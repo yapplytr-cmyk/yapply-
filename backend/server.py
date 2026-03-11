@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from .config import (
   ADMIN_ROLES,
+  FRONTEND_ORIGINS,
   HOST,
   PORT,
   PUBLIC_SIGNUP_ROLES,
@@ -55,11 +56,28 @@ def parse_json_body(handler: "YapplyRequestHandler") -> dict:
 def json_response(handler: "YapplyRequestHandler", status: int, payload: dict) -> None:
   body = json.dumps(payload).encode("utf-8")
   handler.send_response(status)
+  apply_cors_headers(handler)
   handler.send_header("Content-Type", "application/json; charset=utf-8")
   handler.send_header("Cache-Control", "no-store")
   handler.send_header("Content-Length", str(len(body)))
   handler.end_headers()
   handler.wfile.write(body)
+
+
+def get_allowed_origin(handler: "YapplyRequestHandler") -> str | None:
+  origin = handler.headers.get("Origin", "").strip()
+  return origin if origin in FRONTEND_ORIGINS else None
+
+
+def apply_cors_headers(handler: "YapplyRequestHandler") -> None:
+  origin = get_allowed_origin(handler)
+
+  if not origin:
+    return
+
+  handler.send_header("Access-Control-Allow-Origin", origin)
+  handler.send_header("Access-Control-Allow-Credentials", "true")
+  handler.send_header("Vary", "Origin")
 
 
 def build_cookie(token: str, max_age: int = SESSION_TTL_SECONDS) -> str:
@@ -172,7 +190,7 @@ def validate_login(payload: dict, audience: str = "public") -> tuple[dict | None
   requested_role = normalize_text(payload.get("role"))
 
   if not identifier:
-    return None, ("EMAIL_INVALID", "A valid email address is required.")
+    return None, ("IDENTIFIER_REQUIRED", "Username or email is required.")
   if audience != "admin" and not EMAIL_RE.match(identifier):
     return None, ("EMAIL_INVALID", "A valid email address is required.")
   if not password:
@@ -210,8 +228,7 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
 
   def do_OPTIONS(self):
     self.send_response(HTTPStatus.NO_CONTENT)
-    self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin", "*"))
-    self.send_header("Access-Control-Allow-Credentials", "true")
+    apply_cors_headers(self)
     self.send_header("Access-Control-Allow-Headers", "Content-Type")
     self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
     self.end_headers()
@@ -255,6 +272,7 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
     user = get_session_user(token_hash)
     if not user:
       self.send_response(HTTPStatus.OK)
+      apply_cors_headers(self)
       self.send_header("Set-Cookie", clear_cookie())
       self.send_header("Content-Type", "application/json; charset=utf-8")
       payload = json.dumps({"authenticated": False, "user": None}).encode("utf-8")
@@ -283,6 +301,7 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
 
     body = json.dumps({"ok": True, "user": user}).encode("utf-8")
     self.send_response(HTTPStatus.CREATED)
+    apply_cors_headers(self)
     self.send_header("Set-Cookie", build_cookie(token))
     self.send_header("Content-Type", "application/json; charset=utf-8")
     self.send_header("Cache-Control", "no-store")
@@ -309,6 +328,7 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
 
     body = json.dumps({"ok": True, "user": get_session_user(token_hash)}).encode("utf-8")
     self.send_response(HTTPStatus.OK)
+    apply_cors_headers(self)
     self.send_header("Set-Cookie", build_cookie(token))
     self.send_header("Content-Type", "application/json; charset=utf-8")
     self.send_header("Cache-Control", "no-store")
@@ -326,6 +346,7 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
 
     body = json.dumps({"ok": True}).encode("utf-8")
     self.send_response(HTTPStatus.OK)
+    apply_cors_headers(self)
     self.send_header("Set-Cookie", clear_cookie())
     self.send_header("Content-Type", "application/json; charset=utf-8")
     self.send_header("Cache-Control", "no-store")

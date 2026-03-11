@@ -1,9 +1,15 @@
 import { clearAuthSession, setAuthSession } from "./state.js";
 
+const AUTH_ORIGIN = "http://127.0.0.1:4174";
+
+function createApiUrl(path) {
+  return `${AUTH_ORIGIN}${path}`;
+}
+
 async function requestJson(path, payload) {
-  const response = await fetch(path, {
+  const response = await fetch(createApiUrl(path), {
     method: "POST",
-    credentials: "same-origin",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -46,9 +52,9 @@ export async function logoutAccount() {
 
 export async function fetchAuthSession() {
   try {
-    const response = await fetch("/api/auth/session", {
+    const response = await fetch(createApiUrl("/api/auth/session"), {
       method: "GET",
-      credentials: "same-origin",
+      credentials: "include",
       headers: {
         Accept: "application/json",
       },
@@ -60,4 +66,8 @@ export async function fetchAuthSession() {
     clearAuthSession();
     return { authenticated: false, user: null };
   }
+}
+
+export function getAuthOrigin() {
+  return AUTH_ORIGIN;
 }

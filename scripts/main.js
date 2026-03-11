@@ -211,10 +211,19 @@ function setupRevealAnimations() {
       "#marketplace-listings .section-heading, .marketplace-tabs, .marketplace-panel, .marketplace-grid, .marketplace-card, .marketplace-card__media"
     ),
   ];
+  const adminDashboardTargets = [
+    ...document.querySelectorAll(
+      'body[data-page="admin-dashboard"] .section-shell, body[data-page="admin-dashboard"] .section-heading, body[data-page="admin-dashboard"] .admin-dashboard-grid, body[data-page="admin-dashboard"] .admin-section-panel, body[data-page="admin-dashboard"] .admin-record, body[data-page="admin-dashboard"] .admin-inline-form'
+    ),
+  ];
 
   if (prefersReducedMotion || !("IntersectionObserver" in window)) {
     allTargets.forEach((target) => target.classList.add("is-visible"));
     return () => {};
+  }
+
+  if (document.body.dataset.page === "admin-dashboard") {
+    adminDashboardTargets.forEach((target) => target.classList.add("is-visible"));
   }
 
   if (isSmallTouchViewport) {
@@ -560,6 +569,7 @@ function setupAuthEntryForms(content) {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       resetErrors();
+      success.hidden = true;
 
       if (password && confirmPassword) {
         const isMatch = password.value === confirmPassword.value;
@@ -634,14 +644,14 @@ function setupAuthEntryForms(content) {
         }
       };
 
-      const submitPromise = loadAuthApi().then((authApi) => {
+      const submitPromise = loadAuthApi().then(async (authApi) => {
         if (!authApi) {
           throw Object.assign(new Error("Auth backend is unavailable."), {
             code: "AUTH_UNAVAILABLE",
           });
         }
 
-        return currentPage === "create-account"
+        const user = await (currentPage === "create-account"
           ? authApi.signupAccount(payload)
           : authApi.loginAccount(
               {
@@ -650,19 +660,25 @@ function setupAuthEntryForms(content) {
                 role: payload.accountRole || undefined,
               },
               audience
-            );
+            ));
+
+        if (audience === "admin") {
+          const session = await authApi.fetchAuthSession();
+          const role = session?.user?.role;
+
+          if (!session?.authenticated || (role !== "admin" && role !== "moderator")) {
+            throw Object.assign(new Error("Admin session could not be confirmed."), {
+              code: "ADMIN_SESSION_INVALID",
+            });
+          }
+        }
+
+        return user;
       });
 
       submitPromise.catch((error) => {
         if (error?.code === "AUTH_UNAVAILABLE") {
-          if (successTitle && successBody) {
-            successTitle.textContent = content.form.successTitle;
-            successBody.textContent = content.form.successText;
-          }
-
-          form.hidden = true;
-          errorBox?.setAttribute("hidden", "");
-          success.hidden = false;
+          handleError(error);
           return;
         }
 

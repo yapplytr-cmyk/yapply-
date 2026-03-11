@@ -6,7 +6,13 @@ DATA_DIR = BACKEND_DIR / "data"
 DB_PATH = DATA_DIR / "yapply.db"
 
 HOST = "127.0.0.1"
-PORT = 4173
+PORT = 4174
+FRONTEND_ORIGINS = {
+  "http://127.0.0.1:4173",
+  "http://localhost:4173",
+  "http://127.0.0.1:4174",
+  "http://localhost:4174",
+}
 
 SESSION_COOKIE_NAME = "yapply_session"
 SESSION_TTL_SECONDS = 60 * 60 * 24 * 14

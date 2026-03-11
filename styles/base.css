@@ -199,6 +199,12 @@ small {
   transform: translate3d(0, 0, 0);
 }
 
+body[data-page="admin-dashboard"] .reveal-section,
+body[data-page="admin-dashboard"] .reveal-item {
+  opacity: 1;
+  transform: none;
+}
+
 html.theme-ready body,
 html.theme-ready body::before,
 html.theme-ready body::after,

@@ -6,7 +6,7 @@
     <title>Yapply | Moderator Login</title>
     <meta
       name="description"
-      content="Internal Yapply moderator access for future review, moderation, and admin workflows."
+      content="Internal Yapply moderator access for review, moderation, and admin workflows."
     />
     <meta
       name="keywords"
@@ -18,10 +18,10 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Sora:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles/tokens.css?v=20260311-auth-pages" />
-    <link rel="stylesheet" href="./styles/base.css?v=20260311-auth-pages" />
-    <link rel="stylesheet" href="./styles/components.css?v=20260311-auth-pages" />
-    <link rel="stylesheet" href="./styles/sections.css?v=20260311-auth-pages" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260312-moderator-portal-direct" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260312-moderator-portal-direct" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260312-moderator-portal-direct" />
+    <link rel="stylesheet" href="./styles/sections.css?v=20260312-moderator-portal-direct" />
     <script>
       try {
         document.documentElement.dataset.theme = localStorage.getItem("yapply-theme") || "dark";
@@ -30,18 +30,60 @@
       }
     </script>
   </head>
-  <body data-page="moderator-login">
-    <div id="app">
-      <div class="page-shell">
-        <main class="section-shell">
-          <div class="panel application-panel">
-            <p class="eyebrow">Yapply</p>
-            <h1 class="section-title">Loading moderator access...</h1>
-            <p class="section-description">The internal login route is initializing.</p>
+  <body>
+    <div class="page-shell">
+      <main>
+        <section class="section-shell auth-admin-shell">
+          <div class="section-heading">
+            <p class="eyebrow">Internal Access</p>
+            <h2 class="section-title">Moderator login</h2>
+            <p class="section-description">This route is reserved for internal moderation and admin access.</p>
           </div>
-        </main>
-      </div>
+          <div class="panel auth-admin-panel">
+            <div class="auth-admin-panel__intro">
+              <span class="auth-admin-panel__eyebrow">Private route</span>
+              <h3>Low-visibility internal access for moderation workflows.</h3>
+              <p>This page is intentionally understated and separate from the public client and developer login flow.</p>
+            </div>
+            <form class="application-form auth-admin-form" id="moderator-login-form" novalidate>
+              <div class="auth-form-error form-field--full" id="moderator-login-error" hidden>
+                <strong>Please review the moderator form</strong>
+                <p id="moderator-login-error-text">Enter valid moderator credentials to continue.</p>
+              </div>
+              <label class="form-field">
+                <span>Moderator Username or Email</span>
+                <input
+                  type="text"
+                  name="adminIdentifier"
+                  placeholder="armandino or armandino@yapply.internal"
+                  autocomplete="username"
+                  required
+                />
+              </label>
+              <label class="form-field">
+                <span>Moderator Password</span>
+                <input
+                  type="password"
+                  name="adminPassword"
+                  placeholder="Enter moderator password"
+                  autocomplete="current-password"
+                  required
+                />
+              </label>
+              <div class="form-actions form-field--full">
+                <button class="button button--secondary" type="submit" id="moderator-login-submit">Enter Moderator Portal</button>
+              </div>
+              <a class="auth-inline-link" href="./login.html">Return to public login</a>
+              <p class="section-description" id="moderator-login-debug" style="font-size:0.82rem; margin:0;"></p>
+            </form>
+            <div class="form-success" id="moderator-login-success" hidden>
+              <h3>Moderator access granted</h3>
+              <p id="moderator-login-success-text">Admin authentication succeeded. Redirecting to the dashboard...</p>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
-    <script type="module" src="./scripts/main.js?v=20260311-auth-pages"></script>
+    <script type="module" src="./scripts/moderatorPortal.js?v=20260312-moderator-portal-direct"></script>
   </body>
 </html>

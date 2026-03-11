@@ -1172,6 +1172,7 @@ export const translations = {
         INVALID_JSON: "The request could not be processed. Please try again.",
         INVALID_ROLE: "Only client and developer accounts can be created here.",
         FULL_NAME_REQUIRED: "Please enter your full name.",
+        IDENTIFIER_REQUIRED: "Please enter the moderator username or email.",
         EMAIL_INVALID: "Please enter a valid email address.",
         EMAIL_IN_USE: "An account with this email already exists.",
         PASSWORD_TOO_SHORT: "Password must be at least 8 characters.",
@@ -1188,6 +1189,8 @@ export const translations = {
         INVALID_CREDENTIALS: "Email or password is incorrect.",
         ADMIN_ONLY: "This login area is reserved for moderator or admin accounts.",
         ADMIN_USE_INTERNAL: "Admin accounts must use the internal moderator login.",
+        AUTH_UNAVAILABLE: "The backend auth server is not available. Start the Yapply backend server and try again.",
+        ADMIN_SESSION_INVALID: "Admin authentication did not produce a valid admin session. Please try again.",
         UNKNOWN_ERROR: "Something went wrong. Please try again.",
       },
       success: {
@@ -3500,6 +3503,7 @@ export const translations = {
         INVALID_JSON: "İstek işlenemedi. Lütfen tekrar deneyin.",
         INVALID_ROLE: "Buradan yalnızca müşteri ve geliştirici hesapları oluşturulabilir.",
         FULL_NAME_REQUIRED: "Lütfen ad soyad bilginizi girin.",
+        IDENTIFIER_REQUIRED: "Lütfen moderatör kullanıcı adı veya e-postasını girin.",
         EMAIL_INVALID: "Lütfen geçerli bir e-posta adresi girin.",
         EMAIL_IN_USE: "Bu e-posta ile kayıtlı bir hesap zaten mevcut.",
         PASSWORD_TOO_SHORT: "Şifre en az 8 karakter olmalıdır.",
@@ -3516,6 +3520,8 @@ export const translations = {
         INVALID_CREDENTIALS: "E-posta veya şifre hatalı.",
         ADMIN_ONLY: "Bu giriş alanı yalnızca moderatör veya yönetici hesapları içindir.",
         ADMIN_USE_INTERNAL: "Yönetici hesapları iç moderatör girişini kullanmalıdır.",
+        AUTH_UNAVAILABLE: "Backend kimlik doğrulama sunucusu erişilebilir değil. Yapply backend sunucusunu başlatıp tekrar deneyin.",
+        ADMIN_SESSION_INVALID: "Yönetici kimlik doğrulaması geçerli bir yönetici oturumu oluşturmadı. Lütfen tekrar deneyin.",
         UNKNOWN_ERROR: "Bir sorun oluştu. Lütfen tekrar deneyin.",
       },
       success: {
