@@ -3,14 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Yapply | Premium Construction Marketplace in Turkey</title>
+    <title>Yapply | Admin Dashboard</title>
     <meta
       name="description"
-      content="Yapply connects clients in Turkey with verified architects, developers, and construction companies through a premium digital marketplace."
-    />
-    <meta
-      name="keywords"
-      content="construction marketplace Turkey, architects Turkey, verified builders, home construction platform, Yapply"
+      content="Protected Yapply admin dashboard for managing marketplace listings and homepage featured projects."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,10 +14,10 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Sora:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles/tokens.css" />
-    <link rel="stylesheet" href="./styles/base.css" />
-    <link rel="stylesheet" href="./styles/components.css" />
-    <link rel="stylesheet" href="./styles/sections.css" />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260311-admin-dashboard" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260311-admin-dashboard" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260311-admin-dashboard" />
+    <link rel="stylesheet" href="./styles/sections.css?v=20260311-admin-dashboard" />
     <script>
       try {
         document.documentElement.dataset.theme = localStorage.getItem("yapply-theme") || "dark";
@@ -30,18 +26,18 @@
       }
     </script>
   </head>
-  <body data-page="home">
+  <body data-page="admin-dashboard">
     <div id="app">
       <div class="page-shell">
         <main class="section-shell">
           <div class="panel application-panel">
-            <p class="eyebrow">Yapply</p>
-            <h1 class="section-title">Loading the interface...</h1>
-            <p class="section-description">The premium construction marketplace is initializing.</p>
+            <p class="eyebrow">Yapply Admin</p>
+            <h1 class="section-title">Loading dashboard...</h1>
+            <p class="section-description">The protected admin interface is initializing.</p>
           </div>
         </main>
       </div>
     </div>
-    <script type="module" src="./scripts/main.js"></script>
+    <script type="module" src="./scripts/main.js?v=20260311-admin-dashboard"></script>
   </body>
 </html>

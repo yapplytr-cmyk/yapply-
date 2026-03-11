@@ -1,5 +1,4 @@
 import { createButton, createSectionHeading } from "./primitives.js";
-import { isMarketplaceAdminMode } from "../core/marketplaceStore.js";
 
 function createSummaryGrid(items) {
   return items
@@ -70,27 +69,6 @@ function createMediaSection(detailContent, listing) {
   `;
 }
 
-function createAdminControls(content, listingType, listing) {
-  if (listing?.source !== "submitted" || !isMarketplaceAdminMode()) {
-    return "";
-  }
-
-  return `
-    <div class="demo-admin">
-      <span>${content.marketplaceFlow.admin.label}</span>
-      <button
-        class="button button--secondary demo-admin__button"
-        type="button"
-        data-delete-listing="${listing.id}"
-        data-delete-listing-type="${listingType}"
-        data-delete-redirect="./open-marketplace.html?tab=${listingType === "professional" ? "developer" : "client"}"
-      >
-        ${content.marketplaceFlow.admin.deleteLabel}
-      </button>
-    </div>
-  `;
-}
-
 function createClientDetail(content, listing) {
   const detailContent = content.marketplaceFlow.detail.client;
   const summaryItems = [
@@ -116,7 +94,6 @@ function createClientDetail(content, listing) {
             ${createButton({ href: "./professional-listing-submission.html", label: detailContent.primaryCta, variant: "primary" })}
             ${createButton({ href: "./open-marketplace.html?tab=client", label: detailContent.secondaryCta, variant: "secondary" })}
           </div>
-          ${createAdminControls(content, "client", listing)}
         </div>
         <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client panel">
           <div class="project-hero-visual__grid"></div>
@@ -188,7 +165,6 @@ function createProfessionalDetail(content, listing) {
             ${createButton({ href: "#listing-contact", label: detailContent.primaryCta, variant: "primary" })}
             ${createButton({ href: "./open-marketplace.html?tab=developer", label: detailContent.secondaryCta, variant: "secondary" })}
           </div>
-          ${createAdminControls(content, "professional", listing)}
         </div>
         <div class="developer-profile-visual panel">
           <div class="developer-profile-visual__grid"></div>

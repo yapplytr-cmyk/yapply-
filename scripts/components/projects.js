@@ -1,6 +1,10 @@
 import { createSectionHeading } from "./primitives.js";
 
 function getProjectPreviewImage(project) {
+  if (project.imageSrc) {
+    return project.imageSrc;
+  }
+
   const imageMap = {
     coast: "./assets/project-previews/aegean-courtyard-villa.svg",
     urban: "./assets/project-previews/urban-ridge-villa.svg",

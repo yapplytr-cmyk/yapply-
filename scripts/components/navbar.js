@@ -1,18 +1,27 @@
-import { createButton } from "./primitives.js";
-
 export function createNavbar(content, currentLocale) {
+  const currentPage = document.body?.dataset?.page || "home";
   const menuCopy =
     currentLocale === "tr"
       ? {
           open: "Menüyü Aç",
           close: "Menüyü Kapat",
+          login: "Giriş Yap",
+          createAccount: "Hesap Oluştur",
         }
       : {
           open: "Open menu",
           close: "Close menu",
+          login: "Login",
+          createAccount: "Create Account",
         };
   const navLinks = content.nav.links
-    .map((link) => `<a href="${link.href}">${link.label}</a>`)
+    .map((link) => {
+      const isMarketplaceLink = link.href === "./open-marketplace.html";
+      const isProfessionalsLink = link.href === "./professionals.html";
+      const featuredClass = isMarketplaceLink ? " nav-link--marketplace" : isProfessionalsLink ? " nav-link--professionals" : "";
+
+      return `<a class="${featuredClass.trim()}" href="${link.href}">${link.label}</a>`;
+    })
     .join("");
   const localeButtons = Object.keys(content.controls.locales)
     .map(
@@ -26,6 +35,49 @@ export function createNavbar(content, currentLocale) {
           ${content.controls.locales[locale]}
         </button>
       `
+    )
+    .join("");
+  const authLinks =
+    currentPage === "login"
+      ? [
+          {
+            href: "./create-account.html",
+            label: menuCopy.createAccount,
+            variant: "secondary",
+          },
+        ]
+      : currentPage === "create-account"
+        ? [
+            {
+              href: "./login.html",
+              label: menuCopy.login,
+              variant: "text",
+            },
+          ]
+        : [
+            {
+              href: "./login.html",
+              label: menuCopy.login,
+              variant: "text",
+            },
+            {
+              href: "./create-account.html",
+              label: menuCopy.createAccount,
+              variant: "secondary",
+            },
+          ];
+  const desktopAuthMarkup = authLinks
+    .map((link) =>
+      link.variant === "secondary"
+        ? `<a class="button button--secondary nav-auth-button" href="${link.href}">${link.label}</a>`
+        : `<a class="nav-auth-link" href="${link.href}">${link.label}</a>`
+    )
+    .join("");
+  const mobileAuthMarkup = authLinks
+    .map((link) =>
+      link.variant === "secondary"
+        ? `<a class="button button--secondary nav-mobile-auth__button" href="${link.href}">${link.label}</a>`
+        : `<a class="nav-mobile-auth__link" href="${link.href}">${link.label}</a>`
     )
     .join("");
 
@@ -46,17 +98,20 @@ export function createNavbar(content, currentLocale) {
           </nav>
 
           <div class="nav-actions">
-            <div class="locale-toggle" role="group" aria-label="${content.controls.languageToggleLabel}">
-              ${localeButtons}
+            <div class="nav-auth-links">
+              ${desktopAuthMarkup}
             </div>
-            <button class="control-button" id="theme-toggle" type="button" aria-label="${content.controls.themeToggleLabel}">
-              ${content.controls.themeToggleLight}
-            </button>
-            ${createButton({ href: content.nav.ctaHref || "#top", label: content.nav.cta, variant: "primary" })}
+            <div class="nav-utility__stack">
+              <div class="locale-toggle locale-toggle--utility" role="group" aria-label="${content.controls.languageToggleLabel}">
+                ${localeButtons}
+              </div>
+              <button class="control-button control-button--utility" id="theme-toggle" type="button" aria-label="${content.controls.themeToggleLabel}">
+                ${content.controls.themeToggleLight}
+              </button>
+            </div>
           </div>
 
           <div class="nav-mobile-actions">
-            <a class="button button--primary nav-mobile-cta" href="${content.nav.ctaHref || "#top"}">${content.nav.cta}</a>
             <button
               class="control-button nav-toggle"
               type="button"
@@ -80,16 +135,16 @@ export function createNavbar(content, currentLocale) {
           <nav class="nav-mobile-links" aria-label="${content.nav.ariaLabel}">
             ${navLinks}
           </nav>
+          <div class="nav-mobile-auth">
+            ${mobileAuthMarkup}
+          </div>
           <div class="nav-mobile-controls">
-            <div class="locale-toggle" role="group" aria-label="${content.controls.languageToggleLabel}">
+            <div class="locale-toggle locale-toggle--utility" role="group" aria-label="${content.controls.languageToggleLabel}">
               ${localeButtons}
             </div>
-            <button class="control-button" id="theme-toggle-mobile" type="button" aria-label="${content.controls.themeToggleLabel}">
+            <button class="control-button control-button--utility" id="theme-toggle-mobile" type="button" aria-label="${content.controls.themeToggleLabel}">
               ${content.controls.themeToggleLight}
             </button>
-          </div>
-          <div class="nav-mobile-panel__cta">
-            ${createButton({ href: content.nav.ctaHref || "#top", label: content.nav.cta, variant: "primary" })}
           </div>
         </div>
       </div>

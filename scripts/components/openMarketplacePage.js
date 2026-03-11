@@ -1,4 +1,4 @@
-import { getMarketplaceListingHref, isMarketplaceAdminMode } from "../core/marketplaceStore.js";
+import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { createButton, createSectionHeading } from "./primitives.js";
 
 function createMarketplaceHero(content) {
@@ -45,24 +45,6 @@ function createMarketplaceIntro(content) {
 
 function createClientListingCard(listing, labels) {
   const ctaHref = listing.detailHref || getMarketplaceListingHref("client", listing.id || listing.slug);
-  const showAdmin = isMarketplaceAdminMode();
-  const adminControls =
-    showAdmin && listing.source === "submitted"
-      ? `
-        <div class="demo-admin demo-admin--card">
-          <span>${labels.adminLabel}</span>
-          <button
-            class="button button--secondary demo-admin__button"
-            type="button"
-            data-delete-listing="${listing.id}"
-            data-delete-listing-type="client"
-            data-delete-redirect="./open-marketplace.html?tab=client"
-          >
-            ${labels.deleteLabel}
-          </button>
-        </div>
-      `
-      : "";
 
   return `
     <article class="marketplace-card panel">
@@ -96,36 +78,16 @@ function createClientListingCard(listing, labels) {
         </div>
         <a class="button button--secondary marketplace-card__cta" href="${ctaHref}">${listing.ctaLabel || labels.viewListing}</a>
       </div>
-      ${adminControls}
     </article>
   `;
 }
 
 function createDeveloperListingCard(listing, labels) {
-  const isSubmitted = listing.source === "submitted";
-  const showAdmin = isMarketplaceAdminMode();
   const actions = listing.actions || labels.actions;
   const profileHref = listing.profileHref || getMarketplaceListingHref("professional", listing.id);
   const quoteHref = listing.quoteHref || `${profileHref}#listing-contact`;
   const projectsHref = listing.projectsHref || `${profileHref}#listing-services`;
   const contactHref = listing.contactHref || `${profileHref}#listing-contact`;
-  const adminControls =
-    showAdmin && isSubmitted
-      ? `
-        <div class="demo-admin demo-admin--card">
-          <span>${labels.adminLabel}</span>
-          <button
-            class="button button--secondary demo-admin__button"
-            type="button"
-            data-delete-listing="${listing.id}"
-            data-delete-listing-type="professional"
-            data-delete-redirect="./open-marketplace.html?tab=developer"
-          >
-            ${labels.deleteLabel}
-          </button>
-        </div>
-      `
-      : "";
   const factItems = listing.facts || [
     { label: labels.startingPrice, value: listing.startingPrice },
     { label: isSubmitted ? labels.experience : labels.deliveryRange, value: isSubmitted ? `${listing.yearsExperience} ${labels.yearsSuffix}` : listing.deliveryRange },
@@ -169,7 +131,6 @@ function createDeveloperListingCard(listing, labels) {
         <a href="${projectsHref}">${actions.seeProjects}</a>
         <a href="${contactHref}">${actions.contactProfessional}</a>
       </div>
-      ${adminControls}
     </article>
   `;
 }

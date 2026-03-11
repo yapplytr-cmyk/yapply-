@@ -1,0 +1,22 @@
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+BACKEND_DIR = ROOT_DIR / "backend"
+DATA_DIR = BACKEND_DIR / "data"
+DB_PATH = DATA_DIR / "yapply.db"
+
+HOST = "127.0.0.1"
+PORT = 4173
+
+SESSION_COOKIE_NAME = "yapply_session"
+SESSION_TTL_SECONDS = 60 * 60 * 24 * 14
+
+PUBLIC_SIGNUP_ROLES = {"developer", "client"}
+ADMIN_ROLES = {"admin", "moderator"}
+ALL_ROLES = PUBLIC_SIGNUP_ROLES | ADMIN_ROLES
+
+SEEDED_ADMIN_USERNAME = "armandino"
+SEEDED_ADMIN_EMAIL = "armandino@yapply.internal"
+SEEDED_ADMIN_PASSWORD = "skylarkyapply877!"
+SEEDED_ADMIN_FULL_NAME = "Armandino"
+SEEDED_ADMIN_ROLE = "admin"

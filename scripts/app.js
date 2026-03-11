@@ -5,13 +5,21 @@ import { createFeatures } from "./components/features.js";
 import { createProjects } from "./components/projects.js";
 import { createTestimonials } from "./components/testimonials.js";
 import { createFooter } from "./components/footer.js";
+import { createAdminAccessDeniedPage, createAdminDashboardPage } from "./components/adminDashboardPage.js";
 import { createOpenMarketplacePage } from "./components/openMarketplacePage.js";
 import { createMarketplaceSubmissionPage } from "./components/marketplaceSubmissionPage.js";
 import { createMarketplaceSubmissionSuccessPage } from "./components/marketplaceSubmissionSuccessPage.js";
 import { createMarketplaceListingDetailPage } from "./components/marketplaceListingDetailPage.js";
 import { createDeveloperProfilePage } from "./components/developerProfilePage.js";
 import { createProjectDetailPage } from "./components/projectDetailPage.js";
-import { getLastSubmission, getSubmittedListing, getSubmittedListings } from "./core/marketplaceStore.js";
+import { createCreateAccountPage, createLoginPage, createModeratorLoginPage } from "./components/authPages.js";
+import {
+  getManagedFeaturedProjects,
+  getManagedMarketplaceCollections,
+  getManagedMarketplaceListing,
+} from "./core/adminStore.js";
+import { getLastSubmission, getSubmittedListing } from "./core/marketplaceStore.js";
+import { getAuthSession } from "./core/state.js";
 import {
   createProfessionalsBenefits,
   createProfessionalsFaq,
@@ -22,15 +30,39 @@ import {
   createProfessionalsWhoCanApply,
 } from "./components/professionalsPage.js";
 
+function isAdminUser() {
+  const role = getAuthSession().user?.role;
+  return role === "admin" || role === "moderator";
+}
+
+function withAdminNav(nav, adminLabel) {
+  if (!isAdminUser()) {
+    return nav;
+  }
+
+  const alreadyIncluded = nav.links.some((link) => link.href === "./admin-dashboard.html");
+  if (alreadyIncluded) {
+    return nav;
+  }
+
+  return {
+    ...nav,
+    links: [...nav.links, { label: adminLabel, href: "./admin-dashboard.html" }],
+  };
+}
+
 function createHomePageContent(content) {
   return {
     brand: content.brand,
     controls: content.controls,
-    nav: content.nav,
+    nav: withAdminNav(content.nav, content.adminDashboardPage.navLabel),
     hero: content.hero,
     howItWorks: content.howItWorks,
     features: content.features,
-    projects: content.projects,
+    projects: {
+      ...content.projects,
+      items: getManagedFeaturedProjects(content.projects.items),
+    },
     testimonials: content.testimonials,
     footer: content.footer,
   };
@@ -41,6 +73,7 @@ function createProfessionalsPageContent(content) {
     brand: content.brand,
     controls: content.controls,
     ...content.professionalsPage,
+    nav: withAdminNav(content.professionalsPage.nav, content.adminDashboardPage.navLabel),
   };
 }
 
@@ -53,7 +86,7 @@ function createProjectDetailPageContent(content, projectSlug) {
     brand: content.brand,
     controls: content.controls,
     nav: {
-      ...detailPage.nav,
+      ...withAdminNav(detailPage.nav, content.adminDashboardPage.navLabel),
       cta: detailPage.sections.cta.requestLabel,
       ctaHref: detailPage.sections.cta.requestHref,
     },
@@ -63,23 +96,53 @@ function createProjectDetailPageContent(content, projectSlug) {
   };
 }
 
+function createCreateAccountPageContent(content) {
+  return {
+    brand: content.brand,
+    controls: content.controls,
+    ...content.authPages.createAccount,
+    nav: withAdminNav(content.authPages.createAccount.nav, content.adminDashboardPage.navLabel),
+  };
+}
+
+function createLoginPageContent(content) {
+  return {
+    brand: content.brand,
+    controls: content.controls,
+    ...content.authPages.login,
+    nav: withAdminNav(content.authPages.login.nav, content.adminDashboardPage.navLabel),
+  };
+}
+
+function createModeratorLoginPageContent(content) {
+  return {
+    brand: content.brand,
+    controls: content.controls,
+    ...content.authPages.moderatorLogin,
+    nav: withAdminNav(content.authPages.moderatorLogin.nav, content.adminDashboardPage.navLabel),
+  };
+}
+
 function createOpenMarketplacePageContent(content) {
-  const submittedClientItems = getSubmittedListings("client");
-  const submittedProfessionalItems = getSubmittedListings("professional");
+  const managedCollections = getManagedMarketplaceCollections(
+    content.openMarketplacePage.tabs.client.items,
+    content.openMarketplacePage.tabs.developer.items
+  );
 
   return {
     brand: content.brand,
     controls: content.controls,
     ...content.openMarketplacePage,
+    nav: withAdminNav(content.openMarketplacePage.nav, content.adminDashboardPage.navLabel),
     tabs: {
       ...content.openMarketplacePage.tabs,
       client: {
         ...content.openMarketplacePage.tabs.client,
-        items: [...submittedClientItems, ...content.openMarketplacePage.tabs.client.items],
+        items: managedCollections.client,
       },
       developer: {
         ...content.openMarketplacePage.tabs.developer,
-        items: [...submittedProfessionalItems, ...content.openMarketplacePage.tabs.developer.items],
+        items: managedCollections.professional,
       },
     },
   };
@@ -92,6 +155,7 @@ function createMarketplaceSubmissionPageContent(content, submissionType) {
     brand: content.brand,
     controls: content.controls,
     ...submissionPage,
+    nav: withAdminNav(submissionPage.nav, content.adminDashboardPage.navLabel),
   };
 }
 
@@ -103,6 +167,7 @@ function createMarketplaceSubmissionSuccessContent(content, submissionType, list
     brand: content.brand,
     controls: content.controls,
     ...content.marketplaceSubmissionPages[submissionType],
+    nav: withAdminNav(content.marketplaceSubmissionPages[submissionType].nav, content.adminDashboardPage.navLabel),
     marketplaceFlow: content.marketplaceFlow,
     submissionType,
     listing: getSubmittedListing(submissionType, resolvedId),
@@ -110,23 +175,25 @@ function createMarketplaceSubmissionSuccessContent(content, submissionType, list
 }
 
 function createMarketplaceListingDetailContent(content, listingType, listingId) {
+  const managedListing = getManagedMarketplaceListing(
+    listingType,
+    listingId,
+    content.openMarketplacePage.tabs.client.items,
+    content.openMarketplacePage.tabs.developer.items
+  );
   const submittedListing = getSubmittedListing(listingType, listingId);
-  const seededClientListing =
-    listingType === "client"
-      ? content.openMarketplacePage.tabs.client.items.find((item) => item.slug === listingId) || null
-      : null;
 
   return {
     brand: content.brand,
     controls: content.controls,
     nav: {
-      ...content.openMarketplacePage.nav,
+      ...withAdminNav(content.openMarketplacePage.nav, content.adminDashboardPage.navLabel),
       cta: content.marketplaceFlow.detail.backToMarketplace,
       ctaHref: "./open-marketplace.html",
     },
     footer: content.openMarketplacePage.footer,
     marketplaceFlow: content.marketplaceFlow,
-    listing: submittedListing || seededClientListing,
+    listing: managedListing || submittedListing,
   };
 }
 
@@ -139,13 +206,36 @@ function createDeveloperProfilePageContent(content, developerSlug) {
     brand: content.brand,
     controls: content.controls,
     nav: {
-      ...developerPage.nav,
+      ...withAdminNav(developerPage.nav, content.adminDashboardPage.navLabel),
       cta: developerPage.hero.primaryCta,
       ctaHref: "#developer-inquiry",
     },
     footer: developerPage.footer,
     profilePage: developerPage,
     profile: selectedProfile,
+  };
+}
+
+function createAdminDashboardPageContent(content) {
+  const managedCollections = getManagedMarketplaceCollections(
+    content.openMarketplacePage.tabs.client.items,
+    content.openMarketplacePage.tabs.developer.items
+  );
+
+  return {
+    brand: content.brand,
+    controls: content.controls,
+    ...content.adminDashboardPage,
+    nav: withAdminNav(content.adminDashboardPage.nav, content.adminDashboardPage.navLabel),
+    listings: {
+      ...content.adminDashboardPage.listings,
+      clientItems: managedCollections.client,
+      professionalItems: managedCollections.professional,
+    },
+    featuredProjects: {
+      ...content.adminDashboardPage.featuredProjects,
+      items: getManagedFeaturedProjects(content.projects.items),
+    },
   };
 }
 
@@ -271,7 +361,80 @@ function createDeveloperProfile(content, locale, developerSlug) {
   `;
 }
 
+function createAccountPage(content, locale) {
+  const pageContent = createCreateAccountPageContent(content);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createCreateAccountPage(pageContent)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
+function createLoginEntryPage(content, locale) {
+  const pageContent = createLoginPageContent(content);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createLoginPage(pageContent)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
+function createModeratorEntryPage(content, locale) {
+  const pageContent = createModeratorLoginPageContent(content);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createModeratorLoginPage(pageContent)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
+function createAdminDashboard(content, locale) {
+  const pageContent = createAdminDashboardPageContent(content);
+  const isAdmin = isAdminUser();
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${isAdmin ? createAdminDashboardPage(pageContent) : createAdminAccessDeniedPage(pageContent)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
 export function createApp(content, locale, page = "home", projectSlug = "", submissionType = "", developerSlug = "", listingType = "", listingId = "") {
+  if (page === "create-account") {
+    return createAccountPage(content, locale);
+  }
+
+  if (page === "login") {
+    return createLoginEntryPage(content, locale);
+  }
+
+  if (page === "moderator-login") {
+    return createModeratorEntryPage(content, locale);
+  }
+
+  if (page === "admin-dashboard") {
+    return createAdminDashboard(content, locale);
+  }
+
   if (page === "professionals") {
     return createProfessionalsPage(content, locale);
   }

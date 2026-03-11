@@ -28,6 +28,16 @@ export function createFooter(content) {
         <span class="footer-note">${content.footer.note}</span>
         <span>© <span data-current-year></span> ${content.footer.copyrightLabel}</span>
       </div>
+
+      ${
+        content.footer.moderatorPortal
+          ? `
+            <div class="footer-admin-access">
+              <a href="${content.footer.moderatorPortal.href}">${content.footer.moderatorPortal.label}</a>
+            </div>
+          `
+          : ""
+      }
     </footer>
   `;
 }

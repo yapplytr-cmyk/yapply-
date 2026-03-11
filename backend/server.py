@@ -1,0 +1,351 @@
+from __future__ import annotations
+
+import json
+import re
+from http import HTTPStatus
+from http.cookies import SimpleCookie
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import urlparse
+
+from .config import (
+  ADMIN_ROLES,
+  HOST,
+  PORT,
+  PUBLIC_SIGNUP_ROLES,
+  ROOT_DIR,
+  SEEDED_ADMIN_EMAIL,
+  SEEDED_ADMIN_FULL_NAME,
+  SEEDED_ADMIN_PASSWORD,
+  SEEDED_ADMIN_ROLE,
+  SEEDED_ADMIN_USERNAME,
+  SESSION_COOKIE_NAME,
+  SESSION_TTL_SECONDS,
+)
+from .db import (
+  create_session,
+  create_user,
+  delete_session,
+  ensure_database,
+  get_session_user,
+  get_user_by_email,
+  get_user_by_identifier,
+  purge_expired_sessions,
+  seed_admin_account,
+)
+from .security import issue_session_token, verify_password
+
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def parse_json_body(handler: "YapplyRequestHandler") -> dict:
+  content_length = int(handler.headers.get("Content-Length", "0") or "0")
+  if content_length <= 0:
+    return {}
+  raw_body = handler.rfile.read(content_length)
+  if not raw_body:
+    return {}
+  try:
+    return json.loads(raw_body.decode("utf-8"))
+  except json.JSONDecodeError as exc:
+    raise ValueError("Invalid JSON payload.") from exc
+
+
+def json_response(handler: "YapplyRequestHandler", status: int, payload: dict) -> None:
+  body = json.dumps(payload).encode("utf-8")
+  handler.send_response(status)
+  handler.send_header("Content-Type", "application/json; charset=utf-8")
+  handler.send_header("Cache-Control", "no-store")
+  handler.send_header("Content-Length", str(len(body)))
+  handler.end_headers()
+  handler.wfile.write(body)
+
+
+def build_cookie(token: str, max_age: int = SESSION_TTL_SECONDS) -> str:
+  cookie = SimpleCookie()
+  cookie[SESSION_COOKIE_NAME] = token
+  cookie[SESSION_COOKIE_NAME]["path"] = "/"
+  cookie[SESSION_COOKIE_NAME]["httponly"] = True
+  cookie[SESSION_COOKIE_NAME]["samesite"] = "Lax"
+  cookie[SESSION_COOKIE_NAME]["max-age"] = max_age
+  return cookie.output(header="").strip()
+
+
+def clear_cookie() -> str:
+  return build_cookie("", 0)
+
+
+def get_session_token(handler: "YapplyRequestHandler") -> str | None:
+  raw_cookie = handler.headers.get("Cookie", "")
+  if not raw_cookie:
+    return None
+  cookie = SimpleCookie()
+  cookie.load(raw_cookie)
+  morsel = cookie.get(SESSION_COOKIE_NAME)
+  return morsel.value if morsel else None
+
+
+def normalize_text(value: str | None) -> str | None:
+  if value is None:
+    return None
+  stripped = str(value).strip()
+  return stripped or None
+
+
+def validate_signup(payload: dict) -> tuple[dict | None, tuple[str, str] | None]:
+  role = normalize_text(payload.get("role"))
+  full_name = normalize_text(payload.get("fullName"))
+  email = normalize_text(payload.get("email"))
+  password = str(payload.get("password") or "")
+  confirm_password = str(payload.get("confirmPassword") or "")
+
+  if role not in PUBLIC_SIGNUP_ROLES:
+    return None, ("INVALID_ROLE", "Only developer and client accounts can be created publicly.")
+  if not full_name:
+    return None, ("FULL_NAME_REQUIRED", "Full name is required.")
+  if not email or not EMAIL_RE.match(email):
+    return None, ("EMAIL_INVALID", "A valid email address is required.")
+  if len(password) < 8:
+    return None, ("PASSWORD_TOO_SHORT", "Password must be at least 8 characters.")
+  if password != confirm_password:
+    return None, ("PASSWORD_MISMATCH", "Password confirmation does not match.")
+  if get_user_by_email(email):
+    return None, ("EMAIL_IN_USE", "An account with this email already exists.")
+
+  base_payload = {
+    "role": role,
+    "fullName": full_name,
+    "email": email.lower(),
+    "password": password,
+    "phoneNumber": normalize_text(payload.get("phoneNumber")),
+    "companyName": normalize_text(payload.get("companyName")),
+    "professionType": normalize_text(payload.get("professionType")),
+    "serviceArea": normalize_text(payload.get("serviceArea")),
+    "specialties": normalize_text(payload.get("specialties")),
+    "preferredRegion": normalize_text(payload.get("preferredRegion")),
+    "website": normalize_text(payload.get("website")),
+  }
+
+  years_experience = normalize_text(payload.get("yearsExperience"))
+  if years_experience is not None:
+    try:
+      parsed_experience = int(years_experience)
+    except ValueError:
+      return None, ("EXPERIENCE_INVALID", "Years of experience must be a whole number.")
+    if parsed_experience < 0:
+      return None, ("EXPERIENCE_INVALID", "Years of experience cannot be negative.")
+    base_payload["yearsExperience"] = parsed_experience
+  else:
+    base_payload["yearsExperience"] = None
+
+  if role == "developer":
+    required_fields = {
+      "phoneNumber": "PHONE_REQUIRED",
+      "companyName": "COMPANY_REQUIRED",
+      "professionType": "PROFESSION_REQUIRED",
+      "serviceArea": "SERVICE_AREA_REQUIRED",
+      "specialties": "SPECIALTIES_REQUIRED",
+    }
+    for key, code in required_fields.items():
+      if not base_payload.get(key):
+        return None, (code, f"{key} is required for developer accounts.")
+    if base_payload["yearsExperience"] is None:
+      return None, ("EXPERIENCE_REQUIRED", "Years of experience is required for developer accounts.")
+  else:
+    if not base_payload.get("phoneNumber"):
+      return None, ("PHONE_REQUIRED", "Phone number is required.")
+    if not base_payload.get("preferredRegion"):
+      return None, ("REGION_REQUIRED", "Preferred city or region is required.")
+    base_payload["professionType"] = None
+    base_payload["serviceArea"] = None
+    base_payload["specialties"] = None
+    base_payload["website"] = None
+    base_payload["yearsExperience"] = None
+
+  return base_payload, None
+
+
+def validate_login(payload: dict, audience: str = "public") -> tuple[dict | None, tuple[str, str] | None]:
+  identifier = normalize_text(payload.get("identifier") or payload.get("email") or payload.get("username"))
+  password = str(payload.get("password") or "")
+  requested_role = normalize_text(payload.get("role"))
+
+  if not identifier:
+    return None, ("EMAIL_INVALID", "A valid email address is required.")
+  if audience != "admin" and not EMAIL_RE.match(identifier):
+    return None, ("EMAIL_INVALID", "A valid email address is required.")
+  if not password:
+    return None, ("PASSWORD_REQUIRED", "Password is required.")
+
+  user = get_user_by_identifier(identifier)
+  if not user or not verify_password(password, user["password_hash"]):
+    return None, ("INVALID_CREDENTIALS", "Email or password is incorrect.")
+
+  if audience != "admin" and user["role"] in ADMIN_ROLES:
+    return None, ("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.")
+
+  if audience == "admin" and user["role"] not in ADMIN_ROLES:
+    return None, ("ADMIN_ONLY", "This login area is reserved for admin or moderator accounts.")
+
+  if requested_role in PUBLIC_SIGNUP_ROLES and user["role"] != requested_role:
+    return None, ("ROLE_MISMATCH", "This account does not match the selected login role.")
+
+  return {"user": user}, None
+
+
+def ensure_seeded_admin_account() -> None:
+  seed_admin_account(
+    email=SEEDED_ADMIN_EMAIL,
+    password=SEEDED_ADMIN_PASSWORD,
+    full_name=SEEDED_ADMIN_FULL_NAME,
+    role=SEEDED_ADMIN_ROLE,
+    username=SEEDED_ADMIN_USERNAME,
+  )
+
+
+class YapplyRequestHandler(SimpleHTTPRequestHandler):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, directory=str(ROOT_DIR), **kwargs)
+
+  def do_OPTIONS(self):
+    self.send_response(HTTPStatus.NO_CONTENT)
+    self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin", "*"))
+    self.send_header("Access-Control-Allow-Credentials", "true")
+    self.send_header("Access-Control-Allow-Headers", "Content-Type")
+    self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    self.end_headers()
+
+  def do_GET(self):
+    parsed = urlparse(self.path)
+
+    if parsed.path == "/api/auth/session":
+      self.handle_auth_session()
+      return
+
+    purge_expired_sessions()
+    super().do_GET()
+
+  def do_POST(self):
+    parsed = urlparse(self.path)
+
+    if parsed.path == "/api/auth/signup":
+      self.handle_auth_signup()
+      return
+
+    if parsed.path == "/api/auth/login":
+      self.handle_auth_login()
+      return
+
+    if parsed.path == "/api/auth/logout":
+      self.handle_auth_logout()
+      return
+
+    self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+
+  def handle_auth_session(self) -> None:
+    token = get_session_token(self)
+    if not token:
+      json_response(self, HTTPStatus.OK, {"authenticated": False, "user": None})
+      return
+
+    import hashlib
+
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    user = get_session_user(token_hash)
+    if not user:
+      self.send_response(HTTPStatus.OK)
+      self.send_header("Set-Cookie", clear_cookie())
+      self.send_header("Content-Type", "application/json; charset=utf-8")
+      payload = json.dumps({"authenticated": False, "user": None}).encode("utf-8")
+      self.send_header("Content-Length", str(len(payload)))
+      self.end_headers()
+      self.wfile.write(payload)
+      return
+
+    json_response(self, HTTPStatus.OK, {"authenticated": True, "user": user})
+
+  def handle_auth_signup(self) -> None:
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    clean_payload, error = validate_signup(payload)
+    if error:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": error[0], "message": error[1]})
+      return
+
+    user = create_user(clean_payload)
+    token, token_hash = issue_session_token()
+    create_session(user["id"], token_hash, self.headers.get("User-Agent", ""), self.client_address[0] if self.client_address else "")
+
+    body = json.dumps({"ok": True, "user": user}).encode("utf-8")
+    self.send_response(HTTPStatus.CREATED)
+    self.send_header("Set-Cookie", build_cookie(token))
+    self.send_header("Content-Type", "application/json; charset=utf-8")
+    self.send_header("Cache-Control", "no-store")
+    self.send_header("Content-Length", str(len(body)))
+    self.end_headers()
+    self.wfile.write(body)
+
+  def handle_auth_login(self) -> None:
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    audience = normalize_text(payload.get("audience")) or "public"
+    login_payload, error = validate_login(payload, audience)
+    if error:
+      json_response(self, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": error[0], "message": error[1]})
+      return
+
+    user = login_payload["user"]
+    token, token_hash = issue_session_token()
+    create_session(user["id"], token_hash, self.headers.get("User-Agent", ""), self.client_address[0] if self.client_address else "")
+
+    body = json.dumps({"ok": True, "user": get_session_user(token_hash)}).encode("utf-8")
+    self.send_response(HTTPStatus.OK)
+    self.send_header("Set-Cookie", build_cookie(token))
+    self.send_header("Content-Type", "application/json; charset=utf-8")
+    self.send_header("Cache-Control", "no-store")
+    self.send_header("Content-Length", str(len(body)))
+    self.end_headers()
+    self.wfile.write(body)
+
+  def handle_auth_logout(self) -> None:
+    import hashlib
+
+    token = get_session_token(self)
+    if token:
+      token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+      delete_session(token_hash)
+
+    body = json.dumps({"ok": True}).encode("utf-8")
+    self.send_response(HTTPStatus.OK)
+    self.send_header("Set-Cookie", clear_cookie())
+    self.send_header("Content-Type", "application/json; charset=utf-8")
+    self.send_header("Cache-Control", "no-store")
+    self.send_header("Content-Length", str(len(body)))
+    self.end_headers()
+    self.wfile.write(body)
+
+
+def run() -> None:
+  ensure_database()
+  ensure_seeded_admin_account()
+  server = ThreadingHTTPServer((HOST, PORT), YapplyRequestHandler)
+  print(f"Yapply backend running on http://{HOST}:{PORT}")
+  try:
+    server.serve_forever()
+  except KeyboardInterrupt:
+    pass
+  finally:
+    server.server_close()
+
+
+if __name__ == "__main__":
+  run()

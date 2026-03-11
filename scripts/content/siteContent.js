@@ -835,6 +835,547 @@ export const translations = {
         },
       },
     },
+    authPages: {
+      createAccount: {
+        nav: {
+          ariaLabel: "Account creation navigation",
+          brandHref: "./index.html",
+          links: [
+            { label: "Back to Home", href: "./index.html" },
+            { label: "Open Marketplace", href: "./open-marketplace.html" },
+            { label: "Login", href: "./login.html" },
+          ],
+          cta: "Open Marketplace",
+          ctaHref: "./open-marketplace.html",
+        },
+        hero: {
+          eyebrow: "Account entry",
+          title: "Choose the right Yapply account before you step into the marketplace.",
+          description:
+            "Create a client or developer account through a cleaner role-based entry flow designed for premium project discovery, inquiry management, and future marketplace participation.",
+          primaryCta: "Choose Your Role",
+          secondaryCta: "Already have an account?",
+        },
+        roleChoice: {
+          eyebrow: "Role selection",
+          title: "Two account paths, tailored to how you build or buy.",
+          description:
+            "Clients and construction professionals enter Yapply through separate account paths so the marketplace can later support more credible permissions, workflows, and bidding behavior.",
+          loginPrompt: "Already have an account?",
+          loginLinkLabel: "Login",
+          roles: [
+            {
+              index: "01",
+              value: "developer",
+              title: "Create Developer Account",
+              description:
+                "For architects, contractors, developers, and construction professionals who want to participate in Yapply as a verified professional.",
+              points: [
+                "Bid on premium project requests",
+                "Show interest in client briefs",
+                "Upload and manage service listings",
+              ],
+              cta: "Choose Developer Account",
+            },
+            {
+              index: "02",
+              value: "client",
+              title: "Create Client Account",
+              description:
+                "For private clients, landowners, and project initiators who want to publish briefs and manage incoming professional interest.",
+              points: [
+                "Create project request listings",
+                "Receive bids from professionals",
+                "Inquire about developer profiles",
+              ],
+              cta: "Choose Client Account",
+            },
+          ],
+        },
+        form: {
+          eyebrow: "Create account",
+          title: "Set up your account entry for the next Yapply phase.",
+          description:
+            "This auth entry flow is frontend-only for now, but the structure is ready for future onboarding, permissions, saved listings, and dashboard logic.",
+          selectedRoleEyebrow: "Selected account",
+          errorTitle: "Please review the form",
+          errorText: "Some required fields still need attention before the account can be created.",
+          roles: [
+            {
+              value: "developer",
+              formTitle: "Developer account setup",
+              formDescription:
+                "This role prepares architects, developers, contractors, and construction companies for future listing, bidding, and inquiry workflows.",
+              groupEyebrow: "Developer signup form",
+              groupTitle: "Professional account details",
+              groupDescription:
+                "Complete the professional profile fields so this account is ready for future listing visibility, project interest, and marketplace participation.",
+              fields: [
+                { name: "companyName", label: "Company / Professional Name", placeholder: "Studio, company, or professional name", required: true },
+                {
+                  name: "professionType",
+                  label: "Profession Type",
+                  type: "select",
+                  placeholder: "Select your profession type",
+                  options: ["Architecture Studio", "Contractor", "Developer", "Construction Company", "Turnkey Builder", "Interior + Fit-Out Specialist"],
+                  required: true,
+                },
+                { name: "serviceArea", label: "City / Service Area", placeholder: "Istanbul, Izmir, Bodrum, Ankara...", required: true },
+                { name: "experience", label: "Years of Experience", type: "number", placeholder: "10", min: 0, step: 1, inputmode: "numeric", required: true },
+                { name: "specialties", label: "Specialties", placeholder: "Luxury villas, turnkey builds, renovations, feasibility...", required: true, full: true },
+                { name: "phoneNumber", label: "Phone Number", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+                {
+                  name: "website",
+                  label: "Website / Portfolio Link",
+                  type: "url",
+                  placeholder: "https://yourstudio.com",
+                  autocomplete: "url",
+                  optionalLabel: "Optional",
+                },
+              ],
+            },
+            {
+              value: "client",
+              formTitle: "Client account setup",
+              formDescription:
+                "This role prepares clients to publish project requests, receive bids, and manage project-side conversations inside Yapply.",
+              groupEyebrow: "Client signup form",
+              groupTitle: "Client account details",
+              groupDescription:
+                "Complete the client-side account details so this account is ready for project requests, bid visibility, and marketplace inquiries.",
+              fields: [
+                { name: "phoneNumber", label: "Phone Number", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+                { name: "preferredRegion", label: "Preferred City / Region", placeholder: "Istanbul, Izmir, Bodrum, Ankara...", required: true },
+                {
+                  name: "companyName",
+                  label: "Company Name",
+                  placeholder: "Company or family office name if relevant",
+                  optionalLabel: "Optional",
+                },
+              ],
+            },
+          ],
+          sharedFields: [
+            { name: "fullName", label: "Full Name", placeholder: "Your full name", autocomplete: "name", required: true },
+            { name: "email", label: "Email", type: "email", placeholder: "name@email.com", autocomplete: "email", required: true },
+            { name: "password", label: "Password", type: "password", placeholder: "Create a secure password", autocomplete: "new-password", required: true },
+            {
+              name: "confirmPassword",
+              label: "Confirm Password",
+              type: "password",
+              placeholder: "Confirm your password",
+              autocomplete: "new-password",
+              required: true,
+            },
+          ],
+          submitLabel: "Create Account",
+          successTitle: "Account entry captured",
+          successText: "Your role selection and account details were recorded in this MVP flow. In the next phase, this can connect to real authentication and onboarding.",
+        },
+        footer: {
+          description:
+            "Yapply account entry is designed as a clean first layer for future authentication, permissions, and role-specific marketplace workflows.",
+          columns: [
+            {
+              title: "Account",
+              links: [
+                { label: "Create account", href: "./create-account.html" },
+                { label: "Login", href: "./login.html" },
+                { label: "Open Marketplace", href: "./open-marketplace.html" },
+              ],
+            },
+            {
+              title: "Explore",
+              links: [
+                { label: "Featured projects", href: "./index.html#featured-projects" },
+                { label: "For professionals", href: "./professionals.html" },
+                { label: "Back to home", href: "./index.html" },
+              ],
+            },
+          ],
+          note: "This account system is currently a frontend entry layer, prepared for future authentication, moderation, and dashboards.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+      login: {
+        nav: {
+          ariaLabel: "Login navigation",
+          brandHref: "./index.html",
+          links: [
+            { label: "Back to Home", href: "./index.html" },
+            { label: "Create Account", href: "./create-account.html" },
+            { label: "Open Marketplace", href: "./open-marketplace.html" },
+          ],
+          cta: "Create Account",
+          ctaHref: "./create-account.html",
+        },
+        hero: {
+          eyebrow: "Login",
+          title: "Enter Yapply with a clean, role-ready account flow.",
+          description:
+            "Use the login page as the premium entry point for future saved listings, project inquiries, and marketplace participation across client and developer roles.",
+          primaryCta: "Login to Yapply",
+          secondaryCta: "Create an Account",
+        },
+        roleChoice: {
+          eyebrow: "Login role",
+          title: "Choose how you are entering Yapply.",
+          description:
+            "Select whether you are signing in as a professional or as a client so the session can be prepared for the right marketplace context.",
+          selectedRoleEyebrow: "Selected login path",
+          roles: [
+            {
+              value: "developer",
+              title: "Developer Login",
+              formTitle: "Professional access for architects, developers, and contractors.",
+              formDescription:
+                "Use this path for future listing ownership, project interest, bid participation, and professional-side marketplace activity.",
+            },
+            {
+              value: "client",
+              title: "Client Login",
+              formTitle: "Client access for project owners and request publishers.",
+              formDescription:
+                "Use this path for future request management, brief ownership, bid review, and client-side inquiry tracking.",
+            },
+          ],
+        },
+        form: {
+          eyebrow: "Account login",
+          title: "Sign in to continue inside the Yapply marketplace.",
+          description:
+            "Begin directly with your account sign-in and choose the role context that matches how you use the platform.",
+          errorTitle: "Please review the login form",
+          errorText: "Enter a valid email and password to continue.",
+          fields: {
+            email: { label: "Email", placeholder: "name@email.com" },
+            password: { label: "Password", placeholder: "Enter your password" },
+          },
+          submitLabel: "Login",
+          createAccountLink: "Need an account? Create one here.",
+          successTitle: "Login captured",
+          successText: "This frontend-only login state was accepted. In the next phase it can connect to a real session and role-based dashboard.",
+        },
+        summary: {
+          eyebrow: "Access scope",
+          title: "Prepared for role-based access across the platform.",
+          description:
+            "The login entry is positioned to support saved project requests, professional listing visibility, bid workflows, and future owner or admin permissions.",
+          items: [
+            { label: "Roles", value: "Client + Developer" },
+            { label: "Next phase", value: "Auth + dashboards" },
+            { label: "Status", value: "Frontend entry layer" },
+          ],
+        },
+        admin: {
+          eyebrow: "Moderator / admin",
+          title: "Restricted moderator access",
+          description:
+            "This understated area is reserved for future moderator or admin login. Public users are not invited into this path.",
+          errorTitle: "Please review the admin form",
+          errorText: "Enter valid moderator credentials to continue.",
+          fields: {
+            email: { label: "Admin Email", placeholder: "admin@yapply.com" },
+            password: { label: "Admin Password", placeholder: "Enter admin password" },
+          },
+          submitLabel: "Admin Login",
+          successTitle: "Admin entry captured",
+          successText: "This admin login remains frontend-only for now and is prepared for future moderator authentication.",
+        },
+        footer: {
+          description:
+            "Yapply login is designed as a premium role-aware entry point for clients and professionals moving through the marketplace.",
+          columns: [
+            {
+              title: "Access",
+              links: [
+                { label: "Login", href: "./login.html" },
+                { label: "Create account", href: "./create-account.html" },
+                { label: "Open Marketplace", href: "./open-marketplace.html" },
+              ],
+            },
+            {
+              title: "Explore",
+              links: [
+                { label: "Featured projects", href: "./index.html#featured-projects" },
+                { label: "For professionals", href: "./professionals.html" },
+                { label: "Back to home", href: "./index.html" },
+              ],
+            },
+          ],
+          note: "Public login now focuses only on client and developer access, ready for future dashboards and account ownership.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+      moderatorLogin: {
+        nav: {
+          ariaLabel: "Moderator login navigation",
+          brandHref: "./index.html",
+          links: [
+            { label: "Back to Home", href: "./index.html" },
+            { label: "Open Marketplace", href: "./open-marketplace.html" },
+          ],
+          cta: "Back to Home",
+          ctaHref: "./index.html",
+        },
+        form: {
+          eyebrow: "Internal access",
+          title: "Moderator login",
+          description: "This route is reserved for internal moderation and admin access.",
+          errorTitle: "Please review the moderator form",
+          errorText: "Enter valid moderator credentials to continue.",
+          fields: {
+            email: { label: "Moderator Username or Email", placeholder: "armandino or armandino@yapply.internal" },
+            password: { label: "Moderator Password", placeholder: "Enter moderator password" },
+          },
+          submitLabel: "Enter Moderator Portal",
+          successTitle: "Moderator access granted",
+          successText: "Admin authentication succeeded. Redirecting to the dashboard...",
+          backToPublicLogin: "Return to public login",
+        },
+        summary: {
+          eyebrow: "Private route",
+          title: "Low-visibility internal access for moderation workflows.",
+          description:
+            "This page is intentionally understated and separate from the public client/developer login flow.",
+        },
+        footer: {
+          description:
+            "Internal moderator access is intentionally separated from the public account flow and prepared for future admin authentication.",
+          columns: [
+            {
+              title: "Routes",
+              links: [
+                { label: "Public login", href: "./login.html" },
+                { label: "Create account", href: "./create-account.html" },
+                { label: "Back to home", href: "./index.html" },
+              ],
+            },
+            {
+              title: "Internal",
+              links: [
+                { label: "Open Marketplace", href: "./open-marketplace.html" },
+                { label: "For professionals", href: "./professionals.html" },
+              ],
+            },
+          ],
+          note: "This internal route can later connect to real moderator permissions and review tooling.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+    },
+    authFeedback: {
+      errors: {
+        INVALID_JSON: "The request could not be processed. Please try again.",
+        INVALID_ROLE: "Only client and developer accounts can be created here.",
+        FULL_NAME_REQUIRED: "Please enter your full name.",
+        EMAIL_INVALID: "Please enter a valid email address.",
+        EMAIL_IN_USE: "An account with this email already exists.",
+        PASSWORD_TOO_SHORT: "Password must be at least 8 characters.",
+        PASSWORD_MISMATCH: "Password confirmation does not match.",
+        PHONE_REQUIRED: "Phone number is required for this account type.",
+        COMPANY_REQUIRED: "Company or professional name is required for developer accounts.",
+        PROFESSION_REQUIRED: "Profession type is required for developer accounts.",
+        SERVICE_AREA_REQUIRED: "City or service area is required for developer accounts.",
+        EXPERIENCE_REQUIRED: "Years of experience is required for developer accounts.",
+        EXPERIENCE_INVALID: "Years of experience must be a valid non-negative number.",
+        SPECIALTIES_REQUIRED: "Please enter at least one specialty for the developer account.",
+        REGION_REQUIRED: "Preferred city or region is required for client accounts.",
+        PASSWORD_REQUIRED: "Please enter your password.",
+        INVALID_CREDENTIALS: "Email or password is incorrect.",
+        ADMIN_ONLY: "This login area is reserved for moderator or admin accounts.",
+        ADMIN_USE_INTERNAL: "Admin accounts must use the internal moderator login.",
+        UNKNOWN_ERROR: "Something went wrong. Please try again.",
+      },
+      success: {
+        accountCreated: {
+          defaultTitle: "Account created",
+          defaultText: "Your account was created and a session is now active in this browser.",
+          developer: "Developer account created",
+          client: "Client account created",
+          detail: {
+            developer: "Your developer account was created successfully. You are now signed in and ready for future listing, bid, and ownership flows.",
+            client: "Your client account was created successfully. You are now signed in and ready for future request, bid, and ownership flows.",
+          },
+        },
+        login: {
+          title: "Login successful",
+          text: "You are now signed in as",
+        },
+        adminLogin: {
+          title: "Admin access granted",
+          text: "Moderator session is now active for",
+        },
+      },
+    },
+    adminDashboardPage: {
+      navLabel: "Admin Dashboard",
+      nav: {
+        ariaLabel: "Admin dashboard navigation",
+        brandHref: "./index.html",
+        links: [
+          { label: "Back to Home", href: "./index.html" },
+          { label: "Open Marketplace", href: "./open-marketplace.html" },
+          { label: "Manage Listings", href: "#admin-marketplace" },
+          { label: "Featured Projects", href: "#admin-featured-projects" },
+        ],
+        cta: "Open Marketplace",
+        ctaHref: "./open-marketplace.html",
+      },
+      hero: {
+        eyebrow: "Admin control layer",
+        title: "Manage the live marketplace surface and homepage project curation.",
+        description:
+          "This dashboard is reserved for Yapply admins. Use it to reorder, edit, and remove marketplace records while shaping the homepage featured-project layer.",
+        primaryCta: "Manage Marketplace",
+        secondaryCta: "Manage Featured Projects",
+      },
+      accessDenied: {
+        eyebrow: "Restricted route",
+        title: "This dashboard is visible only to signed-in admin accounts.",
+        description:
+          "Public visitors, clients, and developers cannot access the admin control layer. Sign in through the internal moderator route to continue.",
+        primaryCta: "Moderator Login",
+        secondaryCta: "Back to Home",
+      },
+      listings: {
+        heading: {
+          eyebrow: "Marketplace listings",
+          title: "Review all active client briefs and professional offers in one place.",
+          description:
+            "Each record can be edited, removed, or reordered without changing the public browsing flow for normal visitors.",
+        },
+        clientTitle: "Client request listings",
+        clientDescription: "Project briefs posted by clients across the open marketplace.",
+        professionalTitle: "Professional listings",
+        professionalDescription: "Architect, developer, and contractor offers currently visible in the marketplace.",
+        clientLabel: "Client Listing",
+        professionalLabel: "Professional Listing",
+        seededLabel: "Seeded",
+        fallback: "Not provided",
+        empty: "No marketplace listings are currently available.",
+        actions: {
+          edit: "Edit Listing",
+          delete: "Delete Listing",
+          moveUp: "Move Up",
+          moveDown: "Move Down",
+          save: "Save Changes",
+          cancel: "Cancel",
+        },
+        summary: {
+          type: "Type",
+          owner: "Owner",
+          location: "Location",
+          position: "Position",
+          status: "Status",
+          clientOwner: "Client Account",
+          developerOwner: "Developer Account",
+          activeStatus: "active",
+        },
+        form: {
+          title: "Title",
+          category: "Category / Type",
+          location: "Location",
+          pricing: "Pricing / Budget",
+          timeline: "Timeline / Delivery",
+          description: "Description",
+          plotStatus: "Plot Status",
+          services: "Services / Specialties",
+          status: "Status",
+          attachments: "Replace or add media",
+        },
+      },
+      featuredProjects: {
+        heading: {
+          eyebrow: "Homepage featured projects",
+          title: "Curate the landing-page project rail from the admin layer.",
+          description:
+            "Add new concept cards, reorder existing projects, replace images, and adjust pricing or positioning without redesigning the homepage.",
+        },
+        createTitle: "Add featured project",
+        createDescription: "Create a new homepage project card with optional image upload and editorial copy.",
+        manageTitle: "Manage current featured projects",
+        manageDescription: "Edit, delete, and reorder the villa concepts currently shown on the landing page.",
+        projectLabel: "Featured Project",
+        fallback: "Not provided",
+        empty: "No featured projects are currently configured.",
+        actions: {
+          add: "Add Featured Project",
+          edit: "Edit Project",
+          delete: "Delete Project",
+          moveUp: "Move Up",
+          moveDown: "Move Down",
+          save: "Save Changes",
+          cancel: "Cancel",
+        },
+        summary: {
+          location: "Location",
+          style: "Style",
+          price: "Starting Price",
+          buildTime: "Build Time",
+        },
+        form: {
+          badge: "Badge",
+          title: "Project Title",
+          location: "Location",
+          style: "Style",
+          price: "Starting Price",
+          buildTime: "Build Time",
+          summary: "Summary",
+          highlights: "Highlights",
+          ctaLabel: "CTA Label",
+          ctaHint: "CTA Hint",
+          href: "Detail Link",
+          image: "Project Image",
+        },
+        placeholders: {
+          badge: "Private Residence",
+          title: "New Featured Concept",
+          location: "Istanbul / Zekeriyakoy",
+          style: "Contemporary Villa",
+          price: "Starting at EUR 1.1M",
+          buildTime: "Estimated 14 months",
+          summary: "A concise premium project summary for the homepage card.",
+          highlights: "Concept design, turnkey coordination, premium finishes",
+          ctaLabel: "Explore Details",
+          ctaHint: "Open project preview",
+          href: "./project-detail.html",
+        },
+      },
+      statusOptions: [
+        { value: "active", label: "Active" },
+        { value: "draft", label: "Draft" },
+        { value: "hidden", label: "Hidden" },
+      ],
+      footer: {
+        description:
+          "The Yapply admin dashboard extends the marketplace and homepage curation flow without exposing control surfaces to public users.",
+        columns: [
+          {
+            title: "Admin",
+            links: [
+              { label: "Manage listings", href: "#admin-marketplace" },
+              { label: "Manage featured projects", href: "#admin-featured-projects" },
+              { label: "Open Marketplace", href: "./open-marketplace.html" },
+            ],
+          },
+          {
+            title: "Site",
+            links: [
+              { label: "Back to Home", href: "./index.html" },
+              { label: "For Professionals", href: "./professionals.html" },
+              { label: "Moderator Login", href: "./moderator-login.html" },
+            ],
+          },
+        ],
+        note: "Admin tooling is intentionally isolated to a protected route and only revealed after backend-authenticated admin login.",
+        contact: "hello@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+    },
     marketplaceFlow: {
       admin: {
         label: "Demo Admin",
@@ -1579,6 +2120,10 @@ export const translations = {
         },
       ],
       note: "English and Turkish content now share the same premium translation system, ready for the next product phase.",
+      moderatorPortal: {
+        label: "Moderator Access",
+        href: "./moderator-login.html",
+      },
       contact: "hello@yapply.com",
       copyrightLabel: "Yapply",
     },
@@ -2618,6 +3163,547 @@ export const translations = {
         },
       },
     },
+    authPages: {
+      createAccount: {
+        nav: {
+          ariaLabel: "Hesap oluşturma gezinmesi",
+          brandHref: "./index.html",
+          links: [
+            { label: "Ana Sayfaya Dön", href: "./index.html" },
+            { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+            { label: "Giriş Yap", href: "./login.html" },
+          ],
+          cta: "Açık Pazaryeri",
+          ctaHref: "./open-marketplace.html",
+        },
+        hero: {
+          eyebrow: "Hesap girişi",
+          title: "Pazaryerine geçmeden önce size uygun Yapply hesabını seçin.",
+          description:
+            "Müşteri veya geliştirici hesabınızı, premium proje keşfi, talep yönetimi ve gelecekteki pazaryeri kullanımı için hazırlanmış rol bazlı bir giriş akışıyla oluşturun.",
+          primaryCta: "Rolünü Seç",
+          secondaryCta: "Zaten hesabın var mı?",
+        },
+        roleChoice: {
+          eyebrow: "Rol seçimi",
+          title: "Nasıl inşa ettiğinize veya nasıl talep oluşturduğunuza göre iki ayrı hesap yolu.",
+          description:
+            "Müşteriler ve yapı profesyonelleri Yapply’ye ayrı hesap yollarından girer; böylece pazaryeri gelecekte daha güçlü yetki, iş akışı ve teklif davranışlarını destekleyebilir.",
+          loginPrompt: "Zaten hesabın var mı?",
+          loginLinkLabel: "Giriş Yap",
+          roles: [
+            {
+              index: "01",
+              value: "developer",
+              title: "Geliştirici Hesabı Oluştur",
+              description:
+                "Mimarlar, yükleniciler, geliştiriciler ve inşaat profesyonelleri için; Yapply içinde doğrulanmış profesyonel olarak yer almak isteyenlere yöneliktir.",
+              points: [
+                "Premium proje taleplerine teklif ver",
+                "Müşteri brieflerine ilgi göster",
+                "Hizmet ilanları yükle ve yönet",
+              ],
+              cta: "Geliştirici Hesabını Seç",
+            },
+            {
+              index: "02",
+              value: "client",
+              title: "Müşteri Hesabı Oluştur",
+              description:
+                "Özel müşteriler, arsa sahipleri ve proje başlatıcıları için; brief yayınlamak ve profesyonel ilgiyi yönetmek isteyenlere yöneliktir.",
+              points: [
+                "Proje talep ilanları oluştur",
+                "Profesyonellerden teklif al",
+                "Geliştirici profillerine talep gönder",
+              ],
+              cta: "Müşteri Hesabını Seç",
+            },
+          ],
+        },
+        form: {
+          eyebrow: "Hesap oluştur",
+          title: "Yapply’nin sonraki fazı için hesap girişini oluşturun.",
+          description:
+            "Bu hesap akışı şimdilik yalnızca frontend düzeyindedir; ancak gelecekte onboarding, yetkiler, kayıtlı ilanlar ve panel mantığı için hazır durumdadır.",
+          selectedRoleEyebrow: "Seçilen hesap",
+          errorTitle: "Lütfen formu kontrol edin",
+          errorText: "Hesap oluşturulmadan önce bazı zorunlu alanlar hâlâ dikkat bekliyor.",
+          roles: [
+            {
+              value: "developer",
+              formTitle: "Geliştirici hesap kurulumu",
+              formDescription:
+                "Bu rol; mimarlar, geliştiriciler, yükleniciler ve inşaat şirketlerini gelecekteki ilan, teklif ve talep iş akışlarına hazırlar.",
+              groupEyebrow: "Geliştirici kayıt formu",
+              groupTitle: "Profesyonel hesap detayları",
+              groupDescription:
+                "Bu profesyonel profil alanlarını doldurarak hesabı gelecekteki ilan görünürlüğü, proje ilgisi ve pazaryeri katılımına hazır hale getirin.",
+              fields: [
+                { name: "companyName", label: "Şirket / Profesyonel Adı", placeholder: "Stüdyo, şirket veya profesyonel adı", required: true },
+                {
+                  name: "professionType",
+                  label: "Meslek Türü",
+                  type: "select",
+                  placeholder: "Meslek türünüzü seçin",
+                  options: ["Mimarlık Ofisi", "Yüklenici", "Geliştirici", "İnşaat Şirketi", "Anahtar Teslim Yapımcı", "İç Mekan + Fit-Out Uzmanı"],
+                  required: true,
+                },
+                { name: "serviceArea", label: "Şehir / Hizmet Alanı", placeholder: "İstanbul, İzmir, Bodrum, Ankara...", required: true },
+                { name: "experience", label: "Deneyim Yılı", type: "number", placeholder: "10", min: 0, step: 1, inputmode: "numeric", required: true },
+                { name: "specialties", label: "Uzmanlıklar", placeholder: "Lüks villa, anahtar teslim yapılar, renovasyon, fizibilite...", required: true, full: true },
+                { name: "phoneNumber", label: "Telefon Numarası", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+                {
+                  name: "website",
+                  label: "Web Sitesi / Portfolyo Linki",
+                  type: "url",
+                  placeholder: "https://studyonuz.com",
+                  autocomplete: "url",
+                  optionalLabel: "Opsiyonel",
+                },
+              ],
+            },
+            {
+              value: "client",
+              formTitle: "Müşteri hesap kurulumu",
+              formDescription:
+                "Bu rol; müşterileri proje talebi yayınlamaya, teklif almaya ve proje odaklı görüşmeleri Yapply içinde yönetmeye hazırlar.",
+              groupEyebrow: "Müşteri kayıt formu",
+              groupTitle: "Müşteri hesap detayları",
+              groupDescription:
+                "Bu müşteri hesap alanlarını doldurarak hesabı proje talepleri, teklif görünürlüğü ve pazaryeri içi iletişim akışına hazır hale getirin.",
+              fields: [
+                { name: "phoneNumber", label: "Telefon Numarası", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+                { name: "preferredRegion", label: "Tercih Edilen Şehir / Bölge", placeholder: "İstanbul, İzmir, Bodrum, Ankara...", required: true },
+                {
+                  name: "companyName",
+                  label: "Şirket Adı",
+                  placeholder: "Uygunsa şirket veya aile ofisi adı",
+                  optionalLabel: "Opsiyonel",
+                },
+              ],
+            },
+          ],
+          sharedFields: [
+            { name: "fullName", label: "Ad Soyad", placeholder: "Adınız ve soyadınız", autocomplete: "name", required: true },
+            { name: "email", label: "E-posta", type: "email", placeholder: "isim@email.com", autocomplete: "email", required: true },
+            { name: "password", label: "Şifre", type: "password", placeholder: "Güvenli bir şifre oluşturun", autocomplete: "new-password", required: true },
+            {
+              name: "confirmPassword",
+              label: "Şifreyi Doğrula",
+              type: "password",
+              placeholder: "Şifrenizi yeniden girin",
+              autocomplete: "new-password",
+              required: true,
+            },
+          ],
+          submitLabel: "Hesap Oluştur",
+          successTitle: "Hesap girişi alındı",
+          successText: "Rol seçiminiz ve hesap bilgileriniz bu MVP akışında kaydedildi. Sonraki fazda gerçek kimlik doğrulama ve onboarding’e bağlanabilir.",
+        },
+        footer: {
+          description:
+            "Yapply hesap girişi; gelecekteki kimlik doğrulama, yetkiler ve rol bazlı pazaryeri iş akışları için temiz bir ilk katman olarak tasarlandı.",
+          columns: [
+            {
+              title: "Hesap",
+              links: [
+                { label: "Hesap oluştur", href: "./create-account.html" },
+                { label: "Giriş yap", href: "./login.html" },
+                { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+              ],
+            },
+            {
+              title: "Keşfet",
+              links: [
+                { label: "Öne çıkan projeler", href: "./index.html#featured-projects" },
+                { label: "Profesyoneller için", href: "./professionals.html" },
+                { label: "Ana sayfaya dön", href: "./index.html" },
+              ],
+            },
+          ],
+          note: "Bu hesap sistemi şu anda frontend giriş katmanıdır; gelecekte kimlik doğrulama, moderasyon ve panellerle genişletilebilir.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+      login: {
+        nav: {
+          ariaLabel: "Giriş gezinmesi",
+          brandHref: "./index.html",
+          links: [
+            { label: "Ana Sayfaya Dön", href: "./index.html" },
+            { label: "Hesap Oluştur", href: "./create-account.html" },
+            { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+          ],
+          cta: "Hesap Oluştur",
+          ctaHref: "./create-account.html",
+        },
+        hero: {
+          eyebrow: "Giriş yap",
+          title: "Yapply’ye temiz ve rol odaklı bir giriş akışıyla erişin.",
+          description:
+            "Bu giriş sayfası; gelecekte kayıtlı ilanlar, proje talepleri ve müşteri/geliştirici rolleri için premium bir erişim noktası olarak konumlanır.",
+          primaryCta: "Yapply’ye Giriş Yap",
+          secondaryCta: "Hesap Oluştur",
+        },
+        roleChoice: {
+          eyebrow: "Giriş rolü",
+          title: "Yapply’ye hangi taraftan giriş yaptığını seç.",
+          description:
+            "Oturum bağlamının doğru pazaryeri akışına hazırlanabilmesi için profesyonel mi yoksa müşteri olarak mı giriş yaptığını netleştir.",
+          selectedRoleEyebrow: "Seçilen giriş yolu",
+          roles: [
+            {
+              value: "developer",
+              title: "Geliştirici Girişi",
+              formTitle: "Mimarlar, geliştiriciler ve yükleniciler için profesyonel erişim.",
+              formDescription:
+                "Bu yol; gelecekte ilan sahipliği, proje ilgisi, teklif katılımı ve profesyonel taraflı pazaryeri faaliyetleri için kullanılır.",
+            },
+            {
+              value: "client",
+              title: "Müşteri Girişi",
+              formTitle: "Proje sahipleri ve talep yayınlayanlar için müşteri erişimi.",
+              formDescription:
+                "Bu yol; gelecekte talep yönetimi, brief sahipliği, teklif değerlendirmesi ve müşteri taraflı talep takibi için kullanılır.",
+            },
+          ],
+        },
+        form: {
+          eyebrow: "Hesap girişi",
+          title: "Yapply pazaryeri içinde devam etmek için giriş yapın.",
+          description:
+            "Doğrudan hesap girişinizle başlayın ve platformu nasıl kullandığınıza uygun rol bağlamını seçin.",
+          errorTitle: "Lütfen giriş formunu kontrol edin",
+          errorText: "Devam etmek için geçerli bir e-posta ve şifre girin.",
+          fields: {
+            email: { label: "E-posta", placeholder: "isim@email.com" },
+            password: { label: "Şifre", placeholder: "Şifrenizi girin" },
+          },
+          submitLabel: "Giriş Yap",
+          createAccountLink: "Hesabın yok mu? Buradan oluştur.",
+          successTitle: "Giriş bilgisi alındı",
+          successText: "Bu yalnızca frontend çalışan giriş durumu kabul edildi. Sonraki fazda gerçek oturum ve rol bazlı panele bağlanabilir.",
+        },
+        summary: {
+          eyebrow: "Erişim kapsamı",
+          title: "Platform genelinde rol bazlı erişim için hazırlandı.",
+          description:
+            "Giriş akışı; kayıtlı proje talepleri, profesyonel ilan görünürlüğü, teklif süreçleri ve gelecekteki sahip/yönetici yetkilerini destekleyecek şekilde konumlanır.",
+          items: [
+            { label: "Roller", value: "Müşteri + Geliştirici" },
+            { label: "Sonraki faz", value: "Kimlik doğrulama + paneller" },
+            { label: "Durum", value: "Frontend giriş katmanı" },
+          ],
+        },
+        admin: {
+          eyebrow: "Moderatör / yönetici",
+          title: "Kısıtlı moderatör erişimi",
+          description:
+            "Bu geri planda kalan alan gelecekteki moderatör veya yönetici girişi için ayrılmıştır. Genel kullanıcı akışına açık şekilde sunulmaz.",
+          errorTitle: "Lütfen yönetici formunu kontrol edin",
+          errorText: "Devam etmek için geçerli moderatör bilgilerini girin.",
+          fields: {
+            email: { label: "Yönetici E-postası", placeholder: "admin@yapply.com" },
+            password: { label: "Yönetici Şifresi", placeholder: "Yönetici şifresini girin" },
+          },
+          submitLabel: "Yönetici Girişi",
+          successTitle: "Yönetici girişi alındı",
+          successText: "Bu yönetici girişi şimdilik yalnızca frontend düzeyindedir ve gelecekteki moderatör kimlik doğrulaması için hazırlanmıştır.",
+        },
+        footer: {
+          description:
+            "Yapply giriş akışı; pazaryerinde ilerleyen müşteriler ve profesyoneller için premium, rol odaklı bir erişim noktası olarak tasarlandı.",
+          columns: [
+            {
+              title: "Erişim",
+              links: [
+                { label: "Giriş yap", href: "./login.html" },
+                { label: "Hesap oluştur", href: "./create-account.html" },
+                { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+              ],
+            },
+            {
+              title: "Keşfet",
+              links: [
+                { label: "Öne çıkan projeler", href: "./index.html#featured-projects" },
+                { label: "Profesyoneller için", href: "./professionals.html" },
+                { label: "Ana sayfaya dön", href: "./index.html" },
+              ],
+            },
+          ],
+          note: "Genel giriş artık yalnızca müşteri ve geliştirici erişimine odaklanır; gelecekteki paneller ve hesap sahipliği için hazırdır.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+      moderatorLogin: {
+        nav: {
+          ariaLabel: "Moderatör giriş gezinmesi",
+          brandHref: "./index.html",
+          links: [
+            { label: "Ana Sayfaya Dön", href: "./index.html" },
+            { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+          ],
+          cta: "Ana Sayfaya Dön",
+          ctaHref: "./index.html",
+        },
+        form: {
+          eyebrow: "İç erişim",
+          title: "Moderatör girişi",
+          description: "Bu rota yalnızca iç moderasyon ve yönetici erişimi için ayrılmıştır.",
+          errorTitle: "Lütfen moderatör formunu kontrol edin",
+          errorText: "Devam etmek için geçerli moderatör bilgilerini girin.",
+          fields: {
+            email: { label: "Moderatör kullanıcı adı veya e-postası", placeholder: "armandino veya armandino@yapply.internal" },
+            password: { label: "Moderatör Şifresi", placeholder: "Moderatör şifresini girin" },
+          },
+          submitLabel: "Moderatör Portalına Gir",
+          successTitle: "Moderatör erişimi verildi",
+          successText: "Yönetici kimlik doğrulaması başarılı. Panele yönlendiriliyor...",
+          backToPublicLogin: "Genel girişe dön",
+        },
+        summary: {
+          eyebrow: "Özel rota",
+          title: "Moderasyon iş akışları için düşük görünürlüklü iç erişim.",
+          description:
+            "Bu sayfa bilerek geri planda tutulur ve genel müşteri/geliştirici giriş akışından ayrı konumlanır.",
+        },
+        footer: {
+          description:
+            "İç moderatör erişimi, genel hesap akışından bilinçli olarak ayrılmıştır ve gelecekteki yönetici kimlik doğrulamasına hazırlanır.",
+          columns: [
+            {
+              title: "Rotalar",
+              links: [
+                { label: "Genel giriş", href: "./login.html" },
+                { label: "Hesap oluştur", href: "./create-account.html" },
+                { label: "Ana sayfaya dön", href: "./index.html" },
+              ],
+            },
+            {
+              title: "İç kullanım",
+              links: [
+                { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+                { label: "Profesyoneller için", href: "./professionals.html" },
+              ],
+            },
+          ],
+          note: "Bu iç rota ileride gerçek moderatör yetkileri ve inceleme araçlarıyla bağlanabilir.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+    },
+    authFeedback: {
+      errors: {
+        INVALID_JSON: "İstek işlenemedi. Lütfen tekrar deneyin.",
+        INVALID_ROLE: "Buradan yalnızca müşteri ve geliştirici hesapları oluşturulabilir.",
+        FULL_NAME_REQUIRED: "Lütfen ad soyad bilginizi girin.",
+        EMAIL_INVALID: "Lütfen geçerli bir e-posta adresi girin.",
+        EMAIL_IN_USE: "Bu e-posta ile kayıtlı bir hesap zaten mevcut.",
+        PASSWORD_TOO_SHORT: "Şifre en az 8 karakter olmalıdır.",
+        PASSWORD_MISMATCH: "Şifre doğrulaması eşleşmiyor.",
+        PHONE_REQUIRED: "Bu hesap türü için telefon numarası gereklidir.",
+        COMPANY_REQUIRED: "Geliştirici hesaplarında şirket veya profesyonel adı zorunludur.",
+        PROFESSION_REQUIRED: "Geliştirici hesaplarında meslek türü zorunludur.",
+        SERVICE_AREA_REQUIRED: "Geliştirici hesaplarında şehir veya hizmet alanı zorunludur.",
+        EXPERIENCE_REQUIRED: "Geliştirici hesaplarında deneyim yılı zorunludur.",
+        EXPERIENCE_INVALID: "Deneyim yılı geçerli ve negatif olmayan bir sayı olmalıdır.",
+        SPECIALTIES_REQUIRED: "Geliştirici hesabı için en az bir uzmanlık girin.",
+        REGION_REQUIRED: "Müşteri hesaplarında tercih edilen şehir veya bölge zorunludur.",
+        PASSWORD_REQUIRED: "Lütfen şifrenizi girin.",
+        INVALID_CREDENTIALS: "E-posta veya şifre hatalı.",
+        ADMIN_ONLY: "Bu giriş alanı yalnızca moderatör veya yönetici hesapları içindir.",
+        ADMIN_USE_INTERNAL: "Yönetici hesapları iç moderatör girişini kullanmalıdır.",
+        UNKNOWN_ERROR: "Bir sorun oluştu. Lütfen tekrar deneyin.",
+      },
+      success: {
+        accountCreated: {
+          defaultTitle: "Hesap oluşturuldu",
+          defaultText: "Hesabınız oluşturuldu ve bu tarayıcıda bir oturum başlatıldı.",
+          developer: "Geliştirici hesabı oluşturuldu",
+          client: "Müşteri hesabı oluşturuldu",
+          detail: {
+            developer: "Geliştirici hesabınız başarıyla oluşturuldu. Artık giriş yaptınız ve gelecekteki ilan, teklif ve sahiplik akışları için hazırsınız.",
+            client: "Müşteri hesabınız başarıyla oluşturuldu. Artık giriş yaptınız ve gelecekteki talep, teklif ve sahiplik akışları için hazırsınız.",
+          },
+        },
+        login: {
+          title: "Giriş başarılı",
+          text: "Aşağıdaki hesapla giriş yaptınız:",
+        },
+        adminLogin: {
+          title: "Yönetici erişimi verildi",
+          text: "Moderatör oturumu şu hesap için aktif:",
+        },
+      },
+    },
+    adminDashboardPage: {
+      navLabel: "Yönetici Paneli",
+      nav: {
+        ariaLabel: "Yönetici paneli gezinmesi",
+        brandHref: "./index.html",
+        links: [
+          { label: "Ana sayfaya dön", href: "./index.html" },
+          { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+          { label: "İlanları yönet", href: "#admin-marketplace" },
+          { label: "Öne çıkan projeler", href: "#admin-featured-projects" },
+        ],
+        cta: "Açık Pazaryeri",
+        ctaHref: "./open-marketplace.html",
+      },
+      hero: {
+        eyebrow: "Yönetici kontrol katmanı",
+        title: "Canlı pazaryerini ve ana sayfa proje kurgusunu tek yerden yönetin.",
+        description:
+          "Bu panel yalnızca Yapply yöneticileri içindir. Pazaryeri ilanlarını düzenlemek, sıralamak ve kaldırmak; ana sayfa öne çıkan proje alanını yönetmek için kullanılır.",
+        primaryCta: "Pazaryerini Yönet",
+        secondaryCta: "Projeleri Yönet",
+      },
+      accessDenied: {
+        eyebrow: "Kısıtlı rota",
+        title: "Bu panel yalnızca oturum açmış yönetici hesaplarına görünür.",
+        description:
+          "Genel ziyaretçiler, müşteriler ve geliştiriciler yönetici kontrol katmanına erişemez. Devam etmek için iç moderatör girişini kullanın.",
+        primaryCta: "Moderatör Girişi",
+        secondaryCta: "Ana Sayfaya Dön",
+      },
+      listings: {
+        heading: {
+          eyebrow: "Pazaryeri ilanları",
+          title: "Tüm aktif müşteri brieflerini ve profesyonel ilanları tek yerden gözden geçirin.",
+          description:
+            "Her kayıt, normal ziyaretçiler için genel gezinme akışını bozmadan düzenlenebilir, kaldırılabilir veya yeniden sıralanabilir.",
+        },
+        clientTitle: "Müşteri talep ilanları",
+        clientDescription: "Açık pazaryerinde yayınlanan müşteri proje briefleri.",
+        professionalTitle: "Profesyonel ilanlar",
+        professionalDescription: "Pazaryerinde görünen mimar, geliştirici ve yüklenici teklifleri.",
+        clientLabel: "Müşteri İlanı",
+        professionalLabel: "Profesyonel İlan",
+        seededLabel: "Hazır Veri",
+        fallback: "Belirtilmedi",
+        empty: "Şu anda pazaryerinde gösterilecek ilan bulunmuyor.",
+        actions: {
+          edit: "İlanı Düzenle",
+          delete: "İlanı Sil",
+          moveUp: "Yukarı Taşı",
+          moveDown: "Aşağı Taşı",
+          save: "Değişiklikleri Kaydet",
+          cancel: "İptal",
+        },
+        summary: {
+          type: "Tür",
+          owner: "Sahip",
+          location: "Konum",
+          position: "Pozisyon",
+          status: "Durum",
+          clientOwner: "Müşteri Hesabı",
+          developerOwner: "Geliştirici Hesabı",
+          activeStatus: "aktif",
+        },
+        form: {
+          title: "Başlık",
+          category: "Kategori / Tür",
+          location: "Konum",
+          pricing: "Fiyat / Bütçe",
+          timeline: "Takvim / Teslim",
+          description: "Açıklama",
+          plotStatus: "Arsa Durumu",
+          services: "Hizmetler / Uzmanlıklar",
+          status: "Durum",
+          attachments: "Medyayı değiştir veya ekle",
+        },
+      },
+      featuredProjects: {
+        heading: {
+          eyebrow: "Ana sayfa öne çıkan projeler",
+          title: "Landing page proje rayını yönetici katmanından yönetin.",
+          description:
+            "Yeni konsept kartları ekleyin, mevcut projeleri yeniden sıralayın, görselleri değiştirin ve fiyatlama bilgisini ana sayfayı yeniden tasarlamadan güncelleyin.",
+        },
+        createTitle: "Öne çıkan proje ekle",
+        createDescription: "Ana sayfa için yeni bir proje kartı oluşturun ve isterseniz görsel yükleyin.",
+        manageTitle: "Mevcut projeleri yönet",
+        manageDescription: "Landing page üzerinde görünen villa konseptlerini düzenleyin, silin ve yeniden sıralayın.",
+        projectLabel: "Öne Çıkan Proje",
+        fallback: "Belirtilmedi",
+        empty: "Şu anda tanımlı öne çıkan proje bulunmuyor.",
+        actions: {
+          add: "Öne Çıkan Proje Ekle",
+          edit: "Projeyi Düzenle",
+          delete: "Projeyi Sil",
+          moveUp: "Yukarı Taşı",
+          moveDown: "Aşağı Taşı",
+          save: "Değişiklikleri Kaydet",
+          cancel: "İptal",
+        },
+        summary: {
+          location: "Konum",
+          style: "Stil",
+          price: "Başlangıç Fiyatı",
+          buildTime: "Yapım Süresi",
+        },
+        form: {
+          badge: "Rozet",
+          title: "Proje Başlığı",
+          location: "Konum",
+          style: "Stil",
+          price: "Başlangıç Fiyatı",
+          buildTime: "Yapım Süresi",
+          summary: "Özet",
+          highlights: "Öne Çıkanlar",
+          ctaLabel: "CTA Etiketi",
+          ctaHint: "CTA İpucu",
+          href: "Detay Linki",
+          image: "Proje Görseli",
+        },
+        placeholders: {
+          badge: "Özel Konut",
+          title: "Yeni Öne Çıkan Konsept",
+          location: "İstanbul / Zekeriyaköy",
+          style: "Çağdaş Villa",
+          price: "EUR 1.1M'den başlar",
+          buildTime: "Tahmini 14 ay",
+          summary: "Ana sayfa kartı için kısa ve premium proje özeti.",
+          highlights: "Konsept tasarım, anahtar teslim koordinasyonu, premium bitişler",
+          ctaLabel: "Detayları İncele",
+          ctaHint: "Proje önizlemesini aç",
+          href: "./project-detail.html",
+        },
+      },
+      statusOptions: [
+        { value: "active", label: "Aktif" },
+        { value: "draft", label: "Taslak" },
+        { value: "hidden", label: "Gizli" },
+      ],
+      footer: {
+        description:
+          "Yapply yönetici paneli, kontrol yüzeylerini genel kullanıcılara açmadan pazaryeri ve ana sayfa kurgusunu yönetmek için uzatılır.",
+        columns: [
+          {
+            title: "Yönetim",
+            links: [
+              { label: "İlanları yönet", href: "#admin-marketplace" },
+              { label: "Projeleri yönet", href: "#admin-featured-projects" },
+              { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+            ],
+          },
+          {
+            title: "Site",
+            links: [
+              { label: "Ana sayfaya dön", href: "./index.html" },
+              { label: "Profesyoneller için", href: "./professionals.html" },
+              { label: "Moderatör girişi", href: "./moderator-login.html" },
+            ],
+          },
+        ],
+        note: "Yönetici araçları yalnızca korumalı bir rotada tutulur ve ancak backend doğrulamalı yönetici girişinden sonra görünür olur.",
+        contact: "hello@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+    },
     marketplaceFlow: {
       admin: {
         label: "Demo Yönetici",
@@ -3361,10 +4447,14 @@ export const translations = {
           ],
         },
       ],
-      note: "İngilizce ve Türkçe içerik artık aynı premium çeviri sistemi üzerinde çalışıyor ve sonraki ürün fazına hazır durumda.",
-      contact: "hello@yapply.com",
-      copyrightLabel: "Yapply",
-    },
+	      note: "İngilizce ve Türkçe içerik artık aynı premium çeviri sistemi üzerinde çalışıyor ve sonraki ürün fazına hazır durumda.",
+	      moderatorPortal: {
+	        label: "Moderatör Erişimi",
+	        href: "./moderator-login.html",
+	      },
+	      contact: "hello@yapply.com",
+	      copyrightLabel: "Yapply",
+	    },
     professionalsPage: {
       nav: {
         ariaLabel: "Ana gezinme",

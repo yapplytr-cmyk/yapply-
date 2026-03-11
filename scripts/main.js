@@ -1,19 +1,114 @@
-import { createApp } from "./app.js";
-import { getDefaultLocale, getLocaleContent } from "./core/i18n.js";
 import {
-  deleteMarketplaceListing,
-  getSubmissionSuccessHref,
-  saveMarketplaceSubmission,
-  syncMarketplaceAdminMode,
-} from "./core/marketplaceStore.js";
-import { applyTheme, getLocale, getTheme, setLocale, toggleTheme } from "./core/state.js";
-import { initHeroScene } from "./visuals/heroScene.js";
+  createManagedFeaturedProject,
+  deleteManagedFeaturedProject,
+  deleteManagedListing,
+  getManagedFeaturedProjects,
+  getManagedMarketplaceListing,
+  moveManagedFeaturedProject,
+  moveManagedListing,
+  updateManagedFeaturedProject,
+  updateManagedListing,
+} from "./core/adminStore.js";
+import { deleteMarketplaceListing, getSubmissionSuccessHref, saveMarketplaceSubmission } from "./core/marketplaceStore.js";
+import { applyTheme, getAuthSession, getLocale, getTheme, setAuthSession, setLocale, toggleTheme } from "./core/state.js";
 
 let cleanupRevealAnimations = () => {};
 let cleanupParallax = () => {};
 let cleanupHeroScene = () => {};
 let cleanupCounters = () => {};
 let heroSceneGeneration = 0;
+let authApiPromise = null;
+let appApiPromise = null;
+let i18nApiPromise = null;
+let heroSceneApiPromise = null;
+
+function createBootFallbackMarkup({
+  eyebrow = "Yapply",
+  title = "Loading the interface...",
+  description = "The site is initializing.",
+  debug = "",
+} = {}) {
+  const debugMarkup = debug ? `<p class="section-description"><strong>Debug:</strong> ${debug}</p>` : "";
+
+  return `
+    <div class="page-shell">
+      <main class="section-shell">
+        <div class="panel application-panel">
+          <p class="eyebrow">${eyebrow}</p>
+          <h1 class="section-title">${title}</h1>
+          <p class="section-description">${description}</p>
+          ${debugMarkup}
+          <div class="hero-actions">
+            <a class="button button--primary" href="./index.html">Back to Home</a>
+            <a class="button button--secondary" href="./open-marketplace.html">Open Marketplace</a>
+          </div>
+        </div>
+      </main>
+    </div>
+  `;
+}
+
+function getBootErrorMessage(error) {
+  if (!error) {
+    return "Unknown boot failure";
+  }
+
+  if (typeof error.message === "string" && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return String(error);
+}
+
+function renderBootFallback(appRoot, error) {
+  if (!appRoot) {
+    return;
+  }
+
+  appRoot.innerHTML = createBootFallbackMarkup({
+    eyebrow: "Yapply Recovery",
+    title: "The interface is recovering.",
+    description: "A runtime or module-load error interrupted the page render. The app shell is visible again while the failing module is bypassed.",
+    debug: getBootErrorMessage(error),
+  });
+}
+
+async function loadAuthApi() {
+  if (!authApiPromise) {
+    authApiPromise = import("./core/auth.js").catch(() => null);
+  }
+
+  return authApiPromise;
+}
+
+async function loadAppApi() {
+  if (!appApiPromise) {
+    appApiPromise = import("./app.js");
+  }
+
+  return appApiPromise;
+}
+
+async function loadI18nApi() {
+  if (!i18nApiPromise) {
+    i18nApiPromise = import("./core/i18n.js");
+  }
+
+  return i18nApiPromise;
+}
+
+async function loadHeroSceneApi() {
+  if (!heroSceneApiPromise) {
+    heroSceneApiPromise = import("./visuals/heroScene.js").catch(() => null);
+  }
+
+  return heroSceneApiPromise;
+}
+
+function setDocumentAuthState(session) {
+  document.body.dataset.authenticated = session?.authenticated ? "true" : "false";
+  document.body.dataset.userRole = session?.user?.role || "";
+}
 
 function getCurrentPage() {
   const page = document.body.dataset.page;
@@ -333,6 +428,400 @@ function setupApplicationForm() {
   });
 }
 
+function setupAuthRoleSelection() {
+  const roleButtons = [...document.querySelectorAll("[data-auth-role-select]")];
+  const roleCards = [...document.querySelectorAll("[data-auth-role-card]")];
+  const roleDetails = [...document.querySelectorAll("[data-auth-role-detail]")];
+  const roleGroups = [...document.querySelectorAll("[data-auth-role-group]")];
+  const roleInput = document.querySelector("[data-auth-role-input]");
+  const authForm = document.querySelector(".auth-signup-form");
+
+  if (roleButtons.length === 0 || !roleInput) {
+    return;
+  }
+
+  const setActiveRole = (role) => {
+    roleInput.value = role;
+
+    roleButtons.forEach((button) => {
+      const isActive = button.getAttribute("data-auth-role-select") === role;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+
+    roleCards.forEach((card) => {
+      card.classList.toggle("is-active", card.getAttribute("data-auth-role-card") === role);
+    });
+
+    roleDetails.forEach((detail) => {
+      detail.classList.toggle("is-active", detail.getAttribute("data-auth-role-detail") === role);
+    });
+
+    roleGroups.forEach((group) => {
+      const isActive = group.getAttribute("data-auth-role-group") === role;
+      group.classList.toggle("is-active", isActive);
+      group.hidden = !isActive;
+
+      group.querySelectorAll("input, select, textarea").forEach((field) => {
+        field.disabled = !isActive;
+
+        if (field.hasAttribute("data-auth-required")) {
+          field.required = isActive;
+        }
+
+        if (!isActive) {
+          field.classList.remove("is-invalid");
+          field.closest(".form-field")?.classList.remove("is-invalid");
+        }
+      });
+    });
+
+    authForm?.querySelector("[data-auth-entry-error]")?.setAttribute("hidden", "");
+  };
+
+  setActiveRole(roleInput.value || roleButtons[0]?.getAttribute("data-auth-role-select") || "developer");
+
+  roleButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const role = button.getAttribute("data-auth-role-select");
+
+      if (!role) {
+        return;
+      }
+
+      setActiveRole(role);
+    });
+  });
+}
+
+function setupAuthEntryForms(content) {
+  const forms = [...document.querySelectorAll("[data-auth-entry-form]")];
+
+  if (forms.length === 0) {
+    return;
+  }
+
+  forms.forEach((form) => {
+    const success = form.parentElement?.querySelector("[data-auth-entry-success]") || form.closest(".panel")?.querySelector("[data-auth-entry-success]");
+    const errorBox = form.querySelector("[data-auth-entry-error]");
+    const errorText = form.querySelector("[data-auth-entry-error-text]");
+    const password = form.querySelector('input[name="password"]');
+    const confirmPassword = form.querySelector('input[name="confirmPassword"]');
+    const currentPage = getCurrentPage();
+
+    if (!success) {
+      return;
+    }
+
+    const successTitle = success.querySelector("h3");
+    const successBody = success.querySelector("p");
+
+    const resetErrors = () => {
+      errorBox?.setAttribute("hidden", "");
+      if (errorText?.dataset.defaultMessage) {
+        errorText.textContent = errorText.dataset.defaultMessage;
+      }
+      form.querySelectorAll(".form-field.is-invalid").forEach((field) => field.classList.remove("is-invalid"));
+      form.querySelectorAll(".is-invalid").forEach((field) => field.classList.remove("is-invalid"));
+    };
+
+    if (errorText && !errorText.dataset.defaultMessage) {
+      errorText.dataset.defaultMessage = errorText.textContent;
+    }
+
+    const syncPasswordValidity = () => {
+      if (!password || !confirmPassword) {
+        return;
+      }
+
+      const mismatchText = document.documentElement.lang === "tr" ? "Şifreler eşleşmiyor." : "Passwords do not match.";
+      const isMatch = password.value === confirmPassword.value || confirmPassword.value === "";
+      confirmPassword.setCustomValidity(isMatch ? "" : mismatchText);
+    };
+
+    password?.addEventListener("input", syncPasswordValidity);
+    confirmPassword?.addEventListener("input", syncPasswordValidity);
+
+    form.querySelectorAll("input, select, textarea").forEach((field) => {
+      field.addEventListener("input", () => {
+        field.classList.remove("is-invalid");
+        field.closest(".form-field")?.classList.remove("is-invalid");
+        if (errorBox && !errorBox.hidden) {
+          errorBox.hidden = true;
+        }
+      });
+
+      field.addEventListener("change", () => {
+        field.classList.remove("is-invalid");
+        field.closest(".form-field")?.classList.remove("is-invalid");
+      });
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      resetErrors();
+
+      if (password && confirmPassword) {
+        const isMatch = password.value === confirmPassword.value;
+        confirmPassword.setCustomValidity(isMatch ? "" : document.documentElement.lang === "tr" ? "Şifreler eşleşmiyor." : "Passwords do not match.");
+      }
+
+      if (!form.checkValidity()) {
+        const invalidFields = [...form.querySelectorAll("input, select, textarea")]
+          .filter((field) => !field.disabled && !field.checkValidity())
+          .map((field) => {
+            field.classList.add("is-invalid");
+            field.closest(".form-field")?.classList.add("is-invalid");
+            return field.closest(".form-field")?.querySelector("span")?.textContent?.trim() || "";
+          })
+          .filter(Boolean);
+
+        if (errorBox && errorText) {
+          const fieldList = invalidFields.slice(0, 3).join(", ");
+          const joiner = document.documentElement.lang === "tr" ? "Lütfen şu alanları kontrol edin: " : "Please review these fields: ";
+          errorText.textContent = invalidFields.length > 0 ? `${joiner}${fieldList}` : errorText.textContent;
+          errorBox.hidden = false;
+        }
+
+        form.reportValidity();
+        return;
+      }
+
+      if (confirmPassword) {
+        confirmPassword.setCustomValidity("");
+      }
+
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+      const audience = form.classList.contains("auth-admin-form") ? "admin" : "public";
+
+      const handleSuccess = (user) => {
+        setAuthSession({ authenticated: true, user });
+        setDocumentAuthState({ authenticated: true, user });
+
+        if (successTitle && successBody) {
+          if (currentPage === "create-account") {
+            successTitle.textContent =
+              content.authFeedback.success.accountCreated[user.role] || content.authFeedback.success.accountCreated.defaultTitle;
+            successBody.textContent =
+              content.authFeedback.success.accountCreated.detail[user.role] || content.authFeedback.success.accountCreated.defaultText;
+          } else if (audience === "admin") {
+            successTitle.textContent = content.authFeedback.success.adminLogin.title;
+            successBody.textContent = `${content.authFeedback.success.adminLogin.text} ${user.username || user.email}`;
+          } else {
+            successTitle.textContent = content.authFeedback.success.login.title;
+            successBody.textContent = `${content.authFeedback.success.login.text} ${user.email}`;
+          }
+        }
+
+        form.hidden = true;
+        errorBox?.setAttribute("hidden", "");
+        success.hidden = false;
+
+        if (audience === "admin") {
+          window.setTimeout(() => {
+            window.location.href = "./admin-dashboard.html";
+          }, 180);
+        }
+      };
+
+      const handleError = (error) => {
+        const errorCode = error?.code || "UNKNOWN_ERROR";
+        const message = content.authFeedback.errors[errorCode] || error?.message || content.authFeedback.errors.UNKNOWN_ERROR;
+        if (errorBox && errorText) {
+          errorText.textContent = message;
+          errorBox.hidden = false;
+        }
+      };
+
+      const submitPromise = loadAuthApi().then((authApi) => {
+        if (!authApi) {
+          throw Object.assign(new Error("Auth backend is unavailable."), {
+            code: "AUTH_UNAVAILABLE",
+          });
+        }
+
+        return currentPage === "create-account"
+          ? authApi.signupAccount(payload)
+          : authApi.loginAccount(
+              {
+                identifier: payload.email || payload.adminIdentifier || payload.adminEmail,
+                password: payload.password || payload.adminPassword,
+                role: payload.accountRole || undefined,
+              },
+              audience
+            );
+      });
+
+      submitPromise.catch((error) => {
+        if (error?.code === "AUTH_UNAVAILABLE") {
+          if (successTitle && successBody) {
+            successTitle.textContent = content.form.successTitle;
+            successBody.textContent = content.form.successText;
+          }
+
+          form.hidden = true;
+          errorBox?.setAttribute("hidden", "");
+          success.hidden = false;
+          return;
+        }
+
+        handleError(error);
+      }).then((user) => {
+        if (user) {
+          handleSuccess(user);
+        }
+      });
+    });
+  });
+}
+
+function setupAdminDashboard(content) {
+  const dashboard = document.querySelector("[data-admin-dashboard]");
+
+  if (!dashboard || !getAuthSession().authenticated) {
+    return;
+  }
+
+  const clientSeedItems = content.openMarketplacePage.tabs.client.items;
+  const professionalSeedItems = content.openMarketplacePage.tabs.developer.items;
+  const featuredSeedItems = content.projects.items;
+  const confirmDeleteLabel =
+    content.meta.locale === "tr"
+      ? "Bu ogeyi silmek istediginize emin misiniz?"
+      : "Are you sure you want to delete this item?";
+
+  const toggleForm = (trigger, isOpen) => {
+    const record = trigger.closest("[data-admin-record]");
+    const form = record?.querySelector(".admin-inline-form");
+
+    if (!form) {
+      return;
+    }
+
+    form.hidden = typeof isOpen === "boolean" ? !isOpen : !form.hidden;
+  };
+
+  dashboard.querySelectorAll("[data-admin-edit-toggle]").forEach((button) => {
+    button.addEventListener("click", () => toggleForm(button));
+  });
+
+  dashboard.querySelectorAll("[data-admin-cancel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const form = button.closest(".admin-inline-form");
+      if (form) {
+        form.hidden = true;
+      }
+    });
+  });
+
+  dashboard.querySelectorAll("[data-admin-listing-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const type = String(formData.get("listingType") || "");
+      const listingKey = String(formData.get("listingKey") || "");
+      const existingListing = getManagedMarketplaceListing(type, listingKey, clientSeedItems, professionalSeedItems);
+
+      if (!type || !listingKey || !existingListing) {
+        return;
+      }
+
+      await updateManagedListing(type, listingKey, formData, existingListing);
+      await renderPage(content.meta.locale);
+    });
+  });
+
+  dashboard.querySelectorAll("[data-admin-featured-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const projectKey = String(formData.get("projectKey") || "");
+      const existingProject = getManagedFeaturedProjects(featuredSeedItems).find((item) => item.adminKey === projectKey);
+
+      if (!projectKey || !existingProject) {
+        return;
+      }
+
+      await updateManagedFeaturedProject(projectKey, formData, existingProject);
+      await renderPage(content.meta.locale);
+    });
+  });
+
+  const createFeaturedForm = dashboard.querySelector("[data-admin-featured-create-form]");
+  createFeaturedForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(createFeaturedForm);
+    await createManagedFeaturedProject(formData);
+    await renderPage(content.meta.locale);
+  });
+
+  dashboard.querySelectorAll("[data-admin-delete]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const key = button.getAttribute("data-admin-delete");
+      const kind = button.getAttribute("data-admin-kind");
+
+      if (!key || !kind || !window.confirm(confirmDeleteLabel)) {
+        return;
+      }
+
+      if (kind === "listing") {
+        const type = button.getAttribute("data-admin-listing-type") || "client";
+        const listing = getManagedMarketplaceListing(type, key, clientSeedItems, professionalSeedItems);
+
+        if (!listing) {
+          return;
+        }
+
+        deleteManagedListing(type, listing);
+      } else {
+        const project = getManagedFeaturedProjects(featuredSeedItems).find((item) => item.adminKey === key);
+
+        if (!project) {
+          return;
+        }
+
+        deleteManagedFeaturedProject(project);
+      }
+
+      await renderPage(content.meta.locale);
+    });
+  });
+
+  dashboard.querySelectorAll("[data-admin-move-up], [data-admin-move-down]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const key = button.getAttribute("data-admin-move-up") || button.getAttribute("data-admin-move-down");
+      const direction = button.hasAttribute("data-admin-move-up") ? "up" : "down";
+      const kind = button.getAttribute("data-admin-kind");
+
+      if (!key || !kind) {
+        return;
+      }
+
+      if (kind === "listing") {
+        const type = button.getAttribute("data-admin-listing-type") || "client";
+        const listing = getManagedMarketplaceListing(type, key, clientSeedItems, professionalSeedItems);
+
+        if (!listing) {
+          return;
+        }
+
+        moveManagedListing(type, listing, direction, clientSeedItems, professionalSeedItems);
+      } else {
+        const project = getManagedFeaturedProjects(featuredSeedItems).find((item) => item.adminKey === key);
+
+        if (!project) {
+          return;
+        }
+
+        moveManagedFeaturedProject(project, direction, featuredSeedItems);
+      }
+
+      await renderPage(content.meta.locale);
+    });
+  });
+}
+
 function setupMarketplaceTabs() {
   const tabs = [...document.querySelectorAll("[data-marketplace-tab]")];
   const panels = [...document.querySelectorAll("[data-marketplace-panel]")];
@@ -560,15 +1049,18 @@ function bindInteractions(content) {
   setupFaqAccordions();
   setupNavMenu();
   setupApplicationForm();
+  setupAuthRoleSelection();
+  setupAuthEntryForms(content);
   setupMarketplaceTabs();
   setupProjectInquiryForm();
   setupMarketplaceSubmissionForm();
   setupMarketplaceListingInquiryForm();
   setupMarketplaceDeleteActions(content.meta.locale);
   setupDeveloperInquiryForm();
+  setupAdminDashboard(content);
   const generation = ++heroSceneGeneration;
   if (getCurrentPage() === "home") {
-    initHeroScene().then((cleanup) => {
+    loadHeroSceneApi().then((heroSceneApi) => heroSceneApi?.initHeroScene?.()).then((cleanup) => {
       if (generation !== heroSceneGeneration) {
         if (typeof cleanup === "function") {
           cleanup();
@@ -582,31 +1074,76 @@ function bindInteractions(content) {
   }
 }
 
-function renderPage(localeOverride) {
-  syncMarketplaceAdminMode();
-  const fallbackLocale = getDefaultLocale();
-  const locale = localeOverride || getLocale(fallbackLocale);
-  const content = getLocaleContent(locale);
-  const appRoot = document.querySelector("#app");
-  const page = getCurrentPage();
-  const project = getCurrentProject();
-  const submissionType = getCurrentSubmissionType();
-  const developer = getCurrentDeveloper();
-  const listingType = getCurrentListingType();
-  const listingId = getCurrentListingId();
+async function syncAuthState() {
+  const authApi = await loadAuthApi();
 
-  document.documentElement.lang = content.meta.locale;
-  applyTheme(getTheme());
+  if (!authApi?.fetchAuthSession) {
+    const fallbackSession = { authenticated: false, user: null };
+    setDocumentAuthState(fallbackSession);
+    return fallbackSession;
+  }
+
+  try {
+    const session = await authApi.fetchAuthSession();
+    setDocumentAuthState(session);
+    return session;
+  } catch (error) {
+    const fallbackSession = { authenticated: false, user: null };
+    setDocumentAuthState(fallbackSession);
+    return fallbackSession;
+  }
+}
+
+async function renderPage(localeOverride) {
+  const appRoot = document.querySelector("#app");
+  if (!appRoot) {
+    return;
+  }
+
+  if (!appRoot.children.length) {
+    appRoot.innerHTML = createBootFallbackMarkup();
+  }
+
   cleanupRevealAnimations();
   cleanupParallax();
   cleanupCounters();
   cleanupHeroScene();
-  appRoot.innerHTML = createApp(content, locale, page, project, submissionType, developer, listingType, listingId);
-  updateThemeToggleLabel(content);
-  bindInteractions(content);
+
+  try {
+    const [{ createApp }, { getDefaultLocale, getLocaleContent }] = await Promise.all([loadAppApi(), loadI18nApi()]);
+    const fallbackLocale = getDefaultLocale();
+    const locale = localeOverride || getLocale(fallbackLocale);
+    const content = getLocaleContent(locale);
+    await syncAuthState();
+    const page = getCurrentPage();
+    const project = getCurrentProject();
+    const submissionType = getCurrentSubmissionType();
+    const developer = getCurrentDeveloper();
+    const listingType = getCurrentListingType();
+    const listingId = getCurrentListingId();
+
+    document.documentElement.lang = content.meta.locale;
+    applyTheme(getTheme());
+    appRoot.innerHTML = createApp(content, locale, page, project, submissionType, developer, listingType, listingId);
+    updateThemeToggleLabel(content);
+    bindInteractions(content);
+  } catch (error) {
+    console.error("Yapply render error", error);
+    renderBootFallback(appRoot, error);
+  }
   window.requestAnimationFrame(() => {
     document.documentElement.classList.add("theme-ready");
   });
 }
 
-renderPage();
+window.addEventListener("error", (event) => {
+  const appRoot = document.querySelector("#app");
+  renderBootFallback(appRoot, event.error || new Error(event.message || "Unhandled runtime error"));
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  const appRoot = document.querySelector("#app");
+  renderBootFallback(appRoot, event.reason || new Error("Unhandled promise rejection"));
+});
+
+void renderPage();
