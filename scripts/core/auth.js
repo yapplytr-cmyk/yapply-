@@ -1,8 +1,24 @@
 import { clearAuthSession, setAuthSession } from "./state.js";
 
+const PUBLIC_BROWSER_ACCOUNTS_KEY = "yapply-browser-public-accounts-v1";
+const PUBLIC_BROWSER_SESSION_KEY = "yapply-browser-public-session-v1";
+
 function getLocalDevOrigin() {
   const { protocol, hostname } = window.location;
   return `${protocol}//${hostname}:4174`;
+}
+
+function getStorage() {
+  try {
+    return window.localStorage;
+  } catch (error) {
+    return null;
+  }
+}
+
+function isLocalFrontend() {
+  const { hostname, port } = window.location;
+  return (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
 }
 
 function resolveAuthOrigin() {
@@ -12,14 +28,278 @@ function resolveAuthOrigin() {
     return configuredOrigin.replace(/\/$/, "");
   }
 
-  const { hostname, port, origin } = window.location;
-  const isLocalFrontend = (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
-
-  return isLocalFrontend ? getLocalDevOrigin() : origin;
+  return isLocalFrontend() ? getLocalDevOrigin() : window.location.origin;
 }
 
 function createApiUrl(path) {
   return `${resolveAuthOrigin()}${path}`;
+}
+
+function usesBrowserPublicAuth() {
+  return !isLocalFrontend();
+}
+
+function normalizeText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeEmail(value) {
+  return normalizeText(value).toLowerCase();
+}
+
+function createAuthError(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+}
+
+function requireBrowserStorage() {
+  if (!getStorage()) {
+    throw createAuthError(
+      "AUTH_UNAVAILABLE",
+      "This browser is blocking secure local account storage. Please enable site storage and try again."
+    );
+  }
+}
+
+function loadBrowserPublicAccounts() {
+  const raw = getStorage()?.getItem(PUBLIC_BROWSER_ACCOUNTS_KEY);
+
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveBrowserPublicAccounts(accounts) {
+  getStorage()?.setItem(PUBLIC_BROWSER_ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
+function loadBrowserPublicSession() {
+  const raw = getStorage()?.getItem(PUBLIC_BROWSER_SESSION_KEY);
+
+  if (!raw) {
+    return { authenticated: false, user: null };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed?.authenticated && parsed?.user ? parsed : { authenticated: false, user: null };
+  } catch (error) {
+    return { authenticated: false, user: null };
+  }
+}
+
+function saveBrowserPublicSession(user) {
+  getStorage()?.setItem(
+    PUBLIC_BROWSER_SESSION_KEY,
+    JSON.stringify({
+      authenticated: true,
+      user,
+    })
+  );
+}
+
+function clearBrowserPublicSession() {
+  getStorage()?.removeItem(PUBLIC_BROWSER_SESSION_KEY);
+}
+
+function generateRecordId(prefix) {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function digestSecret(secret) {
+  if (window.crypto?.subtle?.digest && window.TextEncoder) {
+    const encoded = new TextEncoder().encode(secret);
+    const digest = await window.crypto.subtle.digest("SHA-256", encoded);
+    return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
+  }
+
+  return btoa(unescape(encodeURIComponent(secret)));
+}
+
+function serializeBrowserUser(account) {
+  return {
+    id: account.id,
+    username: account.username || null,
+    email: account.email,
+    role: account.role,
+    fullName: account.fullName,
+    phoneNumber: account.phoneNumber || null,
+    companyName: account.companyName || null,
+    professionType: account.professionType || null,
+    serviceArea: account.serviceArea || null,
+    yearsExperience: account.yearsExperience ?? null,
+    specialties: account.specialties || null,
+    preferredRegion: account.preferredRegion || null,
+    website: account.website || null,
+    createdAt: account.createdAt,
+    status: account.status || "active",
+  };
+}
+
+function ensurePublicSignupPayload(payload) {
+  const role = normalizeText(payload.role || payload.accountRole);
+  const fullName = normalizeText(payload.fullName);
+  const email = normalizeEmail(payload.email);
+  const password = String(payload.password || "");
+  const phoneNumber = normalizeText(payload.phoneNumber);
+  const companyName = normalizeText(payload.companyName);
+  const professionType = normalizeText(payload.professionType);
+  const serviceArea = normalizeText(payload.serviceArea);
+  const specialties = normalizeText(payload.specialties);
+  const preferredRegion = normalizeText(payload.preferredRegion);
+  const website = normalizeText(payload.website);
+  const yearsExperienceRaw = normalizeText(payload.yearsExperience || payload.experience);
+  const yearsExperience = yearsExperienceRaw === "" ? null : Number(yearsExperienceRaw);
+
+  if (role !== "client" && role !== "developer") {
+    throw createAuthError("INVALID_ROLE", "Only client and developer accounts can be created here.");
+  }
+
+  if (!fullName) {
+    throw createAuthError("FULL_NAME_REQUIRED", "Please enter your full name.");
+  }
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
+  }
+
+  if (password.length < 8) {
+    throw createAuthError("PASSWORD_TOO_SHORT", "Password must be at least 8 characters.");
+  }
+
+  if (!phoneNumber) {
+    throw createAuthError("PHONE_REQUIRED", "Phone number is required for this account type.");
+  }
+
+  if (role === "developer") {
+    if (!companyName) {
+      throw createAuthError("COMPANY_REQUIRED", "Company or professional name is required for developer accounts.");
+    }
+
+    if (!professionType) {
+      throw createAuthError("PROFESSION_REQUIRED", "Profession type is required for developer accounts.");
+    }
+
+    if (!serviceArea) {
+      throw createAuthError("SERVICE_AREA_REQUIRED", "City or service area is required for developer accounts.");
+    }
+
+    if (yearsExperience === null || Number.isNaN(yearsExperience) || yearsExperience < 0) {
+      throw createAuthError("EXPERIENCE_INVALID", "Years of experience must be a valid non-negative number.");
+    }
+
+    if (!specialties) {
+      throw createAuthError("SPECIALTIES_REQUIRED", "Please enter at least one specialty for the developer account.");
+    }
+  }
+
+  if (role === "client" && !preferredRegion) {
+    throw createAuthError("REGION_REQUIRED", "Preferred city or region is required for client accounts.");
+  }
+
+  return {
+    role,
+    fullName,
+    email,
+    password,
+    phoneNumber,
+    companyName: companyName || null,
+    professionType: professionType || null,
+    serviceArea: serviceArea || null,
+    yearsExperience: yearsExperience === null || Number.isNaN(yearsExperience) ? null : yearsExperience,
+    specialties: specialties || null,
+    preferredRegion: preferredRegion || null,
+    website: website || null,
+  };
+}
+
+async function signupBrowserPublicAccount(payload) {
+  requireBrowserStorage();
+  const cleanPayload = ensurePublicSignupPayload(payload);
+  const accounts = loadBrowserPublicAccounts();
+
+  if (accounts.some((account) => account.email === cleanPayload.email)) {
+    throw createAuthError("EMAIL_IN_USE", "An account with this email already exists.");
+  }
+
+  const account = {
+    id: generateRecordId("acct"),
+    username: null,
+    email: cleanPayload.email,
+    passwordHash: await digestSecret(cleanPayload.password),
+    role: cleanPayload.role,
+    fullName: cleanPayload.fullName,
+    phoneNumber: cleanPayload.phoneNumber,
+    companyName: cleanPayload.companyName,
+    professionType: cleanPayload.professionType,
+    serviceArea: cleanPayload.serviceArea,
+    yearsExperience: cleanPayload.yearsExperience,
+    specialties: cleanPayload.specialties,
+    preferredRegion: cleanPayload.preferredRegion,
+    website: cleanPayload.website,
+    createdAt: new Date().toISOString(),
+    status: "active",
+  };
+  const user = serializeBrowserUser(account);
+
+  accounts.unshift(account);
+  saveBrowserPublicAccounts(accounts);
+  saveBrowserPublicSession(user);
+  setAuthSession({ authenticated: true, user });
+  return user;
+}
+
+async function loginBrowserPublicAccount(payload) {
+  requireBrowserStorage();
+  const identifier = normalizeEmail(payload.identifier || payload.email);
+  const password = String(payload.password || "");
+  const expectedRole = normalizeText(payload.role);
+  const accounts = loadBrowserPublicAccounts();
+
+  if (!identifier) {
+    throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
+  }
+
+  if (!password) {
+    throw createAuthError("PASSWORD_REQUIRED", "Please enter your password.");
+  }
+
+  const account = accounts.find((entry) => entry.email === identifier);
+
+  if (!account || (expectedRole && account.role !== expectedRole)) {
+    throw createAuthError("INVALID_CREDENTIALS", "Email or password is incorrect.");
+  }
+
+  if (account.role === "admin" || account.role === "moderator") {
+    throw createAuthError("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.");
+  }
+
+  if (account.status === "inactive") {
+    throw createAuthError("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.");
+  }
+
+  const incomingHash = await digestSecret(password);
+
+  if (incomingHash !== account.passwordHash) {
+    throw createAuthError("INVALID_CREDENTIALS", "Email or password is incorrect.");
+  }
+
+  const user = serializeBrowserUser(account);
+  saveBrowserPublicSession(user);
+  setAuthSession({ authenticated: true, user });
+  return user;
 }
 
 async function requestJson(path, payload) {
@@ -50,6 +330,10 @@ async function requestJson(path, payload) {
 }
 
 export async function signupAccount(payload) {
+  if (usesBrowserPublicAuth()) {
+    return signupBrowserPublicAccount(payload);
+  }
+
   const signupPayload = {
     ...payload,
     role: payload.role || payload.accountRole,
@@ -64,17 +348,64 @@ export async function signupAccount(payload) {
 }
 
 export async function loginAccount(payload, audience = "public") {
+  if (audience === "public" && usesBrowserPublicAuth()) {
+    return loginBrowserPublicAccount(payload);
+  }
+
   const data = await requestJson("/api/auth/login", { ...payload, audience });
   setAuthSession({ authenticated: true, user: data.user });
   return data.user;
 }
 
 export async function logoutAccount() {
+  if (usesBrowserPublicAuth()) {
+    requireBrowserStorage();
+    clearBrowserPublicSession();
+
+    try {
+      await requestJson("/api/auth/logout", {});
+    } catch (error) {
+      // Ignore backend logout failures when the active public session is browser-managed.
+    }
+
+    clearAuthSession();
+    return;
+  }
+
   await requestJson("/api/auth/logout", {});
   clearAuthSession();
 }
 
 export async function fetchAuthSession() {
+  if (usesBrowserPublicAuth()) {
+    if (!getStorage()) {
+      clearAuthSession();
+      return { authenticated: false, user: null };
+    }
+
+    try {
+      const response = await fetch(createApiUrl("/api/auth/session"), {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      const data = await response.json();
+
+      if (data?.authenticated && data?.user) {
+        setAuthSession(data);
+        return data;
+      }
+    } catch (error) {
+      // Fall back to the browser-managed public session below.
+    }
+
+    const session = loadBrowserPublicSession();
+    setAuthSession(session);
+    return session;
+  }
+
   try {
     const response = await fetch(createApiUrl("/api/auth/session"), {
       method: "GET",
