@@ -5,7 +5,7 @@ import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, SESSION_TTL_SECONDS
+from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, SEED_DB_PATH, SESSION_TTL_SECONDS
 from .security import hash_password
 
 
@@ -19,6 +19,9 @@ def utc_iso(dt: datetime | None = None) -> str:
 
 def ensure_database() -> None:
   DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+  if DB_PATH != SEED_DB_PATH and not DB_PATH.exists() and SEED_DB_PATH.exists():
+    DB_PATH.write_bytes(SEED_DB_PATH.read_bytes())
 
   with sqlite3.connect(DB_PATH) as connection:
     connection.execute("PRAGMA foreign_keys = ON")

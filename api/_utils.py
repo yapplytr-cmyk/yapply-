@@ -1,0 +1,220 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from http import HTTPStatus
+from http.cookies import SimpleCookie
+
+from backend.config import ADMIN_ROLES, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS
+from backend.db import (
+  count_active_admin_users,
+  create_session,
+  create_user,
+  delete_session,
+  delete_user_account,
+  ensure_database,
+  get_session_user,
+  get_user_by_id,
+  list_users,
+  update_user_status,
+)
+from backend.security import issue_session_token
+from backend.server import ensure_seeded_admin_account, normalize_text, parse_json_body, validate_login, validate_signup
+
+
+def bootstrap_backend() -> None:
+  ensure_database()
+  ensure_seeded_admin_account()
+
+
+def json_response(handler, status: int, payload: dict, cookie: str | None = None) -> None:
+  body = json.dumps(payload).encode("utf-8")
+  handler.send_response(status)
+  if cookie:
+    handler.send_header("Set-Cookie", cookie)
+  handler.send_header("Content-Type", "application/json; charset=utf-8")
+  handler.send_header("Cache-Control", "no-store")
+  handler.send_header("Content-Length", str(len(body)))
+  handler.end_headers()
+  handler.wfile.write(body)
+
+
+def build_cookie(token: str, max_age: int = SESSION_TTL_SECONDS) -> str:
+  cookie = SimpleCookie()
+  cookie[SESSION_COOKIE_NAME] = token
+  cookie[SESSION_COOKIE_NAME]["path"] = "/"
+  cookie[SESSION_COOKIE_NAME]["httponly"] = True
+  cookie[SESSION_COOKIE_NAME]["samesite"] = "Lax"
+  cookie[SESSION_COOKIE_NAME]["max-age"] = max_age
+  return cookie.output(header="").strip()
+
+
+def clear_cookie() -> str:
+  return build_cookie("", 0)
+
+
+def get_session_token(handler) -> str | None:
+  raw_cookie = handler.headers.get("Cookie", "")
+  if not raw_cookie:
+    return None
+  cookie = SimpleCookie()
+  cookie.load(raw_cookie)
+  morsel = cookie.get(SESSION_COOKIE_NAME)
+  return morsel.value if morsel else None
+
+
+def get_authenticated_user(handler) -> dict | None:
+  token = get_session_token(handler)
+  if not token:
+    return None
+  token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+  return get_session_user(token_hash)
+
+
+def require_admin_user(handler) -> dict | None:
+  user = get_authenticated_user(handler)
+
+  if not user:
+    json_response(handler, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "Admin authentication is required."})
+    return None
+
+  if user["role"] not in ADMIN_ROLES:
+    json_response(handler, HTTPStatus.FORBIDDEN, {"ok": False, "code": "ADMIN_ONLY", "message": "This endpoint is available only to admin users."})
+    return None
+
+  return user
+
+
+def handle_signup(handler) -> None:
+  try:
+    payload = parse_json_body(handler)
+  except ValueError:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+    return
+
+  clean_payload, error = validate_signup(payload)
+  if error:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": error[0], "message": error[1]})
+    return
+
+  user = create_user(clean_payload)
+  token, token_hash = issue_session_token()
+  create_session(user["id"], token_hash, handler.headers.get("User-Agent", ""), handler.client_address[0] if handler.client_address else "")
+  json_response(handler, HTTPStatus.CREATED, {"ok": True, "user": user}, cookie=build_cookie(token))
+
+
+def handle_login(handler) -> None:
+  try:
+    payload = parse_json_body(handler)
+  except ValueError:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+    return
+
+  audience = normalize_text(payload.get("audience")) or "public"
+  login_payload, error = validate_login(payload, audience)
+  if error:
+    json_response(handler, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": error[0], "message": error[1]})
+    return
+
+  user = login_payload["user"]
+  token, token_hash = issue_session_token()
+  create_session(user["id"], token_hash, handler.headers.get("User-Agent", ""), handler.client_address[0] if handler.client_address else "")
+  json_response(handler, HTTPStatus.OK, {"ok": True, "user": get_session_user(token_hash)}, cookie=build_cookie(token))
+
+
+def handle_logout(handler) -> None:
+  token = get_session_token(handler)
+  if token:
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    delete_session(token_hash)
+
+  json_response(handler, HTTPStatus.OK, {"ok": True}, cookie=clear_cookie())
+
+
+def handle_session(handler) -> None:
+  user = get_authenticated_user(handler)
+  if not user:
+    json_response(handler, HTTPStatus.OK, {"authenticated": False, "user": None}, cookie=clear_cookie())
+    return
+
+  json_response(handler, HTTPStatus.OK, {"authenticated": True, "user": user})
+
+
+def handle_admin_accounts(handler) -> None:
+  if not require_admin_user(handler):
+    return
+
+  json_response(handler, HTTPStatus.OK, {"ok": True, "accounts": list_users()})
+
+
+def handle_admin_account_status(handler) -> None:
+  current_user = require_admin_user(handler)
+  if not current_user:
+    return
+
+  try:
+    payload = parse_json_body(handler)
+  except ValueError:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+    return
+
+  user_id = normalize_text(payload.get("userId"))
+  action = normalize_text(payload.get("action"))
+
+  if not user_id or action not in {"disable", "enable"}:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_ACCOUNT_ACTION", "message": "A valid account action is required."})
+    return
+
+  target_user = get_user_by_id(user_id)
+  if not target_user:
+    json_response(handler, HTTPStatus.NOT_FOUND, {"ok": False, "code": "ACCOUNT_NOT_FOUND", "message": "The requested account could not be found."})
+    return
+
+  if action == "disable":
+    if target_user["id"] == current_user["id"]:
+      json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "ACCOUNT_SELF_PROTECTED", "message": "You cannot disable your own admin account."})
+      return
+
+    if target_user["role"] in ADMIN_ROLES and count_active_admin_users(exclude_user_id=target_user["id"]) == 0:
+      json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "LAST_ADMIN_PROTECTED", "message": "The last active admin account cannot be disabled."})
+      return
+
+    updated_user = update_user_status(user_id, False)
+    json_response(handler, HTTPStatus.OK, {"ok": True, "user": updated_user})
+    return
+
+  updated_user = update_user_status(user_id, True)
+  json_response(handler, HTTPStatus.OK, {"ok": True, "user": updated_user})
+
+
+def handle_admin_account_delete(handler) -> None:
+  current_user = require_admin_user(handler)
+  if not current_user:
+    return
+
+  try:
+    payload = parse_json_body(handler)
+  except ValueError:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+    return
+
+  user_id = normalize_text(payload.get("userId"))
+  if not user_id:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_ACCOUNT_ACTION", "message": "A valid account id is required."})
+    return
+
+  target_user = get_user_by_id(user_id)
+  if not target_user:
+    json_response(handler, HTTPStatus.NOT_FOUND, {"ok": False, "code": "ACCOUNT_NOT_FOUND", "message": "The requested account could not be found."})
+    return
+
+  if target_user["id"] == current_user["id"]:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "ACCOUNT_SELF_PROTECTED", "message": "You cannot delete your own admin account."})
+    return
+
+  if target_user["role"] in ADMIN_ROLES and count_active_admin_users(exclude_user_id=target_user["id"]) == 0:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "LAST_ADMIN_PROTECTED", "message": "The last active admin account cannot be deleted."})
+    return
+
+  delete_user_account(user_id)
+  json_response(handler, HTTPStatus.OK, {"ok": True, "deletedUserId": user_id})

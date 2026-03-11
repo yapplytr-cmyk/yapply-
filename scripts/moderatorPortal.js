@@ -1,4 +1,20 @@
-const AUTH_ORIGIN = "http://127.0.0.1:4174";
+function getLocalDevOrigin() {
+  const { protocol, hostname } = window.location;
+  return `${protocol}//${hostname}:4174`;
+}
+
+function getAuthOrigin() {
+  const configuredOrigin = window.YAPPLY_AUTH_ORIGIN || document.documentElement.dataset.authOrigin || "";
+
+  if (configuredOrigin) {
+    return configuredOrigin.replace(/\/$/, "");
+  }
+
+  const { hostname, port, origin } = window.location;
+  const isLocalFrontend = (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
+
+  return isLocalFrontend ? getLocalDevOrigin() : origin;
+}
 const REDIRECT_URL = "./admin-dashboard.html";
 
 function $(selector) {
@@ -15,7 +31,8 @@ function setDebug(message) {
 function resetState() {
   $("#moderator-login-error")?.setAttribute("hidden", "");
   $("#moderator-login-success")?.setAttribute("hidden", "");
-  setDebug(`Backend origin: ${AUTH_ORIGIN}`);
+  const authOrigin = getAuthOrigin();
+  setDebug(`Backend origin: ${authOrigin}`);
 }
 
 function showError(message) {
@@ -51,9 +68,10 @@ async function readJson(response) {
 }
 
 async function loginModerator(identifier, password) {
-  setDebug(`POST ${AUTH_ORIGIN}/api/auth/login`);
+  const authOrigin = getAuthOrigin();
+  setDebug(`POST ${authOrigin}/api/auth/login`);
 
-  const response = await fetch(`${AUTH_ORIGIN}/api/auth/login`, {
+  const response = await fetch(`${authOrigin}/api/auth/login`, {
     method: "POST",
     credentials: "include",
     headers: {
@@ -79,9 +97,10 @@ async function loginModerator(identifier, password) {
 }
 
 async function verifySession() {
-  setDebug(`GET ${AUTH_ORIGIN}/api/auth/session`);
+  const authOrigin = getAuthOrigin();
+  setDebug(`GET ${authOrigin}/api/auth/session`);
 
-  const response = await fetch(`${AUTH_ORIGIN}/api/auth/session`, {
+  const response = await fetch(`${authOrigin}/api/auth/session`, {
     method: "GET",
     credentials: "include",
     headers: {
@@ -112,7 +131,7 @@ function getFailureMessage(error) {
     case "ADMIN_ONLY":
       return "This login area is reserved for admin or moderator accounts.";
     case "AUTH_UNAVAILABLE":
-      return "The backend auth server is not available on 127.0.0.1:4174.";
+      return `The backend auth server is not available on ${getAuthOrigin()}.`;
     case "SESSION_INVALID":
       return "Login succeeded but the admin session could not be confirmed.";
     default:
@@ -149,7 +168,7 @@ function bindModeratorLogin() {
     }
 
     submitButton.disabled = true;
-    setDebug(`Submitting to ${AUTH_ORIGIN}`);
+    setDebug(`Submitting to ${getAuthOrigin()}`);
 
     try {
       await loginModerator(identifier, password);

@@ -1,9 +1,12 @@
+import os
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 BACKEND_DIR = ROOT_DIR / "backend"
 DATA_DIR = BACKEND_DIR / "data"
-DB_PATH = DATA_DIR / "yapply.db"
+SEED_DB_PATH = DATA_DIR / "yapply.db"
+IS_VERCEL = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+DB_PATH = Path(os.environ.get("YAPPLY_DB_PATH", "/tmp/yapply.db" if IS_VERCEL else str(SEED_DB_PATH)))
 
 HOST = "127.0.0.1"
 PORT = 4174

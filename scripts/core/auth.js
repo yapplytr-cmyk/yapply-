@@ -1,9 +1,25 @@
 import { clearAuthSession, setAuthSession } from "./state.js";
 
-const AUTH_ORIGIN = "http://127.0.0.1:4174";
+function getLocalDevOrigin() {
+  const { protocol, hostname } = window.location;
+  return `${protocol}//${hostname}:4174`;
+}
+
+function resolveAuthOrigin() {
+  const configuredOrigin = window.YAPPLY_AUTH_ORIGIN || document.documentElement.dataset.authOrigin || "";
+
+  if (configuredOrigin) {
+    return configuredOrigin.replace(/\/$/, "");
+  }
+
+  const { hostname, port, origin } = window.location;
+  const isLocalFrontend = (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
+
+  return isLocalFrontend ? getLocalDevOrigin() : origin;
+}
 
 function createApiUrl(path) {
-  return `${AUTH_ORIGIN}${path}`;
+  return `${resolveAuthOrigin()}${path}`;
 }
 
 async function requestJson(path, payload) {
@@ -77,7 +93,7 @@ export async function fetchAuthSession() {
 }
 
 export function getAuthOrigin() {
-  return AUTH_ORIGIN;
+  return resolveAuthOrigin();
 }
 
 export async function fetchAdminAccounts() {
