@@ -1,5 +1,11 @@
 import { createApp } from "./app.js";
 import { getDefaultLocale, getLocaleContent } from "./core/i18n.js";
+import {
+  deleteMarketplaceListing,
+  getSubmissionSuccessHref,
+  saveMarketplaceSubmission,
+  syncMarketplaceAdminMode,
+} from "./core/marketplaceStore.js";
 import { applyTheme, getLocale, getTheme, setLocale, toggleTheme } from "./core/state.js";
 import { initHeroScene } from "./visuals/heroScene.js";
 
@@ -24,6 +30,15 @@ function getCurrentSubmissionType() {
 
 function getCurrentDeveloper() {
   return document.body.dataset.developer || "";
+}
+
+function getCurrentListingType() {
+  return document.body.dataset.listingType || "";
+}
+
+function getCurrentListingId() {
+  const url = new URL(window.location.href);
+  return url.searchParams.get("id") || "";
 }
 
 function updateThemeToggleLabel(content) {
@@ -307,9 +322,28 @@ function setupApplicationForm() {
 function setupMarketplaceTabs() {
   const tabs = [...document.querySelectorAll("[data-marketplace-tab]")];
   const panels = [...document.querySelectorAll("[data-marketplace-panel]")];
+  const requestedTab = new URL(window.location.href).searchParams.get("tab");
 
   if (tabs.length === 0 || panels.length === 0) {
     return;
+  }
+
+  const setActiveTab = (target) => {
+    tabs.forEach((entry) => {
+      const isActive = entry.getAttribute("data-marketplace-tab") === target;
+      entry.classList.toggle("is-active", isActive);
+      entry.setAttribute("aria-selected", String(isActive));
+    });
+
+    panels.forEach((panel) => {
+      const isActive = panel.getAttribute("data-marketplace-panel") === target;
+      panel.classList.toggle("is-active", isActive);
+      panel.hidden = !isActive;
+    });
+  };
+
+  if (requestedTab && tabs.some((tab) => tab.getAttribute("data-marketplace-tab") === requestedTab)) {
+    setActiveTab(requestedTab);
   }
 
   tabs.forEach((tab) => {
@@ -320,17 +354,7 @@ function setupMarketplaceTabs() {
         return;
       }
 
-      tabs.forEach((entry) => {
-        const isActive = entry === tab;
-        entry.classList.toggle("is-active", isActive);
-        entry.setAttribute("aria-selected", String(isActive));
-      });
-
-      panels.forEach((panel) => {
-        const isActive = panel.getAttribute("data-marketplace-panel") === target;
-        panel.classList.toggle("is-active", isActive);
-        panel.hidden = !isActive;
-      });
+      setActiveTab(target);
     });
   });
 }
@@ -364,10 +388,38 @@ function setupProjectInquiryForm() {
 
 function setupMarketplaceSubmissionForm() {
   const form = document.querySelector("[data-marketplace-submission-form]");
-  const success = document.querySelector("[data-marketplace-submission-success]");
+  const submissionType = getCurrentSubmissionType();
 
-  if (!form || !success) {
+  if (!form || !submissionType) {
     return;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const formData = new FormData(form);
+    const listing = await saveMarketplaceSubmission(submissionType, formData);
+    window.location.href = getSubmissionSuccessHref(submissionType, listing.id);
+  });
+}
+
+function setupMarketplaceListingInquiryForm() {
+  const form = document.querySelector("[data-marketplace-listing-inquiry-form]");
+  const success = document.querySelector("[data-marketplace-listing-inquiry-success]");
+  const successName = document.querySelector("[data-marketplace-listing-success-name]");
+  const listingName = document.querySelector("[data-marketplace-listing-name-field]");
+
+  if (!form || !success || !listingName) {
+    return;
+  }
+
+  if (successName) {
+    successName.textContent = listingName.value;
   }
 
   form.addEventListener("submit", (event) => {
@@ -380,6 +432,47 @@ function setupMarketplaceSubmissionForm() {
 
     form.hidden = true;
     success.hidden = false;
+  });
+}
+
+function setupMarketplaceDeleteActions(locale) {
+  document.querySelectorAll("[data-delete-listing]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.getAttribute("data-delete-listing");
+      const type = button.getAttribute("data-delete-listing-type");
+      const redirect = button.getAttribute("data-delete-redirect");
+
+      if (!id || !type) {
+        return;
+      }
+
+      const confirmLabel =
+        locale === "tr"
+          ? "Bu demo ilanını silmek istediğinize emin misiniz?"
+          : "Are you sure you want to delete this demo listing?";
+
+      if (!window.confirm(confirmLabel)) {
+        return;
+      }
+
+      const deleted = deleteMarketplaceListing(type, id);
+
+      if (!deleted) {
+        return;
+      }
+
+      if (redirect) {
+        window.location.href = redirect;
+        return;
+      }
+
+      if (getCurrentPage() === "open-marketplace") {
+        renderPage(locale);
+        return;
+      }
+
+      window.location.href = `./open-marketplace.html?tab=${type === "professional" ? "developer" : "client"}`;
+    });
   });
 }
 
@@ -456,6 +549,8 @@ function bindInteractions(content) {
   setupMarketplaceTabs();
   setupProjectInquiryForm();
   setupMarketplaceSubmissionForm();
+  setupMarketplaceListingInquiryForm();
+  setupMarketplaceDeleteActions(content.meta.locale);
   setupDeveloperInquiryForm();
   const generation = ++heroSceneGeneration;
   if (getCurrentPage() === "home") {
@@ -474,6 +569,7 @@ function bindInteractions(content) {
 }
 
 function renderPage(localeOverride) {
+  syncMarketplaceAdminMode();
   const fallbackLocale = getDefaultLocale();
   const locale = localeOverride || getLocale(fallbackLocale);
   const content = getLocaleContent(locale);
@@ -482,6 +578,8 @@ function renderPage(localeOverride) {
   const project = getCurrentProject();
   const submissionType = getCurrentSubmissionType();
   const developer = getCurrentDeveloper();
+  const listingType = getCurrentListingType();
+  const listingId = getCurrentListingId();
 
   document.documentElement.lang = content.meta.locale;
   applyTheme(getTheme());
@@ -489,7 +587,7 @@ function renderPage(localeOverride) {
   cleanupParallax();
   cleanupCounters();
   cleanupHeroScene();
-  appRoot.innerHTML = createApp(content, locale, page, project, submissionType, developer);
+  appRoot.innerHTML = createApp(content, locale, page, project, submissionType, developer, listingType, listingId);
   updateThemeToggleLabel(content);
   bindInteractions(content);
   window.requestAnimationFrame(() => {

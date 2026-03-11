@@ -226,7 +226,7 @@ export const translations = {
           { label: "Back to Home", href: "./index.html" },
           { label: "Overview", href: "#marketplace-intro" },
           { label: "Listings", href: "#marketplace-listings" },
-          { label: "Create Listing", href: "./client-project-submission.html" },
+          { label: "Create Request Listing", href: "./client-project-submission.html" },
         ],
         cta: "Post Your Project",
         ctaHref: "./client-project-submission.html",
@@ -237,7 +237,7 @@ export const translations = {
         description:
           "Open Marketplace expands Yapply beyond featured concepts. Clients can publish what they want to build, while architects, developers, and contractors can present their own offers in a more elevated environment.",
         primaryCta: { label: "Browse Listings", href: "#marketplace-listings" },
-        secondaryCta: { label: "List Your Services", href: "./professional-listing-submission.html" },
+        secondaryCta: { label: "List Your Services for Contractors", href: "./professional-listing-submission.html" },
         highlights: [
           "Client briefs and professional offers in one system",
           "Luxury marketplace tone instead of generic classifieds",
@@ -296,9 +296,13 @@ export const translations = {
             plotStatus: "Plot Status",
             timeline: "Timeline",
             category: "Category",
+            viewListing: "View Brief",
+            adminLabel: "Demo Admin",
+            deleteLabel: "Delete Listing",
           },
           items: [
             {
+              slug: "zekeriyakoy-family-villa",
               title: "Private hillside villa for family living",
               projectType: "Villa build",
               location: "Istanbul / Zekeriyakoy",
@@ -313,6 +317,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "nisantasi-apartment-renovation",
               title: "Full apartment renovation with architectural replan",
               projectType: "Renovation",
               location: "Istanbul / Nisantasi",
@@ -327,6 +332,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "cesme-coastal-villa-compound",
               title: "Boutique coastal villa compound concept",
               projectType: "Hospitality-style residential",
               location: "Izmir / Cesme",
@@ -341,6 +347,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "ankara-commercial-shell-fitout",
               title: "Ground-up commercial shell and fit-out",
               projectType: "Commercial project",
               location: "Ankara / Cankaya",
@@ -355,6 +362,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "bodrum-seasonal-home",
               title: "Bodrum seasonal home with guest suite",
               projectType: "Luxury residence",
               location: "Mugla / Bodrum",
@@ -369,6 +377,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "bursa-development-feasibility",
               title: "Mid-scale residential development feasibility",
               projectType: "Development study",
               location: "Bursa / Nilufer",
@@ -390,6 +399,17 @@ export const translations = {
             startingPrice: "Starting Price",
             deliveryRange: "Delivery Range",
             services: "Lead Service",
+            experience: "Experience",
+            serviceArea: "Service Area",
+            yearsSuffix: "years",
+            adminLabel: "Demo Admin",
+            deleteLabel: "Delete Listing",
+            actions: {
+              viewProfile: "View Profile",
+              seeProjects: "See Projects",
+              requestQuote: "Request Quote",
+              contactProfessional: "Contact Professional",
+            },
           },
           items: [
             {
@@ -540,7 +560,7 @@ export const translations = {
           "This first version is frontend-only, but the structure is already prepared for a future create-listing flow with authentication, moderation, and lead routing.",
         clientLabel: "Post Your Project",
         clientHref: "./client-project-submission.html",
-        proLabel: "List Your Services",
+        proLabel: "List Your Services for Contractors",
         proHref: "./professional-listing-submission.html",
       },
       footer: {
@@ -665,6 +685,7 @@ export const translations = {
               placeholder: "Upload inspiration images or reference material",
               hint: "Frontend placeholder only for now. Future versions can store images directly in the marketplace workflow.",
               full: true,
+              multiple: true,
             },
             additionalNotes: {
               label: "Additional Notes",
@@ -725,11 +746,7 @@ export const translations = {
             intake: "Specialty, region, pricing, and portfolio",
             review: "Prepared for future moderation and publishing",
           },
-          notes: [
-            { value: "Credible", label: "Structured to present your expertise with clarity" },
-            { value: "Curated", label: "Aligned with Yapply’s premium marketplace tone" },
-            { value: "Frontend", label: "Ready for backend integration in the next phase" },
-          ],
+          notes: [],
         },
         form: {
           eyebrow: "Professional listing form",
@@ -772,7 +789,7 @@ export const translations = {
               full: true,
               required: true,
             },
-            website: { label: "Website / Portfolio URL", type: "url", placeholder: "https://yourstudio.com", required: true },
+            website: { label: "Website / Portfolio URL", type: "url", placeholder: "https://yourstudio.com" },
             companyDescription: {
               label: "Short Company Description",
               type: "textarea",
@@ -815,6 +832,152 @@ export const translations = {
           note: "This page is frontend-only for now and prepared for future moderation, publishing, and lead-routing flows.",
           contact: "hello@yapply.com",
           copyrightLabel: "Yapply",
+        },
+      },
+    },
+    marketplaceFlow: {
+      admin: {
+        label: "Demo Admin",
+        deleteLabel: "Delete Listing",
+      },
+      success: {
+        client: {
+          eyebrow: "Submission received",
+          title: "Your project brief is now part of the marketplace flow.",
+          description:
+            "This MVP stores your submission locally in the current browser and immediately makes it visible in Yapply’s client listings board.",
+          note: "For this frontend MVP, submissions remain visible on this device and browser through local storage.",
+          viewListing: "View My Listing",
+          backToMarketplace: "Back to Marketplace",
+          submitAnother: "Submit Another",
+          submitAnotherHref: "./client-project-submission.html",
+          marketplaceHref: "./open-marketplace.html?tab=client",
+          missingTitle: "No saved client submission was found.",
+          missingDescription: "Submit a project brief first, then come back here to review the listing summary.",
+          summary: {
+            project: "Project",
+            type: "Type",
+            location: "Location",
+            budget: "Budget",
+          },
+        },
+        professional: {
+          eyebrow: "Submission received",
+          title: "Your professional listing is now live in the marketplace flow.",
+          description:
+            "This MVP stores your listing locally in the current browser and adds it to Yapply’s professional marketplace board instantly.",
+          note: "For this frontend MVP, listings remain visible on this device and browser through local storage.",
+          viewListing: "View My Listing",
+          backToMarketplace: "Back to Marketplace",
+          submitAnother: "Submit Another",
+          submitAnotherHref: "./professional-listing-submission.html",
+          marketplaceHref: "./open-marketplace.html?tab=developer",
+          missingTitle: "No saved professional listing was found.",
+          missingDescription: "Submit your professional profile first, then come back here to review the listing summary.",
+          summary: {
+            company: "Company",
+            specialty: "Specialty",
+            location: "Location",
+            price: "Pricing",
+          },
+        },
+      },
+      detail: {
+        missingEyebrow: "Marketplace listing",
+        missingTitle: "This listing is no longer available.",
+        missingDescription: "The listing may have been deleted from the local MVP store or the link is no longer valid.",
+        backToMarketplace: "Back to Marketplace",
+        client: {
+          eyebrow: "Client project brief",
+          primaryCta: "List Your Services",
+          secondaryCta: "Back to Marketplace",
+          boardTitle: "Project brief",
+          fallback: "Shared after review",
+          downloadLabel: "Download",
+          filesLabel: "Attached file",
+          styleTitle: "Style direction",
+          notesTitle: "Additional notes",
+          noNotes: "No additional notes were provided for this submission.",
+          media: {
+            eyebrow: "Attached media",
+            title: "Files published with this brief.",
+            description:
+              "Uploaded inspiration images and supporting documents are displayed here so professionals can evaluate the request with more context.",
+          },
+          summary: {
+            type: "Project Type",
+            location: "Location",
+            budget: "Budget",
+            timeline: "Timeline",
+            plotStatus: "Plot Status",
+            size: "Project Size",
+          },
+          overview: {
+            eyebrow: "Project overview",
+            title: "A structured brief ready for marketplace visibility.",
+            description:
+              "This submission page now behaves like a lightweight marketplace listing, with the key project signals visible in a cleaner public format.",
+          },
+        },
+        professional: {
+          eyebrow: "Professional listing",
+          primaryCta: "Request Quote",
+          secondaryCta: "Back to Marketplace",
+          boardTitle: "Marketplace profile",
+          fallback: "Shared after review",
+          yearsSuffix: "years",
+          downloadLabel: "Download",
+          filesLabel: "Attached file",
+          portfolioTitle: "Portfolio summary",
+          websiteTitle: "Website / portfolio",
+          noWebsite: "No website or portfolio URL was provided for this listing.",
+          serviceDescription: "Presented as part of this submitted marketplace profile.",
+          media: {
+            eyebrow: "Attached media",
+            title: "Files published with this professional listing.",
+            description:
+              "Uploaded portfolio images and supporting documents are shown here so clients can review the practice in a more credible way.",
+          },
+          summary: {
+            specialty: "Specialty",
+            location: "Location",
+            experience: "Experience",
+            price: "Pricing",
+          },
+          overview: {
+            eyebrow: "Profile overview",
+            title: "A public profile page generated from the marketplace submission.",
+            description:
+              "Submitted professional listings now have a visible detail surface so clients can review positioning, services, and pricing before making contact.",
+          },
+          services: {
+            eyebrow: "Services",
+            title: "Core services published with the listing.",
+            description:
+              "This section turns the original form input into a cleaner public service summary for the MVP marketplace flow.",
+          },
+          contactSummary: "Direct inquiry",
+          contact: {
+            eyebrow: "Request quote",
+            title: "Send a quick inquiry through the listing page.",
+            description:
+              "This inquiry form remains frontend-only, but it completes the interaction loop for the marketplace MVP.",
+            formTitle: "Contact this professional",
+            formIntro: "Use this lightweight form to simulate a quote request or first project inquiry.",
+            fields: {
+              fullName: "Full Name",
+              email: "Email",
+              message: "Project Message",
+            },
+            placeholders: {
+              fullName: "Your full name",
+              email: "name@email.com",
+              message: "Describe your project, budget direction, and what you want to ask.",
+            },
+            submitLabel: "Send Inquiry",
+            successTitle: "Inquiry captured",
+            successText: "Your message has been recorded for",
+          },
         },
       },
     },
@@ -1846,7 +2009,7 @@ export const translations = {
           { label: "Ana sayfaya dön", href: "./index.html" },
           { label: "Genel bakış", href: "#marketplace-intro" },
           { label: "İlanlar", href: "#marketplace-listings" },
-          { label: "İlan oluştur", href: "./client-project-submission.html" },
+          { label: "Talep İlanı Oluştur", href: "./client-project-submission.html" },
         ],
         cta: "Projeni Yayınla",
         ctaHref: "./client-project-submission.html",
@@ -1857,7 +2020,7 @@ export const translations = {
         description:
           "Open Marketplace, Yapply’yi yalnızca öne çıkan projelerin ötesine taşır. Müşteriler ne inşa etmek istediklerini yayınlayabilir; mimarlar, geliştiriciler ve yükleniciler ise kendi tekliflerini daha rafine bir ortamda sunabilir.",
         primaryCta: { label: "İlanları İncele", href: "#marketplace-listings" },
-        secondaryCta: { label: "Hizmetlerini Listele", href: "./professional-listing-submission.html" },
+        secondaryCta: { label: "Yükleniciler için Hizmetlerini Listele", href: "./professional-listing-submission.html" },
         highlights: [
           "Müşteri briefleri ve profesyonel ilanlar aynı sistemde",
           "Genel ilan siteleri yerine lüks pazaryeri tonu",
@@ -1916,9 +2079,13 @@ export const translations = {
             plotStatus: "Arsa Durumu",
             timeline: "Takvim",
             category: "Kategori",
+            viewListing: "Briefi Gör",
+            adminLabel: "Demo Yönetici",
+            deleteLabel: "İlanı Sil",
           },
           items: [
             {
+              slug: "zekeriyakoy-family-villa",
               title: "Aile yaşamı için özel yamaç villası",
               projectType: "Villa yapımı",
               location: "İstanbul / Zekeriyaköy",
@@ -1933,6 +2100,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "nisantasi-apartment-renovation",
               title: "Mimari yeniden planlamayla tam daire renovasyonu",
               projectType: "Renovasyon",
               location: "İstanbul / Nişantaşı",
@@ -1947,6 +2115,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "cesme-coastal-villa-compound",
               title: "Butik sahil villa grubu konsepti",
               projectType: "Konaklama etkili konut",
               location: "İzmir / Çeşme",
@@ -1961,6 +2130,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "ankara-commercial-shell-fitout",
               title: "Sıfırdan ticari kabuk ve fit-out projesi",
               projectType: "Ticari proje",
               location: "Ankara / Çankaya",
@@ -1975,6 +2145,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "bodrum-seasonal-home",
               title: "Misafir süitli Bodrum sezonluk evi",
               projectType: "Lüks konut",
               location: "Muğla / Bodrum",
@@ -1989,6 +2160,7 @@ export const translations = {
               ctaHref: "./professional-listing-submission.html",
             },
             {
+              slug: "bursa-development-feasibility",
               title: "Orta ölçekli konut geliştirme fizibilitesi",
               projectType: "Geliştirme etüdü",
               location: "Bursa / Nilüfer",
@@ -2010,6 +2182,17 @@ export const translations = {
             startingPrice: "Başlangıç Fiyatı",
             deliveryRange: "Teslim Alanı",
             services: "Öne Çıkan Hizmet",
+            experience: "Deneyim",
+            serviceArea: "Hizmet Alanı",
+            yearsSuffix: "yıl",
+            adminLabel: "Demo Yönetici",
+            deleteLabel: "İlanı Sil",
+            actions: {
+              viewProfile: "Profili Gör",
+              seeProjects: "Projeleri İncele",
+              requestQuote: "Teklif İste",
+              contactProfessional: "Profesyonelle İletişime Geç",
+            },
           },
           items: [
             {
@@ -2160,7 +2343,7 @@ export const translations = {
           "Bu ilk versiyon yalnızca frontend yapısıdır; ancak kullanıcı hesabı, moderasyon ve lead yönlendirmesi içeren gerçek ilan oluşturma akışına hazır şekilde kurgulandı.",
         clientLabel: "Projeni Yayınla",
         clientHref: "./client-project-submission.html",
-        proLabel: "Hizmetlerini Listele",
+        proLabel: "Yükleniciler için Hizmetlerini Listele",
         proHref: "./professional-listing-submission.html",
       },
       footer: {
@@ -2285,6 +2468,7 @@ export const translations = {
               placeholder: "İlham görselleri veya referans materyal yükleyin",
               hint: "Şimdilik yalnızca frontend placeholder alanıdır. Gelecek versiyonlarda görseller doğrudan pazaryeri akışına alınabilir.",
               full: true,
+              multiple: true,
             },
             additionalNotes: {
               label: "Ek Notlar",
@@ -2345,11 +2529,7 @@ export const translations = {
             intake: "Uzmanlık, bölge, fiyat ve portfolyo",
             review: "Gelecekte moderasyon ve yayın için hazır",
           },
-          notes: [
-            { value: "Güvenilir", label: "Uzmanlığınızı daha net sunmanız için yapılandırıldı" },
-            { value: "Küratöryel", label: "Yapply’nin premium pazaryeri tonuyla uyumlu" },
-            { value: "Frontend", label: "Sonraki fazda backend entegrasyonuna hazır" },
-          ],
+          notes: [],
         },
         form: {
           eyebrow: "Profesyonel ilan formu",
@@ -2392,7 +2572,7 @@ export const translations = {
               full: true,
               required: true,
             },
-            website: { label: "Website / Portfolyo URL", type: "url", placeholder: "https://studionuz.com", required: true },
+            website: { label: "Website / Portfolyo URL", type: "url", placeholder: "https://studionuz.com" },
             companyDescription: {
               label: "Kısa Şirket Tanımı",
               type: "textarea",
@@ -2435,6 +2615,152 @@ export const translations = {
           note: "Bu sayfa şimdilik yalnızca frontend akışıdır ve gelecekte moderasyon, yayın ve lead yönlendirme sistemlerine hazırdır.",
           contact: "hello@yapply.com",
           copyrightLabel: "Yapply",
+        },
+      },
+    },
+    marketplaceFlow: {
+      admin: {
+        label: "Demo Yönetici",
+        deleteLabel: "İlanı Sil",
+      },
+      success: {
+        client: {
+          eyebrow: "Gönderim alındı",
+          title: "Proje briefiniz artık pazaryeri akışının bir parçası.",
+          description:
+            "Bu MVP sürümü gönderiminizi mevcut tarayıcıda yerel olarak saklar ve Yapply müşteri ilan panosunda anında görünür hale getirir.",
+          note: "Bu frontend MVP’de gönderimler bu cihaz ve tarayıcı içinde local storage üzerinden görünür kalır.",
+          viewListing: "İlanımı Gör",
+          backToMarketplace: "Pazaryerine Dön",
+          submitAnother: "Yeni Gönderim Yap",
+          submitAnotherHref: "./client-project-submission.html",
+          marketplaceHref: "./open-marketplace.html?tab=client",
+          missingTitle: "Kaydedilmiş bir müşteri gönderimi bulunamadı.",
+          missingDescription: "Önce bir proje briefi gönderin, ardından bu sayfaya dönerek ilan özetini inceleyin.",
+          summary: {
+            project: "Proje",
+            type: "Tür",
+            location: "Konum",
+            budget: "Bütçe",
+          },
+        },
+        professional: {
+          eyebrow: "Gönderim alındı",
+          title: "Profesyonel ilanınız artık pazaryeri akışında canlı.",
+          description:
+            "Bu MVP sürümü profesyonel ilanınızı mevcut tarayıcıda yerel olarak saklar ve Yapply profesyonel ilan panosuna anında ekler.",
+          note: "Bu frontend MVP’de ilanlar bu cihaz ve tarayıcı içinde local storage üzerinden görünür kalır.",
+          viewListing: "İlanımı Gör",
+          backToMarketplace: "Pazaryerine Dön",
+          submitAnother: "Yeni Gönderim Yap",
+          submitAnotherHref: "./professional-listing-submission.html",
+          marketplaceHref: "./open-marketplace.html?tab=developer",
+          missingTitle: "Kaydedilmiş bir profesyonel ilan bulunamadı.",
+          missingDescription: "Önce profesyonel profilinizi gönderin, ardından bu sayfaya dönerek ilan özetini inceleyin.",
+          summary: {
+            company: "Şirket",
+            specialty: "Uzmanlık",
+            location: "Konum",
+            price: "Fiyatlama",
+          },
+        },
+      },
+      detail: {
+        missingEyebrow: "Pazaryeri ilanı",
+        missingTitle: "Bu ilan artık mevcut değil.",
+        missingDescription: "İlan yerel MVP deposundan silinmiş olabilir veya bağlantı artık geçerli değildir.",
+        backToMarketplace: "Pazaryerine Dön",
+        client: {
+          eyebrow: "Müşteri proje briefi",
+          primaryCta: "Hizmetlerini Listele",
+          secondaryCta: "Pazaryerine Dön",
+          boardTitle: "Proje briefi",
+          fallback: "İnceleme sonrası paylaşılır",
+          downloadLabel: "İndir",
+          filesLabel: "Ek dosya",
+          styleTitle: "Stil yönü",
+          notesTitle: "Ek notlar",
+          noNotes: "Bu gönderim için ek not paylaşılmadı.",
+          media: {
+            eyebrow: "Ekli medya",
+            title: "Bu brief ile yayınlanan dosyalar.",
+            description:
+              "Yüklenen ilham görselleri ve destekleyici belgeler burada gösterilir; böylece profesyoneller talebi daha güçlü bir bağlamla değerlendirebilir.",
+          },
+          summary: {
+            type: "Proje Türü",
+            location: "Konum",
+            budget: "Bütçe",
+            timeline: "Takvim",
+            plotStatus: "Arsa Durumu",
+            size: "Proje Büyüklüğü",
+          },
+          overview: {
+            eyebrow: "Proje özeti",
+            title: "Pazaryerinde görünmeye hazır yapılandırılmış bir brief.",
+            description:
+              "Bu gönderim artık hafif bir pazaryeri ilanı gibi çalışır; temel proje sinyalleri daha temiz bir kamusal formatta görünür.",
+          },
+        },
+        professional: {
+          eyebrow: "Profesyonel ilan",
+          primaryCta: "Teklif İste",
+          secondaryCta: "Pazaryerine Dön",
+          boardTitle: "Pazaryeri profili",
+          fallback: "İnceleme sonrası paylaşılır",
+          yearsSuffix: "yıl",
+          downloadLabel: "İndir",
+          filesLabel: "Ek dosya",
+          portfolioTitle: "Portfolyo özeti",
+          websiteTitle: "Web sitesi / portfolyo",
+          noWebsite: "Bu ilan için web sitesi veya portfolyo bağlantısı paylaşılmadı.",
+          serviceDescription: "Bu gönderilmiş pazaryeri profilinin parçası olarak sunuluyor.",
+          media: {
+            eyebrow: "Ekli medya",
+            title: "Bu profesyonel ilanla yayınlanan dosyalar.",
+            description:
+              "Yüklenen portfolyo görselleri ve destekleyici belgeler burada gösterilir; böylece müşteriler pratiği daha güvenilir bir biçimde inceleyebilir.",
+          },
+          summary: {
+            specialty: "Uzmanlık",
+            location: "Konum",
+            experience: "Deneyim",
+            price: "Fiyatlama",
+          },
+          overview: {
+            eyebrow: "Profil özeti",
+            title: "Pazaryeri gönderiminden üretilen herkese açık profil sayfası.",
+            description:
+              "Gönderilen profesyonel ilanlar artık müşterilerin uzmanlık, hizmet ve fiyatlamayı inceleyebileceği görünür bir detay yüzeyine sahip.",
+          },
+          services: {
+            eyebrow: "Hizmetler",
+            title: "İlanda yayınlanan temel hizmetler.",
+            description:
+              "Bu bölüm, form verisini MVP pazaryeri akışı için daha temiz bir kamusal hizmet özetine dönüştürür.",
+          },
+          contactSummary: "Doğrudan talep",
+          contact: {
+            eyebrow: "Teklif iste",
+            title: "İlan sayfası üzerinden hızlı bir talep gönderin.",
+            description:
+              "Bu talep formu hâlâ yalnızca frontend çalışır; ancak pazaryeri MVP’si için etkileşim döngüsünü tamamlar.",
+            formTitle: "Bu profesyonelle iletişime geçin",
+            formIntro: "Teklif isteği veya ilk proje görüşmesini simüle etmek için bu hafif formu kullanın.",
+            fields: {
+              fullName: "Ad Soyad",
+              email: "E-posta",
+              message: "Proje Mesajı",
+            },
+            placeholders: {
+              fullName: "Adınız ve soyadınız",
+              email: "isim@email.com",
+              message: "Projenizi, bütçe yönünüzü ve sormak istediklerinizi paylaşın.",
+            },
+            submitLabel: "Talebi Gönder",
+            successTitle: "Talep alındı",
+            successText: "Mesajınız şu profesyonel için kaydedildi:",
+          },
         },
       },
     },

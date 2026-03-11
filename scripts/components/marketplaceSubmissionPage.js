@@ -66,7 +66,7 @@ function createField(fieldKey, field, pageContent) {
 }
 
 function createSubmissionHero(pageContent) {
-  const notes = pageContent.hero.notes
+  const notes = (pageContent.hero.notes || [])
     .map(
       (item) => `
         <article class="metric-card submission-note">
@@ -76,6 +76,7 @@ function createSubmissionHero(pageContent) {
       `
     )
     .join("");
+  const notesMarkup = notes ? `<div class="submission-stage__notes">${notes}</div>` : "";
 
   return `
     <section class="submission-hero section-shell">
@@ -102,7 +103,7 @@ function createSubmissionHero(pageContent) {
           </div>
           <div class="submission-stage__beam submission-stage__beam--h"></div>
           <div class="submission-stage__beam submission-stage__beam--v"></div>
-          <div class="submission-stage__notes">${notes}</div>
+          ${notesMarkup}
         </div>
       </div>
     </section>

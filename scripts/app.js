@@ -7,8 +7,11 @@ import { createTestimonials } from "./components/testimonials.js";
 import { createFooter } from "./components/footer.js";
 import { createOpenMarketplacePage } from "./components/openMarketplacePage.js";
 import { createMarketplaceSubmissionPage } from "./components/marketplaceSubmissionPage.js";
+import { createMarketplaceSubmissionSuccessPage } from "./components/marketplaceSubmissionSuccessPage.js";
+import { createMarketplaceListingDetailPage } from "./components/marketplaceListingDetailPage.js";
 import { createDeveloperProfilePage } from "./components/developerProfilePage.js";
 import { createProjectDetailPage } from "./components/projectDetailPage.js";
+import { getLastSubmission, getSubmittedListing, getSubmittedListings } from "./core/marketplaceStore.js";
 import {
   createProfessionalsBenefits,
   createProfessionalsFaq,
@@ -61,10 +64,24 @@ function createProjectDetailPageContent(content, projectSlug) {
 }
 
 function createOpenMarketplacePageContent(content) {
+  const submittedClientItems = getSubmittedListings("client");
+  const submittedProfessionalItems = getSubmittedListings("professional");
+
   return {
     brand: content.brand,
     controls: content.controls,
     ...content.openMarketplacePage,
+    tabs: {
+      ...content.openMarketplacePage.tabs,
+      client: {
+        ...content.openMarketplacePage.tabs.client,
+        items: [...submittedClientItems, ...content.openMarketplacePage.tabs.client.items],
+      },
+      developer: {
+        ...content.openMarketplacePage.tabs.developer,
+        items: [...submittedProfessionalItems, ...content.openMarketplacePage.tabs.developer.items],
+      },
+    },
   };
 }
 
@@ -75,6 +92,41 @@ function createMarketplaceSubmissionPageContent(content, submissionType) {
     brand: content.brand,
     controls: content.controls,
     ...submissionPage,
+  };
+}
+
+function createMarketplaceSubmissionSuccessContent(content, submissionType, listingId) {
+  const lastSubmission = getLastSubmission();
+  const resolvedId = listingId || (lastSubmission?.type === submissionType ? lastSubmission.id : "");
+
+  return {
+    brand: content.brand,
+    controls: content.controls,
+    ...content.marketplaceSubmissionPages[submissionType],
+    marketplaceFlow: content.marketplaceFlow,
+    submissionType,
+    listing: getSubmittedListing(submissionType, resolvedId),
+  };
+}
+
+function createMarketplaceListingDetailContent(content, listingType, listingId) {
+  const submittedListing = getSubmittedListing(listingType, listingId);
+  const seededClientListing =
+    listingType === "client"
+      ? content.openMarketplacePage.tabs.client.items.find((item) => item.slug === listingId) || null
+      : null;
+
+  return {
+    brand: content.brand,
+    controls: content.controls,
+    nav: {
+      ...content.openMarketplacePage.nav,
+      cta: content.marketplaceFlow.detail.backToMarketplace,
+      ctaHref: "./open-marketplace.html",
+    },
+    footer: content.openMarketplacePage.footer,
+    marketplaceFlow: content.marketplaceFlow,
+    listing: submittedListing || seededClientListing,
   };
 }
 
@@ -177,6 +229,34 @@ function createMarketplaceSubmission(content, locale, submissionType) {
   `;
 }
 
+function createMarketplaceSubmissionSuccess(content, locale, submissionType, listingId) {
+  const pageContent = createMarketplaceSubmissionSuccessContent(content, submissionType, listingId);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createMarketplaceSubmissionSuccessPage(pageContent, pageContent.listing, submissionType)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
+function createMarketplaceListingDetail(content, locale, listingType, listingId) {
+  const pageContent = createMarketplaceListingDetailContent(content, listingType, listingId);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createMarketplaceListingDetailPage(pageContent, listingType, pageContent.listing)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
 function createDeveloperProfile(content, locale, developerSlug) {
   const pageContent = createDeveloperProfilePageContent(content, developerSlug);
 
@@ -191,7 +271,7 @@ function createDeveloperProfile(content, locale, developerSlug) {
   `;
 }
 
-export function createApp(content, locale, page = "home", projectSlug = "", submissionType = "", developerSlug = "") {
+export function createApp(content, locale, page = "home", projectSlug = "", submissionType = "", developerSlug = "", listingType = "", listingId = "") {
   if (page === "professionals") {
     return createProfessionalsPage(content, locale);
   }
@@ -202,6 +282,14 @@ export function createApp(content, locale, page = "home", projectSlug = "", subm
 
   if (page === "marketplace-submission") {
     return createMarketplaceSubmission(content, locale, submissionType);
+  }
+
+  if (page === "marketplace-submission-success") {
+    return createMarketplaceSubmissionSuccess(content, locale, submissionType, listingId);
+  }
+
+  if (page === "marketplace-listing-detail") {
+    return createMarketplaceListingDetail(content, locale, listingType, listingId);
   }
 
   if (page === "developer-profile") {
