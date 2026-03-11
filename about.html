@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lodos Atlası | Metodoloji</title>
+    <meta name="description" content="Çeşme verilerinin hangi yöntemle işlendiğini ve nasıl puanlandığını görün." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-page="about">
+    <div class="ambient ambient-a" aria-hidden="true"></div>
+    <div class="ambient ambient-b" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="logo-roof"></span>
+          <span class="logo-body"></span>
+          <span class="logo-door"></span>
+          <span class="logo-bar logo-bar-a"></span>
+          <span class="logo-bar logo-bar-b"></span>
+          <span class="logo-bar logo-bar-c"></span>
+        </span>
+        <span class="brand-text">
+          <strong>Lodos Atlası</strong>
+          <small data-i18n="brand.subtitle">Çeşme gayrimenkul radarı</small>
+        </span>
+      </a>
+
+      <nav class="site-nav" aria-label="Ana gezinme">
+        <a href="index.html" data-i18n="nav.home">Anasayfa</a>
+        <a href="shop.html" data-i18n="nav.listings">İlanlar</a>
+        <a href="about.html" data-i18n="nav.methodology">Metodoloji</a>
+        <a href="cart.html" data-i18n="nav.watchlist">İzleme Listesi</a>
+        <a href="contact.html" data-i18n="nav.contact">İletişim</a>
+      </nav>
+    </header>
+
+    <main class="shell">
+      <section class="page-hero panel reveal">
+        <p class="eyebrow" data-i18n="about.hero.eyebrow">Metodoloji</p>
+        <h1 data-i18n="about.hero.title">Veri katmanı nasıl kuruldu, mahalle skoru nasıl üretildi?</h1>
+        <p class="lead" data-i18n="about.hero.lead">
+          Çeşme için açık ilan akışları, mahalle trend sayfaları ve TCMB omurgası birlikte okunarak sadeleştirildi.
+        </p>
+      </section>
+
+      <section class="method-grid reveal">
+        <article class="panel method-card">
+          <h3 data-i18n="about.cards.scoreTitle">Skor mantığı</h3>
+          <p data-i18n="about.cards.scoreText">
+            Yatırım skoru dört sütuna bakar: giriş erişilebilirliği, büyüme beklentisi, kira çevikliği ve yeniden satış
+            likiditesi.
+          </p>
+        </article>
+        <article class="panel method-card">
+          <h3 data-i18n="about.cards.yieldTitle">Getiri mantığı</h3>
+          <p data-i18n="about.cards.yieldText">
+            Yaz ve kış senaryoları, açık kiralama akışları ile satış fiyatının birlikte okunmasından türetilmiş brüt
+            senaryolardır.
+          </p>
+        </article>
+        <article class="panel method-card">
+          <h3 data-i18n="about.cards.historyTitle">25 yıl modeli</h3>
+          <p data-i18n="about.cards.historyText">
+            2010 sonrası TCMB KFE ile, öncesi kıyı premium projeksiyonu ve saha davranışı çaprazlanarak okunmuştur.
+          </p>
+        </article>
+      </section>
+
+      <section class="history-layout reveal">
+        <article class="panel chart-card">
+          <svg data-history-chart viewBox="0 0 760 360" role="img" aria-label="Çeşme 25 yıllık değer tutma grafiği"></svg>
+        </article>
+        <div class="history-side">
+          <div class="history-metrics" data-history-metrics></div>
+          <article class="panel note-card">
+            <p class="eyebrow" data-i18n="about.note.eyebrow">Kaynak disiplini</p>
+            <h3 data-i18n="about.note.title">Kaynak isimleri içeride tutulur; kullanıcı akışı dışarı taşınmaz.</h3>
+            <p data-i18n="about.note.text">
+              Bu sürümde veri kaynağı isimleri gösterilir ama kullanıcı deneyimi dış listing sitelerine yönlendirilmez.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="about.sources.eyebrow">Kullanılan açık veri katmanı</p>
+          <h2 data-i18n="about.sources.title">Mahalle trendleri ve piyasa referansları</h2>
+        </div>
+        <div class="source-grid" data-sources></div>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <p data-i18n="footer.about">Metodoloji sayfası, ürün içindeki tüm yorumların nasıl üretildiğini açıklar.</p>
+      <a href="index.html" data-i18n="nav.home">Anasayfa</a>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

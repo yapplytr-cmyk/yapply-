@@ -1,0 +1,3242 @@
+export const translations = {
+  en: {
+    meta: {
+      locale: "en",
+      languageLabel: "English",
+    },
+    brand: {
+      name: "Yapply",
+      tagline: "Verified construction marketplace",
+      homeAriaLabel: "Yapply homepage",
+    },
+    controls: {
+      themeToggleLabel: "Toggle color theme",
+      themeToggleDark: "Switch to Dark",
+      themeToggleLight: "Switch to Light",
+      languageToggleLabel: "Switch language",
+      locales: {
+        en: "EN",
+        tr: "TR",
+      },
+    },
+    nav: {
+      ariaLabel: "Primary navigation",
+      brandHref: "./index.html",
+      links: [
+        { label: "How it works", href: "#how-it-works" },
+        { label: "Why Yapply", href: "#why-yapply" },
+        { label: "Projects", href: "#featured-projects" },
+        { label: "Open Marketplace", href: "./open-marketplace.html" },
+        { label: "Testimonials", href: "#testimonials" },
+        { label: "For Professionals", href: "./professionals.html" },
+      ],
+      cta: "Start My Project",
+      ctaHref: "#featured-projects",
+    },
+    hero: {
+      eyebrow: "Luxury construction marketplace for Turkey",
+      titlePrimary: "Build the Future.",
+      titleSecondary: "Your Vision. Your Way.",
+      description:
+        "Yapply connects clients in Turkey with verified architects, developers, and construction professionals to bring dream projects to life.",
+      primaryCta: {
+        label: "Start My Project",
+        href: "#featured-projects",
+      },
+      secondaryCta: {
+        label: "Join as a Professional",
+        href: "./professionals.html",
+      },
+      note:
+        "A premium layer for partner discovery, proposal matching, and delivery confidence across residential and commercial builds.",
+      highlights: [
+        "Verified architects, developers, and builders",
+        "Designed for villas, residences, and mixed-use projects",
+        "Prepared for elegant English and Turkish experiences",
+      ],
+      metrics: [
+        { value: "250+", label: "Verified experts prepared for launch across key Turkish cities" },
+        { value: "48h", label: "Target response window for qualified project matches" },
+        { value: "End-to-End", label: "From brief creation to shortlist and execution readiness" },
+      ],
+      stage: {
+        statusTitle: "Architectural intelligence",
+        statusCopy: "Premium discovery, expert vetting, and scope alignment built into the first touchpoint.",
+        detailTitle: "Cinematic project matching",
+        detailCopy: "Brief-driven pairing for concept design, development, and construction delivery teams.",
+        legendTitle: "Build layers",
+        annotations: ["01 / Villa massing", "02 / Structural rhythm", "03 / Facade glazing"],
+        legendItems: [
+          { label: "Brief", value: "Scope clarity" },
+          { label: "Match", value: "Verified experts" },
+          { label: "Build", value: "Execution partners" },
+        ],
+      },
+    },
+    howItWorks: {
+      eyebrow: "How it works",
+      title: "One refined path from idea to build-ready team.",
+      description:
+        "Yapply simplifies a fragmented market into a trusted marketplace flow that feels premium for clients and credible for professionals.",
+      steps: [
+        {
+          number: "01",
+          title: "Define the project vision",
+          description:
+            "Share your project type, location, budget range, and aesthetic direction so the platform understands the brief with clarity.",
+        },
+        {
+          number: "02",
+          title: "Receive curated professional matches",
+          description:
+            "Yapply filters for verified architects, developers, and construction companies aligned with your project needs and standards.",
+        },
+        {
+          number: "03",
+          title: "Move into proposals with confidence",
+          description:
+            "Compare the right partners, review fit and capability, and advance your project with a stronger foundation for execution.",
+        },
+      ],
+    },
+    features: {
+      eyebrow: "Why Yapply",
+      title: "Built for trust, elegance, and complex delivery.",
+      description:
+        "The platform is designed to feel high-end for discerning clients while giving serious professionals the credibility signals they need.",
+      items: [
+        {
+          index: "A1",
+          title: "Verified ecosystem",
+          description:
+            "Every architect, developer, and construction company is presented with quality signals that support confidence before first contact.",
+        },
+        {
+          index: "A2",
+          title: "Construction-aware matching",
+          description:
+            "Discovery is shaped around project scale, delivery model, geography, and capability, not generic marketplace categories.",
+        },
+        {
+          index: "A3",
+          title: "Premium proposal readiness",
+          description:
+            "The experience prepares clients to compare teams on clarity, process, and execution value instead of surface-level pricing alone.",
+        },
+        {
+          index: "A4",
+          title: "Turkey-first market understanding",
+          description:
+            "The platform language, project examples, and professional categories are tailored to the realities of building in Turkey.",
+        },
+      ],
+    },
+    projects: {
+      eyebrow: "Featured projects",
+      title: "A curated look at the kinds of builds Yapply can unlock.",
+      description:
+        "These example project cards establish the marketplace tone: architectural, polished, and grounded in real project categories for Turkey.",
+      viewLabel: "Open project preview",
+      ctaHint: "See estimated cost and timeline",
+      blueprintLabel: "Architectural Preview",
+      factLabels: {
+        style: "Style",
+        price: "Starting Price",
+        buildTime: "Build Time",
+      },
+      items: [
+        {
+          badge: "Private Residence",
+          title: "Aegean Courtyard Villa",
+          location: "Izmir / Cesme",
+          style: "Mediterranean Modern",
+          price: "Starting at EUR 780K",
+          buildTime: "Estimated 14 months",
+          summary:
+            "A warm stone-and-glass family villa concept with a sheltered courtyard, panoramic glazing, and turnkey delivery potential.",
+          highlights: ["Material-led concept curation", "Verified construction shortlist", "Timeline-aware delivery fit"],
+          visual: "coast",
+          href: "./project-aegean-courtyard-villa.html",
+          ctaLabel: "Explore Details",
+          ctaHint: "See cost, scope, and timeline",
+        },
+        {
+          badge: "Private Residence",
+          title: "Urban Ridge Villa",
+          location: "Istanbul / Zekeriyakoy",
+          style: "Contemporary Hillside",
+          price: "Starting at EUR 1.15M",
+          buildTime: "Estimated 16 months",
+          summary:
+            "A sculpted luxury villa preview with layered terraces, expressive glazing, and a disciplined design-build path.",
+          highlights: ["Developer-ready planning logic", "Integrated structural coordination", "Landscape-facing spatial layout"],
+          visual: "urban",
+          href: "./project-urban-ridge-villa.html",
+          ctaLabel: "View Project",
+          ctaHint: "Review pricing and build phases",
+        },
+        {
+          badge: "Private Residence",
+          title: "Hillside Retreat Villa",
+          location: "Mugla / Bodrum",
+          style: "Resort Minimal",
+          price: "Starting at EUR 940K",
+          buildTime: "Estimated 15 months",
+          summary:
+            "A resort-inspired hillside home concept shaped around privacy, exterior living, and premium finish quality.",
+          highlights: ["Experience-driven design teams", "Landscape and poolside planning", "Finish quality aligned with brand vision"],
+          visual: "retreat",
+          href: "./project-hillside-retreat-villa.html",
+          ctaLabel: "See Estimated Cost & Timeline",
+          ctaHint: "Explore the full concept brief",
+        },
+      ],
+    },
+    testimonials: {
+      eyebrow: "Testimonials",
+      title: "Confidence starts before the first contract.",
+      description:
+        "These launch-phase testimonials position Yapply as a serious platform for clients who want clarity and professionals who value trust.",
+      items: [
+        {
+          quote:
+            "Yapply feels closer to a private advisory layer than a generic marketplace. The quality of the presentation instantly raises confidence.",
+          name: "Selin A.",
+          role: "Private client, coastal residence brief",
+        },
+        {
+          quote:
+            "For architecture studios, credibility matters. A platform that frames expertise well can improve the quality of every lead and conversation.",
+          name: "Mert K.",
+          role: "Founding architect, Istanbul studio",
+        },
+        {
+          quote:
+            "Construction projects need alignment long before procurement. Yapply’s positioning suggests a stronger match between expectation and execution.",
+          name: "Deniz T.",
+          role: "Development consultant",
+        },
+      ],
+    },
+    openMarketplacePage: {
+      nav: {
+        ariaLabel: "Marketplace navigation",
+        brandHref: "./index.html",
+        links: [
+          { label: "Back to Home", href: "./index.html" },
+          { label: "Overview", href: "#marketplace-intro" },
+          { label: "Listings", href: "#marketplace-listings" },
+          { label: "Create Listing", href: "./client-project-submission.html" },
+        ],
+        cta: "Post Your Project",
+        ctaHref: "./client-project-submission.html",
+      },
+      hero: {
+        eyebrow: "Open Marketplace",
+        title: "A curated open marketplace for ambitious construction briefs and premium service listings.",
+        description:
+          "Open Marketplace expands Yapply beyond featured concepts. Clients can publish what they want to build, while architects, developers, and contractors can present their own offers in a more elevated environment.",
+        primaryCta: { label: "Browse Listings", href: "#marketplace-listings" },
+        secondaryCta: { label: "List Your Services", href: "./professional-listing-submission.html" },
+        highlights: [
+          "Client briefs and professional offers in one system",
+          "Luxury marketplace tone instead of generic classifieds",
+          "Built to expand into a real two-sided platform later",
+        ],
+        boardLabels: {
+          client: "Client briefs",
+          pro: "Professional offers",
+        },
+        boardValues: {
+          client: "High-intent project requests",
+          pro: "Curated specialist visibility",
+        },
+        stats: [
+          { value: "24", label: "Mock listings structured for the first marketplace version" },
+          { value: "2-sided", label: "Clients and professionals sharing the same premium surface" },
+          { value: "Curated", label: "Designed for quality positioning, not listing noise" },
+        ],
+      },
+      intro: {
+        eyebrow: "Marketplace logic",
+        title: "The next layer of Yapply is a real marketplace, not just a showcase.",
+        description:
+          "Featured concepts build trust and brand tone. Open Marketplace introduces a scalable structure where demand-side briefs and supply-side offers can coexist with better context, filtering, and presentation quality.",
+        pillars: [
+          {
+            index: "01",
+            title: "Clients can post what they want to build",
+            description: "Villa projects, renovation briefs, hospitality concepts, or commercial developments can be published with budget, location, and timeline context.",
+          },
+          {
+            index: "02",
+            title: "Professionals can publish their own offers",
+            description: "Architects, developers, contractors, and construction companies can position their specialty, price point, and services with more clarity.",
+          },
+          {
+            index: "03",
+            title: "Curated marketplace tone",
+            description: "The UI is designed to feel premium and editorial, preparing Yapply for a higher-trust two-sided experience instead of a crowded listing board.",
+          },
+        ],
+      },
+      tabs: {
+        ariaLabel: "Marketplace listing categories",
+        heading: {
+          eyebrow: "Listing board",
+          title: "Browse both sides of the marketplace through a cleaner, more premium lens.",
+          description:
+            "Switch between client demand and developer-side offers. This first version focuses on layout, hierarchy, and high-quality marketplace presentation.",
+        },
+        client: {
+          tabLabel: "Client Listings",
+          labels: {
+            budget: "Budget",
+            startDate: "Desired Start",
+            plotStatus: "Plot Status",
+            timeline: "Timeline",
+            category: "Category",
+          },
+          items: [
+            {
+              title: "Private hillside villa for family living",
+              projectType: "Villa build",
+              location: "Istanbul / Zekeriyakoy",
+              budget: "EUR 1.2M - 1.6M",
+              startDate: "September 2026",
+              timeline: "Start within 6 months",
+              plotStatus: "Plot secured",
+              brief:
+                "A family is seeking a contemporary villa with privacy, landscape integration, and a strong design-build team for a sloped suburban plot.",
+              tags: ["Villa", "Turnkey", "Family Home"],
+              ctaLabel: "View Brief",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Full apartment renovation with architectural replan",
+              projectType: "Renovation",
+              location: "Istanbul / Nisantasi",
+              budget: "EUR 220K - 340K",
+              startDate: "June 2026",
+              timeline: "Delivery in 8-10 months",
+              plotStatus: "Existing apartment owned",
+              brief:
+                "An owner wants a high-end renovation covering spatial reconfiguration, joinery, lighting, and full turnkey coordination.",
+              tags: ["Renovation", "Turnkey", "Interior Upgrade"],
+              ctaLabel: "Express Interest",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Boutique coastal villa compound concept",
+              projectType: "Hospitality-style residential",
+              location: "Izmir / Cesme",
+              budget: "EUR 2.4M+",
+              startDate: "Design phase Q3 2026",
+              timeline: "Design phase this season",
+              plotStatus: "Land owned, feasibility open",
+              brief:
+                "A landowner is exploring a small compound of premium villas with shared landscape logic and phased delivery strategy.",
+              tags: ["Coastal", "Villa", "Development"],
+              ctaLabel: "View Brief",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Ground-up commercial shell and fit-out",
+              projectType: "Commercial project",
+              location: "Ankara / Cankaya",
+              budget: "EUR 900K - 1.3M",
+              startDate: "Q4 2026",
+              timeline: "Target opening in 14 months",
+              plotStatus: "Site under review",
+              brief:
+                "The brief requires architecture, permit coordination, and delivery planning for a design-forward mixed retail and office building.",
+              tags: ["Commercial", "Fit-Out", "Urgent"],
+              ctaLabel: "Bid on Project",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Bodrum seasonal home with guest suite",
+              projectType: "Luxury residence",
+              location: "Mugla / Bodrum",
+              budget: "EUR 950K - 1.4M",
+              startDate: "After land closing",
+              timeline: "Start after land acquisition",
+              plotStatus: "Land shortlist in progress",
+              brief:
+                "The client wants a resort-like seasonal house with poolside living, one detached guest suite, and warm material character.",
+              tags: ["Coastal", "Villa", "Resort"],
+              ctaLabel: "Express Interest",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Mid-scale residential development feasibility",
+              projectType: "Development study",
+              location: "Bursa / Nilufer",
+              budget: "Under evaluation",
+              startDate: "Immediately",
+              timeline: "Feasibility this quarter",
+              plotStatus: "Land option under negotiation",
+              brief:
+                "A developer is seeking early architectural and construction input to test land potential before committing to a residential scheme.",
+              tags: ["Development", "Feasibility", "Residential"],
+              ctaLabel: "View Brief",
+              ctaHref: "./professional-listing-submission.html",
+            },
+          ],
+        },
+        developer: {
+          tabLabel: "Developer Listings",
+          labels: {
+            startingPrice: "Starting Price",
+            deliveryRange: "Delivery Range",
+            services: "Lead Service",
+          },
+          items: [
+            {
+              slug: "atelier-north-studio",
+              name: "Atelier North Studio",
+              specialty: "Architecture Studio",
+              location: "Istanbul",
+              startingPrice: "Concept packages from EUR 45K",
+              deliveryRange: "Villas and boutique residential",
+              summary:
+                "A contemporary architecture studio focused on high-end villas, spatial clarity, and premium residential concept development.",
+              services: ["Concept design", "Permit package", "Interior coordination"],
+              tags: ["Modern Villas", "Design-Led", "Istanbul"],
+              imageSrc: "./assets/developer-previews/atelier-north-studio.svg",
+              profileHref: "./developer-atelier-north-studio.html",
+              projectsHref: "./developer-atelier-north-studio.html#developer-projects",
+              quoteHref: "./developer-atelier-north-studio.html#developer-inquiry",
+              contactHref: "./developer-atelier-north-studio.html#developer-inquiry",
+              actions: {
+                viewProfile: "View Profile",
+                seeProjects: "See Projects",
+                requestQuote: "Request Quote",
+                contactProfessional: "Contact Professional",
+              },
+            },
+            {
+              slug: "aegean-build-partners",
+              name: "Aegean Build Partners",
+              specialty: "Turnkey Contractor",
+              location: "Izmir / Cesme",
+              startingPrice: "Turnkey builds from EUR 780K",
+              deliveryRange: "Coastal residential delivery",
+              summary:
+                "A contractor positioned for premium coastal villas with strong finish management, subcontractor control, and exterior living execution.",
+              services: ["Turnkey construction", "Pool and landscape coordination", "Finish procurement"],
+              tags: ["Turnkey", "Coastal", "Luxury Finish"],
+              imageSrc: "./assets/developer-previews/aegean-build-partners.svg",
+              profileHref: "./developer-aegean-build-partners.html",
+              projectsHref: "./developer-aegean-build-partners.html#developer-projects",
+              quoteHref: "./developer-aegean-build-partners.html#developer-inquiry",
+              contactHref: "./developer-aegean-build-partners.html#developer-inquiry",
+              actions: {
+                viewProfile: "View Profile",
+                seeProjects: "See Projects",
+                requestQuote: "Request Quote",
+                contactProfessional: "Contact Professional",
+              },
+            },
+            {
+              slug: "ridge-development-lab",
+              name: "Ridge Development Lab",
+              specialty: "Developer / Delivery Team",
+              location: "Istanbul / Kemerburgaz",
+              startingPrice: "Feasibility support from EUR 25K",
+              deliveryRange: "Residential and mixed-use land strategies",
+              summary:
+                "A development-focused team offering land evaluation, delivery planning, and project structuring for high-potential sites.",
+              services: ["Land feasibility", "Project structuring", "Delivery planning"],
+              tags: ["Feasibility", "Development", "Residential"],
+              imageSrc: "./assets/developer-previews/ridge-development-lab.svg",
+              profileHref: "./developer-ridge-development-lab.html",
+              projectsHref: "./developer-ridge-development-lab.html#developer-projects",
+              quoteHref: "./developer-ridge-development-lab.html#developer-inquiry",
+              contactHref: "./developer-ridge-development-lab.html#developer-inquiry",
+              actions: {
+                viewProfile: "View Profile",
+                seeProjects: "See Projects",
+                requestQuote: "Request Quote",
+                contactProfessional: "Contact Professional",
+              },
+            },
+            {
+              slug: "forma-structural-build",
+              name: "Forma Structural & Build",
+              specialty: "Construction Company",
+              location: "Ankara",
+              startingPrice: "Structural delivery from EUR 320K",
+              deliveryRange: "Commercial and residential shells",
+              summary:
+                "A disciplined contractor combining structural execution strength with detail-driven coordination for premium project teams.",
+              services: ["Structural works", "Main contractor services", "Site coordination"],
+              tags: ["Main Contractor", "Commercial", "Structural"],
+              imageSrc: "./assets/developer-previews/forma-structural-build.svg",
+              profileHref: "./developer-forma-structural-build.html",
+              projectsHref: "./developer-forma-structural-build.html#developer-projects",
+              quoteHref: "./developer-forma-structural-build.html#developer-inquiry",
+              contactHref: "./developer-forma-structural-build.html#developer-inquiry",
+              actions: {
+                viewProfile: "View Profile",
+                seeProjects: "See Projects",
+                requestQuote: "Request Quote",
+                contactProfessional: "Contact Professional",
+              },
+            },
+            {
+              slug: "bodrum-living-atelier",
+              name: "Bodrum Living Atelier",
+              specialty: "Architecture + Interiors",
+              location: "Bodrum",
+              startingPrice: "Interior-led concepts from EUR 38K",
+              deliveryRange: "Resort villas and hospitality-style homes",
+              summary:
+                "A design practice focused on softer luxury, exterior living integration, and curated finish direction for seasonal residences.",
+              services: ["Architecture", "Interior architecture", "Material curation"],
+              tags: ["Hospitality Feel", "Bodrum", "Interiors"],
+              imageSrc: "./assets/developer-previews/bodrum-living-atelier.svg",
+              profileHref: "./developer-bodrum-living-atelier.html",
+              projectsHref: "./developer-bodrum-living-atelier.html#developer-projects",
+              quoteHref: "./developer-bodrum-living-atelier.html#developer-inquiry",
+              contactHref: "./developer-bodrum-living-atelier.html#developer-inquiry",
+              actions: {
+                viewProfile: "View Profile",
+                seeProjects: "See Projects",
+                requestQuote: "Request Quote",
+                contactProfessional: "Contact Professional",
+              },
+            },
+            {
+              slug: "urban-span-contracting",
+              name: "Urban Span Contracting",
+              specialty: "Facade + Fit-Out Partner",
+              location: "Istanbul",
+              startingPrice: "Facade scope from EUR 180K",
+              deliveryRange: "High-end residential envelopes",
+              summary:
+                "A specialist contractor for glazing, cladding, and premium fit-out packages where delivery discipline and finish quality matter.",
+              services: ["Facade packages", "Glazing systems", "Interior fit-out"],
+              tags: ["Facade", "Fit-Out", "Detail Quality"],
+              imageSrc: "./assets/developer-previews/urban-span-contracting.svg",
+              profileHref: "./developer-urban-span-contracting.html",
+              projectsHref: "./developer-urban-span-contracting.html#developer-projects",
+              quoteHref: "./developer-urban-span-contracting.html#developer-inquiry",
+              contactHref: "./developer-urban-span-contracting.html#developer-inquiry",
+              actions: {
+                viewProfile: "View Profile",
+                seeProjects: "See Projects",
+                requestQuote: "Request Quote",
+                contactProfessional: "Contact Professional",
+              },
+            },
+          ],
+        },
+      },
+      cta: {
+        eyebrow: "Create a listing",
+        title: "Ready to publish a brief or present your offer?",
+        description:
+          "This first version is frontend-only, but the structure is already prepared for a future create-listing flow with authentication, moderation, and lead routing.",
+        clientLabel: "Post Your Project",
+        clientHref: "./client-project-submission.html",
+        proLabel: "List Your Services",
+        proHref: "./professional-listing-submission.html",
+      },
+      footer: {
+        description:
+          "Open Marketplace extends Yapply into a premium two-sided listing environment where clients can publish project intent and professionals can present curated offers.",
+        columns: [
+          {
+            title: "Marketplace",
+            links: [
+              { label: "Client listings", href: "#marketplace-listings" },
+              { label: "Developer listings", href: "#marketplace-listings" },
+              { label: "Post your project", href: "./client-project-submission.html" },
+            ],
+          },
+          {
+            title: "Explore",
+            links: [
+              { label: "Featured projects", href: "./index.html#featured-projects" },
+              { label: "For professionals", href: "./professionals.html" },
+              { label: "Back to home", href: "./index.html" },
+            ],
+          },
+        ],
+        note: "Open Marketplace is designed as the foundation for a future live listing system with moderation, profiles, and lead routing.",
+        contact: "hello@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+    },
+    marketplaceSubmissionPages: {
+      client: {
+        nav: {
+          ariaLabel: "Client submission navigation",
+          brandHref: "./index.html",
+          links: [
+            { label: "Back to Marketplace", href: "./open-marketplace.html" },
+            { label: "Submission Form", href: "#submission-form" },
+          ],
+          cta: "Open Marketplace",
+          ctaHref: "./open-marketplace.html",
+        },
+        hero: {
+          eyebrow: "Client project submission",
+          title: "Post a premium construction brief with more clarity.",
+          description:
+            "Use this form to publish what you want to build on Yapply’s Open Marketplace. The structure is designed to help serious professionals understand your project faster.",
+          primaryCta: { label: "Complete the Form", href: "#submission-form" },
+          secondaryCta: { label: "Back to Marketplace", href: "./open-marketplace.html" },
+          boardLabels: {
+            intake: "Project intake",
+            review: "Professional-ready brief",
+          },
+          boardValues: {
+            intake: "Scope, budget, region, and timing",
+            review: "Prepared for future matching and bidding",
+          },
+          notes: [
+            { value: "Premium", label: "Built for serious, high-context construction requests" },
+            { value: "Structured", label: "Helps professionals evaluate fit faster" },
+            { value: "Frontend", label: "Ready for backend routing in the next phase" },
+          ],
+        },
+        form: {
+          eyebrow: "Client intake form",
+          title: "Tell Yapply what you want to build.",
+          description:
+            "This first version is frontend-only, but the full structure is in place for future moderation, marketplace posting, and lead routing.",
+          submitLabel: "Submit Project Brief",
+          successTitle: "Project brief captured",
+          successText: "Your project submission has been recorded in this frontend flow. In the next phase, it can be connected to a live marketplace review and publishing workflow.",
+          summary: {
+            eyebrow: "Submission intent",
+            title: "A serious luxury construction intake",
+            description:
+              "The form captures the core signals professionals need: project type, location, land readiness, budget, timing, design preference, and build ambition.",
+            items: [
+              { label: "Audience", value: "Architects, developers, contractors" },
+              { label: "Use case", value: "Marketplace brief publishing" },
+              { label: "Flow", value: "Frontend only for now" },
+            ],
+          },
+          fields: {
+            fullName: { label: "Full Name", placeholder: "Your full name", autocomplete: "name", required: true },
+            email: { label: "Email", type: "email", placeholder: "name@email.com", autocomplete: "email", required: true },
+            phone: { label: "Phone Number", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+            projectTitle: { label: "Project Title", placeholder: "Private coastal villa, boutique renovation, mixed-use concept...", required: true },
+            projectType: {
+              label: "Project Type",
+              type: "select",
+              placeholder: "Select the project type",
+              options: ["Villa Build", "Apartment Renovation", "Commercial Project", "Residential Development", "Hospitality Concept"],
+              required: true,
+            },
+            preferredLocation: { label: "Preferred Location / City", placeholder: "Istanbul, Izmir, Bodrum...", required: true },
+            estimatedBudget: {
+              label: "Estimated Budget",
+              type: "select",
+              placeholder: "Select your estimated range",
+              options: ["Under EUR 300K", "EUR 300K - 800K", "EUR 800K - 1.5M", "EUR 1.5M - 3M", "EUR 3M+"],
+              required: true,
+            },
+            desiredTimeline: { label: "Desired Timeline / Start", placeholder: "Q3 2026, within 6 months, after land closing...", required: true },
+            plotStatus: {
+              label: "Plot Ownership Status",
+              type: "select",
+              placeholder: "Select your current land status",
+              options: ["I already own the plot", "Plot reserved / under review", "Looking for land options", "Need advisory support on land and feasibility"],
+              required: true,
+            },
+            projectSize: { label: "Project Size / Square Meter Goal", placeholder: "Approx. 280 m2 interior / 900 m2 plot", required: true },
+            stylePreference: { label: "Style Preference", placeholder: "Mediterranean modern, warm minimal, contemporary hillside...", required: true },
+            projectBrief: {
+              label: "Short Project Brief / What You Want Built",
+              type: "textarea",
+              placeholder: "Describe the project, lifestyle intent, required spaces, and what matters most in the build.",
+              rows: 5,
+              full: true,
+              required: true,
+            },
+            referenceUpload: {
+              label: "Reference Image Upload",
+              type: "file",
+              placeholder: "Upload inspiration images or reference material",
+              hint: "Frontend placeholder only for now. Future versions can store images directly in the marketplace workflow.",
+              full: true,
+            },
+            additionalNotes: {
+              label: "Additional Notes",
+              type: "textarea",
+              placeholder: "Share anything else that could help professionals understand your project.",
+              rows: 4,
+              full: true,
+            },
+          },
+        },
+        footer: {
+          description:
+            "Client project submission pages on Yapply are designed to turn high-intent briefs into a structured listing flow prepared for future marketplace publishing.",
+          columns: [
+            {
+              title: "Submission",
+              links: [
+                { label: "Project form", href: "#submission-form" },
+                { label: "Open Marketplace", href: "./open-marketplace.html" },
+              ],
+            },
+            {
+              title: "Explore",
+              links: [
+                { label: "Featured projects", href: "./index.html#featured-projects" },
+                { label: "For professionals", href: "./professionals.html" },
+              ],
+            },
+          ],
+          note: "This page is frontend-only for now and prepared for future moderation, publishing, and lead-routing flows.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+      professional: {
+        nav: {
+          ariaLabel: "Professional submission navigation",
+          brandHref: "./index.html",
+          links: [
+            { label: "Back to Marketplace", href: "./open-marketplace.html" },
+            { label: "Submission Form", href: "#submission-form" },
+          ],
+          cta: "Open Marketplace",
+          ctaHref: "./open-marketplace.html",
+        },
+        hero: {
+          eyebrow: "Professional listing submission",
+          title: "Present your practice in a premium marketplace format.",
+          description:
+            "Architects, developers, contractors, and construction companies can use this page to submit a professional listing prepared for Yapply’s future open marketplace.",
+          primaryCta: { label: "Complete the Form", href: "#submission-form" },
+          secondaryCta: { label: "Back to Marketplace", href: "./open-marketplace.html" },
+          boardLabels: {
+            intake: "Professional profile",
+            review: "Marketplace-ready listing",
+          },
+          boardValues: {
+            intake: "Specialty, region, pricing, and portfolio",
+            review: "Prepared for future moderation and publishing",
+          },
+          notes: [
+            { value: "Credible", label: "Structured to present your expertise with clarity" },
+            { value: "Curated", label: "Aligned with Yapply’s premium marketplace tone" },
+            { value: "Frontend", label: "Ready for backend integration in the next phase" },
+          ],
+        },
+        form: {
+          eyebrow: "Professional listing form",
+          title: "Submit your listing with a clear premium profile.",
+          description:
+            "This first version is frontend-only, but it is structured for future moderation, profile approval, and marketplace publishing.",
+          submitLabel: "Submit Professional Listing",
+          successTitle: "Professional listing captured",
+          successText: "Your professional listing has been recorded in this frontend flow. In the next phase, it can be connected to approval, CRM, and live marketplace publishing.",
+          summary: {
+            eyebrow: "Listing structure",
+            title: "Built for premium professional visibility",
+            description:
+              "The form captures your company profile, specialties, geography, experience level, price position, and portfolio context for a more trustworthy marketplace presence.",
+            items: [
+              { label: "Audience", value: "Clients seeking aligned project partners" },
+              { label: "Use case", value: "Professional listing submission" },
+              { label: "Flow", value: "Frontend only for now" },
+            ],
+          },
+          fields: {
+            fullName: { label: "Full Name", placeholder: "Your full name", autocomplete: "name", required: true },
+            companyName: { label: "Company Name", placeholder: "Studio or company name", required: true },
+            professionType: {
+              label: "Profession Type",
+              type: "select",
+              placeholder: "Select your profession type",
+              options: ["Architecture Studio", "Developer", "Construction Company", "Turnkey Contractor", "Facade / Fit-Out Specialist"],
+              required: true,
+            },
+            serviceArea: { label: "City / Service Area", placeholder: "Istanbul, Izmir, Bodrum, Ankara...", required: true },
+            experience: { label: "Years of Experience", type: "number", placeholder: "10", required: true },
+            specialties: { label: "Specialties / Services Offered", placeholder: "Villas, turnkey builds, renovation delivery, feasibility...", required: true },
+            pricingModel: { label: "Starting Price or Pricing Model", placeholder: "Concept packages from EUR 45K / Turnkey from EUR 780K", required: true },
+            portfolioSummary: {
+              label: "Past Projects / Portfolio Summary",
+              type: "textarea",
+              placeholder: "Summarize relevant past work, sectors served, and delivery strengths.",
+              rows: 5,
+              full: true,
+              required: true,
+            },
+            website: { label: "Website / Portfolio URL", type: "url", placeholder: "https://yourstudio.com", required: true },
+            companyDescription: {
+              label: "Short Company Description",
+              type: "textarea",
+              placeholder: "Describe your positioning, team strengths, and market fit in a concise premium tone.",
+              rows: 4,
+              full: true,
+              required: true,
+            },
+            uploads: {
+              label: "Upload Logo / Project Images / Portfolio",
+              type: "file",
+              placeholder: "Upload supporting materials for your listing",
+              hint: "Frontend placeholder only for now. Future versions can accept and moderate uploaded files before publication.",
+              full: true,
+              multiple: true,
+            },
+            contactEmail: { label: "Contact Email", type: "email", placeholder: "team@company.com", autocomplete: "email", required: true },
+            phone: { label: "Phone Number", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+          },
+        },
+        footer: {
+          description:
+            "Professional listing submission pages on Yapply are structured to help practices present their expertise in a more credible, premium marketplace format.",
+          columns: [
+            {
+              title: "Submission",
+              links: [
+                { label: "Listing form", href: "#submission-form" },
+                { label: "Open Marketplace", href: "./open-marketplace.html" },
+              ],
+            },
+            {
+              title: "Explore",
+              links: [
+                { label: "For professionals", href: "./professionals.html" },
+                { label: "Featured projects", href: "./index.html#featured-projects" },
+              ],
+            },
+          ],
+          note: "This page is frontend-only for now and prepared for future moderation, publishing, and lead-routing flows.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+    },
+    developerProfilePage: {
+      nav: {
+        ariaLabel: "Developer profile navigation",
+        brandHref: "./index.html",
+        links: [
+          { label: "Back to Marketplace", href: "./open-marketplace.html" },
+          { label: "Overview", href: "#developer-overview" },
+          { label: "Projects", href: "#developer-projects" },
+          { label: "Contact", href: "#developer-inquiry" },
+        ],
+      },
+      hero: {
+        eyebrow: "Marketplace profile",
+        primaryCta: "Request Quote",
+        secondaryCta: "See Projects",
+      },
+      labels: {
+        specialty: "Specialty",
+        location: "Location",
+        startingPrice: "Starting Price",
+        deliveryRange: "Delivery Range",
+        experience: "Experience",
+        projectsDelivered: "Projects Delivered",
+        serviceArea: "Service Area",
+      },
+      sections: {
+        overview: {
+          eyebrow: "Profile overview",
+          title: "A premium partner profile shaped for direct client evaluation.",
+          description:
+            "Each profile is structured to help clients understand capability, delivery range, and project fit before they start a serious conversation.",
+        },
+        services: {
+          eyebrow: "Services",
+          title: "Clear capabilities for high-value residential and mixed-use briefs.",
+          description:
+            "The service presentation is intentionally concise, polished, and practical so clients can scan fit quickly without losing confidence in quality.",
+        },
+        projects: {
+          eyebrow: "Selected projects",
+          title: "A tighter portfolio view designed for marketplace decision-making.",
+          description:
+            "These sample projects show the type, quality level, and delivery character the practice is best aligned with on Yapply.",
+        },
+        inquiry: {
+          eyebrow: "Request a quote",
+          title: "Start a direct conversation with this professional profile.",
+          description:
+            "Share your project context and budget range to express interest in this team through a cleaner, premium inquiry flow.",
+          summaryTitle: "Selected professional",
+          formTitle: "Professional inquiry",
+          formIntro:
+            "This is a frontend-only contact flow for now. It is structured to connect to CRM, notifications, or future marketplace messaging in the next phase.",
+          submitLabel: "Send Inquiry",
+          successTitle: "Inquiry received",
+          successText: "Your interest has been captured for ",
+          successTextEnd: ". In the next phase, this can route directly into Yapply’s professional lead workflow.",
+          fields: {
+            fullName: { label: "Full Name", placeholder: "Your full name" },
+            email: { label: "Email", placeholder: "name@email.com" },
+            phone: { label: "Phone Number", placeholder: "+90 5XX XXX XX XX" },
+            city: { label: "Project location / city", placeholder: "Istanbul, Izmir, Bodrum..." },
+            scope: { label: "Project scope", placeholder: "Select the type of work you need" },
+            budget: { label: "Estimated budget", placeholder: "Select your expected range" },
+            message: { label: "Message / project context", placeholder: "Describe what you want to build, timeline expectations, and any site context." },
+          },
+          scopeOptions: [
+            "Concept design only",
+            "Architecture + permits",
+            "Turnkey construction",
+            "Developer / delivery advisory",
+            "Facade or fit-out package",
+          ],
+          budgetOptions: [
+            "Under EUR 300K",
+            "EUR 300K - 800K",
+            "EUR 800K - 1.5M",
+            "EUR 1.5M - 3M",
+            "EUR 3M+",
+          ],
+        },
+      },
+      footer: {
+        description:
+          "Developer profile pages on Yapply are designed to make premium practices easier to evaluate, compare, and contact through a more structured marketplace format.",
+        columns: [
+          {
+            title: "Marketplace",
+            links: [
+              { label: "Open Marketplace", href: "./open-marketplace.html" },
+              { label: "Projects", href: "#developer-projects" },
+              { label: "Request quote", href: "#developer-inquiry" },
+            ],
+          },
+          {
+            title: "Explore",
+            links: [
+              { label: "Featured projects", href: "./index.html#featured-projects" },
+              { label: "For professionals", href: "./professionals.html" },
+              { label: "Back to home", href: "./index.html" },
+            ],
+          },
+        ],
+        note: "Developer profile pages are structured as marketplace-ready detail views and can evolve into authenticated public listings later.",
+        contact: "hello@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+      profiles: {
+        "atelier-north-studio": {
+          name: "Atelier North Studio",
+          subtitle: "A design-led Istanbul architecture studio focused on premium villas with calm spatial sequencing and refined material direction.",
+          specialty: "Architecture Studio",
+          location: "Istanbul",
+          startingPrice: "Concept packages from EUR 45K",
+          deliveryRange: "Villas and boutique residential",
+          experience: "12 years",
+          projectsDelivered: "34",
+          serviceArea: "Istanbul, Sapanca, Izmir",
+          imageSrc: "./assets/developer-previews/atelier-north-studio.svg",
+          visualLabel: "Featured residence",
+          visualCaption: "Contemporary family villa concept board",
+          tags: ["Modern villas", "Concept design", "Planning clarity"],
+          overview:
+            "Atelier North Studio positions itself around elegant, low-noise contemporary homes for clients who want architectural precision without a cold aesthetic. Their work typically starts at the concept stage and carries through permit-ready coordination and interior alignment.",
+          positioning:
+            "The studio is best suited to clients who care about proportion, calm luxury, and a disciplined design process before construction teams are finalized.",
+          services: [
+            { title: "Concept architecture", description: "Early design direction, massing logic, and premium residential planning frameworks." },
+            { title: "Permit coordination", description: "Architectural package refinement prepared for smoother municipality and consultant workflows." },
+            { title: "Interior alignment", description: "Material direction and interior coordination so the architectural concept stays coherent at execution stage." },
+          ],
+          projects: [
+            { name: "Forest Edge Residence", type: "Private villa", location: "Sariyer / Istanbul", summary: "A layered family villa with framed garden views, deep overhangs, and warm stone detailing.", imageSrc: "./assets/developer-previews/atelier-north-studio.svg" },
+            { name: "Waterside Courtyard Home", type: "Boutique residential", location: "Sapanca", summary: "A courtyard-led home concept balancing privacy, hospitality flow, and restrained premium finishes.", imageSrc: "./assets/project-previews/aegean-courtyard-villa.svg" },
+          ],
+        },
+        "aegean-build-partners": {
+          name: "Aegean Build Partners",
+          subtitle: "A premium turnkey contractor focused on coastal villa delivery with tighter finish control and outdoor-living execution.",
+          specialty: "Turnkey Contractor",
+          location: "Izmir / Cesme",
+          startingPrice: "Turnkey builds from EUR 780K",
+          deliveryRange: "Coastal residential delivery",
+          experience: "15 years",
+          projectsDelivered: "41",
+          serviceArea: "Cesme, Urla, Bodrum",
+          imageSrc: "./assets/developer-previews/aegean-build-partners.svg",
+          visualLabel: "Coastal delivery",
+          visualCaption: "Warm stone-and-glass villa build",
+          tags: ["Turnkey build", "Coastal homes", "Finish quality"],
+          overview:
+            "Aegean Build Partners focuses on the realities of delivering luxury villas in coastal Turkish markets, where detailing, weather exposure, and finish management matter as much as core construction discipline.",
+          positioning:
+            "The team is a strong fit for clients who already know they want turnkey execution and need a contractor capable of handling structure, exterior living, and premium material coordination together.",
+          services: [
+            { title: "Turnkey construction", description: "Main build coordination from mobilization through commissioning and handover." },
+            { title: "Outdoor living delivery", description: "Pool, terraces, landscape edges, and pergola zones integrated into the overall project plan." },
+            { title: "Finish procurement", description: "Support for premium material packages, supplier coordination, and finishing consistency." },
+          ],
+          projects: [
+            { name: "Aegean Terrace Villa", type: "Turnkey villa", location: "Cesme", summary: "A sea-facing villa with limestone cladding, deep terraces, and polished summer-living details.", imageSrc: "./assets/project-previews/hillside-retreat-villa.svg" },
+            { name: "Urla Horizon House", type: "Luxury residence", location: "Urla", summary: "A two-level residence delivered with strong exterior integration and a high-spec finish package.", imageSrc: "./assets/developer-previews/aegean-build-partners.svg" },
+          ],
+        },
+        "ridge-development-lab": {
+          name: "Ridge Development Lab",
+          subtitle: "A development-focused team combining feasibility thinking, land strategy, and delivery planning for residential sites.",
+          specialty: "Developer / Delivery Team",
+          location: "Istanbul / Kemerburgaz",
+          startingPrice: "Feasibility support from EUR 25K",
+          deliveryRange: "Residential and mixed-use land strategies",
+          experience: "10 years",
+          projectsDelivered: "22",
+          serviceArea: "Istanbul, Bursa, Ankara",
+          imageSrc: "./assets/developer-previews/ridge-development-lab.svg",
+          visualLabel: "Development strategy",
+          visualCaption: "Stepped hillside concept and feasibility board",
+          tags: ["Feasibility", "Land strategy", "Residential growth"],
+          overview:
+            "Ridge Development Lab helps clients and landowners test opportunity before committing to a full design-build path. Their value comes from structuring scope, density, phasing, and delivery logic early.",
+          positioning:
+            "This profile is best matched to clients with land decisions, investment scenarios, or mid-scale residential ambitions that need commercial discipline as well as architectural framing.",
+          services: [
+            { title: "Land feasibility", description: "Early-stage testing of site potential, density logic, and commercial viability." },
+            { title: "Project structuring", description: "Delivery strategy, phase logic, and positioning support before design escalation." },
+            { title: "Consultant alignment", description: "Bringing architects, engineers, and cost perspectives into one coherent development brief." },
+          ],
+          projects: [
+            { name: "Ridge Court Residences", type: "Residential study", location: "Kemerburgaz", summary: "A stepped suburban development scenario designed around phased delivery and view capture.", imageSrc: "./assets/developer-previews/ridge-development-lab.svg" },
+            { name: "Nilufer Family Blocks", type: "Feasibility package", location: "Bursa", summary: "A mid-scale housing test balancing saleability, site efficiency, and staged build logic.", imageSrc: "./assets/project-previews/urban-ridge-villa.svg" },
+          ],
+        },
+        "forma-structural-build": {
+          name: "Forma Structural & Build",
+          subtitle: "Ankara-based construction leadership for premium shells, disciplined site execution, and clean coordination across consultants.",
+          specialty: "Construction Company",
+          location: "Ankara",
+          startingPrice: "Structural delivery from EUR 320K",
+          deliveryRange: "Commercial and residential shells",
+          experience: "18 years",
+          projectsDelivered: "58",
+          serviceArea: "Ankara, Eskisehir, Konya",
+          imageSrc: "./assets/developer-previews/forma-structural-build.svg",
+          visualLabel: "Build discipline",
+          visualCaption: "Multi-volume residential shell package",
+          tags: ["Structural works", "Main contractor", "Site discipline"],
+          overview:
+            "Forma Structural & Build is oriented toward clients and design teams that need reliable execution strength on premium shells and technically coordinated builds. Their profile emphasizes schedule control, engineering alignment, and site clarity.",
+          positioning:
+            "The company suits projects where structural confidence, contractor discipline, and multi-party coordination are more valuable than flashy presentation alone.",
+          services: [
+            { title: "Structural works", description: "Concrete, steel, and shell execution with close engineering coordination." },
+            { title: "Main contractor management", description: "Site sequencing, trade planning, and milestone control for premium project teams." },
+            { title: "Technical delivery", description: "A practical approach to detail resolution, procurement timing, and construction interfaces." },
+          ],
+          projects: [
+            { name: "Ankara Frame House", type: "Residential shell", location: "Ankara", summary: "A large-format private residence delivered with disciplined structural sequencing and envelope readiness.", imageSrc: "./assets/developer-previews/forma-structural-build.svg" },
+            { name: "Cankaya Office Pavilion", type: "Commercial shell", location: "Ankara", summary: "A low-rise office and retail shell package executed with tight consultant coordination and build staging.", imageSrc: "./assets/project-previews/urban-ridge-villa.svg" },
+          ],
+        },
+        "bodrum-living-atelier": {
+          name: "Bodrum Living Atelier",
+          subtitle: "A resort-inflected architecture and interiors practice for clients who want softer luxury and outdoor-first seasonal living.",
+          specialty: "Architecture + Interiors",
+          location: "Bodrum",
+          startingPrice: "Interior-led concepts from EUR 38K",
+          deliveryRange: "Resort villas and hospitality-style homes",
+          experience: "9 years",
+          projectsDelivered: "27",
+          serviceArea: "Bodrum, Gocek, Fethiye",
+          imageSrc: "./assets/developer-previews/bodrum-living-atelier.svg",
+          visualLabel: "Seasonal living",
+          visualCaption: "Resort villa composition with pool court",
+          tags: ["Resort feel", "Interiors", "Outdoor living"],
+          overview:
+            "Bodrum Living Atelier blends architecture, interiors, and finish curation for clients who want homes to feel relaxed, tactile, and hospitality-aware rather than overtly formal.",
+          positioning:
+            "This practice is a strong match for second homes, branded residences, and coastal properties where the emotional feel of the project matters as much as the plan itself.",
+          services: [
+            { title: "Architecture + interiors", description: "Joined-up concept development so architecture and interiors feel authored together." },
+            { title: "Material curation", description: "Selection logic for warmer palettes, tactile surfaces, and hospitality-adjacent finish packages." },
+            { title: "Pool and terrace planning", description: "A stronger focus on exterior living environments and leisure-centered layouts." },
+          ],
+          projects: [
+            { name: "Bodrum Cove House", type: "Seasonal villa", location: "Bodrum", summary: "A hospitality-inspired private residence with long pool lines, shaded lounges, and soft natural textures.", imageSrc: "./assets/developer-previews/bodrum-living-atelier.svg" },
+            { name: "Sunset Guest Estate", type: "Resort residence", location: "Gocek", summary: "A guest-oriented coastal home with detached suites and a carefully layered indoor-outdoor sequence.", imageSrc: "./assets/project-previews/hillside-retreat-villa.svg" },
+          ],
+        },
+        "urban-span-contracting": {
+          name: "Urban Span Contracting",
+          subtitle: "A specialist partner for facade systems, glazing, and premium fit-out packages where detail control is central to value.",
+          specialty: "Facade + Fit-Out Partner",
+          location: "Istanbul",
+          startingPrice: "Facade scope from EUR 180K",
+          deliveryRange: "High-end residential envelopes",
+          experience: "14 years",
+          projectsDelivered: "49",
+          serviceArea: "Istanbul, Bursa, Izmir",
+          imageSrc: "./assets/developer-previews/urban-span-contracting.svg",
+          visualLabel: "Envelope systems",
+          visualCaption: "Facade and glazing package composition",
+          tags: ["Facade packages", "Glazing", "Luxury fit-out"],
+          overview:
+            "Urban Span Contracting focuses on the visible technical layers that shape premium residential quality, from facade precision to interior fit-out packages that need tighter integration with architecture.",
+          positioning:
+            "This team is ideal for clients and lead architects who already have a project direction but want a specialist partner to strengthen envelope performance and finishing quality.",
+          services: [
+            { title: "Facade packages", description: "Cladding, envelope sequencing, and specification support for premium residential projects." },
+            { title: "Glazing systems", description: "High-quality glazing coordination for large openings, corner details, and cleaner visual lines." },
+            { title: "Interior fit-out", description: "Focused delivery for joinery, finishes, and premium interior package coordination." },
+          ],
+          projects: [
+            { name: "Glass Horizon Villa", type: "Facade package", location: "Istanbul", summary: "A facade-led hillside residence with large-format glazing and fine junction detailing.", imageSrc: "./assets/developer-previews/urban-span-contracting.svg" },
+            { name: "Bosphorus Detail House", type: "Fit-out package", location: "Istanbul", summary: "A premium residential envelope and fit-out scope tailored around precision finishes and glazing control.", imageSrc: "./assets/project-previews/urban-ridge-villa.svg" },
+          ],
+        },
+      },
+    },
+    projectDetailPage: {
+      nav: {
+        ariaLabel: "Project navigation",
+        brandHref: "./index.html",
+        links: [
+          { label: "Back to Home", href: "./index.html" },
+          { label: "Overview", href: "#project-overview" },
+          { label: "Pricing", href: "#project-pricing" },
+          { label: "Timeline", href: "#project-timeline" },
+          { label: "Included", href: "#project-included" },
+        ],
+      },
+      labels: {
+        style: "Style",
+        region: "Region",
+        startingBudget: "Starting Budget",
+        turnkeyBudget: "Turnkey Budget Range",
+        duration: "Construction Duration",
+        plotSize: "Plot Size Range",
+        interiorSize: "Interior Size Range",
+        rooms: "Rooms",
+        groundFloor: "Ground Floor",
+        roofPlan: "Roof Plan",
+        elevation: "Elevation",
+        conceptLayout: "Concept Layout",
+        siteLayout: "Site Layout",
+        terraceSection: "Terrace Section",
+        idealClient: "Ideal client",
+        idealUseCases: "Ideal use case",
+        optionalUpgrades: "Optional upgrades",
+        pricingFactors: "What affects final pricing",
+        estimateNote: "Pricing note",
+        estimateText: "All budgets are indicative concept estimates and can vary based on site conditions, municipality approvals, materials, and final scope.",
+      },
+      sections: {
+        overview: {
+          eyebrow: "Project overview",
+          title: "A design-led villa concept prepared for premium delivery in Turkey.",
+          description:
+            "Each concept page is structured like a high-end project brief so clients can quickly understand scope, fit, and investment expectations.",
+        },
+        pricing: {
+          eyebrow: "Estimated pricing",
+          title: "Transparent range guidance before deeper scoping.",
+          description:
+            "These figures are designed to help clients understand where the project sits in the market before refining the brief with professionals.",
+        },
+        timeline: {
+          eyebrow: "Estimated timeline",
+          title: "A realistic path from design alignment to turnkey delivery.",
+          description:
+            "The timeline below reflects a premium residential workflow and should be refined once location, approvals, and technical scope are confirmed.",
+        },
+        inquiry: {
+          eyebrow: "Request this project",
+          title: "Start a private conversation around this villa concept.",
+          description:
+            "Share your context and Yapply can help align the right professionals around this concept, your region, and your expected investment level.",
+          summaryTitle: "Selected concept",
+          summaryLabels: {
+            project: "Project",
+            region: "Suggested region",
+            startingBudget: "Starting budget",
+            duration: "Estimated duration",
+          },
+          formTitle: "Project inquiry",
+          formIntro:
+            "This is a frontend-only lead flow for now. It is ready to connect to CRM, email routing, or a qualification pipeline in the next phase.",
+          submitLabel: "Request This Project",
+          successTitle: "Inquiry received",
+          successText: "Your interest for",
+          successTextEnd: "has been captured. In the next phase, this can route directly to Yapply’s lead workflow.",
+          fields: {
+            fullName: { label: "Full Name", placeholder: "Your full name" },
+            email: { label: "Email", placeholder: "name@email.com" },
+            phone: { label: "Phone Number", placeholder: "+90 5XX XXX XX XX" },
+            city: { label: "Preferred city / region", placeholder: "Istanbul, Izmir, Bodrum..." },
+            plotStatus: { label: "Plot ownership status", placeholder: "Select your current status" },
+            budget: { label: "Estimated budget", placeholder: "Select your expected range" },
+            message: { label: "Message / notes", placeholder: "Share your goals, timeline, land context, or any preferences." },
+          },
+          plotStatusOptions: [
+            "I already own the plot",
+            "I am currently evaluating land options",
+            "The plot is reserved / under review",
+            "I need advisory support on land and feasibility",
+          ],
+          budgetOptions: [
+            "EUR 500K - 800K",
+            "EUR 800K - 1.2M",
+            "EUR 1.2M - 1.8M",
+            "EUR 1.8M+",
+          ],
+        },
+        included: {
+          eyebrow: "What is included",
+          title: "A balanced concept for design, coordination, and build readiness.",
+          description:
+            "The page outlines what a client would typically expect in a premium concept-led package before optional upgrades and customizations are added.",
+        },
+        ideal: {
+          eyebrow: "Ideal use case",
+          title: "Who this project suits best.",
+          description:
+            "Each concept is positioned for a distinct kind of client, site condition, and lifestyle expectation.",
+        },
+        cta: {
+          title: "Take the next step with the right professional team.",
+          description:
+            "Yapply can connect you with verified architects, developers, and construction companies to adapt this concept to your location, budget, and build strategy.",
+          requestLabel: "Request This Project",
+          requestHref: "#project-request",
+          speakLabel: "Speak With a Professional",
+          speakHref: "#project-request",
+        },
+      },
+      footer: {
+        description:
+          "Yapply project detail pages present high-end residential concepts in a structured format so clients can move from inspiration to real project conversations with more clarity.",
+        columns: [
+          {
+            title: "Project pages",
+            links: [
+              { label: "Back to home", href: "./index.html" },
+              { label: "Featured projects", href: "./index.html#featured-projects" },
+              { label: "For professionals", href: "./professionals.html" },
+            ],
+          },
+          {
+            title: "Next step",
+            links: [
+              { label: "Request this project", href: "#project-request" },
+              { label: "Speak with a professional", href: "#project-request" },
+              { label: "Marketplace overview", href: "./index.html#why-yapply" },
+            ],
+          },
+        ],
+        note: "Project detail pages are designed as premium concept previews and are ready to evolve into fully dynamic listing or package pages later.",
+        contact: "hello@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+      projects: {
+        "aegean-courtyard-villa": {
+          name: "Aegean Courtyard Villa",
+          subtitle: "A calm coastal family villa concept shaped around privacy, natural light, and warm materiality.",
+          style: "Coastal Family Villa",
+          region: "Izmir / Cesme",
+          startingBudget: "EUR 780K",
+          turnkeyBudget: "EUR 1.05M - 1.28M",
+          duration: "14-16 months",
+          plotSize: "700-950 m2",
+          interiorSize: "260-320 m2",
+          rooms: "4-5 bedrooms",
+          overview:
+            "This concept is designed for clients seeking a refined primary or seasonal residence in the Aegean region. The architectural language balances stone, warm-toned plaster, and expansive glazing around a private courtyard and generous outdoor living areas.",
+          optionalUpgrades: [
+            "Infinity pool and sunken lounge sequence",
+            "Guest pavilion or detached studio suite",
+            "Natural stone facade enhancement package",
+            "Smart home automation and energy monitoring",
+          ],
+          pricingFactors: [
+            "Site slope, retaining requirements, and coastal wind exposure",
+            "Facade material selection and glazing specification",
+            "Pool, landscape, and exterior living scope",
+            "Municipality permit process and infrastructure readiness",
+          ],
+          timeline: [
+            { phase: "Concept & brief alignment", detail: "3-5 weeks for scope, style direction, and partner selection." },
+            { phase: "Design development", detail: "8-10 weeks for architectural refinement, consultants, and budget coordination." },
+            { phase: "Permits & technical package", detail: "10-14 weeks depending on municipality process and local conditions." },
+            { phase: "Construction delivery", detail: "9-11 months for structure, finishes, exterior works, and commissioning." },
+          ],
+          included: [
+            "Architectural concept and space planning direction",
+            "Structural and MEP coordination framework",
+            "Premium facade and material palette guidance",
+            "Exterior living, courtyard, and landscape strategy",
+            "Turnkey delivery planning with consultant alignment",
+          ],
+          idealClient: [
+            "Families building a high-quality second home in the Aegean",
+            "Clients seeking privacy without losing indoor-outdoor flow",
+            "Owners who value warm contemporary architecture over minimal starkness",
+          ],
+          idealUseCases: [
+            "Primary family residence with seasonal flexibility",
+            "High-end summer home with hosting capacity",
+            "Long-term lifestyle investment in a premium coastal area",
+          ],
+          boards: ["Ground Floor", "Courtyard Elevation", "Roof Plan"],
+          visual: "coast",
+        },
+        "urban-ridge-villa": {
+          name: "Urban Ridge Villa",
+          subtitle: "A sculpted hillside residence concept with strong geometry, layered terraces, and a premium city-edge presence.",
+          style: "Modern Villa",
+          region: "Istanbul / Zekeriyakoy",
+          startingBudget: "EUR 1.15M",
+          turnkeyBudget: "EUR 1.48M - 1.82M",
+          duration: "16-18 months",
+          plotSize: "900-1,250 m2",
+          interiorSize: "340-420 m2",
+          rooms: "5-6 bedrooms",
+          overview:
+            "Urban Ridge Villa is positioned for clients who want an assertive, contemporary home close to city life while preserving calm, privacy, and a disciplined luxury aesthetic. The massing is stepped to work well on elevated plots and to maximize terraces, framed views, and integrated landscape edges.",
+          optionalUpgrades: [
+            "Private wellness suite with sauna and gym",
+            "Basement entertainment lounge and wine room",
+            "High-performance facade and shading package",
+            "Signature landscape lighting and motor court design",
+          ],
+          pricingFactors: [
+            "Basement and retaining wall complexity on sloped land",
+            "Span requirements for open-plan living spaces",
+            "Joinery, cladding, and facade system specification",
+            "Automation, climate control, and security system depth",
+          ],
+          timeline: [
+            { phase: "Brief strategy & site fit", detail: "4-6 weeks for site response, massing logic, and delivery team alignment." },
+            { phase: "Design and technical planning", detail: "10-12 weeks for architecture, engineering, and cost structure." },
+            { phase: "Authority submissions", detail: "12-16 weeks based on approval path and local coordination." },
+            { phase: "Construction and fit-out", detail: "10-12 months for structural works, facade, interiors, and landscape." },
+          ],
+          included: [
+            "Architectural massing and premium planning concept",
+            "Terrace strategy and landscape integration",
+            "Structural coordination for hillside conditions",
+            "Interior zoning and core material direction",
+            "Turnkey execution framework with specialist inputs",
+          ],
+          idealClient: [
+            "Clients seeking a high-end primary residence near Istanbul",
+            "Buyers prioritizing strong architectural identity and resale value",
+            "Families who want privacy, terraces, and contemporary entertaining spaces",
+          ],
+          idealUseCases: [
+            "Primary luxury residence on a premium suburban plot",
+            "Multi-generational family villa with formal and informal zones",
+            "Statement home for clients valuing architectural presence",
+          ],
+          boards: ["Concept Layout", "Elevation", "Terrace Section"],
+          visual: "urban",
+        },
+        "hillside-retreat-villa": {
+          name: "Hillside Retreat Villa",
+          subtitle: "A resort-inspired home concept built around exterior living, hospitality-level comfort, and serene privacy.",
+          style: "Resort Villa",
+          region: "Mugla / Bodrum",
+          startingBudget: "EUR 940K",
+          turnkeyBudget: "EUR 1.22M - 1.54M",
+          duration: "15-17 months",
+          plotSize: "800-1,100 m2",
+          interiorSize: "290-360 m2",
+          rooms: "4-5 bedrooms",
+          overview:
+            "This villa concept is tailored for Bodrum-style living, where outdoor terraces, poolside zones, and a softer hospitality atmosphere shape the project as much as the enclosed interior. The design language remains contemporary, but with a warmer and more relaxed spatial rhythm.",
+          optionalUpgrades: [
+            "Pool house or outdoor guest suite",
+            "Spa-grade master bath and dressing suite",
+            "Outdoor kitchen, dining pavilion, and fire pit",
+            "Expanded natural stone and timber finish palette",
+          ],
+          pricingFactors: [
+            "Terrain preparation and sea-facing retaining strategy",
+            "Exterior living scope, pool design, and landscape intensity",
+            "Imported finish selections and custom joinery",
+            "Hospitality-grade lighting, audio, and automation packages",
+          ],
+          timeline: [
+            { phase: "Concept positioning", detail: "3-5 weeks for vision, site response, and professional shortlist." },
+            { phase: "Design detailing", detail: "8-11 weeks for architecture, interiors, and outdoor living integration." },
+            { phase: "Technical package & approvals", detail: "10-14 weeks depending on local review and infrastructure context." },
+            { phase: "Build and final delivery", detail: "9-11 months for structure, finishes, pool works, and handover." },
+          ],
+          included: [
+            "Architectural concept with resort-oriented planning",
+            "Pool and exterior living layout guidance",
+            "Material direction for warm luxury finishes",
+            "Coordination logic for turnkey execution",
+            "Landscape and hospitality atmosphere framework",
+          ],
+          idealClient: [
+            "Clients building a high-end seasonal home in Bodrum or similar regions",
+            "Owners prioritizing exterior living and guest experience",
+            "Buyers seeking a softer luxury language with hospitality cues",
+          ],
+          idealUseCases: [
+            "Seasonal retreat for family and entertaining",
+            "Lifestyle investment with strong short-term rental potential",
+            "Private villa with resort-like outdoor experience",
+          ],
+          boards: ["Ground Floor", "Site Layout", "Roof Plan"],
+          visual: "retreat",
+        },
+      },
+    },
+    footer: {
+      description:
+        "Yapply is building the premium digital marketplace layer for clients in Turkey who want better ways to discover, evaluate, and engage trusted construction professionals.",
+      columns: [
+        {
+          title: "Platform",
+          links: [
+            { label: "How it works", href: "#how-it-works" },
+            { label: "Featured projects", href: "#featured-projects" },
+            { label: "Open Marketplace", href: "./open-marketplace.html" },
+            { label: "For professionals", href: "./professionals.html" },
+          ],
+        },
+        {
+          title: "Next phase",
+          links: [
+            { label: "Bilingual interface foundation", href: "#top" },
+            { label: "Professional onboarding flow", href: "./professionals.html#application-form" },
+            { label: "Marketplace detail pages", href: "#top" },
+          ],
+        },
+      ],
+      note: "English and Turkish content now share the same premium translation system, ready for the next product phase.",
+      contact: "hello@yapply.com",
+      copyrightLabel: "Yapply",
+    },
+    professionalsPage: {
+      nav: {
+        ariaLabel: "Primary navigation",
+        brandHref: "./index.html",
+        links: [
+          { label: "Back to Home", href: "./index.html" },
+          { label: "Benefits", href: "#join-benefits" },
+          { label: "Who Can Apply", href: "#who-can-apply" },
+          { label: "Process", href: "#join-process" },
+          { label: "FAQ", href: "#join-faq" },
+        ],
+        cta: "Apply Now",
+        ctaHref: "#application-form",
+      },
+      hero: {
+        eyebrow: "For architects, developers, and builders",
+        title: "Be Part of the Future of Construction",
+        description:
+          "Join Yapply to present your expertise in a premium marketplace built for high-intent residential and development projects across Turkey.",
+        primaryCta: { label: "Start My Application", href: "#application-form" },
+        secondaryCta: { label: "Explore the Benefits", href: "#join-benefits" },
+        pillars: [
+          "Premium positioning for serious clients",
+          "A curated verification layer that builds trust",
+          "A platform designed for architecture and delivery excellence",
+        ],
+        spotlight: {
+          title: "A stronger first impression",
+          text:
+            "Your profile is framed like a premium capability statement, not a commodity listing. Yapply is built to elevate perception before the first conversation begins.",
+        },
+        sideNotes: [
+          { value: "Curated", label: "Only aligned professionals move forward" },
+          { value: "Verified", label: "Profiles are reviewed before going live" },
+          { value: "Qualified", label: "Receive project opportunities with context" },
+        ],
+      },
+      benefits: {
+        eyebrow: "Why join Yapply",
+        title: "A marketplace experience designed to reflect the standard of your work.",
+        description:
+          "Yapply is tailored for professionals who care about credibility, presentation quality, and being matched with the right kind of project opportunity.",
+        items: [
+          {
+            index: "01",
+            title: "Premium market positioning",
+            description: "Appear inside a refined environment built for trust, architectural taste, and high-value project discovery.",
+          },
+          {
+            index: "02",
+            title: "Qualified client exposure",
+            description: "Receive opportunities from clients who arrive with clearer ambitions, context, and project intent.",
+          },
+          {
+            index: "03",
+            title: "Verification-led credibility",
+            description: "The platform review process supports stronger first impressions before proposals or meetings begin.",
+          },
+          {
+            index: "04",
+            title: "Better professional storytelling",
+            description: "Showcase your discipline, delivery strength, and market fit through a cleaner, more premium profile structure.",
+          },
+        ],
+      },
+      audiences: {
+        eyebrow: "Who can apply",
+        title: "Built for the professionals shaping tomorrow’s projects.",
+        description:
+          "Yapply is opening its network to firms and studios that combine proven capability with a strong standard of design, delivery, and communication.",
+        items: [
+          {
+            title: "Architects",
+            subtitle: "Studios and independent practices with a strong design language.",
+            points: [
+              "Concept design, residential architecture, and boutique hospitality",
+              "Interior architecture and spatial refinement",
+              "Clear portfolio presentation and client communication",
+            ],
+          },
+          {
+            title: "Construction Companies",
+            subtitle: "Execution partners focused on quality, detail, and reliable delivery.",
+            points: [
+              "Turnkey builds, structural works, and finish quality",
+              "Residential, villa, and project-scale construction teams",
+              "Operational discipline, references, and delivery trust",
+            ],
+          },
+          {
+            title: "Developers",
+            subtitle: "Teams leading residential or mixed-use projects with clarity and ambition.",
+            points: [
+              "Project development and land-to-delivery capability",
+              "Partner coordination across architecture and build",
+              "Commercial maturity and long-term brand value",
+            ],
+          },
+        ],
+      },
+      process: {
+        eyebrow: "The process",
+        title: "A clear onboarding flow, built for quality control and long-term fit.",
+        description:
+          "The application journey is intentionally selective. Each step helps preserve the quality and trust expected from the platform.",
+        steps: [
+          { title: "Apply", description: "Submit your core business details, practice type, portfolio link, and a short positioning statement." },
+          { title: "Verification", description: "The Yapply team reviews your discipline, presence, and quality signals for marketplace fit." },
+          { title: "Profile Live", description: "Approved professionals receive a profile presence aligned with the premium tone of the platform." },
+          { title: "Receive Projects", description: "Qualified opportunities are introduced with more context, scope direction, and expectation clarity." },
+          { title: "Build & Grow", description: "Strengthen visibility over time through strong delivery, client fit, and profile credibility." },
+        ],
+      },
+      stats: {
+        eyebrow: "Why now",
+        title: "Built for meaningful exposure, not marketplace noise.",
+        description:
+          "The first version of Yapply is focused on quality over volume. The goal is better alignment, stronger presentation, and more credible opportunity flow.",
+        items: [
+          { value: 320, suffix: "+", label: "Profiles targeted for the first curated network", detail: "Selective early growth across key disciplines" },
+          { value: 12, suffix: "", label: "Priority cities for launch-phase visibility", detail: "Including Istanbul, Izmir, Bodrum, and Ankara" },
+          { value: 72, suffix: "h", label: "Target review time for strong applications", detail: "Fast enough to keep momentum, careful enough to protect quality" },
+          { value: 91, suffix: "%", label: "Profile completeness benchmark for go-live", detail: "Structured to make expertise easier to evaluate" },
+        ],
+      },
+      form: {
+        eyebrow: "Application form",
+        title: "Introduce your practice with clarity.",
+        description:
+          "This first application foundation is designed to capture the essentials with a premium, friction-aware experience. It is ready for backend integration in the next phase.",
+        successTitle: "Application draft captured",
+        successText: "The frontend flow is ready. In the next phase, this form can be connected to file storage, CRM, or an internal review workflow.",
+        submitLabel: "Submit Application",
+        fields: {
+          name: { label: "Name", placeholder: "Your full name" },
+          companyName: { label: "Company Name", placeholder: "Studio or company name" },
+          professionType: { label: "Profession Type", placeholder: "Select your profession" },
+          city: { label: "City", placeholder: "Istanbul, Izmir, Ankara..." },
+          website: { label: "Website / Portfolio URL", placeholder: "https://yourstudio.com" },
+          experience: { label: "Years of Experience", placeholder: "e.g. 12" },
+          description: { label: "Short Description", placeholder: "Tell us about your focus, scale, and the kinds of projects you want to receive." },
+          upload: { label: "File Upload", hint: "Portfolio PDF, credentials, or a capability deck" },
+        },
+        professionOptions: ["Architect", "Construction Company", "Developer", "Interior Architecture Studio", "Design & Build Firm"],
+      },
+      faq: {
+        eyebrow: "FAQ",
+        title: "Answers for professionals considering the platform.",
+        description:
+          "The first version of the page is structured to answer the most common questions with clarity and confidence.",
+        items: [
+          {
+            question: "Who is Yapply for?",
+            answer: "Yapply is designed for architects, developers, construction companies, and related studios that want to be presented in a more premium and trustworthy environment.",
+          },
+          {
+            question: "Is every application accepted?",
+            answer: "No. The platform is intentionally curated. Applications are reviewed for professional fit, presentation quality, and alignment with the marketplace standard.",
+          },
+          {
+            question: "What kind of projects will I receive?",
+            answer: "The platform is focused on residential, villa, mixed-use, and selected hospitality opportunities where clients value quality, clarity, and strong execution.",
+          },
+          {
+            question: "Can I apply before the full marketplace launches?",
+            answer: "Yes. This page is meant to prepare the onboarding pipeline early so qualified professionals can be ready when the next product phase expands.",
+          },
+          {
+            question: "Will Turkish and English profiles both be supported?",
+            answer: "Yes. The frontend foundation now supports both languages, and profile experiences can be extended bilingually in the next phase.",
+          },
+        ],
+      },
+      footer: {
+        description:
+          "Yapply for Professionals is the premium onboarding layer for architects, developers, and construction companies that want to meet better-aligned project opportunities across Turkey.",
+        columns: [
+          {
+            title: "Explore",
+            links: [
+              { label: "Back to home", href: "./index.html" },
+              { label: "Benefits", href: "#join-benefits" },
+              { label: "Application form", href: "#application-form" },
+            ],
+          },
+          {
+            title: "Platform readiness",
+            links: [
+              { label: "Verification workflow", href: "#join-process" },
+              { label: "Bilingual profile foundation", href: "#top" },
+              { label: "Frequently asked questions", href: "#join-faq" },
+            ],
+          },
+        ],
+        note: "This page is ready for backend submission handling, file storage integration, and deeper professional profile workflows.",
+        contact: "partners@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+    },
+  },
+  tr: {
+    meta: {
+      locale: "tr",
+      languageLabel: "Türkçe",
+    },
+    brand: {
+      name: "Yapply",
+      tagline: "Doğrulanmış yapı profesyonelleri pazaryeri",
+      homeAriaLabel: "Yapply ana sayfa",
+    },
+    controls: {
+      themeToggleLabel: "Renk temasını değiştir",
+      themeToggleDark: "Koyu temaya geç",
+      themeToggleLight: "Açık temaya geç",
+      languageToggleLabel: "Dili değiştir",
+      locales: {
+        en: "EN",
+        tr: "TR",
+      },
+    },
+    nav: {
+      ariaLabel: "Ana gezinme",
+      brandHref: "./index.html",
+      links: [
+        { label: "Nasıl çalışır", href: "#how-it-works" },
+        { label: "Neden Yapply", href: "#why-yapply" },
+        { label: "Projeler", href: "#featured-projects" },
+        { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+        { label: "Yorumlar", href: "#testimonials" },
+        { label: "Profesyoneller İçin", href: "./professionals.html" },
+      ],
+      cta: "Projemi Başlat",
+      ctaHref: "#featured-projects",
+    },
+    hero: {
+      eyebrow: "Türkiye için premium yapı pazaryeri",
+      titlePrimary: "Geleceği İnşa Et.",
+      titleSecondary: "Vizyonunla. Kendi Yolunla.",
+      description:
+        "Yapply, Türkiye’deki müşterileri doğrulanmış mimarlar, geliştiriciler ve inşaat profesyonelleriyle buluşturarak hayal edilen projeleri hayata geçirir.",
+      primaryCta: {
+        label: "Projemi Başlat",
+        href: "#featured-projects",
+      },
+      secondaryCta: {
+        label: "Profesyonel Olarak Katıl",
+        href: "./professionals.html",
+      },
+      note:
+        "Konut ve ticari projelerde doğru ekipleri keşfetmek, teklif süreçlerini netleştirmek ve teslim güvenini güçlendirmek için tasarlanmış rafine bir dijital katman.",
+      highlights: [
+        "Doğrulanmış mimarlar, geliştiriciler ve uygulayıcı ekipler",
+        "Villa, konut ve karma kullanım projeleri için tasarlanmış yapı",
+        "İngilizce ve Türkçe deneyim için hazır içerik altyapısı",
+      ],
+      metrics: [
+        { value: "250+", label: "Türkiye’nin öncelikli şehirlerinde yayına hazır doğrulanmış uzman ağı" },
+        { value: "48 Saat", label: "Nitelikli proje eşleşmeleri için hedeflenen ilk dönüş süresi" },
+        { value: "Uçtan Uca", label: "Brief oluşturma aşamasından shortlist ve uygulama hazırlığına kadar" },
+      ],
+      stage: {
+        statusTitle: "Mimari zekayla kurgulandı",
+        statusCopy: "Premium keşif, uzman doğrulama ve kapsam uyumu daha ilk temas noktasında birlikte çalışır.",
+        detailTitle: "Sinematik proje eşleştirmesi",
+        detailCopy: "Konsept tasarım, geliştirme ve uygulama ekipleri için brief odaklı bir eşleştirme kurgusu.",
+        legendTitle: "Yapı katmanları",
+        annotations: ["01 / Kütle kompozisyonu", "02 / Taşıyıcı ritmi", "03 / Şeffaf cephe"],
+        legendItems: [
+          { label: "Brief", value: "Kapsam netliği" },
+          { label: "Eşleşme", value: "Doğrulanmış uzmanlar" },
+          { label: "Uygulama", value: "Teslim ekipleri" },
+        ],
+      },
+    },
+    howItWorks: {
+      eyebrow: "Nasıl çalışır",
+      title: "Fikirden uygulamaya hazır ekibe uzanan rafine bir akış.",
+      description:
+        "Yapply, dağınık yapı pazarını müşteriler için güven veren, profesyoneller için itibarlı bir deneyime dönüştürür.",
+      steps: [
+        {
+          number: "01",
+          title: "Projenizin vizyonunu tanımlayın",
+          description:
+            "Proje tipi, lokasyon, bütçe aralığı ve estetik yönelim gibi temel bilgileri paylaşın; platform briefinizi net biçimde anlayabilsin.",
+        },
+        {
+          number: "02",
+          title: "Özenle seçilmiş profesyonellerle eşleşin",
+          description:
+            "Yapply, proje ihtiyaçlarınıza ve kalite beklentinize uygun doğrulanmış mimarları, geliştiricileri ve inşaat firmalarını öne çıkarır.",
+        },
+        {
+          number: "03",
+          title: "Teklif sürecine güvenle ilerleyin",
+          description:
+            "Doğru ekipleri karşılaştırın, yetkinlik ve uyumu değerlendirin, projenizi daha sağlam bir başlangıçla bir sonraki aşamaya taşıyın.",
+        },
+      ],
+    },
+    features: {
+      eyebrow: "Neden Yapply",
+      title: "Güven, zarafet ve karmaşık teslim süreçleri için tasarlandı.",
+      description:
+        "Platform, seçici müşteriler için premium bir deneyim sunarken ciddi profesyonellere de ihtiyaç duydukları güven sinyallerini verir.",
+      items: [
+        {
+          index: "A1",
+          title: "Doğrulanmış ekosistem",
+          description:
+            "Her mimar, geliştirici ve inşaat şirketi; ilk temas başlamadan önce güven oluşturan kalite göstergeleriyle sunulur.",
+        },
+        {
+          index: "A2",
+          title: "İnşaat odaklı eşleştirme",
+          description:
+            "Keşif deneyimi, genel pazaryeri kategorileri yerine proje ölçeği, teslim modeli, coğrafya ve yetkinlik etrafında şekillenir.",
+        },
+        {
+          index: "A3",
+          title: "Premium teklif hazırlığı",
+          description:
+            "Deneyim, müşterilerin ekipleri yalnızca fiyat üzerinden değil; netlik, süreç ve uygulama değeri üzerinden değerlendirmesine yardımcı olur.",
+        },
+        {
+          index: "A4",
+          title: "Türkiye pazarına uyumlu yapı",
+          description:
+            "Platform dili, örnek proje kurguları ve profesyonel kategorileri Türkiye’de yapı üretmenin gerçeklerine göre tasarlanır.",
+        },
+      ],
+    },
+    projects: {
+      eyebrow: "Öne çıkan projeler",
+      title: "Yapply’nin açabileceği proje dünyasına küratöryel bir bakış.",
+      description:
+        "Bu örnek proje kartları; Yapply’nin mimari, rafine ve Türkiye’deki gerçek yapı kategorilerine dayanan tonunu ortaya koyar.",
+      viewLabel: "Proje önizlemesini aç",
+      ctaHint: "Tahmini maliyet ve takvimi gör",
+      blueprintLabel: "Mimari Önizleme",
+      factLabels: {
+        style: "Stil",
+        price: "Başlangıç Fiyatı",
+        buildTime: "Yapım Süresi",
+      },
+      items: [
+        {
+          badge: "Özel Konut",
+          title: "Ege Avlulu Villa",
+          location: "İzmir / Çeşme",
+          style: "Akdeniz Modern",
+          price: "Başlangıç fiyatı EUR 780K",
+          buildTime: "Tahmini 14 ay",
+          summary:
+            "Taş ve camın sıcak dilini kullanan; korunaklı avlusu, panoramik açıklıkları ve anahtar teslim potansiyeliyle öne çıkan aile villası konsepti.",
+          highlights: ["Malzeme odaklı konsept kurgusu", "Doğrulanmış uygulama shortlist’i", "Takvim duyarlılığı yüksek teslim uyumu"],
+          visual: "coast",
+          href: "./project-aegean-courtyard-villa.html",
+          ctaLabel: "Detayları İncele",
+          ctaHint: "Maliyet, kapsam ve takvimi gör",
+        },
+        {
+          badge: "Özel Konut",
+          title: "Kent Sırtı Villa",
+          location: "İstanbul / Zekeriyaköy",
+          style: "Çağdaş Yamaç Evi",
+          price: "Başlangıç fiyatı EUR 1.15M",
+          buildTime: "Tahmini 16 ay",
+          summary:
+            "Katmanlı terasları, güçlü cephe dili ve kontrollü tasarım-uygulama yaklaşımıyla şekillenen lüks villa önizlemesi.",
+          highlights: ["Geliştirici mantığıyla kurgulanmış planlama", "Entegre statik koordinasyon", "Peyzaja açılan yaşam senaryosu"],
+          visual: "urban",
+          href: "./project-urban-ridge-villa.html",
+          ctaLabel: "Projeyi Gör",
+          ctaHint: "Fiyatlama ve yapım fazlarını incele",
+        },
+        {
+          badge: "Özel Konut",
+          title: "Yamaç Retreat Villa",
+          location: "Muğla / Bodrum",
+          style: "Resort Minimal",
+          price: "Başlangıç fiyatı EUR 940K",
+          buildTime: "Tahmini 15 ay",
+          summary:
+            "Mahremiyet, açık hava yaşamı ve yüksek bitiş kalitesini aynı çizgide buluşturan resort etkili bir villa kurgusu.",
+          highlights: ["Deneyim tasarımına güçlü ekipler", "Peyzaj ve havuz çevresi planlaması", "Marka vizyonuna uyumlu bitiş kalitesi"],
+          visual: "retreat",
+          href: "./project-hillside-retreat-villa.html",
+          ctaLabel: "Maliyet ve Takvimi Gör",
+          ctaHint: "Konsept özetini keşfet",
+        },
+      ],
+    },
+    testimonials: {
+      eyebrow: "Yorumlar",
+      title: "Güven, ilk sözleşmeden çok daha önce başlar.",
+      description:
+        "Bu lansman dönemi yorumları, Yapply’yi netlik arayan müşteriler ve itibarını önemseyen profesyoneller için ciddi bir platform olarak konumlandırır.",
+      items: [
+        {
+          quote:
+            "Yapply, klasik bir pazaryerinden çok özel danışmanlık katmanına yakın hissettiriyor. Sunum kalitesi daha ilk anda güven oluşturuyor.",
+          name: "Selin A.",
+          role: "Özel müşteri, sahil konutu briefi",
+        },
+        {
+          quote:
+            "Mimarlık ofisleri için itibar belirleyicidir. Uzmanlığı doğru çerçeveleyen bir platform, gelen her görüşmenin niteliğini yukarı taşır.",
+          name: "Mert K.",
+          role: "Kurucu mimar, İstanbul merkezli stüdyo",
+        },
+        {
+          quote:
+            "Yapı projelerinde hizalanma, satın alma aşamasından çok önce başlar. Yapply’nin yaklaşımı beklenti ile uygulama arasındaki uyumu güçlendiriyor.",
+          name: "Deniz T.",
+          role: "Gayrimenkul geliştirme danışmanı",
+        },
+      ],
+    },
+    openMarketplacePage: {
+      nav: {
+        ariaLabel: "Pazaryeri gezinmesi",
+        brandHref: "./index.html",
+        links: [
+          { label: "Ana sayfaya dön", href: "./index.html" },
+          { label: "Genel bakış", href: "#marketplace-intro" },
+          { label: "İlanlar", href: "#marketplace-listings" },
+          { label: "İlan oluştur", href: "./client-project-submission.html" },
+        ],
+        cta: "Projeni Yayınla",
+        ctaHref: "./client-project-submission.html",
+      },
+      hero: {
+        eyebrow: "Açık Pazaryeri",
+        title: "İddialı yapı briefleri ve premium hizmet ilanları için küratöryel bir açık pazaryeri.",
+        description:
+          "Open Marketplace, Yapply’yi yalnızca öne çıkan projelerin ötesine taşır. Müşteriler ne inşa etmek istediklerini yayınlayabilir; mimarlar, geliştiriciler ve yükleniciler ise kendi tekliflerini daha rafine bir ortamda sunabilir.",
+        primaryCta: { label: "İlanları İncele", href: "#marketplace-listings" },
+        secondaryCta: { label: "Hizmetlerini Listele", href: "./professional-listing-submission.html" },
+        highlights: [
+          "Müşteri briefleri ve profesyonel ilanlar aynı sistemde",
+          "Genel ilan siteleri yerine lüks pazaryeri tonu",
+          "Gelecekte gerçek iki taraflı platforma dönüşecek şekilde tasarlandı",
+        ],
+        boardLabels: {
+          client: "Müşteri briefleri",
+          pro: "Profesyonel ilanlar",
+        },
+        boardValues: {
+          client: "Yüksek niyetli proje talepleri",
+          pro: "Küratöryel uzman görünürlüğü",
+        },
+        stats: [
+          { value: "24", label: "İlk pazaryeri versiyonu için yapılandırılmış örnek ilan" },
+          { value: "2 taraflı", label: "Müşteriler ve profesyoneller aynı premium yüzeyde" },
+          { value: "Küratöryel", label: "İlan gürültüsü değil, kalite odaklı görünürlük için tasarlandı" },
+        ],
+      },
+      intro: {
+        eyebrow: "Pazaryeri mantığı",
+        title: "Yapply’nin bir sonraki katmanı yalnızca vitrin değil, gerçek bir pazaryeri.",
+        description:
+          "Öne çıkan konseptler güven ve marka tonu oluşturur. Open Marketplace ise talep tarafındaki briefler ile arz tarafındaki profesyonel tekliflerin daha güçlü bağlam ve sunum kalitesiyle aynı yapıda buluşmasını sağlar.",
+        pillars: [
+          {
+            index: "01",
+            title: "Müşteriler ne inşa etmek istediklerini yayınlayabilir",
+            description: "Villa projeleri, renovasyon briefleri, konaklama konseptleri veya ticari yapılar; bütçe, lokasyon ve takvimle paylaşılabilir.",
+          },
+          {
+            index: "02",
+            title: "Profesyoneller kendi tekliflerini yayınlayabilir",
+            description: "Mimarlar, geliştiriciler, yükleniciler ve inşaat şirketleri uzmanlıklarını, fiyat seviyelerini ve hizmetlerini daha net anlatabilir.",
+          },
+          {
+            index: "03",
+            title: "Küratöryel pazaryeri tonu",
+            description: "Arayüz, kalabalık ilan panosu gibi değil; daha güvenilir iki taraflı deneyime hazırlayan premium ve editoryal bir yapı gibi hissettirir.",
+          },
+        ],
+      },
+      tabs: {
+        ariaLabel: "Pazaryeri ilan kategorileri",
+        heading: {
+          eyebrow: "İlan panosu",
+          title: "Pazaryerinin iki tarafını daha temiz ve premium bir bakışla inceleyin.",
+          description:
+            "Müşteri talepleri ile profesyonel teklifleri arasında geçiş yapın. Bu ilk versiyon; düzen, hiyerarşi ve kaliteli pazaryeri sunumuna odaklanır.",
+        },
+        client: {
+          tabLabel: "Müşteri İlanları",
+          labels: {
+            budget: "Bütçe",
+            startDate: "İstenen Başlangıç",
+            plotStatus: "Arsa Durumu",
+            timeline: "Takvim",
+            category: "Kategori",
+          },
+          items: [
+            {
+              title: "Aile yaşamı için özel yamaç villası",
+              projectType: "Villa yapımı",
+              location: "İstanbul / Zekeriyaköy",
+              budget: "EUR 1.2M - 1.6M",
+              startDate: "Eylül 2026",
+              timeline: "6 ay içinde başlangıç",
+              plotStatus: "Arsa hazır",
+              brief:
+                "Bir aile; eğimli banliyö arazisi için mahremiyet, peyzaj entegrasyonu ve güçlü tasarım-uygulama ekibi arayan çağdaş bir villa planlıyor.",
+              tags: ["Villa", "Anahtar Teslim", "Aile Evi"],
+              ctaLabel: "Briefi Gör",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Mimari yeniden planlamayla tam daire renovasyonu",
+              projectType: "Renovasyon",
+              location: "İstanbul / Nişantaşı",
+              budget: "EUR 220K - 340K",
+              startDate: "Haziran 2026",
+              timeline: "8-10 ayda teslim",
+              plotStatus: "Mevcut daire mülkiyeti hazır",
+              brief:
+                "Mal sahibi; mekansal yeniden kurgu, doğrama, aydınlatma ve tam anahtar teslim koordinasyon içeren üst segment bir renovasyon istiyor.",
+              tags: ["Renovasyon", "Anahtar Teslim", "İç Mekan"],
+              ctaLabel: "İlgi Göster",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Butik sahil villa grubu konsepti",
+              projectType: "Konaklama etkili konut",
+              location: "İzmir / Çeşme",
+              budget: "EUR 2.4M+",
+              startDate: "2026 3. çeyrek tasarım fazı",
+              timeline: "Bu sezon tasarım fazı",
+              plotStatus: "Arsa mevcut, fizibilite açık",
+              brief:
+                "Bir arsa sahibi; ortak peyzaj mantığı ve fazlı teslim stratejisi olan küçük ölçekli premium villa grubu ihtimalini değerlendiriyor.",
+              tags: ["Sahil", "Villa", "Geliştirme"],
+              ctaLabel: "Briefi Gör",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Sıfırdan ticari kabuk ve fit-out projesi",
+              projectType: "Ticari proje",
+              location: "Ankara / Çankaya",
+              budget: "EUR 900K - 1.3M",
+              startDate: "2026 4. çeyrek",
+              timeline: "14 ay içinde açılış hedefi",
+              plotStatus: "Arsa / saha değerlendirmede",
+              brief:
+                "Brief; tasarım odaklı karma perakende ve ofis yapısı için mimarlık, izin koordinasyonu ve teslim planlaması gerektiriyor.",
+              tags: ["Ticari", "Fit-Out", "Acil"],
+              ctaLabel: "Projeye Teklif Ver",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Misafir süitli Bodrum sezonluk evi",
+              projectType: "Lüks konut",
+              location: "Muğla / Bodrum",
+              budget: "EUR 950K - 1.4M",
+              startDate: "Arsa kapanışından sonra",
+              timeline: "Arsa alımından sonra başlangıç",
+              plotStatus: "Arsa shortlist aşamasında",
+              brief:
+                "Müşteri; havuz çevresi yaşam, bağımsız bir misafir süiti ve sıcak malzeme karakteri taşıyan resort etkili bir sezonluk ev arıyor.",
+              tags: ["Sahil", "Villa", "Resort"],
+              ctaLabel: "İlgi Göster",
+              ctaHref: "./professional-listing-submission.html",
+            },
+            {
+              title: "Orta ölçekli konut geliştirme fizibilitesi",
+              projectType: "Geliştirme etüdü",
+              location: "Bursa / Nilüfer",
+              budget: "Değerlendirme aşamasında",
+              startDate: "Hemen",
+              timeline: "Bu çeyrekte fizibilite",
+              plotStatus: "Arsa opsiyonu görüşülüyor",
+              brief:
+                "Bir geliştirici; arsaya bağlanmadan önce potansiyeli test etmek için erken aşama mimarlık ve inşaat girdisi arıyor.",
+              tags: ["Geliştirme", "Fizibilite", "Konut"],
+              ctaLabel: "Briefi Gör",
+              ctaHref: "./professional-listing-submission.html",
+            },
+          ],
+        },
+        developer: {
+          tabLabel: "Profesyonel İlanları",
+          labels: {
+            startingPrice: "Başlangıç Fiyatı",
+            deliveryRange: "Teslim Alanı",
+            services: "Öne Çıkan Hizmet",
+          },
+          items: [
+            {
+              slug: "atelier-north-studio",
+              name: "Atelier North Studio",
+              specialty: "Mimarlık Ofisi",
+              location: "İstanbul",
+              startingPrice: "Konsept paketleri EUR 45K’dan başlar",
+              deliveryRange: "Villa ve butik konut projeleri",
+              summary:
+                "Üst segment villalar, mekansal netlik ve premium konut konsept geliştirme odaklı çağdaş bir mimarlık stüdyosu.",
+              services: ["Konsept tasarım", "Ruhsat paketi", "İç mekan koordinasyonu"],
+              tags: ["Modern Villalar", "Tasarım Odaklı", "İstanbul"],
+              imageSrc: "./assets/developer-previews/atelier-north-studio.svg",
+              profileHref: "./developer-atelier-north-studio.html",
+              projectsHref: "./developer-atelier-north-studio.html#developer-projects",
+              quoteHref: "./developer-atelier-north-studio.html#developer-inquiry",
+              contactHref: "./developer-atelier-north-studio.html#developer-inquiry",
+              actions: {
+                viewProfile: "Profili Gör",
+                seeProjects: "Projeleri İncele",
+                requestQuote: "Teklif İste",
+                contactProfessional: "Profesyonelle İletişime Geç",
+              },
+            },
+            {
+              slug: "aegean-build-partners",
+              name: "Aegean Build Partners",
+              specialty: "Anahtar Teslim Yüklenici",
+              location: "İzmir / Çeşme",
+              startingPrice: "Anahtar teslim işler EUR 780K’dan başlar",
+              deliveryRange: "Sahil konut teslimleri",
+              summary:
+                "Premium sahil villaları için ince iş kalitesi, taşeron kontrolü ve dış yaşam uygulaması konusunda konumlanan bir yüklenici ekip.",
+              services: ["Anahtar teslim inşaat", "Havuz ve peyzaj koordinasyonu", "Bitiş malzemesi tedariği"],
+              tags: ["Anahtar Teslim", "Sahil", "İnce İş Kalitesi"],
+              imageSrc: "./assets/developer-previews/aegean-build-partners.svg",
+              profileHref: "./developer-aegean-build-partners.html",
+              projectsHref: "./developer-aegean-build-partners.html#developer-projects",
+              quoteHref: "./developer-aegean-build-partners.html#developer-inquiry",
+              contactHref: "./developer-aegean-build-partners.html#developer-inquiry",
+              actions: {
+                viewProfile: "Profili Gör",
+                seeProjects: "Projeleri İncele",
+                requestQuote: "Teklif İste",
+                contactProfessional: "Profesyonelle İletişime Geç",
+              },
+            },
+            {
+              slug: "ridge-development-lab",
+              name: "Ridge Development Lab",
+              specialty: "Geliştirici / Teslim Ekibi",
+              location: "İstanbul / Kemerburgaz",
+              startingPrice: "Fizibilite desteği EUR 25K’dan başlar",
+              deliveryRange: "Konut ve karma kullanım arazi stratejileri",
+              summary:
+                "Yüksek potansiyelli arsalar için arazi değerlendirmesi, teslim planlaması ve proje kurgusu sunan geliştirme odaklı ekip.",
+              services: ["Arsa fizibilitesi", "Proje kurgusu", "Teslim planlaması"],
+              tags: ["Fizibilite", "Geliştirme", "Konut"],
+              imageSrc: "./assets/developer-previews/ridge-development-lab.svg",
+              profileHref: "./developer-ridge-development-lab.html",
+              projectsHref: "./developer-ridge-development-lab.html#developer-projects",
+              quoteHref: "./developer-ridge-development-lab.html#developer-inquiry",
+              contactHref: "./developer-ridge-development-lab.html#developer-inquiry",
+              actions: {
+                viewProfile: "Profili Gör",
+                seeProjects: "Projeleri İncele",
+                requestQuote: "Teklif İste",
+                contactProfessional: "Profesyonelle İletişime Geç",
+              },
+            },
+            {
+              slug: "forma-structural-build",
+              name: "Forma Structural & Build",
+              specialty: "İnşaat Şirketi",
+              location: "Ankara",
+              startingPrice: "Kaba yapı teslimleri EUR 320K’dan başlar",
+              deliveryRange: "Ticari ve konut kabuk yapıları",
+              summary:
+                "Üst segment proje ekipleri için yapısal uygulama gücünü detay odaklı koordinasyonla birleştiren disiplinli bir yüklenici.",
+              services: ["Kaba yapı işleri", "Ana yüklenici hizmetleri", "Şantiye koordinasyonu"],
+              tags: ["Ana Yüklenici", "Ticari", "Taşıyıcı Sistem"],
+              imageSrc: "./assets/developer-previews/forma-structural-build.svg",
+              profileHref: "./developer-forma-structural-build.html",
+              projectsHref: "./developer-forma-structural-build.html#developer-projects",
+              quoteHref: "./developer-forma-structural-build.html#developer-inquiry",
+              contactHref: "./developer-forma-structural-build.html#developer-inquiry",
+              actions: {
+                viewProfile: "Profili Gör",
+                seeProjects: "Projeleri İncele",
+                requestQuote: "Teklif İste",
+                contactProfessional: "Profesyonelle İletişime Geç",
+              },
+            },
+            {
+              slug: "bodrum-living-atelier",
+              name: "Bodrum Living Atelier",
+              specialty: "Mimarlık + İç Mekan",
+              location: "Bodrum",
+              startingPrice: "İç mekan odaklı konseptler EUR 38K’dan başlar",
+              deliveryRange: "Resort villalar ve konaklama etkili konutlar",
+              summary:
+                "Daha yumuşak lüks dili, dış yaşam entegrasyonu ve sezonluk konutlar için küratöryel malzeme yönü sunan tasarım pratiği.",
+              services: ["Mimarlık", "İç mimarlık", "Malzeme kurgusu"],
+              tags: ["Resort Hissi", "Bodrum", "İç Mekan"],
+              imageSrc: "./assets/developer-previews/bodrum-living-atelier.svg",
+              profileHref: "./developer-bodrum-living-atelier.html",
+              projectsHref: "./developer-bodrum-living-atelier.html#developer-projects",
+              quoteHref: "./developer-bodrum-living-atelier.html#developer-inquiry",
+              contactHref: "./developer-bodrum-living-atelier.html#developer-inquiry",
+              actions: {
+                viewProfile: "Profili Gör",
+                seeProjects: "Projeleri İncele",
+                requestQuote: "Teklif İste",
+                contactProfessional: "Profesyonelle İletişime Geç",
+              },
+            },
+            {
+              slug: "urban-span-contracting",
+              name: "Urban Span Contracting",
+              specialty: "Cephe + Fit-Out Ortağı",
+              location: "İstanbul",
+              startingPrice: "Cephe kapsamları EUR 180K’dan başlar",
+              deliveryRange: "Üst segment konut zarfları",
+              summary:
+                "Teslim disiplini ve bitiş kalitesinin kritik olduğu projelerde cam, kaplama ve premium fit-out paketlerine odaklanan uzman yüklenici.",
+              services: ["Cephe paketleri", "Cam sistemleri", "İç mekan fit-out"],
+              tags: ["Cephe", "Fit-Out", "Detay Kalitesi"],
+              imageSrc: "./assets/developer-previews/urban-span-contracting.svg",
+              profileHref: "./developer-urban-span-contracting.html",
+              projectsHref: "./developer-urban-span-contracting.html#developer-projects",
+              quoteHref: "./developer-urban-span-contracting.html#developer-inquiry",
+              contactHref: "./developer-urban-span-contracting.html#developer-inquiry",
+              actions: {
+                viewProfile: "Profili Gör",
+                seeProjects: "Projeleri İncele",
+                requestQuote: "Teklif İste",
+                contactProfessional: "Profesyonelle İletişime Geç",
+              },
+            },
+          ],
+        },
+      },
+      cta: {
+        eyebrow: "İlan oluştur",
+        title: "Bir brief yayınlamaya veya teklifinizi sunmaya hazır mısınız?",
+        description:
+          "Bu ilk versiyon yalnızca frontend yapısıdır; ancak kullanıcı hesabı, moderasyon ve lead yönlendirmesi içeren gerçek ilan oluşturma akışına hazır şekilde kurgulandı.",
+        clientLabel: "Projeni Yayınla",
+        clientHref: "./client-project-submission.html",
+        proLabel: "Hizmetlerini Listele",
+        proHref: "./professional-listing-submission.html",
+      },
+      footer: {
+        description:
+          "Open Marketplace, Yapply’yi müşterilerin proje niyetini yayınlayabildiği ve profesyonellerin küratöryel ilanlarla görünür olabildiği premium iki taraflı bir yapıya genişletir.",
+        columns: [
+          {
+            title: "Pazaryeri",
+            links: [
+              { label: "Müşteri ilanları", href: "#marketplace-listings" },
+              { label: "Profesyonel ilanları", href: "#marketplace-listings" },
+              { label: "Projeni yayınla", href: "./client-project-submission.html" },
+            ],
+          },
+          {
+            title: "Keşfet",
+            links: [
+              { label: "Öne çıkan projeler", href: "./index.html#featured-projects" },
+              { label: "Profesyoneller için", href: "./professionals.html" },
+              { label: "Ana sayfaya dön", href: "./index.html" },
+            ],
+          },
+        ],
+        note: "Open Marketplace; moderasyon, profiller ve lead yönlendirmesi içeren canlı bir ilan sisteminin temeli olarak tasarlandı.",
+        contact: "hello@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+    },
+    marketplaceSubmissionPages: {
+      client: {
+        nav: {
+          ariaLabel: "Müşteri gönderim gezinmesi",
+          brandHref: "./index.html",
+          links: [
+            { label: "Pazaryerine dön", href: "./open-marketplace.html" },
+            { label: "Gönderim formu", href: "#submission-form" },
+          ],
+          cta: "Açık Pazaryeri",
+          ctaHref: "./open-marketplace.html",
+        },
+        hero: {
+          eyebrow: "Müşteri proje gönderimi",
+          title: "Ne inşa etmek istediğinizi daha net bir şekilde yayınlayın.",
+          description:
+            "Bu formu kullanarak Open Marketplace içinde yayınlanmaya hazır bir proje briefi oluşturabilirsiniz. Yapı, profesyonellerin projenizi daha hızlı anlamasına yardımcı olur.",
+          primaryCta: { label: "Formu Doldur", href: "#submission-form" },
+          secondaryCta: { label: "Pazaryerine Dön", href: "./open-marketplace.html" },
+          boardLabels: {
+            intake: "Proje alımı",
+            review: "Profesyonel odaklı brief",
+          },
+          boardValues: {
+            intake: "Kapsam, bütçe, bölge ve zamanlama",
+            review: "Gelecekte eşleşme ve teklif sürecine hazır",
+          },
+          notes: [
+            { value: "Premium", label: "Ciddi ve yüksek bağlamlı yapı talepleri için" },
+            { value: "Yapılandırılmış", label: "Profesyonellerin uyumu daha hızlı değerlendirmesine yardım eder" },
+            { value: "Frontend", label: "Sonraki fazda backend entegrasyonuna hazır" },
+          ],
+        },
+        form: {
+          eyebrow: "Müşteri intake formu",
+          title: "Yapply’ye ne inşa etmek istediğinizi anlatın.",
+          description:
+            "Bu ilk versiyon yalnızca frontend akışıdır; ancak moderasyon, pazaryeri yayını ve lead yönlendirmesi için gerekli tam yapı kurulmuştur.",
+          submitLabel: "Proje Briefini Gönder",
+          successTitle: "Proje briefi alındı",
+          successText: "Proje gönderiminiz bu frontend akışında kaydedildi. Sonraki fazda canlı pazaryeri değerlendirme ve yayın sürecine bağlanabilir.",
+          summary: {
+            eyebrow: "Gönderim amacı",
+            title: "Ciddi bir lüks yapı intake akışı",
+            description:
+              "Form; proje tipi, bölge, arsa hazırlığı, bütçe, zamanlama, stil tercihi ve yapı hedefi gibi profesyonellerin ihtiyaç duyduğu temel sinyalleri toplar.",
+            items: [
+              { label: "Hedef kitle", value: "Mimarlar, geliştiriciler, yükleniciler" },
+              { label: "Kullanım", value: "Pazaryerinde brief yayını" },
+              { label: "Akış", value: "Şimdilik yalnızca frontend" },
+            ],
+          },
+          fields: {
+            fullName: { label: "Ad Soyad", placeholder: "Adınız ve soyadınız", autocomplete: "name", required: true },
+            email: { label: "E-posta", type: "email", placeholder: "isim@email.com", autocomplete: "email", required: true },
+            phone: { label: "Telefon Numarası", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+            projectTitle: { label: "Proje Başlığı", placeholder: "Özel sahil villası, butik renovasyon, karma kullanım konsepti...", required: true },
+            projectType: {
+              label: "Proje Türü",
+              type: "select",
+              placeholder: "Proje türünü seçin",
+              options: ["Villa Yapımı", "Daire Renovasyonu", "Ticari Proje", "Konut Geliştirme", "Konaklama Konsepti"],
+              required: true,
+            },
+            preferredLocation: { label: "Tercih Edilen Lokasyon / Şehir", placeholder: "İstanbul, İzmir, Bodrum...", required: true },
+            estimatedBudget: {
+              label: "Tahmini Bütçe",
+              type: "select",
+              placeholder: "Tahmini aralığınızı seçin",
+              options: ["EUR 300K altı", "EUR 300K - 800K", "EUR 800K - 1.5M", "EUR 1.5M - 3M", "EUR 3M+"],
+              required: true,
+            },
+            desiredTimeline: { label: "İstenen Takvim / Başlangıç", placeholder: "2026 3. çeyrek, 6 ay içinde, arsa kapanışından sonra...", required: true },
+            plotStatus: {
+              label: "Arsa Sahiplik Durumu",
+              type: "select",
+              placeholder: "Mevcut arsa durumunuzu seçin",
+              options: ["Arsa bana ait", "Arsa rezerve / inceleme aşamasında", "Arsa seçenekleri aranıyor", "Arsa ve fizibilite danışmanlığına ihtiyacım var"],
+              required: true,
+            },
+            projectSize: { label: "Proje Ölçeği / m2 Hedefi", placeholder: "Yaklaşık 280 m2 iç alan / 900 m2 arsa", required: true },
+            stylePreference: { label: "Stil Tercihi", placeholder: "Akdeniz modern, sıcak minimal, çağdaş yamaç evi...", required: true },
+            projectBrief: {
+              label: "Kısa Proje Briefi / Ne İnşa Etmek İstiyorsunuz?",
+              type: "textarea",
+              placeholder: "Projeyi, yaşam hedefini, gerekli mekanları ve yapıdaki önceliklerinizi anlatın.",
+              rows: 5,
+              full: true,
+              required: true,
+            },
+            referenceUpload: {
+              label: "Referans Görsel Yükleme",
+              type: "file",
+              placeholder: "İlham görselleri veya referans materyal yükleyin",
+              hint: "Şimdilik yalnızca frontend placeholder alanıdır. Gelecek versiyonlarda görseller doğrudan pazaryeri akışına alınabilir.",
+              full: true,
+            },
+            additionalNotes: {
+              label: "Ek Notlar",
+              type: "textarea",
+              placeholder: "Profesyonellerin projenizi anlamasına yardımcı olacak ek bilgileri paylaşın.",
+              rows: 4,
+              full: true,
+            },
+          },
+        },
+        footer: {
+          description:
+            "Yapply müşteri proje gönderim sayfaları; yüksek niyetli briefleri gelecekte pazaryerinde yayınlanabilecek yapılandırılmış bir akışa dönüştürmek için tasarlandı.",
+          columns: [
+            {
+              title: "Gönderim",
+              links: [
+                { label: "Proje formu", href: "#submission-form" },
+                { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+              ],
+            },
+            {
+              title: "Keşfet",
+              links: [
+                { label: "Öne çıkan projeler", href: "./index.html#featured-projects" },
+                { label: "Profesyoneller için", href: "./professionals.html" },
+              ],
+            },
+          ],
+          note: "Bu sayfa şimdilik yalnızca frontend akışıdır ve gelecekte moderasyon, yayın ve lead yönlendirme sistemlerine hazırdır.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+      professional: {
+        nav: {
+          ariaLabel: "Profesyonel gönderim gezinmesi",
+          brandHref: "./index.html",
+          links: [
+            { label: "Pazaryerine dön", href: "./open-marketplace.html" },
+            { label: "Gönderim formu", href: "#submission-form" },
+          ],
+          cta: "Açık Pazaryeri",
+          ctaHref: "./open-marketplace.html",
+        },
+        hero: {
+          eyebrow: "Profesyonel ilan gönderimi",
+          title: "Uzmanlığınızı premium bir pazaryeri formatında sunun.",
+          description:
+            "Mimarlar, geliştiriciler, yükleniciler ve inşaat şirketleri bu sayfayı kullanarak Yapply’nin gelecekteki açık pazaryeri için profesyonel ilanlarını gönderebilir.",
+          primaryCta: { label: "Formu Doldur", href: "#submission-form" },
+          secondaryCta: { label: "Pazaryerine Dön", href: "./open-marketplace.html" },
+          boardLabels: {
+            intake: "Profesyonel profil",
+            review: "Pazaryerine hazır ilan",
+          },
+          boardValues: {
+            intake: "Uzmanlık, bölge, fiyat ve portfolyo",
+            review: "Gelecekte moderasyon ve yayın için hazır",
+          },
+          notes: [
+            { value: "Güvenilir", label: "Uzmanlığınızı daha net sunmanız için yapılandırıldı" },
+            { value: "Küratöryel", label: "Yapply’nin premium pazaryeri tonuyla uyumlu" },
+            { value: "Frontend", label: "Sonraki fazda backend entegrasyonuna hazır" },
+          ],
+        },
+        form: {
+          eyebrow: "Profesyonel ilan formu",
+          title: "İlanınızı net ve premium bir profille gönderin.",
+          description:
+            "Bu ilk versiyon yalnızca frontend akışıdır; ancak moderasyon, profil onayı ve pazaryeri yayını için uygun şekilde tasarlandı.",
+          submitLabel: "Profesyonel İlanı Gönder",
+          successTitle: "Profesyonel ilan alındı",
+          successText: "Profesyonel ilanınız bu frontend akışında kaydedildi. Sonraki fazda onay, CRM ve canlı pazaryeri yayınına bağlanabilir.",
+          summary: {
+            eyebrow: "İlan yapısı",
+            title: "Premium profesyonel görünürlük için tasarlandı",
+            description:
+              "Form; şirket profilinizi, uzmanlıklarınızı, coğrafi alanınızı, deneyim seviyenizi, fiyat pozisyonunuzu ve portfolyo bağlamınızı toplar.",
+            items: [
+              { label: "Hedef kitle", value: "Doğru proje ortağını arayan müşteriler" },
+              { label: "Kullanım", value: "Profesyonel ilan gönderimi" },
+              { label: "Akış", value: "Şimdilik yalnızca frontend" },
+            ],
+          },
+          fields: {
+            fullName: { label: "Ad Soyad", placeholder: "Adınız ve soyadınız", autocomplete: "name", required: true },
+            companyName: { label: "Şirket Adı", placeholder: "Stüdyo veya firma adı", required: true },
+            professionType: {
+              label: "Meslek Türü",
+              type: "select",
+              placeholder: "Meslek türünüzü seçin",
+              options: ["Mimarlık Ofisi", "Geliştirici", "İnşaat Şirketi", "Anahtar Teslim Yüklenici", "Cephe / Fit-Out Uzmanı"],
+              required: true,
+            },
+            serviceArea: { label: "Şehir / Hizmet Alanı", placeholder: "İstanbul, İzmir, Bodrum, Ankara...", required: true },
+            experience: { label: "Deneyim Yılı", type: "number", placeholder: "10", required: true },
+            specialties: { label: "Uzmanlıklar / Sunulan Hizmetler", placeholder: "Villa projeleri, anahtar teslim işler, renovasyon teslimi, fizibilite...", required: true },
+            pricingModel: { label: "Başlangıç Fiyatı veya Fiyatlama Modeli", placeholder: "Konsept paketleri EUR 45K’dan / Anahtar teslim EUR 780K’dan", required: true },
+            portfolioSummary: {
+              label: "Geçmiş Projeler / Portfolyo Özeti",
+              type: "textarea",
+              placeholder: "İlgili geçmiş işlerinizi, hizmet verdiğiniz sektörleri ve teslim gücünüzü özetleyin.",
+              rows: 5,
+              full: true,
+              required: true,
+            },
+            website: { label: "Website / Portfolyo URL", type: "url", placeholder: "https://studionuz.com", required: true },
+            companyDescription: {
+              label: "Kısa Şirket Tanımı",
+              type: "textarea",
+              placeholder: "Konumlanmanızı, ekip gücünüzü ve pazardaki uygunluğunuzu kısa ve premium bir tonda anlatın.",
+              rows: 4,
+              full: true,
+              required: true,
+            },
+            uploads: {
+              label: "Logo / Proje Görselleri / Portfolyo Yükleme",
+              type: "file",
+              placeholder: "İlanınızı destekleyen materyalleri yükleyin",
+              hint: "Şimdilik yalnızca frontend placeholder alanıdır. Gelecek sürümlerde yüklenen dosyalar yayın öncesi moderasyon sürecine alınabilir.",
+              full: true,
+              multiple: true,
+            },
+            contactEmail: { label: "İletişim E-postası", type: "email", placeholder: "ekip@sirket.com", autocomplete: "email", required: true },
+            phone: { label: "Telefon Numarası", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+          },
+        },
+        footer: {
+          description:
+            "Yapply profesyonel ilan gönderim sayfaları; pratiklerin uzmanlığını daha güvenilir ve premium bir pazaryeri formatında sunmasına yardımcı olur.",
+          columns: [
+            {
+              title: "Gönderim",
+              links: [
+                { label: "İlan formu", href: "#submission-form" },
+                { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+              ],
+            },
+            {
+              title: "Keşfet",
+              links: [
+                { label: "Profesyoneller için", href: "./professionals.html" },
+                { label: "Öne çıkan projeler", href: "./index.html#featured-projects" },
+              ],
+            },
+          ],
+          note: "Bu sayfa şimdilik yalnızca frontend akışıdır ve gelecekte moderasyon, yayın ve lead yönlendirme sistemlerine hazırdır.",
+          contact: "hello@yapply.com",
+          copyrightLabel: "Yapply",
+        },
+      },
+    },
+    developerProfilePage: {
+      nav: {
+        ariaLabel: "Profesyonel profil gezinmesi",
+        brandHref: "./index.html",
+        links: [
+          { label: "Pazaryerine dön", href: "./open-marketplace.html" },
+          { label: "Genel bakış", href: "#developer-overview" },
+          { label: "Projeler", href: "#developer-projects" },
+          { label: "İletişim", href: "#developer-inquiry" },
+        ],
+      },
+      hero: {
+        eyebrow: "Pazaryeri profili",
+        primaryCta: "Teklif İste",
+        secondaryCta: "Projeleri İncele",
+      },
+      labels: {
+        specialty: "Uzmanlık",
+        location: "Lokasyon",
+        startingPrice: "Başlangıç Fiyatı",
+        deliveryRange: "Teslim Alanı",
+        experience: "Deneyim",
+        projectsDelivered: "Tamamlanan Proje",
+        serviceArea: "Hizmet Bölgesi",
+      },
+      sections: {
+        overview: {
+          eyebrow: "Profil genel bakışı",
+          title: "Doğrudan müşteri değerlendirmesi için kurgulanmış premium bir iş ortağı profili.",
+          description:
+            "Her profil; ciddi bir görüşme başlamadan önce yetkinliği, teslim alanını ve proje uyumunu daha net anlatmak için yapılandırıldı.",
+        },
+        services: {
+          eyebrow: "Hizmetler",
+          title: "Yüksek değerli konut ve karma kullanım briefleri için net yetkinlikler.",
+          description:
+            "Hizmet sunumu; müşterilerin kalite algısını kaybetmeden uyumu hızlıca tarayabilmesi için bilinçli olarak sade, rafine ve pratik tutuldu.",
+        },
+        projects: {
+          eyebrow: "Seçili projeler",
+          title: "Pazaryeri karar anına uygun daha odaklı bir portfolyo görünümü.",
+          description:
+            "Bu örnek projeler, ekibin Yapply üzerinde en iyi uyum sağladığı tipolojiyi, kalite seviyesini ve teslim karakterini gösterir.",
+        },
+        inquiry: {
+          eyebrow: "Teklif iste",
+          title: "Bu profesyonel profille doğrudan bir görüşme başlatın.",
+          description:
+            "Proje bağlamınızı ve bütçe aralığınızı paylaşarak bu ekibe premium bir talep akışı üzerinden ilginizi iletin.",
+          summaryTitle: "Seçilen profesyonel",
+          formTitle: "Profesyonel talep formu",
+          formIntro:
+            "Bu aşamada yalnızca frontend iletişim akışı hazırdır. Sonraki fazda CRM, bildirimler veya pazaryeri mesajlaşmasına bağlanacak şekilde kurgulandı.",
+          submitLabel: "Talep Gönder",
+          successTitle: "Talebiniz alındı",
+          successText: "İlgi kaydınız şu profesyonel için alındı: ",
+          successTextEnd: ". Sonraki fazda bu akış doğrudan Yapply’nin profesyonel lead sürecine bağlanabilir.",
+          fields: {
+            fullName: { label: "Ad Soyad", placeholder: "Adınız ve soyadınız" },
+            email: { label: "E-posta", placeholder: "isim@email.com" },
+            phone: { label: "Telefon Numarası", placeholder: "+90 5XX XXX XX XX" },
+            city: { label: "Proje lokasyonu / şehir", placeholder: "İstanbul, İzmir, Bodrum..." },
+            scope: { label: "Proje kapsamı", placeholder: "İhtiyaç duyduğunuz iş tipini seçin" },
+            budget: { label: "Tahmini bütçe", placeholder: "Beklenen aralığı seçin" },
+            message: { label: "Mesaj / proje bağlamı", placeholder: "Ne inşa etmek istediğinizi, takvim beklentinizi ve arsa bağlamınızı anlatın." },
+          },
+          scopeOptions: [
+            "Yalnızca konsept tasarım",
+            "Mimarlık + ruhsat süreci",
+            "Anahtar teslim inşaat",
+            "Geliştirme / teslim danışmanlığı",
+            "Cephe veya fit-out paketi",
+          ],
+          budgetOptions: [
+            "EUR 300K altı",
+            "EUR 300K - 800K",
+            "EUR 800K - 1.5M",
+            "EUR 1.5M - 3M",
+            "EUR 3M+",
+          ],
+        },
+      },
+      footer: {
+        description:
+          "Yapply profesyonel profil sayfaları; premium ekipleri daha kolay değerlendirmek, karşılaştırmak ve yapılandırılmış bir pazaryeri formatında iletişime geçmek için tasarlandı.",
+        columns: [
+          {
+            title: "Pazaryeri",
+            links: [
+              { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+              { label: "Projeler", href: "#developer-projects" },
+              { label: "Teklif iste", href: "#developer-inquiry" },
+            ],
+          },
+          {
+            title: "Keşfet",
+            links: [
+              { label: "Öne çıkan projeler", href: "./index.html#featured-projects" },
+              { label: "Profesyoneller için", href: "./professionals.html" },
+              { label: "Ana sayfaya dön", href: "./index.html" },
+            ],
+          },
+        ],
+        note: "Profesyonel profil sayfaları, pazaryerine hazır detay görünümü olarak kurgulandı ve ileride doğrulanmış kamuya açık ilanlara dönüşebilir.",
+        contact: "hello@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+      profiles: {
+        "atelier-north-studio": {
+          name: "Atelier North Studio",
+          subtitle: "Rafine malzeme yönü ve sakin mekansal kurguya sahip üst segment villalara odaklanan İstanbul merkezli tasarım stüdyosu.",
+          specialty: "Mimarlık Ofisi",
+          location: "İstanbul",
+          startingPrice: "Konsept paketleri EUR 45K’dan başlar",
+          deliveryRange: "Villa ve butik konut projeleri",
+          experience: "12 yıl",
+          projectsDelivered: "34",
+          serviceArea: "İstanbul, Sapanca, İzmir",
+          imageSrc: "./assets/developer-previews/atelier-north-studio.svg",
+          visualLabel: "Öne çıkan konut",
+          visualCaption: "Çağdaş aile villası konsept panosu",
+          tags: ["Modern villalar", "Konsept tasarım", "Planlama netliği"],
+          overview:
+            "Atelier North Studio; soğuk bir estetikten uzak, orantı ve sakin lüks duygusunu öne çıkaran çağdaş konutlara odaklanır. İşleri çoğunlukla konsept aşamasında başlar ve ruhsat koordinasyonu ile iç mekan hizasına kadar ilerler.",
+          positioning:
+            "Bu stüdyo; inşaat ekibi netleşmeden önce tasarım sürecinde güçlü mimari yön ve rafine mekansal kurgu isteyen müşteriler için doğru eşleşmedir.",
+          services: [
+            { title: "Konsept mimarlık", description: "Erken tasarım yönü, kütle kararı ve premium konut planlama çerçevesi." },
+            { title: "Ruhsat koordinasyonu", description: "Belediye ve danışman süreçlerine daha temiz ilerleyecek mimari paket geliştirmesi." },
+            { title: "İç mekan hizası", description: "Mimari konseptin uygulama aşamasında da tutarlı kalması için malzeme ve iç mekan yönlendirmesi." },
+          ],
+          projects: [
+            { name: "Forest Edge Residence", type: "Özel villa", location: "Sarıyer / İstanbul", summary: "Bahçeye açılan derin saçaklar ve sıcak taş diliyle tasarlanmış katmanlı aile villası.", imageSrc: "./assets/developer-previews/atelier-north-studio.svg" },
+            { name: "Waterside Courtyard Home", type: "Butik konut", location: "Sapanca", summary: "Mahremiyet, misafir ağırlama akışı ve sıcak malzeme karakteri etrafında kurgulanmış avlulu ev.", imageSrc: "./assets/project-previews/aegean-courtyard-villa.svg" },
+          ],
+        },
+        "aegean-build-partners": {
+          name: "Aegean Build Partners",
+          subtitle: "Sahil villalarında premium ince iş kalitesi ve dış yaşam kurgusuna hakim anahtar teslim yüklenici ekip.",
+          specialty: "Anahtar Teslim Yüklenici",
+          location: "İzmir / Çeşme",
+          startingPrice: "Anahtar teslim işler EUR 780K’dan başlar",
+          deliveryRange: "Sahil konut teslimleri",
+          experience: "15 yıl",
+          projectsDelivered: "41",
+          serviceArea: "Çeşme, Urla, Bodrum",
+          imageSrc: "./assets/developer-previews/aegean-build-partners.svg",
+          visualLabel: "Sahil teslimi",
+          visualCaption: "Sıcak taş ve cam villanın uygulama kurgusu",
+          tags: ["Anahtar teslim", "Sahil evleri", "İnce iş kalitesi"],
+          overview:
+            "Aegean Build Partners; kıyı bölgelerinde lüks villa tesliminin gerektirdiği detay yönetimi, dış yaşam koordinasyonu ve malzeme kontrolü üzerine uzmanlaşmıştır.",
+          positioning:
+            "Anahtar teslim bir süreç arayan, hem yapısal uygulamayı hem de ince işleri tek ekip koordinasyonunda görmek isteyen müşteriler için güçlü bir profildir.",
+          services: [
+            { title: "Anahtar teslim inşaat", description: "Mobilizasyondan devreye alma ve teslim noktasına kadar ana uygulama koordinasyonu." },
+            { title: "Dış yaşam teslimi", description: "Havuz, teras, peyzaj ve pergola alanlarının ana proje planına entegre edilmesi." },
+            { title: "Malzeme tedariği", description: "Premium malzeme paketleri, tedarikçi ilişkileri ve bitiş kalitesi kontrolü." },
+          ],
+          projects: [
+            { name: "Aegean Terrace Villa", type: "Anahtar teslim villa", location: "Çeşme", summary: "Denize açılan terasları, taş kaplaması ve yaz yaşamına odaklanan ince detaylarıyla öne çıkan villa.", imageSrc: "./assets/project-previews/hillside-retreat-villa.svg" },
+            { name: "Urla Horizon House", type: "Lüks konut", location: "Urla", summary: "Dış yaşam ile iç mekan bütünlüğünü güçlendiren, yüksek özellikli bitiş paketine sahip iki katlı konut.", imageSrc: "./assets/developer-previews/aegean-build-partners.svg" },
+          ],
+        },
+        "ridge-development-lab": {
+          name: "Ridge Development Lab",
+          subtitle: "Konut arsaları için fizibilite, arazi stratejisi ve teslim planlamasını aynı çerçevede yöneten geliştirme odaklı ekip.",
+          specialty: "Geliştirici / Teslim Ekibi",
+          location: "İstanbul / Kemerburgaz",
+          startingPrice: "Fizibilite desteği EUR 25K’dan başlar",
+          deliveryRange: "Konut ve karma kullanım arazi stratejileri",
+          experience: "10 yıl",
+          projectsDelivered: "22",
+          serviceArea: "İstanbul, Bursa, Ankara",
+          imageSrc: "./assets/developer-previews/ridge-development-lab.svg",
+          visualLabel: "Geliştirme stratejisi",
+          visualCaption: "Yamaç yerleşimi ve fizibilite panosu",
+          tags: ["Fizibilite", "Arsa stratejisi", "Konut geliştirme"],
+          overview:
+            "Ridge Development Lab; müşteriler ve arsa sahipleri için tam tasarım-uygulama sürecine geçmeden önce fırsatın doğru test edilmesine odaklanır. Değer önerisi; yoğunluk, fazlama ve teslim mantığını erken aşamada netleştirmektir.",
+          positioning:
+            "Arsa kararı, yatırım senaryosu veya orta ölçekli konut geliştirme planı olan; ticari disiplin ile mimari çerçeveyi birlikte görmek isteyen kullanıcılar için uygundur.",
+          services: [
+            { title: "Arsa fizibilitesi", description: "Sahanın potansiyeli, yoğunluk mantığı ve ticari uygunluğuna dair erken testler." },
+            { title: "Proje kurgusu", description: "Tasarım derinleşmeden önce teslim stratejisi, faz mantığı ve konumlama desteği." },
+            { title: "Danışman hizası", description: "Mimarlık, mühendislik ve maliyet perspektiflerini tek bir geliştirme briefinde birleştirme." },
+          ],
+          projects: [
+            { name: "Ridge Court Residences", type: "Konut etüdü", location: "Kemerburgaz", summary: "Fazlı teslim ve manzara avantajı üzerinden kurgulanmış, teraslı banliyö yerleşim senaryosu.", imageSrc: "./assets/developer-previews/ridge-development-lab.svg" },
+            { name: "Nilufer Family Blocks", type: "Fizibilite paketi", location: "Bursa", summary: "Satılabilirlik, saha verimliliği ve uygulama fazlarını dengeleyen orta ölçekli konut çalışması.", imageSrc: "./assets/project-previews/urban-ridge-villa.svg" },
+          ],
+        },
+        "forma-structural-build": {
+          name: "Forma Structural & Build",
+          subtitle: "Premium kabuk yapılar, disiplinli şantiye yönetimi ve net teknik koordinasyon için Ankara merkezli uygulama liderliği.",
+          specialty: "İnşaat Şirketi",
+          location: "Ankara",
+          startingPrice: "Kaba yapı teslimleri EUR 320K’dan başlar",
+          deliveryRange: "Ticari ve konut kabuk yapıları",
+          experience: "18 yıl",
+          projectsDelivered: "58",
+          serviceArea: "Ankara, Eskişehir, Konya",
+          imageSrc: "./assets/developer-previews/forma-structural-build.svg",
+          visualLabel: "Uygulama disiplini",
+          visualCaption: "Çok hacimli konut kabuk paket görünümü",
+          tags: ["Kaba yapı", "Ana yüklenici", "Şantiye disiplini"],
+          overview:
+            "Forma Structural & Build; premium kabuk yapılar ve teknik koordinasyon gerektiren uygulamalar için güvenilir saha gücü sunar. Profilin odağında program kontrolü, mühendislik uyumu ve şantiye netliği vardır.",
+          positioning:
+            "Gösterişli sunumdan çok, yapısal güven, söz verilen program ve koordinasyon disiplini arayan projeler için doğru eşleşmedir.",
+          services: [
+            { title: "Kaba yapı işleri", description: "Betonarme, çelik ve kabuk uygulamalarında yakın mühendislik koordinasyonu." },
+            { title: "Ana yüklenici yönetimi", description: "Şantiye sıralaması, taşeron planlaması ve kilometre taşı kontrolü." },
+            { title: "Teknik teslim", description: "Detay çözümü, tedarik zamanı ve uygulama arayüzlerinde daha pratik bir yaklaşım." },
+          ],
+          projects: [
+            { name: "Ankara Frame House", type: "Konut kabuğu", location: "Ankara", summary: "Taşıyıcı sistem kurgusu güçlü, kabuk hazır hale getirilmiş büyük ölçekli özel konut.", imageSrc: "./assets/developer-previews/forma-structural-build.svg" },
+            { name: "Cankaya Office Pavilion", type: "Ticari kabuk", location: "Ankara", summary: "Danışman koordinasyonu ve etaplı uygulama planıyla ilerletilen düşük katlı ofis-perakende yapısı.", imageSrc: "./assets/project-previews/urban-ridge-villa.svg" },
+          ],
+        },
+        "bodrum-living-atelier": {
+          name: "Bodrum Living Atelier",
+          subtitle: "Yumuşak lüks dili, dış yaşam odağı ve sezonluk yaşam kurgusuyla öne çıkan mimarlık ve iç mekan pratiği.",
+          specialty: "Mimarlık + İç Mekan",
+          location: "Bodrum",
+          startingPrice: "İç mekan odaklı konseptler EUR 38K’dan başlar",
+          deliveryRange: "Resort villalar ve konaklama etkili konutlar",
+          experience: "9 yıl",
+          projectsDelivered: "27",
+          serviceArea: "Bodrum, Göcek, Fethiye",
+          imageSrc: "./assets/developer-previews/bodrum-living-atelier.svg",
+          visualLabel: "Sezonluk yaşam",
+          visualCaption: "Havuz avlulu resort villa kompozisyonu",
+          tags: ["Resort hissi", "İç mekan", "Dış yaşam"],
+          overview:
+            "Bodrum Living Atelier; mimarlık, iç mekan ve malzeme seçimini birlikte ele alarak evlerin daha rahat, dokunsal ve konaklama etkili hissetmesini hedefler.",
+          positioning:
+            "İkinci konutlar, markalı konutlar ve duygusal deneyimi plan kadar önemli olan sahil projeleri için güçlü bir eşleşmedir.",
+          services: [
+            { title: "Mimarlık + iç mekan", description: "Mimari ve iç mekansal kararların tek bir konsept diliyle geliştirilmesi." },
+            { title: "Malzeme kurgusu", description: "Sıcak paletler, doğal yüzeyler ve konaklama etkili premium bitiş paketleri." },
+            { title: "Havuz ve teras planlaması", description: "Dış yaşam alanlarının daha güçlü, yaşanabilir ve davetkar kurulması." },
+          ],
+          projects: [
+            { name: "Bodrum Cove House", type: "Sezonluk villa", location: "Bodrum", summary: "Uzun havuz çizgisi, gölgeli lounge alanları ve yumuşak doğal dokularla tanımlanan sahil evi.", imageSrc: "./assets/developer-previews/bodrum-living-atelier.svg" },
+            { name: "Sunset Guest Estate", type: "Resort konut", location: "Göcek", summary: "Bağımsız misafir süitleri ve katmanlı iç-dış yaşam sekansıyla kurgulanmış kıyı konutu.", imageSrc: "./assets/project-previews/hillside-retreat-villa.svg" },
+          ],
+        },
+        "urban-span-contracting": {
+          name: "Urban Span Contracting",
+          subtitle: "Cephe sistemleri, doğrama ve premium fit-out paketlerinde detay kontrolünü merkeze alan uzman çözüm ortağı.",
+          specialty: "Cephe + Fit-Out Ortağı",
+          location: "İstanbul",
+          startingPrice: "Cephe kapsamları EUR 180K’dan başlar",
+          deliveryRange: "Üst segment konut zarfları",
+          experience: "14 yıl",
+          projectsDelivered: "49",
+          serviceArea: "İstanbul, Bursa, İzmir",
+          imageSrc: "./assets/developer-previews/urban-span-contracting.svg",
+          visualLabel: "Zarf sistemleri",
+          visualCaption: "Cephe ve cam paket kompozisyonu",
+          tags: ["Cephe paketleri", "Cam sistemleri", "Lüks fit-out"],
+          overview:
+            "Urban Span Contracting; premium konut kalitesini görünür şekilde etkileyen teknik katmanlara odaklanır. Cephe hassasiyeti, cam detayları ve ince iş paketleri bu profilin ana gücüdür.",
+          positioning:
+            "Proje yönü netleşmiş ancak bina zarfı performansı ve bitiş kalitesini uzman bir ortakla güçlendirmek isteyen mimarlar ve müşteriler için uygundur.",
+          services: [
+            { title: "Cephe paketleri", description: "Kaplama, dış kabuk sıralaması ve üst segment konut projeleri için sistem desteği." },
+            { title: "Cam sistemleri", description: "Geniş açıklıklar, köşe birleşimleri ve daha temiz görüş hatları için yüksek kaliteli cam koordinasyonu." },
+            { title: "İç mekan fit-out", description: "Doğrama, bitişler ve premium iç mekan paketleri için odaklı uygulama desteği." },
+          ],
+          projects: [
+            { name: "Glass Horizon Villa", type: "Cephe paketi", location: "İstanbul", summary: "Geniş açıklıklı camları ve hassas birleşim detaylarıyla öne çıkan yamaç villa cephesi.", imageSrc: "./assets/developer-previews/urban-span-contracting.svg" },
+            { name: "Bosphorus Detail House", type: "Fit-out paketi", location: "İstanbul", summary: "Cephe, doğrama ve premium iç mekan paketlerinin hassas koordinasyonla çözüldüğü konut.", imageSrc: "./assets/project-previews/urban-ridge-villa.svg" },
+          ],
+        },
+      },
+    },
+    projectDetailPage: {
+      nav: {
+        ariaLabel: "Proje gezinmesi",
+        brandHref: "./index.html",
+        links: [
+          { label: "Ana sayfaya dön", href: "./index.html" },
+          { label: "Genel bakış", href: "#project-overview" },
+          { label: "Fiyatlama", href: "#project-pricing" },
+          { label: "Zaman planı", href: "#project-timeline" },
+          { label: "Dahil olanlar", href: "#project-included" },
+        ],
+      },
+      labels: {
+        style: "Stil",
+        region: "Bölge",
+        startingBudget: "Başlangıç Bütçesi",
+        turnkeyBudget: "Anahtar Teslim Bütçe Aralığı",
+        duration: "Yapım Süresi",
+        plotSize: "Arsa Büyüklüğü",
+        interiorSize: "İç Mekan Alanı",
+        rooms: "Oda Sayısı",
+        groundFloor: "Zemin Kat",
+        roofPlan: "Çatı Planı",
+        elevation: "Cephe",
+        conceptLayout: "Konsept Yerleşim",
+        siteLayout: "Vaziyet Planı",
+        terraceSection: "Teras Kesiti",
+        idealClient: "İdeal müşteri",
+        idealUseCases: "İdeal kullanım",
+        optionalUpgrades: "Opsiyonel yükseltmeler",
+        pricingFactors: "Nihai fiyatı etkileyen unsurlar",
+        estimateNote: "Fiyat notu",
+        estimateText: "Tüm bütçeler kavramsal ve yön gösterici tahminlerdir; arazi koşulları, belediye süreçleri, malzeme seçimi ve nihai kapsam doğrultusunda değişebilir.",
+      },
+      sections: {
+        overview: {
+          eyebrow: "Proje genel bakışı",
+          title: "Türkiye’de premium teslim için hazırlanmış tasarım odaklı bir villa konsepti.",
+          description:
+            "Her konsept sayfası; müşterilerin kapsamı, proje uyumunu ve yatırım beklentisini hızlıca anlayabilmesi için üst segment bir proje özeti gibi kurgulandı.",
+        },
+        pricing: {
+          eyebrow: "Tahmini fiyatlama",
+          title: "Derinlemesine scoping öncesinde şeffaf aralık rehberi.",
+          description:
+            "Bu rakamlar, müşterilerin profesyonellerle detaylı brief sürecine geçmeden önce projenin pazardaki konumunu anlamasına yardımcı olmak için hazırlandı.",
+        },
+        timeline: {
+          eyebrow: "Tahmini zaman planı",
+          title: "Tasarım uyumundan anahtar teslim uygulamaya gerçekçi bir yolculuk.",
+          description:
+            "Aşağıdaki takvim, premium konut üretim akışını yansıtır; lokasyon, izinler ve teknik kapsam netleştikçe yeniden kalibre edilmelidir.",
+        },
+        inquiry: {
+          eyebrow: "Bu projeyi talep et",
+          title: "Bu villa konsepti için özel bir görüşme başlatın.",
+          description:
+            "Bilgilerinizi paylaşın; Yapply bu konsept, bulunduğunuz bölge ve yatırım seviyeniz etrafında doğru profesyonelleri eşleştirmenize yardımcı olsun.",
+          summaryTitle: "Seçilen konsept",
+          summaryLabels: {
+            project: "Proje",
+            region: "Önerilen bölge",
+            startingBudget: "Başlangıç bütçesi",
+            duration: "Tahmini süre",
+          },
+          formTitle: "Proje talep formu",
+          formIntro:
+            "Bu aşamada yalnızca frontend akışı hazırdır. Sonraki fazda CRM, e-posta yönlendirmesi veya lead değerlendirme hattına bağlanabilir.",
+          submitLabel: "Bu Projeyi Talep Et",
+          successTitle: "Talebiniz alındı",
+          successText: "",
+          successTextEnd: "için ilettiğiniz ilgi kaydı başarıyla alındı. Bir sonraki fazda bu akış doğrudan Yapply lead sürecine bağlanabilir.",
+          fields: {
+            fullName: { label: "Ad Soyad", placeholder: "Adınız ve soyadınız" },
+            email: { label: "E-posta", placeholder: "isim@email.com" },
+            phone: { label: "Telefon Numarası", placeholder: "+90 5XX XXX XX XX" },
+            city: { label: "Tercih edilen şehir / bölge", placeholder: "İstanbul, İzmir, Bodrum..." },
+            plotStatus: { label: "Arsa sahiplik durumu", placeholder: "Mevcut durumunuzu seçin" },
+            budget: { label: "Tahmini bütçe", placeholder: "Beklenen aralığı seçin" },
+            message: { label: "Mesaj / notlar", placeholder: "Hedeflerinizi, takviminizi, arsa bağlamını veya özel taleplerinizi paylaşın." },
+          },
+          plotStatusOptions: [
+            "Arsa bana ait",
+            "Şu anda arsa seçeneklerini değerlendiriyorum",
+            "Arsa rezerve edildi / inceleme aşamasında",
+            "Arsa ve fizibilite konusunda danışmanlık desteğine ihtiyacım var",
+          ],
+          budgetOptions: [
+            "EUR 500K - 800K",
+            "EUR 800K - 1.2M",
+            "EUR 1.2M - 1.8M",
+            "EUR 1.8M+",
+          ],
+        },
+        included: {
+          eyebrow: "Dahil olanlar",
+          title: "Tasarım, koordinasyon ve yapım hazırlığını dengeleyen bir konsept kapsamı.",
+          description:
+            "Bu sayfa, opsiyonel yükseltmeler ve özel talepler eklenmeden önce premium bir konsept paketinde tipik olarak nelerin bekleneceğini özetler.",
+        },
+        ideal: {
+          eyebrow: "İdeal kullanım",
+          title: "Bu proje kimler için daha doğru?",
+          description:
+            "Her konsept; belirli bir müşteri profili, arsa karakteri ve yaşam beklentisi için konumlandırıldı.",
+        },
+        cta: {
+          title: "Doğru profesyonel ekiple bir sonraki adıma geçin.",
+          description:
+            "Yapply; bu konsepti lokasyonunuza, bütçenize ve yapım stratejinize uyarlamak için sizi doğrulanmış mimarlar, geliştiriciler ve inşaat şirketleriyle buluşturabilir.",
+          requestLabel: "Bu Projeyi Talep Et",
+          requestHref: "#project-request",
+          speakLabel: "Bir Profesyonelle Görüş",
+          speakHref: "#project-request",
+        },
+      },
+      footer: {
+        description:
+          "Yapply proje detay sayfaları; üst segment konut konseptlerini yapılandırılmış bir formatta sunarak müşterilerin ilham aşamasından gerçek proje görüşmelerine daha net ilerlemesini sağlar.",
+        columns: [
+          {
+            title: "Proje sayfaları",
+            links: [
+              { label: "Ana sayfaya dön", href: "./index.html" },
+              { label: "Öne çıkan projeler", href: "./index.html#featured-projects" },
+              { label: "Profesyoneller için", href: "./professionals.html" },
+            ],
+          },
+          {
+            title: "Sonraki adım",
+            links: [
+              { label: "Bu projeyi talep et", href: "#project-request" },
+              { label: "Bir profesyonelle görüş", href: "#project-request" },
+              { label: "Pazaryeri genel bakışı", href: "./index.html#why-yapply" },
+            ],
+          },
+        ],
+        note: "Proje detay sayfaları, premium konsept önizlemeleri olarak tasarlandı ve ileride tam dinamik paket veya listeleme sayfalarına dönüştürülmeye hazır.",
+        contact: "hello@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+      projects: {
+        "aegean-courtyard-villa": {
+          name: "Ege Avlulu Villa",
+          subtitle: "Mahremiyet, doğal ışık ve sıcak malzeme dili etrafında şekillenen sakin bir sahil aile villası konsepti.",
+          style: "Sahil Aile Villası",
+          region: "İzmir / Çeşme",
+          startingBudget: "EUR 780K",
+          turnkeyBudget: "EUR 1.05M - 1.28M",
+          duration: "14-16 ay",
+          plotSize: "700-950 m2",
+          interiorSize: "260-320 m2",
+          rooms: "4-5 yatak odası",
+          overview:
+            "Bu konsept, Ege bölgesinde rafine bir ana konut veya sezonluk yaşam evi arayan müşteriler için tasarlandı. Mimari dil; taş, sıcak tonlu sıva ve geniş açıklıkları; mahremiyet sağlayan bir avlu ve güçlü dış yaşam alanları çevresinde dengeler.",
+          optionalUpgrades: [
+            "Infinity havuz ve çökük lounge dizisi",
+            "Misafir pavyonu veya bağımsız stüdyo süiti",
+            "Doğal taş cephe yükseltme paketi",
+            "Akıllı ev otomasyonu ve enerji izleme",
+          ],
+          pricingFactors: [
+            "Arsa eğimi, istinat ihtiyacı ve kıyı rüzgarı etkisi",
+            "Cephe malzemesi ve doğrama / cam spesifikasyonu",
+            "Havuz, peyzaj ve dış yaşam alanı kapsamı",
+            "Belediye izin süreci ve altyapı hazırlığı",
+          ],
+          timeline: [
+            { phase: "Konsept ve brief uyumu", detail: "Kapsam, stil yönü ve ekip seçimi için 3-5 hafta." },
+            { phase: "Tasarım geliştirme", detail: "Mimari netleşme, danışman koordinasyonu ve bütçe hizası için 8-10 hafta." },
+            { phase: "İzinler ve teknik paket", detail: "Belediye sürecine ve yerel koşullara bağlı olarak 10-14 hafta." },
+            { phase: "İnşaat teslimi", detail: "Kaba yapı, ince işler, dış alanlar ve devreye alma için 9-11 ay." },
+          ],
+          included: [
+            "Mimari konsept ve mekan planlama yönü",
+            "Statik ve MEP koordinasyon çerçevesi",
+            "Premium cephe ve malzeme paleti yönlendirmesi",
+            "Avlu, dış yaşam ve peyzaj stratejisi",
+            "Turnkey teslim için danışman ve ekip planlaması",
+          ],
+          idealClient: [
+            "Ege’de yüksek kaliteli ikinci ev inşa etmek isteyen aileler",
+            "Mahremiyet isterken iç-dış yaşam akışından ödün vermek istemeyen müşteriler",
+            "Keskin minimalizm yerine sıcak çağdaş mimari arayan kullanıcılar",
+          ],
+          idealUseCases: [
+            "Mevsimsel esnekliğe sahip ana aile konutu",
+            "Misafir ağırlama kapasitesi olan üst segment yaz evi",
+            "Premium bir sahil bölgesinde uzun vadeli yaşam yatırımı",
+          ],
+          boards: ["Zemin Kat", "Avlu Cephesi", "Çatı Planı"],
+          visual: "coast",
+        },
+        "urban-ridge-villa": {
+          name: "Kent Sırtı Villa",
+          subtitle: "Güçlü geometri, katmanlı teraslar ve kent çeperinde premium bir duruş sunan yamaç evi konsepti.",
+          style: "Modern Villa",
+          region: "İstanbul / Zekeriyaköy",
+          startingBudget: "EUR 1.15M",
+          turnkeyBudget: "EUR 1.48M - 1.82M",
+          duration: "16-18 ay",
+          plotSize: "900-1,250 m2",
+          interiorSize: "340-420 m2",
+          rooms: "5-6 yatak odası",
+          overview:
+            "Kent Sırtı Villa; şehir yaşamına yakın kalırken sakinlik, mahremiyet ve güçlü mimari kimlik isteyen müşteriler için konumlandırıldı. Kütle kurgusu, eğimli parsellerde terasları, çerçeveli manzaraları ve peyzaj sınırlarını en verimli biçimde değerlendirecek şekilde tasarlandı.",
+          optionalUpgrades: [
+            "Özel wellness alanı, sauna ve spor salonu",
+            "Bodrum kat eğlence lounge’u ve şarap odası",
+            "Yüksek performanslı cephe ve güneş kırıcı paketi",
+            "İmza niteliğinde peyzaj aydınlatması ve araç avlusu tasarımı",
+          ],
+          pricingFactors: [
+            "Eğimli arazide bodrum ve istinat duvarı karmaşıklığı",
+            "Geniş açıklıklı yaşam alanları için taşıyıcı gereksinimler",
+            "Doğrama, kaplama ve cephe sistem seçimi",
+            "Otomasyon, iklimlendirme ve güvenlik altyapısının derinliği",
+          ],
+          timeline: [
+            { phase: "Brief stratejisi ve arazi uyumu", detail: "Araziye yanıt, kütle mantığı ve ekip hizası için 4-6 hafta." },
+            { phase: "Tasarım ve teknik planlama", detail: "Mimarlık, mühendislik ve maliyet kurgusu için 10-12 hafta." },
+            { phase: "Resmi başvurular", detail: "Onay yoluna ve yerel koordinasyona bağlı olarak 12-16 hafta." },
+            { phase: "İnşaat ve fit-out", detail: "Kaba yapı, cephe, iç mekan ve peyzaj için 10-12 ay." },
+          ],
+          included: [
+            "Mimari kütle kurgusu ve premium planlama yaklaşımı",
+            "Teras stratejisi ve peyzaj entegrasyonu",
+            "Yamaç koşulları için statik koordinasyon mantığı",
+            "İç mekan zonlama ve temel malzeme yönü",
+            "Uzman ekiplerle anahtar teslim uygulama çerçevesi",
+          ],
+          idealClient: [
+            "İstanbul yakınında üst segment ana konut arayan müşteriler",
+            "Güçlü mimari karakter ve yeniden satış değeri önemseyen alıcılar",
+            "Mahremiyet, teras ve çağdaş ağırlama alanları isteyen aileler",
+          ],
+          idealUseCases: [
+            "Premium banliyö parselinde ana lüks konut",
+            "Resmi ve gayriresmi alanları ayrışan çok kuşaklı aile villası",
+            "Mimari duruşa önem veren müşteriler için imza niteliğinde ev",
+          ],
+          boards: ["Konsept Yerleşim", "Cephe", "Teras Kesiti"],
+          visual: "urban",
+        },
+        "hillside-retreat-villa": {
+          name: "Yamaç Retreat Villa",
+          subtitle: "Dış yaşam, konfor ve huzurlu mahremiyet etrafında şekillenen resort etkili bir konut konsepti.",
+          style: "Resort Villa",
+          region: "Muğla / Bodrum",
+          startingBudget: "EUR 940K",
+          turnkeyBudget: "EUR 1.22M - 1.54M",
+          duration: "15-17 ay",
+          plotSize: "800-1,100 m2",
+          interiorSize: "290-360 m2",
+          rooms: "4-5 yatak odası",
+          overview:
+            "Bu villa konsepti, Bodrum yaşam ritmine uygun şekilde; teraslar, havuz çevresi ve dış mekandaki deneyimi en az iç hacimler kadar önemser. Tasarım dili çağdaştır; ancak daha sıcak, daha rahat ve konaklama deneyiminden ilham alan bir akış sunar.",
+          optionalUpgrades: [
+            "Pool house veya dış mekan misafir süiti",
+            "Spa kalitesinde ebeveyn banyo ve giyinme alanı",
+            "Dış mutfak, yemek pavyonu ve ateş çukuru",
+            "Genişletilmiş doğal taş ve ahşap bitiş paketi",
+          ],
+          pricingFactors: [
+            "Arazi hazırlığı ve manzaraya dönük istinat stratejisi",
+            "Dış yaşam alanı, havuz ve peyzaj yoğunluğu",
+            "İthal bitiş malzemeleri ve özel doğrama seviyesi",
+            "Konaklama kalitesinde aydınlatma, ses ve otomasyon paketleri",
+          ],
+          timeline: [
+            { phase: "Konsept konumlandırması", detail: "Vizyon, araziye yanıt ve profesyonel shortlist için 3-5 hafta." },
+            { phase: "Tasarım detaylandırma", detail: "Mimarlık, iç mekan ve dış yaşam entegrasyonu için 8-11 hafta." },
+            { phase: "Teknik paket ve izinler", detail: "Yerel süreçlere ve altyapı bağlamına göre 10-14 hafta." },
+            { phase: "Yapım ve teslim", detail: "Kaba yapı, ince işler, havuz ve nihai teslim için 9-11 ay." },
+          ],
+          included: [
+            "Resort odaklı mimari konsept ve planlama",
+            "Havuz ve dış yaşam alanı yerleşim yönü",
+            "Sıcak lüks bitişler için malzeme yönlendirmesi",
+            "Anahtar teslim uygulama için koordinasyon mantığı",
+            "Peyzaj ve atmosfer kurgusu",
+          ],
+          idealClient: [
+            "Bodrum ve benzeri bölgelerde üst segment sezonluk ev yaptırmak isteyen müşteriler",
+            "Dış yaşam ve misafir deneyimini önceliklendiren kullanıcılar",
+            "Yumuşak lüks dili ve konaklama hissi arayan alıcılar",
+          ],
+          idealUseCases: [
+            "Aile ve misafir ağırlamaya uygun sezonluk retreat",
+            "Kısa dönem kiralama potansiyeli yüksek yaşam yatırımı",
+            "Resort benzeri dış mekan deneyimi sunan özel villa",
+          ],
+          boards: ["Zemin Kat", "Vaziyet Planı", "Çatı Planı"],
+          visual: "retreat",
+        },
+      },
+    },
+    footer: {
+      description:
+        "Yapply, Türkiye’de yapı profesyonellerini keşfetmek, değerlendirmek ve doğru ekiplerle çalışmaya başlamak isteyen müşteriler için premium dijital pazaryeri katmanını inşa ediyor.",
+      columns: [
+        {
+          title: "Platform",
+          links: [
+            { label: "Nasıl çalışır", href: "#how-it-works" },
+            { label: "Öne çıkan projeler", href: "#featured-projects" },
+            { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
+            { label: "Profesyoneller için", href: "./professionals.html" },
+          ],
+        },
+        {
+          title: "Sonraki faz",
+          links: [
+            { label: "Çift dilli arayüz temeli", href: "#top" },
+            { label: "Profesyonel onboarding akışı", href: "./professionals.html#application-form" },
+            { label: "Pazaryeri detay sayfaları", href: "#top" },
+          ],
+        },
+      ],
+      note: "İngilizce ve Türkçe içerik artık aynı premium çeviri sistemi üzerinde çalışıyor ve sonraki ürün fazına hazır durumda.",
+      contact: "hello@yapply.com",
+      copyrightLabel: "Yapply",
+    },
+    professionalsPage: {
+      nav: {
+        ariaLabel: "Ana gezinme",
+        brandHref: "./index.html",
+        links: [
+          { label: "Ana sayfa", href: "./index.html" },
+          { label: "Avantajlar", href: "#join-benefits" },
+          { label: "Kimler Başvurabilir", href: "#who-can-apply" },
+          { label: "Süreç", href: "#join-process" },
+          { label: "SSS", href: "#join-faq" },
+        ],
+        cta: "Şimdi Başvur",
+        ctaHref: "#application-form",
+      },
+      hero: {
+        eyebrow: "Mimarlar, geliştiriciler ve uygulayıcı ekipler için",
+        title: "İnşaatın Geleceğinin Parçası Ol",
+        description:
+          "Yapply’ye katılarak uzmanlığınızı, Türkiye genelinde nitelikli konut ve geliştirme projeleri arayan müşterilere premium bir pazaryeri içinde sunun.",
+        primaryCta: { label: "Başvurumu Başlat", href: "#application-form" },
+        secondaryCta: { label: "Avantajları Keşfet", href: "#join-benefits" },
+        pillars: [
+          "Ciddi müşterilere karşı daha güçlü konumlanma",
+          "Güven oluşturan küratöryel doğrulama katmanı",
+          "Mimarlık ve teslim kalitesine göre tasarlanmış bir platform",
+        ],
+        spotlight: {
+          title: "İlk izleniminizi güçlendirin",
+          text:
+            "Profiliniz, sıradan bir listeleme gibi değil; premium bir yetkinlik sunumu gibi kurgulanır. Yapply, ilk görüşmeden önce algıyı yükseltmek için tasarlandı.",
+        },
+        sideNotes: [
+          { value: "Seçici", label: "Yalnızca platformla uyumlu profesyoneller ilerler" },
+          { value: "Doğrulanmış", label: "Profiller yayına alınmadan önce incelenir" },
+          { value: "Nitelikli", label: "Projeler daha fazla bağlamla paylaşılır" },
+        ],
+      },
+      benefits: {
+        eyebrow: "Neden Yapply’ye katılmalı",
+        title: "Yaptığınız işin standardını yansıtan bir pazaryeri deneyimi.",
+        description:
+          "Yapply; itibarını önemseyen, doğru projelerle eşleşmek isteyen ve uzmanlığını daha rafine bir zeminde sunmak isteyen profesyoneller için kurgulandı.",
+        items: [
+          {
+            index: "01",
+            title: "Premium pazar konumlaması",
+            description: "İşinizi; güven, mimari zevk ve yüksek değerli proje keşfi üzerine kurulu rafine bir çevrede görünür kılın.",
+          },
+          {
+            index: "02",
+            title: "Nitelikli müşteri görünürlüğü",
+            description: "Daha net hedeflerle, daha güçlü bağlamla ve daha bilinçli proje niyetiyle gelen fırsatlarla karşılaşın.",
+          },
+          {
+            index: "03",
+            title: "Doğrulamaya dayalı itibar",
+            description: "Platform inceleme süreci; teklif veya toplantı öncesinde daha güçlü bir ilk algı oluşmasına destek verir.",
+          },
+          {
+            index: "04",
+            title: "Uzmanlığı daha iyi anlatma",
+            description: "Disiplininizi, teslim gücünüzü ve pazar uyumunuzu daha temiz, daha premium bir profil kurgusuyla gösterin.",
+          },
+        ],
+      },
+      audiences: {
+        eyebrow: "Kimler başvurabilir",
+        title: "Yarının projelerini şekillendiren profesyoneller için tasarlandı.",
+        description:
+          "Yapply, güçlü yetkinliği; tasarım, teslim ve iletişim standardıyla birleştiren stüdyolara ve firmalara açılıyor.",
+        items: [
+          {
+            title: "Mimarlar",
+            subtitle: "Net bir tasarım dili olan stüdyolar ve bağımsız pratikler.",
+            points: [
+              "Konsept tasarım, konut mimarlığı ve butik konaklama projeleri",
+              "İç mimarlık ve mekan kalitesine odaklanan çalışmalar",
+              "Güçlü portfolyo sunumu ve müşteri iletişimi",
+            ],
+          },
+          {
+            title: "İnşaat Şirketleri",
+            subtitle: "Kalite, detay ve güvenilir teslim odağında çalışan uygulama ortakları.",
+            points: [
+              "Anahtar teslim işler, kaba yapı ve ince işçilik kalitesi",
+              "Konut, villa ve proje ölçekli inşaat ekipleri",
+              "Operasyonel disiplin, referanslar ve teslim güveni",
+            ],
+          },
+          {
+            title: "Geliştiriciler",
+            subtitle: "Konut veya karma kullanım projelerini netlik ve vizyonla yöneten ekipler.",
+            points: [
+              "Geliştirme yönetimi ve arsadan teslim sürecine uzanan yetkinlik",
+              "Mimarlık ve uygulama ortaklarını bir araya getirme becerisi",
+              "Ticari olgunluk ve uzun vadeli marka değeri",
+            ],
+          },
+        ],
+      },
+      process: {
+        eyebrow: "Süreç",
+        title: "Kalite kontrolü ve uzun vadeli uyum için kurgulanmış net bir onboarding akışı.",
+        description:
+          "Başvuru süreci bilinçli olarak seçicidir. Her adım, platformdan beklenen güven ve kalite standardını korumaya hizmet eder.",
+        steps: [
+          { title: "Başvuru", description: "Temel şirket bilgilerinizi, uzmanlık alanınızı, portfolyo bağlantınızı ve kısa konumlandırmanızı paylaşın." },
+          { title: "Doğrulama", description: "Yapply ekibi disiplininizi, görünürlüğünüzü ve kalite sinyallerinizi platform uyumu açısından inceler." },
+          { title: "Profil Yayında", description: "Onaylanan profesyoneller, platformun premium tonuna uygun bir profil görünürlüğü kazanır." },
+          { title: "Projeler Alın", description: "Fırsatlar daha fazla bağlam, kapsam yönü ve beklenti netliği ile paylaşılır." },
+          { title: "İnşa Et ve Büyü", description: "Güçlü teslim performansı, doğru müşteri uyumu ve profil itibarıyla görünürlüğünüzü zaman içinde artırın." },
+        ],
+      },
+      stats: {
+        eyebrow: "Neden şimdi",
+        title: "Pazaryeri gürültüsü için değil, anlamlı görünürlük için tasarlandı.",
+        description:
+          "Yapply’nin ilk versiyonu hacimden çok kaliteye odaklanıyor. Amaç; daha iyi eşleşme, daha güçlü sunum ve daha itibarlı fırsat akışı sağlamak.",
+        items: [
+          { value: 320, suffix: "+", label: "İlk küratöryel ağ için hedeflenen profil sayısı", detail: "Temel disiplinlerde kontrollü erken büyüme" },
+          { value: 12, suffix: "", label: "Lansman görünürlüğü için öncelikli şehir", detail: "İstanbul, İzmir, Bodrum ve Ankara dahil" },
+          { value: 72, suffix: "s", label: "Güçlü başvurular için hedeflenen inceleme süresi", detail: "Hızı korurken kalite filtresinden ödün vermez" },
+          { value: 91, suffix: "%", label: "Yayına geçiş için hedef profil bütünlüğü", detail: "Uzmanlığın daha kolay değerlendirilebilmesi için yapılandırıldı" },
+        ],
+      },
+      form: {
+        eyebrow: "Başvuru formu",
+        title: "Pratiğinizi net ve güçlü bir şekilde tanıtın.",
+        description:
+          "Bu ilk başvuru altyapısı, temel bilgileri premium ve düşük sürtünmeli bir deneyimle toplamak için tasarlandı. Bir sonraki fazda backend entegrasyonuna hazırdır.",
+        successTitle: "Başvuru taslağı alındı",
+        successText: "Önyüz akışı hazır durumda. Bir sonraki fazda bu form dosya depolama, CRM veya iç değerlendirme akışıyla entegre edilebilir.",
+        submitLabel: "Başvuruyu Gönder",
+        fields: {
+          name: { label: "İsim", placeholder: "Adınız ve soyadınız" },
+          companyName: { label: "Şirket Adı", placeholder: "Stüdyo veya firma adı" },
+          professionType: { label: "Meslek / Şirket Türü", placeholder: "Uzmanlık alanınızı seçin" },
+          city: { label: "Şehir", placeholder: "İstanbul, İzmir, Ankara..." },
+          website: { label: "Web Sitesi / Portfolyo URL", placeholder: "https://sirketiniz.com" },
+          experience: { label: "Deneyim Yılı", placeholder: "Örn. 12" },
+          description: { label: "Kısa Açıklama", placeholder: "Odak alanınızı, ölçeğinizi ve almak istediğiniz proje tiplerini kısaca anlatın." },
+          upload: { label: "Dosya Yükleme", hint: "Portfolyo PDF’i, yetkinlik sunumu veya belgeler" },
+        },
+        professionOptions: ["Mimar", "İnşaat Şirketi", "Geliştirici", "İç Mimarlık Stüdyosu", "Tasarım & Uygulama Firması"],
+      },
+      faq: {
+        eyebrow: "SSS",
+        title: "Platformu değerlendiren profesyoneller için yanıtlar.",
+        description:
+          "Bu ilk sayfa versiyonu, en sık sorulan sorulara net ve güven veren bir dille yanıt vermek için yapılandırıldı.",
+        items: [
+          {
+            question: "Yapply kimler için tasarlandı?",
+            answer: "Yapply; mimarlar, geliştiriciler, inşaat şirketleri ve uzmanlığını daha premium, daha güvenilir bir zeminde sunmak isteyen ilgili stüdyolar için tasarlandı.",
+          },
+          {
+            question: "Her başvuru kabul ediliyor mu?",
+            answer: "Hayır. Platform bilinçli olarak küratöryeldir. Başvurular; profesyonel uyum, sunum kalitesi ve pazaryeri standardına uygunluk açısından değerlendirilir.",
+          },
+          {
+            question: "Nasıl projeler alacağım?",
+            answer: "Platform; kalite, netlik ve güçlü teslim beklentisine sahip müşterilerin aradığı konut, villa, karma kullanım ve seçili konaklama projelerine odaklanır.",
+          },
+          {
+            question: "Tam pazaryeri yayına girmeden başvurabilir miyim?",
+            answer: "Evet. Bu sayfa, bir sonraki ürün fazı büyümeden önce nitelikli profesyonellerin onboarding hattını hazırlamak için oluşturuldu.",
+          },
+          {
+            question: "İngilizce ve Türkçe profiller desteklenecek mi?",
+            answer: "Evet. Önyüz temeli artık iki dili de destekliyor ve bir sonraki fazda profil deneyimleri çift dilli olarak genişletilebilir.",
+          },
+        ],
+      },
+      footer: {
+        description:
+          "Yapply Profesyoneller için; daha iyi uyumlanan proje fırsatlarıyla buluşmak isteyen mimarlar, geliştiriciler ve inşaat şirketleri için premium onboarding katmanını sunar.",
+        columns: [
+          {
+            title: "Keşfet",
+            links: [
+              { label: "Ana sayfaya dön", href: "./index.html" },
+              { label: "Avantajlar", href: "#join-benefits" },
+              { label: "Başvuru formu", href: "#application-form" },
+            ],
+          },
+          {
+            title: "Platform hazırlığı",
+            links: [
+              { label: "Doğrulama akışı", href: "#join-process" },
+              { label: "Çift dilli profil temeli", href: "#top" },
+              { label: "Sık sorulan sorular", href: "#join-faq" },
+            ],
+          },
+        ],
+        note: "Bu sayfa; backend başvuru işleme, dosya depolama entegrasyonu ve daha derin profesyonel profil akışları için hazır durumda.",
+        contact: "partners@yapply.com",
+        copyrightLabel: "Yapply",
+      },
+    },
+  },
+};

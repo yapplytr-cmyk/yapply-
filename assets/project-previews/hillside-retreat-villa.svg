@@ -1,0 +1,53 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgRetreat" x1="120" y1="70" x2="1034" y2="710" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101614"/>
+      <stop offset="0.52" stop-color="#17211F"/>
+      <stop offset="1" stop-color="#476158"/>
+    </linearGradient>
+    <radialGradient id="retreatGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(914 598) rotate(-146) scale(280 220)">
+      <stop stop-color="#D5BE7C" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#D5BE7C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="retreatBody" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#F1EEE8"/>
+      <stop offset="1" stop-color="#C3BDB4"/>
+    </linearGradient>
+    <linearGradient id="retreatGlass" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#CBF2FB" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#7FAAB0" stop-opacity="0.18"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" rx="40" fill="url(#bgRetreat)"/>
+  <rect width="1200" height="760" rx="40" fill="url(#retreatGlow)"/>
+  <g opacity="0.22" stroke="#EDF3F8" stroke-width="1">
+    <path d="M0 118H1200"/>
+    <path d="M0 218H1200"/>
+    <path d="M0 318H1200"/>
+    <path d="M0 418H1200"/>
+    <path d="M0 518H1200"/>
+    <path d="M0 618H1200"/>
+    <path d="M150 0V760"/>
+    <path d="M320 0V760"/>
+    <path d="M490 0V760"/>
+    <path d="M660 0V760"/>
+    <path d="M830 0V760"/>
+    <path d="M1000 0V760"/>
+  </g>
+  <g opacity="0.42" stroke="#C9A84C" stroke-width="2" stroke-dasharray="8 10">
+    <path d="M196 560H924"/>
+    <path d="M846 246H1022L1076 336"/>
+    <path d="M310 322H168L126 428"/>
+  </g>
+  <path d="M172 592L348 492H846L1012 552L788 664H344L172 592Z" fill="#D7D0C5" fill-opacity="0.16" stroke="#ECE6DA" stroke-opacity="0.34" stroke-width="2"/>
+  <rect x="276" y="310" width="506" height="134" rx="16" fill="url(#retreatBody)" stroke="#FBF7F0" stroke-opacity="0.58" stroke-width="3"/>
+  <rect x="710" y="236" width="152" height="124" rx="14" fill="url(#retreatBody)" stroke="#FBF7F0" stroke-opacity="0.54" stroke-width="3"/>
+  <rect x="250" y="294" width="650" height="18" rx="9" fill="#1B2324" stroke="#F7E4AF" stroke-opacity="0.38" stroke-width="2"/>
+  <rect x="352" y="338" width="178" height="72" rx="8" fill="url(#retreatGlass)" stroke="#DDF5FF" stroke-opacity="0.82" stroke-width="2"/>
+  <rect x="566" y="338" width="132" height="72" rx="8" fill="url(#retreatGlass)" stroke="#DDF5FF" stroke-opacity="0.82" stroke-width="2"/>
+  <rect x="748" y="258" width="74" height="86" rx="8" fill="url(#retreatGlass)" stroke="#DDF5FF" stroke-opacity="0.82" stroke-width="2"/>
+  <rect x="240" y="510" width="304" height="46" rx="23" fill="#6CB6CF" fill-opacity="0.2" stroke="#C0EFFA" stroke-opacity="0.52" stroke-width="2"/>
+  <path d="M226 522H578" stroke="#FFE7A7" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="1076" cy="336" r="8" fill="#C9A84C"/>
+  <circle cx="126" cy="428" r="8" fill="#C9A84C"/>
+</svg>
