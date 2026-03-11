@@ -3315,6 +3315,8 @@ body[data-submission-type="professional"] .submission-stage__notes {
 
 @supports (-webkit-touch-callout: none) {
   @media (max-width: 820px) {
+    #marketplace-listings,
+    #marketplace-listings .section-heading,
     .marketplace-tabs,
     .marketplace-panel,
     .marketplace-grid,
@@ -3324,6 +3326,10 @@ body[data-submission-type="professional"] .submission-stage__notes {
       transform: none !important;
       filter: none !important;
       will-change: auto;
+    }
+
+    #marketplace-listings {
+      visibility: visible !important;
     }
 
     .marketplace-card,

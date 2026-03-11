@@ -110,9 +110,10 @@ function setupRevealAnimations() {
   const isSmallTouchViewport =
     window.matchMedia("(max-width: 820px)").matches &&
     ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  const marketplaceSection = document.querySelector("#marketplace-listings");
   const marketplaceTargets = [
     ...document.querySelectorAll(
-      ".marketplace-tabs, .marketplace-panel, .marketplace-grid, .marketplace-card, .marketplace-card__media"
+      "#marketplace-listings .section-heading, .marketplace-tabs, .marketplace-panel, .marketplace-grid, .marketplace-card, .marketplace-card__media"
     ),
   ];
 
@@ -122,6 +123,7 @@ function setupRevealAnimations() {
   }
 
   if (isSmallTouchViewport) {
+    marketplaceSection?.classList.add("is-visible");
     marketplaceTargets.forEach((target) => target.classList.add("is-visible"));
   }
 
