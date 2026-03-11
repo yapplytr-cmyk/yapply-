@@ -5,7 +5,7 @@ import json
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 
-from backend.config import ADMIN_ROLES, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS
+from backend.config import ADMIN_ROLES, IS_VERCEL, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS
 from backend.db import (
   count_active_admin_users,
   create_session,
@@ -18,7 +18,7 @@ from backend.db import (
   list_users,
   update_user_status,
 )
-from backend.security import issue_session_token
+from backend.security import issue_session_token, issue_signed_session_token, verify_signed_session_token
 from backend.server import ensure_seeded_admin_account, normalize_text, parse_json_body, validate_login, validate_signup
 
 
@@ -46,6 +46,8 @@ def build_cookie(token: str, max_age: int = SESSION_TTL_SECONDS) -> str:
   cookie[SESSION_COOKIE_NAME]["httponly"] = True
   cookie[SESSION_COOKIE_NAME]["samesite"] = "Lax"
   cookie[SESSION_COOKIE_NAME]["max-age"] = max_age
+  if IS_VERCEL:
+    cookie[SESSION_COOKIE_NAME]["secure"] = True
   return cookie.output(header="").strip()
 
 
@@ -67,6 +69,34 @@ def get_authenticated_user(handler) -> dict | None:
   token = get_session_token(handler)
   if not token:
     return None
+
+  if IS_VERCEL:
+    signed_payload = verify_signed_session_token(token)
+    if signed_payload:
+      role = signed_payload.get("role")
+      status = signed_payload.get("status", "active")
+
+      if status != "active":
+        return None
+
+      return {
+        "id": signed_payload.get("id"),
+        "username": signed_payload.get("username"),
+        "email": signed_payload.get("email"),
+        "role": role,
+        "fullName": signed_payload.get("fullName"),
+        "phoneNumber": signed_payload.get("phoneNumber"),
+        "companyName": signed_payload.get("companyName"),
+        "professionType": signed_payload.get("professionType"),
+        "serviceArea": signed_payload.get("serviceArea"),
+        "yearsExperience": signed_payload.get("yearsExperience"),
+        "specialties": signed_payload.get("specialties"),
+        "preferredRegion": signed_payload.get("preferredRegion"),
+        "website": signed_payload.get("website"),
+        "createdAt": signed_payload.get("createdAt"),
+        "status": status,
+      }
+
   token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
   return get_session_user(token_hash)
 
@@ -117,6 +147,29 @@ def handle_login(handler) -> None:
     return
 
   user = login_payload["user"]
+  if IS_VERCEL and user["role"] in ADMIN_ROLES:
+    serialized_user = get_user_by_id(user["id"])
+    session_user = {
+      "id": serialized_user["id"],
+      "username": serialized_user["username"],
+      "email": serialized_user["email"],
+      "role": serialized_user["role"],
+      "fullName": serialized_user["full_name"],
+      "phoneNumber": serialized_user["phone_number"],
+      "companyName": serialized_user["company_name"],
+      "professionType": serialized_user["profession_type"],
+      "serviceArea": serialized_user["service_area"],
+      "yearsExperience": serialized_user["years_experience"],
+      "specialties": serialized_user["specialties"],
+      "preferredRegion": serialized_user["preferred_region"],
+      "website": serialized_user["website"],
+      "createdAt": serialized_user["created_at"],
+      "status": "active" if serialized_user["is_active"] else "inactive",
+    }
+    token = issue_signed_session_token(session_user, SESSION_TTL_SECONDS)
+    json_response(handler, HTTPStatus.OK, {"ok": True, "user": session_user}, cookie=build_cookie(token))
+    return
+
   token, token_hash = issue_session_token()
   create_session(user["id"], token_hash, handler.headers.get("User-Agent", ""), handler.client_address[0] if handler.client_address else "")
   json_response(handler, HTTPStatus.OK, {"ok": True, "user": get_session_user(token_hash)}, cookie=build_cookie(token))
