@@ -107,10 +107,22 @@ function setupRevealAnimations() {
   const sections = [...document.querySelectorAll(".reveal-section")];
   const items = [...document.querySelectorAll(".reveal-item")];
   const allTargets = [...sections, ...items];
+  const isSmallTouchViewport =
+    window.matchMedia("(max-width: 820px)").matches &&
+    ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  const marketplaceTargets = [
+    ...document.querySelectorAll(
+      ".marketplace-tabs, .marketplace-panel, .marketplace-grid, .marketplace-card, .marketplace-card__media"
+    ),
+  ];
 
   if (prefersReducedMotion || !("IntersectionObserver" in window)) {
     allTargets.forEach((target) => target.classList.add("is-visible"));
     return () => {};
+  }
+
+  if (isSmallTouchViewport) {
+    marketplaceTargets.forEach((target) => target.classList.add("is-visible"));
   }
 
   allTargets.forEach((target) => {
