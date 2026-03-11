@@ -88,10 +88,11 @@ function createDeveloperListingCard(listing, labels) {
   const quoteHref = listing.quoteHref || `${profileHref}#listing-contact`;
   const projectsHref = listing.projectsHref || `${profileHref}#listing-services`;
   const contactHref = listing.contactHref || `${profileHref}#listing-contact`;
+  const isSubmitted = listing.source === "submitted";
   const factItems = listing.facts || [
     { label: labels.startingPrice, value: listing.startingPrice },
     { label: isSubmitted ? labels.experience : labels.deliveryRange, value: isSubmitted ? `${listing.yearsExperience} ${labels.yearsSuffix}` : listing.deliveryRange },
-    { label: isSubmitted ? labels.serviceArea : labels.services, value: isSubmitted ? listing.location : listing.services[0] },
+    { label: isSubmitted ? labels.serviceArea : labels.services, value: isSubmitted ? listing.location : listing.services?.[0] || labels.fallback },
   ];
 
   return `

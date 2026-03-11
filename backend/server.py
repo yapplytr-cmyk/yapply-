@@ -24,15 +24,20 @@ from .config import (
   SESSION_TTL_SECONDS,
 )
 from .db import (
+  count_active_admin_users,
   create_session,
   create_user,
+  delete_user_account,
   delete_session,
   ensure_database,
   get_session_user,
   get_user_by_email,
   get_user_by_identifier,
+  get_user_by_id,
+  list_users,
   purge_expired_sessions,
   seed_admin_account,
+  update_user_status,
 )
 from .security import issue_session_token, verify_password
 
@@ -102,6 +107,32 @@ def get_session_token(handler: "YapplyRequestHandler") -> str | None:
   cookie.load(raw_cookie)
   morsel = cookie.get(SESSION_COOKIE_NAME)
   return morsel.value if morsel else None
+
+
+def get_authenticated_user(handler: "YapplyRequestHandler") -> dict | None:
+  import hashlib
+
+  token = get_session_token(handler)
+
+  if not token:
+    return None
+
+  token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+  return get_session_user(token_hash)
+
+
+def require_admin_user(handler: "YapplyRequestHandler") -> dict | None:
+  user = get_authenticated_user(handler)
+
+  if not user:
+    json_response(handler, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "Admin authentication is required."})
+    return None
+
+  if user["role"] not in ADMIN_ROLES:
+    json_response(handler, HTTPStatus.FORBIDDEN, {"ok": False, "code": "ADMIN_ONLY", "message": "This endpoint is available only to admin users."})
+    return None
+
+  return user
 
 
 def normalize_text(value: str | None) -> str | None:
@@ -200,6 +231,9 @@ def validate_login(payload: dict, audience: str = "public") -> tuple[dict | None
   if not user or not verify_password(password, user["password_hash"]):
     return None, ("INVALID_CREDENTIALS", "Email or password is incorrect.")
 
+  if not user["is_active"]:
+    return None, ("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.")
+
   if audience != "admin" and user["role"] in ADMIN_ROLES:
     return None, ("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.")
 
@@ -240,6 +274,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       self.handle_auth_session()
       return
 
+    if parsed.path == "/api/admin/accounts":
+      self.handle_admin_accounts()
+      return
+
     purge_expired_sessions()
     super().do_GET()
 
@@ -258,30 +296,101 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       self.handle_auth_logout()
       return
 
+    if parsed.path == "/api/admin/accounts/status":
+      self.handle_admin_account_status()
+      return
+
+    if parsed.path == "/api/admin/accounts/delete":
+      self.handle_admin_account_delete()
+      return
+
     self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
   def handle_auth_session(self) -> None:
-    token = get_session_token(self)
-    if not token:
+    user = get_authenticated_user(self)
+    if not user:
       json_response(self, HTTPStatus.OK, {"authenticated": False, "user": None})
       return
 
-    import hashlib
+    json_response(self, HTTPStatus.OK, {"authenticated": True, "user": user})
 
-    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-    user = get_session_user(token_hash)
-    if not user:
-      self.send_response(HTTPStatus.OK)
-      apply_cors_headers(self)
-      self.send_header("Set-Cookie", clear_cookie())
-      self.send_header("Content-Type", "application/json; charset=utf-8")
-      payload = json.dumps({"authenticated": False, "user": None}).encode("utf-8")
-      self.send_header("Content-Length", str(len(payload)))
-      self.end_headers()
-      self.wfile.write(payload)
+  def handle_admin_accounts(self) -> None:
+    if not require_admin_user(self):
       return
 
-    json_response(self, HTTPStatus.OK, {"authenticated": True, "user": user})
+    json_response(self, HTTPStatus.OK, {"ok": True, "accounts": list_users()})
+
+  def handle_admin_account_status(self) -> None:
+    current_user = require_admin_user(self)
+    if not current_user:
+      return
+
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    user_id = normalize_text(payload.get("userId"))
+    action = normalize_text(payload.get("action"))
+
+    if not user_id or action not in {"disable", "enable"}:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_ACCOUNT_ACTION", "message": "A valid account action is required."})
+      return
+
+    target_user = get_user_by_id(user_id)
+    if not target_user:
+      json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "code": "ACCOUNT_NOT_FOUND", "message": "The requested account could not be found."})
+      return
+
+    if action == "disable":
+      if target_user["id"] == current_user["id"]:
+        json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "ACCOUNT_SELF_PROTECTED", "message": "You cannot disable your own admin account."})
+        return
+
+      if target_user["role"] in ADMIN_ROLES and count_active_admin_users(exclude_user_id=target_user["id"]) == 0:
+        json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "LAST_ADMIN_PROTECTED", "message": "The last active admin account cannot be disabled."})
+        return
+
+      updated_user = update_user_status(user_id, False)
+      json_response(self, HTTPStatus.OK, {"ok": True, "user": updated_user})
+      return
+
+    updated_user = update_user_status(user_id, True)
+    json_response(self, HTTPStatus.OK, {"ok": True, "user": updated_user})
+
+  def handle_admin_account_delete(self) -> None:
+    current_user = require_admin_user(self)
+    if not current_user:
+      return
+
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    user_id = normalize_text(payload.get("userId"))
+
+    if not user_id:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_ACCOUNT_ACTION", "message": "A valid account id is required."})
+      return
+
+    target_user = get_user_by_id(user_id)
+    if not target_user:
+      json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "code": "ACCOUNT_NOT_FOUND", "message": "The requested account could not be found."})
+      return
+
+    if target_user["id"] == current_user["id"]:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "ACCOUNT_SELF_PROTECTED", "message": "You cannot delete your own admin account."})
+      return
+
+    if target_user["role"] in ADMIN_ROLES and count_active_admin_users(exclude_user_id=target_user["id"]) == 0:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "LAST_ADMIN_PROTECTED", "message": "The last active admin account cannot be deleted."})
+      return
+
+    delete_user_account(user_id)
+    json_response(self, HTTPStatus.OK, {"ok": True, "deletedUserId": user_id})
 
   def handle_auth_signup(self) -> None:
     try:

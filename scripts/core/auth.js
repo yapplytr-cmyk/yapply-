@@ -34,7 +34,15 @@ async function requestJson(path, payload) {
 }
 
 export async function signupAccount(payload) {
-  const data = await requestJson("/api/auth/signup", payload);
+  const signupPayload = {
+    ...payload,
+    role: payload.role || payload.accountRole,
+    yearsExperience: payload.yearsExperience || payload.experience,
+  };
+  delete signupPayload.accountRole;
+  delete signupPayload.experience;
+
+  const data = await requestJson("/api/auth/signup", signupPayload);
   setAuthSession({ authenticated: true, user: data.user });
   return data.user;
 }
@@ -70,4 +78,40 @@ export async function fetchAuthSession() {
 
 export function getAuthOrigin() {
   return AUTH_ORIGIN;
+}
+
+export async function fetchAdminAccounts() {
+  const response = await fetch(createApiUrl("/api/admin/accounts"), {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const authError = new Error(data.message || "Account directory request failed.");
+    authError.code = data.code || "UNKNOWN_ERROR";
+    throw authError;
+  }
+
+  return data.accounts || [];
+}
+
+export async function updateAdminAccountStatus(userId, action) {
+  const data = await requestJson("/api/admin/accounts/status", { userId, action });
+  return data.user;
+}
+
+export async function deleteAdminAccount(userId) {
+  const data = await requestJson("/api/admin/accounts/delete", { userId });
+  return data.deletedUserId;
 }

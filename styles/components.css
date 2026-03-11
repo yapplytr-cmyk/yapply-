@@ -255,6 +255,55 @@
   min-width: 0;
 }
 
+.nav-auth-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.nav-auth-user__pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.62rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text);
+  font-size: 0.84rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.nav-auth-user__pill--mobile {
+  width: 100%;
+  justify-content: center;
+  min-height: 3rem;
+  border-radius: 1.2rem;
+}
+
+.nav-auth-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.62rem 0.35rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    color 220ms var(--ease-premium),
+    transform 240ms var(--ease-premium);
+}
+
+.nav-auth-logout:hover,
+.nav-auth-logout:focus-visible {
+  color: var(--text);
+  transform: translate3d(0, -2px, 0);
+}
+
 .nav-auth-link {
   display: inline-flex;
   align-items: center;
@@ -348,6 +397,10 @@
 .nav-mobile-auth {
   display: grid;
   gap: 0.65rem;
+}
+
+.nav-mobile-auth--session {
+  gap: 0.75rem;
 }
 
 .nav-mobile-links a {

@@ -2441,6 +2441,13 @@ body[data-submission-type="professional"] .submission-stage__notes {
   padding-top: clamp(1rem, 2vw, 1.8rem);
 }
 
+.admin-dashboard-hero,
+#admin-marketplace,
+#admin-featured-projects,
+#admin-accounts {
+  scroll-margin-top: 6.5rem;
+}
+
 .admin-dashboard-hero__panel {
   display: grid;
   gap: 1.25rem;
@@ -2581,6 +2588,124 @@ body[data-submission-type="professional"] .submission-stage__notes {
   padding: 0;
   border: 0;
   background: transparent;
+}
+
+.admin-account-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-account-directory {
+  display: grid;
+  gap: 1rem;
+  min-height: 4rem;
+}
+
+.admin-account-notice {
+  padding: 0.9rem 1rem;
+  border-radius: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, rgba(255, 255, 255, 0.02));
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.admin-account-notice--success {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  color: var(--text);
+}
+
+.admin-account-notice--error {
+  border-color: rgba(216, 126, 118, 0.45);
+  color: color-mix(in srgb, var(--text) 86%, #f2beb8 14%);
+}
+
+.admin-account-card {
+  display: grid;
+  gap: 0;
+  padding: 0.2rem;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, rgba(255, 255, 255, 0.02));
+  border-radius: 1.1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 100%),
+    rgba(8, 12, 17, 0.45);
+}
+
+.admin-account-card__summary {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0.9rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-account-card__summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-account-card__title {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-account-card__title h3 {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.admin-account-card__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-account-card__facts div {
+  display: grid;
+  gap: 0.22rem;
+  padding: 0.8rem 0.85rem;
+  border-radius: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, rgba(255, 255, 255, 0.02));
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.admin-account-card__facts span {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-account-card__facts strong {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.admin-account-card__details {
+  display: grid;
+  gap: 1rem;
+  padding: 0 0.9rem 0.9rem;
+}
+
+.admin-record__facts--account {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-account-card__meta {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, rgba(255, 255, 255, 0.02));
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  line-height: 1.75;
+}
+
+.admin-account-card__meta strong {
+  color: var(--text);
 }
 
 .submission-upload input[type="file"] {
@@ -3784,6 +3909,11 @@ body[data-submission-type="professional"] .submission-stage__notes {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-account-card__facts,
+  .admin-record__facts--account {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .demo-admin--card {
     display: grid;
     grid-template-columns: 1fr;
@@ -3826,6 +3956,11 @@ body[data-submission-type="professional"] .submission-stage__notes {
   }
 
   .admin-record__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-account-card__facts,
+  .admin-record__facts--account {
     grid-template-columns: 1fr;
   }
 

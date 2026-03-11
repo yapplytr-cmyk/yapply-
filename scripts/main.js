@@ -10,7 +10,7 @@ import {
   updateManagedListing,
 } from "./core/adminStore.js";
 import { deleteMarketplaceListing, getSubmissionSuccessHref, saveMarketplaceSubmission } from "./core/marketplaceStore.js";
-import { applyTheme, getAuthSession, getLocale, getTheme, setAuthSession, setLocale, toggleTheme } from "./core/state.js";
+import { applyTheme, clearAuthSession, getAuthSession, getLocale, getTheme, setAuthSession, setLocale, toggleTheme } from "./core/state.js";
 
 let cleanupRevealAnimations = () => {};
 let cleanupParallax = () => {};
@@ -58,6 +58,15 @@ function getBootErrorMessage(error) {
   }
 
   return String(error);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function renderBootFallback(appRoot, error) {
@@ -177,6 +186,64 @@ function setupNavMenu() {
   panel.querySelectorAll("a, button[data-locale-switch], #theme-toggle-mobile").forEach((node) => {
     node.addEventListener("click", () => {
       syncState(false);
+    });
+  });
+}
+
+function setupAuthNavigation() {
+  const logoutButtons = [...document.querySelectorAll("[data-auth-logout]")];
+
+  if (logoutButtons.length === 0) {
+    return;
+  }
+
+  logoutButtons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+
+      try {
+        const authApi = await loadAuthApi();
+        await authApi?.logoutAccount?.();
+      } catch (error) {
+        console.error("Yapply logout failed", error);
+      } finally {
+        clearAuthSession();
+        setDocumentAuthState({ authenticated: false, user: null });
+        window.location.href = "./index.html";
+      }
+    });
+  });
+}
+
+function setupAdminSectionNavigation() {
+  if (document.body.dataset.page !== "admin-dashboard") {
+    return;
+  }
+
+  const adminAnchors = [...document.querySelectorAll('a[href*="#admin-"]')];
+
+  adminAnchors.forEach((anchor) => {
+    anchor.addEventListener("click", (event) => {
+      const href = anchor.getAttribute("href") || "";
+      const hashIndex = href.indexOf("#");
+
+      if (hashIndex < 0) {
+        return;
+      }
+
+      const targetId = href.slice(hashIndex);
+      const target = document.querySelector(targetId);
+
+      if (!target) {
+        return;
+      }
+
+      event.preventDefault();
+      history.replaceState(null, "", `./admin-dashboard.html${targetId}`);
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     });
   });
 }
@@ -444,6 +511,8 @@ function setupAuthRoleSelection() {
   const roleGroups = [...document.querySelectorAll("[data-auth-role-group]")];
   const roleInput = document.querySelector("[data-auth-role-input]");
   const authForm = document.querySelector(".auth-signup-form");
+  const formSection = document.querySelector("#create-account-form");
+  const shouldScrollToForm = document.body.dataset.page === "create-account" && Boolean(formSection);
 
   if (roleButtons.length === 0 || !roleInput) {
     return;
@@ -499,6 +568,15 @@ function setupAuthRoleSelection() {
       }
 
       setActiveRole(role);
+
+      if (shouldScrollToForm) {
+        window.requestAnimationFrame(() => {
+          formSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        });
+      }
     });
   });
 }
@@ -628,9 +706,18 @@ function setupAuthEntryForms(content) {
         errorBox?.setAttribute("hidden", "");
         success.hidden = false;
 
-        if (audience === "admin") {
+        if (currentPage === "create-account") {
+          const redirectTarget = user.role === "developer" ? "./open-marketplace.html?tab=developer" : "./open-marketplace.html?tab=client";
+          window.setTimeout(() => {
+            window.location.href = redirectTarget;
+          }, 220);
+        } else if (audience === "admin") {
           window.setTimeout(() => {
             window.location.href = "./admin-dashboard.html";
+          }, 180);
+        } else if (currentPage === "login") {
+          window.setTimeout(() => {
+            window.location.href = "./index.html";
           }, 180);
         }
       };
@@ -661,6 +748,17 @@ function setupAuthEntryForms(content) {
               },
               audience
             ));
+
+        if (currentPage === "create-account") {
+          const session = await authApi.fetchAuthSession();
+          const role = session?.user?.role;
+
+          if (!session?.authenticated || !session?.user || !role || role !== user?.role) {
+            throw Object.assign(new Error("Account session could not be confirmed."), {
+              code: "ACCOUNT_SESSION_INVALID",
+            });
+          }
+        }
 
         if (audience === "admin") {
           const session = await authApi.fetchAuthSession();
@@ -702,10 +800,198 @@ function setupAdminDashboard(content) {
   const clientSeedItems = content.openMarketplacePage.tabs.client.items;
   const professionalSeedItems = content.openMarketplacePage.tabs.developer.items;
   const featuredSeedItems = content.projects.items;
+  const accountsRoot = dashboard.querySelector("[data-admin-account-directory]");
+  const currentUserId = getAuthSession().user?.id || "";
   const confirmDeleteLabel =
     content.meta.locale === "tr"
       ? "Bu ogeyi silmek istediginize emin misiniz?"
       : "Are you sure you want to delete this item?";
+  const accountCopy = content.adminDashboardPage.accounts;
+
+  const renderAccountDirectory = (accounts = [], state = "ready", notice = null) => {
+    if (!accountsRoot) {
+      return;
+    }
+
+    if (state === "loading") {
+      accountsRoot.innerHTML = `<p class="admin-empty">${accountCopy.loading}</p>`;
+      return;
+    }
+
+    if (state === "error") {
+      accountsRoot.innerHTML = `<p class="admin-empty">${accountCopy.error}</p>`;
+      return;
+    }
+
+    if (accounts.length === 0) {
+      accountsRoot.innerHTML = `
+        ${notice ? `<div class="admin-account-notice admin-account-notice--${notice.tone || "info"}">${escapeHtml(notice.message)}</div>` : ""}
+        <p class="admin-empty">${accountCopy.empty}</p>
+      `;
+      return;
+    }
+
+    const formatter = new Intl.DateTimeFormat(content.meta.locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+    const fallback = accountCopy.fallback;
+    const statusMap =
+      content.meta.locale === "tr"
+        ? { active: "aktif", inactive: "pasif", admin: "yonetici", moderator: "moderatör", developer: "geliştirici", client: "musteri" }
+        : { active: "active", inactive: "inactive", admin: "admin", moderator: "moderator", developer: "developer", client: "client" };
+
+    accountsRoot.innerHTML = `
+      ${notice ? `<div class="admin-account-notice admin-account-notice--${notice.tone || "info"}">${escapeHtml(notice.message)}</div>` : ""}
+      <div class="admin-account-list">
+        ${accounts
+          .map((account) => {
+            const region = account.preferredRegion || account.serviceArea || fallback;
+            const company = account.companyName || fallback;
+            const phone = account.phoneNumber || fallback;
+            const createdAtDate = account.createdAt ? new Date(account.createdAt) : null;
+            const createdAt =
+              createdAtDate && !Number.isNaN(createdAtDate.getTime()) ? formatter.format(createdAtDate) : fallback;
+            const specialties = account.specialties || fallback;
+            const experience =
+              account.yearsExperience !== null && account.yearsExperience !== undefined
+                ? `${account.yearsExperience}`
+                : fallback;
+            const roleLabel = statusMap[account.role] || account.role || fallback;
+            const statusLabel = statusMap[account.status] || account.status || fallback;
+            const isSelf = account.id === currentUserId;
+            const canDisable = account.status === "active";
+            const canEnable = account.status !== "active";
+
+            return `
+              <details class="panel admin-account-card">
+                <summary class="admin-account-card__summary">
+                  <div class="admin-account-card__title">
+                    <h3>${escapeHtml(account.fullName || fallback)}</h3>
+                    <span class="admin-record__status">${escapeHtml(roleLabel)}</span>
+                  </div>
+                  <div class="admin-account-card__facts">
+                    <div><span>${accountCopy.summary.email}</span><strong>${escapeHtml(account.email || fallback)}</strong></div>
+                    <div><span>${accountCopy.summary.phone}</span><strong>${escapeHtml(phone)}</strong></div>
+                    <div><span>${accountCopy.summary.region}</span><strong>${escapeHtml(region)}</strong></div>
+                    <div><span>${accountCopy.summary.company}</span><strong>${escapeHtml(company)}</strong></div>
+                    <div><span>${accountCopy.summary.created}</span><strong>${escapeHtml(createdAt)}</strong></div>
+                    <div><span>${accountCopy.summary.status}</span><strong>${escapeHtml(statusLabel)}</strong></div>
+                  </div>
+                </summary>
+                <div class="admin-account-card__details">
+                  <div class="admin-record__facts admin-record__facts--account">
+                    <div><span>${accountCopy.summary.role}</span><strong>${escapeHtml(roleLabel)}</strong></div>
+                    <div><span>${accountCopy.summary.email}</span><strong>${escapeHtml(account.email || fallback)}</strong></div>
+                    <div><span>${accountCopy.summary.phone}</span><strong>${escapeHtml(phone)}</strong></div>
+                    <div><span>${accountCopy.summary.region}</span><strong>${escapeHtml(region)}</strong></div>
+                    <div><span>${accountCopy.summary.company}</span><strong>${escapeHtml(company)}</strong></div>
+                    <div><span>${accountCopy.summary.created}</span><strong>${escapeHtml(createdAt)}</strong></div>
+                  </div>
+                  <div class="admin-account-card__meta">
+                    <p><strong>${content.meta.locale === "tr" ? "Uzmanliklar" : "Specialties"}:</strong> ${escapeHtml(specialties)}</p>
+                    <p><strong>${content.meta.locale === "tr" ? "Deneyim" : "Years of experience"}:</strong> ${escapeHtml(experience)}</p>
+                    <p><strong>${content.meta.locale === "tr" ? "Meslek / Tip" : "Profession / Type"}:</strong> ${escapeHtml(account.professionType || fallback)}</p>
+                    <p><strong>${content.meta.locale === "tr" ? "Website / Portfolyo" : "Website / Portfolio"}:</strong> ${escapeHtml(account.website || fallback)}</p>
+                    <p><strong>${content.meta.locale === "tr" ? "Sifre" : "Password"}:</strong> ${accountCopy.hiddenPassword}</p>
+                  </div>
+                  <div class="admin-record__actions">
+                    <button
+                      class="button button--secondary"
+                      type="button"
+                      data-admin-account-action="${canDisable ? "disable" : "enable"}"
+                      data-admin-account-id="${account.id}"
+                      ${isSelf && canDisable ? "disabled" : ""}
+                    >
+                      ${canDisable ? accountCopy.actions.disable : accountCopy.actions.enable}
+                    </button>
+                    <button
+                      class="button button--secondary"
+                      type="button"
+                      data-admin-account-action="delete"
+                      data-admin-account-id="${account.id}"
+                      ${isSelf ? "disabled" : ""}
+                    >
+                      ${accountCopy.actions.delete}
+                    </button>
+                  </div>
+                </div>
+              </details>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
+  };
+
+  let lastAccountNotice = null;
+
+  const refreshAccountDirectory = async () => {
+    renderAccountDirectory([], "loading", lastAccountNotice);
+
+    try {
+      const authApi = await loadAuthApi();
+      const accounts = await authApi?.fetchAdminAccounts?.();
+
+      if (accounts) {
+        renderAccountDirectory(accounts, "ready", lastAccountNotice);
+      } else {
+        renderAccountDirectory([], "error", lastAccountNotice);
+      }
+    } catch (error) {
+      renderAccountDirectory([], "error", lastAccountNotice);
+    }
+  };
+
+  accountsRoot?.addEventListener("click", async (event) => {
+    const trigger = event.target.closest("[data-admin-account-action]");
+
+    if (!trigger) {
+      return;
+    }
+
+    const userId = trigger.getAttribute("data-admin-account-id");
+    const action = trigger.getAttribute("data-admin-account-action");
+
+    if (!userId || !action) {
+      return;
+    }
+
+    const confirmMessage =
+      action === "delete" ? accountCopy.confirmDelete : action === "disable" ? accountCopy.confirmDisable : accountCopy.confirmEnable;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    trigger.setAttribute("disabled", "");
+
+    try {
+      const authApi = await loadAuthApi();
+
+      if (!authApi) {
+        throw Object.assign(new Error("Auth backend is unavailable."), { code: "AUTH_UNAVAILABLE" });
+      }
+
+      if (action === "delete") {
+        await authApi.deleteAdminAccount(userId);
+        lastAccountNotice = { tone: "success", message: accountCopy.successDeleted };
+      } else {
+        await authApi.updateAdminAccountStatus(userId, action);
+        lastAccountNotice = { tone: "success", message: action === "disable" ? accountCopy.successDisabled : accountCopy.successEnabled };
+      }
+    } catch (error) {
+      lastAccountNotice = {
+        tone: "error",
+        message: content.authFeedback.errors[error?.code] || error?.message || content.authFeedback.errors.UNKNOWN_ERROR,
+      };
+    }
+
+    await refreshAccountDirectory();
+  });
+
+  refreshAccountDirectory();
 
   const toggleForm = (trigger, isOpen) => {
     const record = trigger.closest("[data-admin-record]");
@@ -1064,6 +1350,8 @@ function bindInteractions(content) {
   cleanupCounters = setupStatsCounters(content.meta.locale);
   setupFaqAccordions();
   setupNavMenu();
+  setupAuthNavigation();
+  setupAdminSectionNavigation();
   setupApplicationForm();
   setupAuthRoleSelection();
   setupAuthEntryForms(content);
@@ -1130,8 +1418,12 @@ async function renderPage(localeOverride) {
     const fallbackLocale = getDefaultLocale();
     const locale = localeOverride || getLocale(fallbackLocale);
     const content = getLocaleContent(locale);
-    await syncAuthState();
+    const session = await syncAuthState();
     const page = getCurrentPage();
+    if (page === "login" && session?.authenticated) {
+      window.location.replace("./index.html");
+      return;
+    }
     const project = getCurrentProject();
     const submissionType = getCurrentSubmissionType();
     const developer = getCurrentDeveloper();

@@ -119,7 +119,21 @@ def serialize_user(row: sqlite3.Row) -> dict:
     "preferredRegion": row["preferred_region"],
     "website": row["website"],
     "createdAt": row["created_at"],
+    "status": "active" if row["is_active"] else "inactive",
   }
+
+
+def list_users() -> list[dict]:
+  with get_connection() as connection:
+    rows = connection.execute(
+      """
+      SELECT *
+      FROM users
+      ORDER BY datetime(created_at) DESC, full_name COLLATE NOCASE ASC
+      """
+    ).fetchall()
+
+  return [serialize_user(row) for row in rows]
 
 
 def get_user_by_email(email: str) -> sqlite3.Row | None:
@@ -139,6 +153,42 @@ def get_user_by_identifier(identifier: str) -> sqlite3.Row | None:
 def get_user_by_id(user_id: str) -> sqlite3.Row | None:
   with get_connection() as connection:
     return connection.execute("SELECT * FROM users WHERE id = ? LIMIT 1", (user_id,)).fetchone()
+
+
+def count_active_admin_users(exclude_user_id: str | None = None) -> int:
+  query = "SELECT COUNT(*) FROM users WHERE role IN (?, ?) AND is_active = 1"
+  params: list[str] = ["admin", "moderator"]
+
+  if exclude_user_id:
+    query += " AND id != ?"
+    params.append(exclude_user_id)
+
+  with get_connection() as connection:
+    return int(connection.execute(query, tuple(params)).fetchone()[0])
+
+
+def update_user_status(user_id: str, is_active: bool) -> dict | None:
+  now = utc_iso()
+
+  with get_connection() as connection:
+    connection.execute(
+      """
+      UPDATE users
+      SET is_active = ?, updated_at = ?
+      WHERE id = ?
+      """,
+      (1 if is_active else 0, now, user_id),
+    )
+    row = connection.execute("SELECT * FROM users WHERE id = ? LIMIT 1", (user_id,)).fetchone()
+
+  return serialize_user(row) if row else None
+
+
+def delete_user_account(user_id: str) -> bool:
+  with get_connection() as connection:
+    cursor = connection.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+  return cursor.rowcount > 0
 
 
 def create_user(payload: dict) -> dict:

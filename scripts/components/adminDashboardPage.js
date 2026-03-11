@@ -296,6 +296,23 @@ function createFeaturedCreateForm(content) {
   `;
 }
 
+function createAccountsSection(content) {
+  return `
+    <section class="section-shell" id="admin-accounts">
+      ${createSectionHeading(content.accounts.heading)}
+      <article class="panel admin-section-panel">
+        <div class="admin-section-panel__header">
+          <h3>${content.accounts.title}</h3>
+          <p>${content.accounts.description}</p>
+        </div>
+        <div class="admin-account-directory" data-admin-account-directory>
+          <p class="admin-empty">${content.accounts.loading}</p>
+        </div>
+      </article>
+    </section>
+  `;
+}
+
 export function createAdminDashboardPage(content) {
   const clientItems = content.listings.clientItems.map((listing) => createListingCard(content, listing, "client")).join("");
   const professionalItems = content.listings.professionalItems
@@ -360,6 +377,8 @@ export function createAdminDashboardPage(content) {
           </article>
         </div>
       </section>
+
+      ${createAccountsSection(content)}
     </div>
   `;
 }

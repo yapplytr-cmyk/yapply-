@@ -1,5 +1,32 @@
+import { getAuthSession } from "../core/state.js";
+
+function getFirstName(user) {
+  const fullName = String(user?.fullName || "").trim();
+
+  if (fullName) {
+    return fullName.split(/\s+/)[0];
+  }
+
+  const username = String(user?.username || "").trim();
+
+  if (username) {
+    return username;
+  }
+
+  const email = String(user?.email || "").trim();
+
+  if (email.includes("@")) {
+    return email.split("@")[0];
+  }
+
+  return "";
+}
+
 export function createNavbar(content, currentLocale) {
   const currentPage = document.body?.dataset?.page || "home";
+  const authSession = getAuthSession();
+  const isAuthenticated = Boolean(authSession.authenticated && authSession.user);
+  const firstName = isAuthenticated ? getFirstName(authSession.user) : "";
   const menuCopy =
     currentLocale === "tr"
       ? {
@@ -7,12 +34,16 @@ export function createNavbar(content, currentLocale) {
           close: "Menüyü Kapat",
           login: "Giriş Yap",
           createAccount: "Hesap Oluştur",
+          welcome: "Hos geldin",
+          logout: "Cikis Yap",
         }
       : {
           open: "Open menu",
           close: "Close menu",
           login: "Login",
           createAccount: "Create Account",
+          welcome: "Welcome",
+          logout: "Logout",
         };
   const navLinks = content.nav.links
     .map((link) => {
@@ -37,8 +68,9 @@ export function createNavbar(content, currentLocale) {
       `
     )
     .join("");
-  const authLinks =
-    currentPage === "login"
+  const authLinks = isAuthenticated
+    ? []
+    : currentPage === "login"
       ? [
           {
             href: "./create-account.html",
@@ -66,20 +98,34 @@ export function createNavbar(content, currentLocale) {
               variant: "secondary",
             },
           ];
-  const desktopAuthMarkup = authLinks
-    .map((link) =>
-      link.variant === "secondary"
-        ? `<a class="button button--secondary nav-auth-button" href="${link.href}">${link.label}</a>`
-        : `<a class="nav-auth-link" href="${link.href}">${link.label}</a>`
-    )
-    .join("");
-  const mobileAuthMarkup = authLinks
-    .map((link) =>
-      link.variant === "secondary"
-        ? `<a class="button button--secondary nav-mobile-auth__button" href="${link.href}">${link.label}</a>`
-        : `<a class="nav-mobile-auth__link" href="${link.href}">${link.label}</a>`
-    )
-    .join("");
+  const desktopAuthMarkup = isAuthenticated
+    ? `
+      <div class="nav-auth-user">
+        <span class="nav-auth-user__pill">${menuCopy.welcome}, ${firstName}</span>
+        <button class="nav-auth-logout" type="button" data-auth-logout>${menuCopy.logout}</button>
+      </div>
+    `
+    : authLinks
+        .map((link) =>
+          link.variant === "secondary"
+            ? `<a class="button button--secondary nav-auth-button" href="${link.href}">${link.label}</a>`
+            : `<a class="nav-auth-link" href="${link.href}">${link.label}</a>`
+        )
+        .join("");
+  const mobileAuthMarkup = isAuthenticated
+    ? `
+      <div class="nav-mobile-auth nav-mobile-auth--session">
+        <span class="nav-auth-user__pill nav-auth-user__pill--mobile">${menuCopy.welcome}, ${firstName}</span>
+        <button class="button button--secondary nav-mobile-auth__button" type="button" data-auth-logout>${menuCopy.logout}</button>
+      </div>
+    `
+    : authLinks
+        .map((link) =>
+          link.variant === "secondary"
+            ? `<a class="button button--secondary nav-mobile-auth__button" href="${link.href}">${link.label}</a>`
+            : `<a class="nav-mobile-auth__link" href="${link.href}">${link.label}</a>`
+        )
+        .join("");
 
   return `
     <header class="site-header" id="top">
