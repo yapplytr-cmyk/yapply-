@@ -18,7 +18,7 @@ import {
   getManagedMarketplaceCollections,
   getManagedMarketplaceListing,
 } from "./core/adminStore.js";
-import { getLastSubmission, getSubmittedListing } from "./core/marketplaceStore.js";
+import { getLastSubmission, getLastSubmissionDetail, getSubmittedListing } from "./core/marketplaceStore.js";
 import { getAuthSession } from "./core/state.js";
 import {
   createProfessionalsBenefits,
@@ -162,6 +162,7 @@ function createMarketplaceSubmissionPageContent(content, submissionType) {
 function createMarketplaceSubmissionSuccessContent(content, submissionType, listingId) {
   const lastSubmission = getLastSubmission();
   const resolvedId = listingId || (lastSubmission?.type === submissionType ? lastSubmission.id : "");
+  const listing = getSubmittedListing(submissionType, resolvedId) || getLastSubmissionDetail(submissionType, resolvedId);
 
   return {
     brand: content.brand,
@@ -170,7 +171,7 @@ function createMarketplaceSubmissionSuccessContent(content, submissionType, list
     nav: withAdminNav(content.marketplaceSubmissionPages[submissionType].nav, content.adminDashboardPage.navLabel),
     marketplaceFlow: content.marketplaceFlow,
     submissionType,
-    listing: getSubmittedListing(submissionType, resolvedId),
+    listing,
   };
 }
 
@@ -181,7 +182,7 @@ function createMarketplaceListingDetailContent(content, listingType, listingId) 
     content.openMarketplacePage.tabs.client.items,
     content.openMarketplacePage.tabs.developer.items
   );
-  const submittedListing = getSubmittedListing(listingType, listingId);
+  const submittedListing = getSubmittedListing(listingType, listingId) || getLastSubmissionDetail(listingType, listingId);
 
   return {
     brand: content.brand,

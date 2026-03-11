@@ -1,5 +1,8 @@
+import { getAuthSession } from "./state.js";
+
 const STORAGE_KEY = "yapply-marketplace-submissions-v1";
 const LAST_SUBMISSION_KEY = "yapply-marketplace-last-submission-v1";
+const LAST_SUBMISSION_DETAIL_KEY = "yapply-marketplace-last-submission-detail-v1";
 const ADMIN_MODE_KEY = "yapply-marketplace-admin-mode-v1";
 
 function getStorage() {
@@ -29,13 +32,14 @@ function writeJson(key, value) {
   const storage = getStorage();
 
   if (!storage) {
-    return;
+    return false;
   }
 
   try {
     storage.setItem(key, JSON.stringify(value));
+    return true;
   } catch (error) {
-    return;
+    return false;
   }
 }
 
@@ -110,10 +114,11 @@ function getStore() {
 }
 
 function setStore(store) {
-  writeJson(STORAGE_KEY, store);
+  return writeJson(STORAGE_KEY, store);
 }
 
 async function createClientListing(formData) {
+  const session = getAuthSession();
   const rawTitle = formData.get("projectTitle") || "Client Project";
   const projectType = escapeHtml(formData.get("projectType") || "");
   const stylePreference = escapeHtml(formData.get("stylePreference") || "");
@@ -130,6 +135,8 @@ async function createClientListing(formData) {
     type: "client",
     source: "submitted",
     createdAt: new Date().toISOString(),
+    ownerUserId: session?.user?.id || null,
+    ownerRole: session?.user?.role || "client",
     contact: {
       fullName: escapeHtml(formData.get("fullName") || ""),
       email: escapeHtml(formData.get("email") || ""),
@@ -152,6 +159,7 @@ async function createClientListing(formData) {
 }
 
 async function createProfessionalListing(formData) {
+  const session = getAuthSession();
   const rawCompanyName = formData.get("companyName") || "Professional Listing";
   const specialties = splitList(formData.get("specialties"));
   const pricingModel = escapeHtml(formData.get("pricingModel") || "");
@@ -164,6 +172,8 @@ async function createProfessionalListing(formData) {
     type: "professional",
     source: "submitted",
     createdAt: new Date().toISOString(),
+    ownerUserId: session?.user?.id || null,
+    ownerRole: session?.user?.role || "developer",
     contact: {
       fullName: escapeHtml(formData.get("fullName") || ""),
       email: escapeHtml(formData.get("contactEmail") || ""),
@@ -215,13 +225,49 @@ export async function saveMarketplaceSubmission(type, formData) {
   const store = getStore();
   const listing = type === "professional" ? await createProfessionalListing(formData) : await createClientListing(formData);
   store[type] = [listing, ...(store[type] || [])];
-  setStore(store);
-  writeJson(LAST_SUBMISSION_KEY, { type, id: listing.id, createdAt: listing.createdAt });
+  const storeSaved = setStore(store);
+  const summarySaved = writeJson(LAST_SUBMISSION_KEY, { type, id: listing.id, createdAt: listing.createdAt });
+  const detailSaved = writeJson(LAST_SUBMISSION_DETAIL_KEY, { type, listing });
+
+  if (!storeSaved || !summarySaved || !detailSaved) {
+    throw Object.assign(new Error("The submission could not be saved in this browser."), {
+      code: "SUBMISSION_SAVE_FAILED",
+    });
+  }
+
+  if (!getSubmittedListing(type, listing.id)) {
+    throw Object.assign(new Error("The submission could not be retrieved after saving."), {
+      code: "SUBMISSION_SAVE_FAILED",
+    });
+  }
+
   return listing;
 }
 
 export function getLastSubmission() {
   return readJson(LAST_SUBMISSION_KEY, null);
+}
+
+export function getLastSubmissionDetail(type, id = "") {
+  const payload = readJson(LAST_SUBMISSION_DETAIL_KEY, null);
+
+  if (!payload?.listing || payload?.type !== type) {
+    return null;
+  }
+
+  if (id && payload.listing.id !== id) {
+    return null;
+  }
+
+  return payload.listing;
+}
+
+export function getOwnedSubmittedListings(type, ownerUserId) {
+  if (!ownerUserId) {
+    return [];
+  }
+
+  return getSubmittedListings(type).filter((item) => item.ownerUserId === ownerUserId);
 }
 
 export function deleteMarketplaceListing(type, id) {
@@ -240,6 +286,7 @@ export function deleteMarketplaceListing(type, id) {
   if (lastSubmission?.type === type && lastSubmission?.id === id) {
     const storage = getStorage();
     storage?.removeItem(LAST_SUBMISSION_KEY);
+    storage?.removeItem(LAST_SUBMISSION_DETAIL_KEY);
   }
 
   return true;

@@ -14,6 +14,55 @@ function createSummaryItems(items) {
     .join("");
 }
 
+function createAttachmentMarkup(attachments = []) {
+  if (!Array.isArray(attachments) || attachments.length === 0) {
+    return "";
+  }
+
+  const imageItems = attachments.filter((item) => item.kind === "image");
+  const fileItems = attachments.filter((item) => item.kind !== "image");
+
+  return `
+    <div class="marketplace-success__media">
+      ${imageItems.length > 0
+        ? `
+          <div class="marketplace-media-grid">
+            ${imageItems
+              .map(
+                (item) => `
+                  <a class="marketplace-media-card panel" href="${item.dataUrl}" target="_blank" rel="noreferrer">
+                    <img src="${item.dataUrl}" alt="${item.name}" />
+                    <span>${item.name}</span>
+                  </a>
+                `
+              )
+              .join("")}
+          </div>
+        `
+        : ""}
+      ${fileItems.length > 0
+        ? `
+          <div class="marketplace-file-list">
+            ${fileItems
+              .map(
+                (item) => `
+                  <a class="marketplace-file-card panel" href="${item.dataUrl}" download="${item.name}">
+                    <div>
+                      <span>Attachment</span>
+                      <strong>${item.name}</strong>
+                    </div>
+                    <span class="marketplace-file-card__action">Download</span>
+                  </a>
+                `
+              )
+              .join("")}
+          </div>
+        `
+        : ""}
+    </div>
+  `;
+}
+
 export function createMarketplaceSubmissionSuccessPage(content, listing, submissionType) {
   const pageContent = content.marketplaceFlow.success[submissionType];
 
@@ -49,6 +98,47 @@ export function createMarketplaceSubmissionSuccessPage(content, listing, submiss
         { label: pageContent.summary.budget, value: listing.budget },
       ];
 
+  const detailMarkup =
+    submissionType === "professional"
+      ? `
+        <div class="project-overview-grid marketplace-success__details">
+          <article class="project-detail-card panel">
+            <div class="project-detail-card__facts">
+              ${createSummaryItems([
+                { label: pageContent.summary.company, value: listing.name },
+                { label: pageContent.summary.specialty, value: listing.specialty },
+                { label: pageContent.summary.location, value: listing.location },
+                { label: pageContent.summary.price, value: listing.startingPrice },
+              ])}
+            </div>
+          </article>
+          <article class="project-note panel">
+            <h3>${listing.name}</h3>
+            <p>${listing.summary || listing.portfolioSummary || ""}</p>
+          </article>
+        </div>
+      `
+      : `
+        <div class="project-overview-grid marketplace-success__details">
+          <article class="project-detail-card panel">
+            <div class="project-detail-card__facts">
+              ${createSummaryItems([
+                { label: pageContent.summary.project, value: listing.title },
+                { label: pageContent.summary.type, value: listing.projectType },
+                { label: pageContent.summary.location, value: listing.location },
+                { label: pageContent.summary.budget, value: listing.budget },
+                { label: "Timeline", value: listing.timeline },
+                { label: "Plot Status", value: listing.plotStatus },
+              ])}
+            </div>
+          </article>
+          <article class="project-note panel">
+            <h3>${listing.title}</h3>
+            <p>${listing.brief || ""}</p>
+          </article>
+        </div>
+      `;
+
   return `
     <section class="section-shell marketplace-success">
       <div class="project-cta-panel panel marketplace-success-panel">
@@ -60,6 +150,8 @@ export function createMarketplaceSubmissionSuccessPage(content, listing, submiss
         <div class="submission-summary__grid marketplace-success__summary">
           ${createSummaryItems(summaryItems)}
         </div>
+        ${detailMarkup}
+        ${createAttachmentMarkup(listing.attachments)}
         <div class="hero-actions">
           ${createButton({ href: getMarketplaceListingHref(submissionType, listing.id), label: pageContent.viewListing, variant: "primary" })}
           ${createButton({ href: pageContent.marketplaceHref, label: pageContent.backToMarketplace, variant: "secondary" })}

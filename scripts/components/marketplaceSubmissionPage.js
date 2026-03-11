@@ -138,6 +138,10 @@ function createSubmissionForm(pageContent) {
 
         <div class="panel application-panel submission-form-panel">
           <form class="application-form submission-form" data-marketplace-submission-form novalidate>
+            <div class="auth-form-error form-field--full" data-marketplace-submission-error hidden>
+              <strong data-marketplace-submission-error-title>Submission failed</strong>
+              <p data-marketplace-submission-error-text>The submission could not be saved. Please try again.</p>
+            </div>
             ${fields}
             <div class="form-actions form-field--full">
               <button class="button button--primary" type="submit">${pageContent.form.submitLabel}</button>

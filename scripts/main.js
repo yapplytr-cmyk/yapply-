@@ -1194,22 +1194,47 @@ function setupProjectInquiryForm() {
 function setupMarketplaceSubmissionForm() {
   const form = document.querySelector("[data-marketplace-submission-form]");
   const submissionType = getCurrentSubmissionType();
+  const errorBox = document.querySelector("[data-marketplace-submission-error]");
+  const errorTitle = document.querySelector("[data-marketplace-submission-error-title]");
+  const errorText = document.querySelector("[data-marketplace-submission-error-text]");
 
   if (!form || !submissionType) {
     return;
   }
 
+  const isTurkish = document.documentElement.lang === "tr";
+  const copy = {
+    title: isTurkish ? "Gönderim kaydedilemedi" : "Submission could not be saved",
+    fallback: isTurkish
+      ? "Gönderiminiz şu anda kaydedilemedi. Lütfen tekrar deneyin."
+      : "Your submission could not be saved right now. Please try again.",
+  };
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    errorBox?.setAttribute("hidden", "");
 
     if (!form.checkValidity()) {
       form.reportValidity();
       return;
     }
 
-    const formData = new FormData(form);
-    const listing = await saveMarketplaceSubmission(submissionType, formData);
-    window.location.href = getSubmissionSuccessHref(submissionType, listing.id);
+    try {
+      const formData = new FormData(form);
+      const listing = await saveMarketplaceSubmission(submissionType, formData);
+      window.location.href = getSubmissionSuccessHref(submissionType, listing.id);
+    } catch (error) {
+      if (errorTitle) {
+        errorTitle.textContent = copy.title;
+      }
+
+      if (errorText) {
+        errorText.textContent = error?.message || copy.fallback;
+      }
+
+      errorBox?.removeAttribute("hidden");
+    }
   });
 }
 
