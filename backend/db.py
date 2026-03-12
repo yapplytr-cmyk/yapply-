@@ -105,15 +105,57 @@ def _user_username_key(username: str) -> str:
 USER_IDS_KEY = "yapply:user-ids"
 
 
+def _normalize_remote_user_record(record) -> dict | None:
+  if not isinstance(record, dict):
+    return None
+
+  user_id = get_record_value(record, "id", "userId")
+  if not user_id:
+    return None
+
+  created_at = get_record_value(record, "created_at", "createdAt") or utc_iso()
+  updated_at = get_record_value(record, "updated_at", "updatedAt") or created_at
+  status = get_record_value(record, "status")
+  is_active = get_record_value(record, "is_active", "isActive")
+
+  if is_active is None and status is not None:
+    is_active = 1 if str(status).lower() == "active" else 0
+
+  email = get_record_value(record, "email")
+  username = get_record_value(record, "username")
+
+  return {
+    "id": str(user_id),
+    "username": str(username).strip() if username is not None else None,
+    "email": str(email).strip().lower() if email is not None else None,
+    "password_hash": get_record_value(record, "password_hash", "passwordHash"),
+    "role": get_record_value(record, "role"),
+    "full_name": get_record_value(record, "full_name", "fullName") or "",
+    "phone_number": get_record_value(record, "phone_number", "phoneNumber"),
+    "company_name": get_record_value(record, "company_name", "companyName"),
+    "profession_type": get_record_value(record, "profession_type", "professionType"),
+    "service_area": get_record_value(record, "service_area", "serviceArea"),
+    "years_experience": get_record_value(record, "years_experience", "yearsExperience"),
+    "specialties": get_record_value(record, "specialties"),
+    "preferred_region": get_record_value(record, "preferred_region", "preferredRegion"),
+    "website": get_record_value(record, "website"),
+    "created_at": created_at,
+    "updated_at": updated_at,
+    "is_active": 1 if int(is_active or 0) == 1 else 0,
+  }
+
+
 def _load_remote_user_by_id(user_id: str) -> dict | None:
   raw = _kv_get(_user_record_key(user_id))
   if not raw:
     return None
 
   try:
-    return json.loads(raw) if isinstance(raw, str) else raw
+    parsed = json.loads(raw) if isinstance(raw, str) else raw
   except json.JSONDecodeError:
     return None
+
+  return _normalize_remote_user_record(parsed)
 
 
 def _load_remote_user_by_index(key: str) -> dict | None:
@@ -121,22 +163,40 @@ def _load_remote_user_by_index(key: str) -> dict | None:
   if not user_id:
     return None
 
+  if isinstance(user_id, dict):
+    normalized = _normalize_remote_user_record(user_id)
+    if normalized:
+      return normalized
+    user_id = get_record_value(user_id, "id", "userId")
+    if not user_id:
+      return None
+
+  if isinstance(user_id, str):
+    trimmed = user_id.strip()
+    if trimmed.startswith("{"):
+      try:
+        normalized = _normalize_remote_user_record(json.loads(trimmed))
+      except json.JSONDecodeError:
+        normalized = None
+      if normalized:
+        return normalized
+
   return _load_remote_user_by_id(str(user_id))
 
 
 def _list_remote_users() -> list[dict]:
   users = [_load_remote_user_by_id(user_id) for user_id in _kv_smembers(USER_IDS_KEY)]
   filtered = [user for user in users if user]
-  filtered.sort(key=lambda user: (user.get("created_at") or "", user.get("full_name") or ""), reverse=True)
+  filtered.sort(key=lambda user: (get_record_value(user, "created_at", "createdAt") or "", get_record_value(user, "full_name", "fullName") or ""), reverse=True)
   return filtered
 
 
 def _count_remote_active_admin_users(exclude_user_id: str | None = None) -> int:
   count = 0
   for user in _list_remote_users():
-    if exclude_user_id and user.get("id") == exclude_user_id:
+    if exclude_user_id and get_record_value(user, "id") == exclude_user_id:
       continue
-    if user.get("role") in ADMIN_ROLES and int(user.get("is_active", 1)) == 1:
+    if get_record_value(user, "role") in ADMIN_ROLES and int(get_record_value(user, "is_active", "isActive") or 1) == 1:
       count += 1
   return count
 
@@ -537,8 +597,28 @@ def seed_admin_account(email: str, password: str, full_name: str, role: str = "a
     normalized_username = (username or "").strip().lower() or None
 
     if _uses_remote_user_store():
-      previous_email = (existing.get("email") or "").strip().lower()
-      previous_username = (existing.get("username") or "").strip().lower() or None
+      existing_id = get_record_value(existing, "id")
+      if not existing_id:
+        return create_user(
+          {
+            "email": email,
+            "username": username,
+            "password": password,
+            "role": role,
+            "fullName": full_name,
+            "phoneNumber": None,
+            "companyName": None,
+            "professionType": None,
+            "serviceArea": None,
+            "yearsExperience": None,
+            "specialties": None,
+            "preferredRegion": None,
+            "website": None,
+          }
+        )
+
+      previous_email = (get_record_value(existing, "email") or "").strip().lower()
+      previous_username = (get_record_value(existing, "username") or "").strip().lower() or None
       record = {
         **existing,
         "username": username,
@@ -550,9 +630,9 @@ def seed_admin_account(email: str, password: str, full_name: str, role: str = "a
         "is_active": 1,
       }
 
-      _kv_set(_user_record_key(existing["id"]), json.dumps(record))
-      _kv_set(_user_email_key(normalized_email), existing["id"])
-      _kv_sadd(USER_IDS_KEY, existing["id"])
+      _kv_set(_user_record_key(existing_id), json.dumps(record))
+      _kv_set(_user_email_key(normalized_email), existing_id)
+      _kv_sadd(USER_IDS_KEY, existing_id)
 
       if previous_email and previous_email != normalized_email:
         _kv_delete(_user_email_key(previous_email))
@@ -561,7 +641,7 @@ def seed_admin_account(email: str, password: str, full_name: str, role: str = "a
         _kv_delete(_user_username_key(previous_username))
 
       if normalized_username:
-        _kv_set(_user_username_key(normalized_username), existing["id"])
+        _kv_set(_user_username_key(normalized_username), existing_id)
       elif previous_username:
         _kv_delete(_user_username_key(previous_username))
 
