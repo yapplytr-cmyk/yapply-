@@ -16,7 +16,9 @@ from api.supabase_utils import (
   handle_admin_account_status as handle_supabase_admin_account_status,
   handle_admin_accounts as handle_supabase_admin_accounts,
   handle_admin_identifier_resolve,
+  handle_public_login,
   handle_public_auth_config,
+  handle_public_signup,
   run_supabase_action,
 )
 
@@ -352,11 +354,11 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       return
 
     if parsed.path == "/api/auth/signup":
-      self.handle_auth_signup()
+      run_supabase_action(self, handle_public_signup)
       return
 
     if parsed.path == "/api/auth/login":
-      self.handle_auth_login()
+      run_supabase_action(self, handle_public_login)
       return
 
     if parsed.path == "/api/auth/logout":

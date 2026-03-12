@@ -464,38 +464,64 @@ async function requestAdminLogin(identifier, password) {
   return data;
 }
 
+async function requestPublicSignup(payload) {
+  const response = await fetch(createApiUrl("/api/auth/signup"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await readResponsePayload(response, "Account creation failed.");
+
+  if (!response.ok) {
+    throw createAuthError(data.code || "UNKNOWN_ERROR", data.message || "Account creation failed.");
+  }
+
+  return data;
+}
+
+async function requestPublicLogin(identifier, password, role) {
+  const response = await fetch(createApiUrl("/api/auth/login"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ identifier, password, role, audience: "public" }),
+  });
+
+  const data = await readResponsePayload(response, "Login failed.");
+
+  if (!response.ok) {
+    throw createAuthError(data.code || "UNKNOWN_ERROR", data.message || "Login failed.");
+  }
+
+  return data;
+}
+
 export async function signupAccount(payload) {
   const signupPayload = ensurePublicSignupPayload(payload);
   const supabase = await getSupabaseClient();
 
-  const { data, error } = await supabase.auth.signUp({
-    email: signupPayload.email,
-    password: signupPayload.password,
-    options: {
-      data: {
-        role: signupPayload.role,
-        full_name: signupPayload.fullName,
-        phone_number: signupPayload.phoneNumber,
-        company_name: signupPayload.companyName,
-        profession_type: signupPayload.professionType,
-        service_area: signupPayload.serviceArea,
-        years_experience: signupPayload.yearsExperience,
-        specialties: signupPayload.specialties,
-        preferred_region: signupPayload.preferredRegion,
-        website: signupPayload.website,
-      },
-    },
-  });
+  const data = await requestPublicSignup(signupPayload);
 
-  if (error) {
-    throw mapSupabaseError(error, "AUTH_UNAVAILABLE");
-  }
-
-  if (!data?.session || !data?.user) {
+  if (!data?.session?.access_token || !data?.session?.refresh_token) {
     throw createAuthError(
       "EMAIL_CONFIRMATION_REQUIRED",
       "Supabase email confirmation is enabled. Disable it to preserve the current instant signup flow."
     );
+  }
+
+  const { error: setSessionError } = await supabase.auth.setSession({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  });
+
+  if (setSessionError) {
+    throw mapSupabaseError(setSessionError, "ACCOUNT_SESSION_INVALID");
   }
 
   const session = await loadConfirmedSession({
@@ -576,37 +602,19 @@ export async function loginAccount(payload, audience = "public") {
     return session.user;
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+  const result = await requestPublicLogin(email, password, requestedRole);
+
+  if (!result?.session?.access_token || !result?.session?.refresh_token) {
+    throw createAuthError("SESSION_INVALID", "Supabase did not return a usable authenticated session.");
+  }
+
+  const { error: setSessionError } = await supabase.auth.setSession({
+    access_token: result.session.access_token,
+    refresh_token: result.session.refresh_token,
   });
 
-  if (error) {
-    if (audience === "admin" && !rawIdentifier.includes("@")) {
-      try {
-        const resolvedEmail = await resolveAdminIdentifier(rawIdentifier);
-        const retry = await supabase.auth.signInWithPassword({
-          email: normalizeEmail(resolvedEmail),
-          password,
-        });
-
-        if (retry.error) {
-          throw retry.error;
-        }
-      } catch (resolveError) {
-        if (resolveError?.code === "SUPABASE_UNAVAILABLE") {
-          throw createAuthError(
-            "ADMIN_IDENTIFIER_RESOLUTION_FAILED",
-            "Moderator username lookup is unavailable right now. Try logging in with the full admin email instead.",
-            resolveError
-          );
-        }
-
-        throw mapSupabaseError(resolveError, "INVALID_CREDENTIALS");
-      }
-    }
-
-    throw mapSupabaseError(error, "INVALID_CREDENTIALS");
+  if (setSessionError) {
+    throw mapSupabaseError(setSessionError, "SESSION_INVALID");
   }
 
   const session = await loadConfirmedSession({

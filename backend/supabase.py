@@ -207,6 +207,56 @@ def sign_in_with_password(email: str, password: str) -> dict[str, Any]:
   return data
 
 
+def sign_up_with_password(email: str, password: str, metadata: dict[str, Any]) -> dict[str, Any]:
+  _ensure_public_config()
+
+  headers = {
+    "Accept": "application/json",
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+    "Content-Type": "application/json; charset=utf-8",
+  }
+  payload = json.dumps(
+    {
+      "email": email.strip().lower(),
+      "password": password,
+      "data": metadata,
+    }
+  ).encode("utf-8")
+  request = Request(
+    f"{SUPABASE_URL}/auth/v1/signup",
+    method="POST",
+    data=payload,
+    headers=headers,
+  )
+
+  try:
+    with urlopen(request, timeout=12) as response:
+      data = _decode_json(response.read())
+  except HTTPError as error:
+    raise _extract_error_payload(
+      error.read(),
+      error.code,
+      "AUTH_SIGNUP_FAILED",
+      "Account creation failed.",
+    ) from error
+  except URLError as error:
+    raise SupabaseError(
+      "AUTH_UNAVAILABLE",
+      "Authentication is not available right now. Please try again in a moment.",
+      503,
+    ) from error
+
+  if not isinstance(data, dict):
+    raise SupabaseError(
+      "SUPABASE_INVALID_RESPONSE",
+      "Supabase returned an invalid signup response.",
+      502,
+    )
+
+  return data
+
+
 def _normalize_role(role: str | None) -> str:
   normalized = (role or "").strip().lower()
   return normalized if normalized in {"client", "developer", "admin", "moderator"} else ""
@@ -328,6 +378,57 @@ def get_profile_by_identifier(identifier: str) -> dict[str, Any] | None:
   return get_profile_by_username(value)
 
 
+def upsert_profile(
+  *,
+  user_id: str,
+  email: str,
+  role: str,
+  full_name: str,
+  phone_number: str | None = None,
+  company_name: str | None = None,
+  profession_type: str | None = None,
+  service_area: str | None = None,
+  years_experience: int | None = None,
+  specialties: str | None = None,
+  preferred_region: str | None = None,
+  website: str | None = None,
+  username: str | None = None,
+  status: str = "active",
+) -> dict[str, Any]:
+  _ensure_service_config()
+
+  payload = {
+    "id": user_id,
+    "email": email.strip().lower(),
+    "username": (username or "").strip().lower() or None,
+    "role": role,
+    "status": status,
+    "full_name": full_name,
+    "phone_number": phone_number,
+    "company_name": company_name,
+    "profession_type": profession_type,
+    "service_area": service_area,
+    "years_experience": years_experience,
+    "specialties": specialties,
+    "preferred_region": preferred_region,
+    "website": website,
+  }
+
+  response = _supabase_request(
+    f"/rest/v1/profiles?{urlencode({'select': PROFILE_COLUMNS})}",
+    method="POST",
+    payload=payload,
+    use_service_role=True,
+    extra_headers={"Prefer": "resolution=merge-duplicates,return=representation"},
+  )
+
+  rows = response if isinstance(response, list) else []
+  profile = normalize_profile_row(rows[0]) if rows else None
+  if not profile:
+    raise SupabaseError("ACCOUNT_PROFILE_MISSING", "The account profile could not be created.", 502)
+  return profile
+
+
 def list_profiles() -> list[dict[str, Any]]:
   _ensure_service_config()
   response = _supabase_request(
@@ -421,6 +522,163 @@ def authenticate_admin(identifier: str, password: str) -> dict[str, Any]:
       "username": profile.get("username"),
       "role": profile.get("role"),
       "status": profile.get("status"),
+    },
+  }
+
+
+def authenticate_public_user(email: str, password: str, expected_role: str = "") -> dict[str, Any]:
+  session = sign_in_with_password(email, password)
+  user_payload = session.get("user") if isinstance(session, dict) else None
+  user_id = str(user_payload.get("id") or "").strip() if isinstance(user_payload, dict) else ""
+
+  if not user_id:
+    raise SupabaseError(
+      "SESSION_INVALID",
+      "Authentication succeeded but the returned session did not include a valid user id.",
+      502,
+    )
+
+  profile = get_profile_by_id(user_id)
+  if not profile:
+    raise SupabaseError("ACCOUNT_PROFILE_MISSING", "The account profile could not be found.", 404)
+  if profile.get("role") in ADMIN_ROLES:
+    raise SupabaseError("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.", 403)
+  if expected_role and profile.get("role") != expected_role:
+    raise SupabaseError("ROLE_MISMATCH", "This account does not match the selected login role.", 403)
+  if profile.get("status") != "active":
+    raise SupabaseError("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.", 403)
+
+  return {
+    "session": {
+      "access_token": session.get("access_token"),
+      "refresh_token": session.get("refresh_token"),
+      "expires_in": session.get("expires_in"),
+      "expires_at": session.get("expires_at"),
+      "token_type": session.get("token_type"),
+    },
+    "user": {
+      "id": profile.get("id"),
+      "email": profile.get("email"),
+      "username": profile.get("username"),
+      "role": profile.get("role"),
+      "status": profile.get("status"),
+      "fullName": profile.get("fullName"),
+      "phoneNumber": profile.get("phoneNumber"),
+      "companyName": profile.get("companyName"),
+      "professionType": profile.get("professionType"),
+      "serviceArea": profile.get("serviceArea"),
+      "yearsExperience": profile.get("yearsExperience"),
+      "specialties": profile.get("specialties"),
+      "preferredRegion": profile.get("preferredRegion"),
+      "website": profile.get("website"),
+    },
+  }
+
+
+def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
+  role = _normalize_role(payload.get("role"))
+  if role not in {"client", "developer"}:
+    raise SupabaseError("INVALID_ROLE", "Only client and developer accounts can be created here.", 400)
+
+  email = str(payload.get("email") or "").strip().lower()
+  password = str(payload.get("password") or "")
+  full_name = str(payload.get("fullName") or "").strip()
+  phone_number = str(payload.get("phoneNumber") or "").strip()
+
+  if not email:
+    raise SupabaseError("EMAIL_INVALID", "Please enter a valid email address.", 400)
+  if len(password) < 8:
+    raise SupabaseError("PASSWORD_TOO_SHORT", "Password must be at least 8 characters.", 400)
+  if not full_name:
+    raise SupabaseError("FULL_NAME_REQUIRED", "Please enter your full name.", 400)
+  if not phone_number:
+    raise SupabaseError("PHONE_REQUIRED", "Phone number is required for this account type.", 400)
+
+  if role == "client" and not str(payload.get("preferredRegion") or "").strip():
+    raise SupabaseError("REGION_REQUIRED", "Preferred city or region is required for client accounts.", 400)
+
+  if role == "developer":
+    if not str(payload.get("companyName") or "").strip():
+      raise SupabaseError("COMPANY_REQUIRED", "Company or professional name is required for developer accounts.", 400)
+    if not str(payload.get("professionType") or "").strip():
+      raise SupabaseError("PROFESSION_REQUIRED", "Profession type is required for developer accounts.", 400)
+    if not str(payload.get("serviceArea") or "").strip():
+      raise SupabaseError("SERVICE_AREA_REQUIRED", "City or service area is required for developer accounts.", 400)
+    if not str(payload.get("specialties") or "").strip():
+      raise SupabaseError("SPECIALTIES_REQUIRED", "Please enter at least one specialty for the developer account.", 400)
+
+  metadata = {
+    "role": role,
+    "full_name": full_name,
+    "phone_number": phone_number,
+    "company_name": str(payload.get("companyName") or "").strip() or None,
+    "profession_type": str(payload.get("professionType") or "").strip() or None,
+    "service_area": str(payload.get("serviceArea") or "").strip() or None,
+    "years_experience": payload.get("yearsExperience"),
+    "specialties": str(payload.get("specialties") or "").strip() or None,
+    "preferred_region": str(payload.get("preferredRegion") or "").strip() or None,
+    "website": str(payload.get("website") or "").strip() or None,
+  }
+
+  session = sign_up_with_password(email, password, metadata)
+  user_payload = session.get("user") if isinstance(session, dict) else None
+  user_id = str(user_payload.get("id") or "").strip() if isinstance(user_payload, dict) else ""
+
+  if not user_id:
+    raise SupabaseError(
+      "SESSION_INVALID",
+      "Account creation succeeded but the returned session did not include a valid user id.",
+      502,
+    )
+
+  profile = upsert_profile(
+    user_id=user_id,
+    email=email,
+    role=role,
+    full_name=full_name,
+    phone_number=phone_number or None,
+    company_name=metadata["company_name"],
+    profession_type=metadata["profession_type"],
+    service_area=metadata["service_area"],
+    years_experience=metadata["years_experience"],
+    specialties=metadata["specialties"],
+    preferred_region=metadata["preferred_region"],
+    website=metadata["website"],
+  )
+
+  if profile.get("status") != "active":
+    raise SupabaseError("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.", 403)
+
+  if not session.get("access_token") or not session.get("refresh_token"):
+    raise SupabaseError(
+      "EMAIL_CONFIRMATION_REQUIRED",
+      "Supabase email confirmation is enabled. Disable it to preserve the current instant signup flow.",
+      409,
+    )
+
+  return {
+    "session": {
+      "access_token": session.get("access_token"),
+      "refresh_token": session.get("refresh_token"),
+      "expires_in": session.get("expires_in"),
+      "expires_at": session.get("expires_at"),
+      "token_type": session.get("token_type"),
+    },
+    "user": {
+      "id": profile.get("id"),
+      "email": profile.get("email"),
+      "username": profile.get("username"),
+      "role": profile.get("role"),
+      "status": profile.get("status"),
+      "fullName": profile.get("fullName"),
+      "phoneNumber": profile.get("phoneNumber"),
+      "companyName": profile.get("companyName"),
+      "professionType": profile.get("professionType"),
+      "serviceArea": profile.get("serviceArea"),
+      "yearsExperience": profile.get("yearsExperience"),
+      "specialties": profile.get("specialties"),
+      "preferredRegion": profile.get("preferredRegion"),
+      "website": profile.get("website"),
     },
   }
 

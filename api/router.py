@@ -15,7 +15,9 @@ from api.supabase_utils import (
   handle_admin_account_status,
   handle_admin_accounts,
   handle_admin_identifier_resolve,
+  handle_public_login,
   handle_public_auth_config,
+  handle_public_signup,
   run_supabase_action,
 )
 
@@ -42,6 +44,21 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "auth/config":
       run_supabase_action(self, handle_public_auth_config)
+      return
+
+    if route == "auth/session":
+      run_supabase_action(
+        self,
+        lambda handler: json_response(
+          handler,
+          HTTPStatus.NOT_IMPLEMENTED,
+          {
+            "ok": False,
+            "code": "NOT_IMPLEMENTED",
+            "message": "This route is handled in the browser via the Supabase session client.",
+          },
+        ),
+      )
       return
 
     if route == "admin/accounts":
@@ -71,6 +88,14 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "auth/admin/resolve":
       run_supabase_action(self, handle_admin_identifier_resolve)
+      return
+
+    if route == "auth/signup":
+      run_supabase_action(self, handle_public_signup)
+      return
+
+    if route == "auth/login":
+      run_supabase_action(self, handle_public_login)
       return
 
     if route == "admin/accounts/status":

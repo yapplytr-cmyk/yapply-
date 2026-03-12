@@ -4,7 +4,9 @@ import json
 from http import HTTPStatus
 
 from backend.supabase import (
+  authenticate_public_user,
   authenticate_admin,
+  register_public_user,
   SupabaseError,
   count_active_admin_profiles,
   delete_user_account,
@@ -125,6 +127,27 @@ def handle_admin_login(handler) -> None:
     raise SupabaseError("PASSWORD_REQUIRED", "A password is required.", 400)
 
   result = authenticate_admin(identifier, password)
+  json_response(handler, HTTPStatus.OK, {"ok": True, **result})
+
+
+def handle_public_signup(handler) -> None:
+  payload = parse_json_body(handler)
+  result = register_public_user(payload)
+  json_response(handler, HTTPStatus.CREATED, {"ok": True, **result})
+
+
+def handle_public_login(handler) -> None:
+  payload = parse_json_body(handler)
+  identifier = str(payload.get("identifier") or payload.get("email") or "").strip()
+  password = str(payload.get("password") or "")
+  role = str(payload.get("role") or "").strip().lower()
+
+  if not identifier:
+    raise SupabaseError("EMAIL_INVALID", "Please enter a valid email address.", 400)
+  if not password:
+    raise SupabaseError("PASSWORD_REQUIRED", "Please enter your password.", 400)
+
+  result = authenticate_public_user(identifier, password, role)
   json_response(handler, HTTPStatus.OK, {"ok": True, **result})
 
 
