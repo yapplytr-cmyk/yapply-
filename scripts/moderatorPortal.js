@@ -1,4 +1,6 @@
-import { fetchAuthSession, loginAccount } from "./core/auth.js?v=20260312-admin-backend-login";
+import { fetchAuthSession, loginAccount } from "./core/auth.js?v=20260312-moderator-asset-trace";
+
+const MODERATOR_BUILD_MARKER = "moderator-build-20260312-asset-trace";
 
 const REDIRECT_URL = "./admin-dashboard.html";
 const DEFAULT_ERROR_TEXT = "Enter valid moderator credentials to continue.";
@@ -144,6 +146,9 @@ function bindModeratorLogin() {
   }
 
   resetState();
+  document.body.dataset.moderatorBuild = MODERATOR_BUILD_MARKER;
+  console.info(`[Yapply] ${MODERATOR_BUILD_MARKER}`);
+  setDebug(`Build marker: ${MODERATOR_BUILD_MARKER}`);
   bootstrapExistingAdminSession();
 
   form.addEventListener("submit", async (event) => {
