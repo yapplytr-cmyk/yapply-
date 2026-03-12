@@ -272,6 +272,45 @@ function serializeBrowserUser(account) {
   };
 }
 
+async function mirrorBackendPublicAccountLocally(user, password) {
+  if (!usesBrowserPublicAuth() || !isBrowserManagedPublicRole(user?.role) || !getStorage() || !password) {
+    return;
+  }
+
+  const accounts = loadBrowserPublicAccounts();
+  const account = {
+    id: user.id || generateRecordId("acct"),
+    username: user.username || null,
+    email: normalizeEmail(user.email),
+    passwordHash: await digestSecret(password),
+    role: user.role,
+    fullName: user.fullName || "",
+    phoneNumber: user.phoneNumber || null,
+    companyName: user.companyName || null,
+    professionType: user.professionType || null,
+    serviceArea: user.serviceArea || null,
+    yearsExperience: user.yearsExperience ?? null,
+    specialties: user.specialties || null,
+    preferredRegion: user.preferredRegion || null,
+    website: user.website || null,
+    createdAt: user.createdAt || new Date().toISOString(),
+    status: user.status || "active",
+  };
+
+  const index = accounts.findIndex((entry) => entry.id === account.id || entry.email === account.email);
+
+  if (index >= 0) {
+    accounts[index] = {
+      ...accounts[index],
+      ...account,
+    };
+  } else {
+    accounts.unshift(account);
+  }
+
+  saveBrowserPublicAccounts(sortAccountsByCreatedAt(accounts));
+}
+
 function ensurePublicSignupPayload(payload) {
   const role = normalizeText(payload.role || payload.accountRole);
   const fullName = normalizeText(payload.fullName);
@@ -408,7 +447,7 @@ async function loginBrowserPublicAccount(payload) {
   const account = accounts.find((entry) => entry.email === identifier);
 
   if (!account) {
-    throw createAuthError("INVALID_CREDENTIALS", "Email or password is incorrect.");
+    throw createAuthError("LOGIN_ACCOUNT_NOT_FOUND", "No account was found for this email address.");
   }
 
   if (expectedRole && account.role !== expectedRole) {
@@ -547,6 +586,7 @@ export async function signupAccount(payload) {
   if (usesBrowserPublicAuth()) {
     try {
       const data = await requestJson("/api/auth/signup", signupPayload);
+      await mirrorBackendPublicAccountLocally(data.user, signupPayload.password);
       setAuthSession({ authenticated: true, user: data.user });
       return data.user;
     } catch (error) {
@@ -567,10 +607,11 @@ export async function loginAccount(payload, audience = "public") {
   if (audience === "public" && usesBrowserPublicAuth()) {
     try {
       const data = await requestJson("/api/auth/login", { ...payload, audience });
+      await mirrorBackendPublicAccountLocally(data.user, payload.password);
       setAuthSession({ authenticated: true, user: data.user });
       return data.user;
     } catch (error) {
-      if (error?.code && error.code !== "INVALID_CREDENTIALS") {
+      if (error?.code && error.code !== "INVALID_CREDENTIALS" && error.code !== "LOGIN_ACCOUNT_NOT_FOUND") {
         throw error;
       }
     }

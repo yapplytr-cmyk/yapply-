@@ -230,7 +230,10 @@ def validate_login(payload: dict, audience: str = "public") -> tuple[dict | None
     return None, ("PASSWORD_REQUIRED", "Password is required.")
 
   user = get_user_by_identifier(identifier)
-  if not user or not verify_password(password, user["password_hash"]):
+  if not user:
+    return None, ("LOGIN_ACCOUNT_NOT_FOUND", "No account was found for this email address.")
+
+  if not verify_password(password, user["password_hash"]):
     return None, ("INVALID_CREDENTIALS", "Email or password is incorrect.")
 
   if not user["is_active"]:
