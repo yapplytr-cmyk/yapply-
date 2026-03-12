@@ -286,7 +286,7 @@ async function loadConfirmedSession({ expectedRole = "", audience = "public", st
     throw createAuthError("ADMIN_SESSION_INVALID", "Admin authentication did not produce a valid admin session.");
   }
 
-  if (audience !== "admin" && isPrivilegedRole(sessionUser.role)) {
+  if (audience === "public" && isPrivilegedRole(sessionUser.role)) {
     await supabase.auth.signOut();
     clearAuthSession();
     throw createAuthError("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.");
@@ -633,9 +633,10 @@ export async function logoutAccount() {
   clearAuthSession();
 }
 
-export async function fetchAuthSession() {
+export async function fetchAuthSession(options = {}) {
   try {
-    return await loadConfirmedSession({ strict: false });
+    const audience = options.audience || "any";
+    return await loadConfirmedSession({ strict: false, audience, expectedRole: options.expectedRole || "" });
   } catch (error) {
     clearAuthSession();
     return { authenticated: false, user: null };
