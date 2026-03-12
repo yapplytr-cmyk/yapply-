@@ -336,3 +336,59 @@ def create_listing_shell(owner_user_id: str, owner_role: str, listing_type: str,
     )
 
   return listing_id
+
+
+def serialize_marketplace_listing(row: sqlite3.Row) -> dict:
+  payload = json.loads(row["payload_json"] or "{}")
+  return {
+    **payload,
+    "id": row["id"],
+    "type": row["listing_type"],
+    "status": row["status"],
+    "title": payload.get("title") or row["title"],
+    "ownerUserId": row["owner_user_id"],
+    "ownerRole": row["owner_role"],
+    "createdAt": row["created_at"],
+    "updatedAt": row["updated_at"],
+  }
+
+
+def create_marketplace_listing(payload: dict) -> dict:
+  listing_id = str(uuid.uuid4())
+  now = utc_iso()
+  listing_type = payload["type"]
+  title = payload.get("title") or payload.get("name") or "Marketplace Listing"
+  owner_user_id = payload.get("ownerUserId")
+  owner_role = payload.get("ownerRole")
+  stored_payload = {**payload, "id": listing_id, "createdAt": now, "updatedAt": now}
+
+  with get_connection() as connection:
+    connection.execute(
+      """
+      INSERT INTO marketplace_listings (
+        id, owner_user_id, owner_role, listing_type, status, title, payload_json, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      """,
+      (
+        listing_id,
+        owner_user_id,
+        owner_role,
+        listing_type,
+        payload.get("status") or "active",
+        title,
+        json.dumps(stored_payload),
+        now,
+        now,
+      ),
+    )
+    row = connection.execute("SELECT * FROM marketplace_listings WHERE id = ? LIMIT 1", (listing_id,)).fetchone()
+
+  return serialize_marketplace_listing(row)
+
+
+def get_marketplace_listing(listing_id: str) -> dict | None:
+  with get_connection() as connection:
+    row = connection.execute("SELECT * FROM marketplace_listings WHERE id = ? LIMIT 1", (listing_id,)).fetchone()
+
+  return serialize_marketplace_listing(row) if row else None

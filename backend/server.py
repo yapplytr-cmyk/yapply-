@@ -6,7 +6,7 @@ from http import HTTPStatus
 from http.cookies import SimpleCookie
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from .config import (
   ADMIN_ROLES,
@@ -25,11 +25,13 @@ from .config import (
 )
 from .db import (
   count_active_admin_users,
+  create_marketplace_listing,
   create_session,
   create_user,
   delete_user_account,
   delete_session,
   ensure_database,
+  get_marketplace_listing,
   get_session_user,
   get_user_by_email,
   get_user_by_identifier,
@@ -274,6 +276,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       self.handle_auth_session()
       return
 
+    if parsed.path == "/api/marketplace/listings/detail":
+      self.handle_marketplace_listing_detail(parsed)
+      return
+
     if parsed.path == "/api/admin/accounts":
       self.handle_admin_accounts()
       return
@@ -294,6 +300,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
 
     if parsed.path == "/api/auth/logout":
       self.handle_auth_logout()
+      return
+
+    if parsed.path == "/api/marketplace/listings/create":
+      self.handle_marketplace_listing_create()
       return
 
     if parsed.path == "/api/admin/accounts/status":
@@ -319,6 +329,87 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       return
 
     json_response(self, HTTPStatus.OK, {"ok": True, "accounts": list_users()})
+
+  def resolve_listing_owner(self, payload: dict) -> dict | None:
+    session_user = get_authenticated_user(self)
+
+    if session_user and session_user.get("role") in {"client", "developer", "admin", "moderator"}:
+      return {
+        "id": session_user.get("id"),
+        "role": session_user.get("role"),
+        "fullName": session_user.get("fullName"),
+        "email": session_user.get("email"),
+      }
+
+    owner = payload.get("owner") if isinstance(payload.get("owner"), dict) else None
+    if not owner:
+      return None
+
+    role = normalize_text(owner.get("role"))
+    if role not in {"client", "developer"}:
+      return None
+
+    return {
+      "id": normalize_text(owner.get("id")),
+      "role": role,
+      "fullName": normalize_text(owner.get("fullName")),
+      "email": normalize_text(owner.get("email")),
+    }
+
+  def handle_marketplace_listing_create(self) -> None:
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    listing = payload.get("listing") if isinstance(payload.get("listing"), dict) else None
+    if not listing:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING", "message": "A valid listing payload is required."})
+      return
+
+    listing_type = normalize_text(listing.get("type"))
+    if listing_type not in {"client", "professional"}:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING", "message": "A valid marketplace listing type is required."})
+      return
+
+    owner = self.resolve_listing_owner(payload)
+    if not owner:
+      json_response(self, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "A signed-in account is required to create a listing."})
+      return
+
+    if listing_type == "client" and owner["role"] != "client":
+      json_response(self, HTTPStatus.FORBIDDEN, {"ok": False, "code": "OWNER_ROLE_INVALID", "message": "Only client accounts can create project request listings."})
+      return
+
+    if listing_type == "professional" and owner["role"] != "developer":
+      json_response(self, HTTPStatus.FORBIDDEN, {"ok": False, "code": "OWNER_ROLE_INVALID", "message": "Only developer accounts can create professional listings."})
+      return
+
+    stored_listing = create_marketplace_listing(
+      {
+        **listing,
+        "ownerUserId": owner.get("id"),
+        "ownerRole": owner["role"],
+        "ownerName": owner.get("fullName"),
+        "ownerEmail": owner.get("email"),
+      }
+    )
+    json_response(self, HTTPStatus.CREATED, {"ok": True, "listing": stored_listing})
+
+  def handle_marketplace_listing_detail(self, parsed) -> None:
+    listing_id = parse_qs(parsed.query).get("id", [""])[0]
+
+    if not listing_id:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING", "message": "A listing id is required."})
+      return
+
+    listing = get_marketplace_listing(listing_id)
+    if not listing:
+      json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "code": "LISTING_NOT_FOUND", "message": "The requested listing could not be found."})
+      return
+
+    json_response(self, HTTPStatus.OK, {"ok": True, "listing": listing})
 
   def handle_admin_account_status(self) -> None:
     current_user = require_admin_user(self)

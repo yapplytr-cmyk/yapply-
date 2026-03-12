@@ -1,4 +1,5 @@
 import { getAuthSession } from "./state.js";
+import { getAuthOrigin } from "./auth.js";
 
 const STORAGE_KEY = "yapply-marketplace-submissions-v1";
 const LAST_SUBMISSION_KEY = "yapply-marketplace-last-submission-v1";
@@ -13,9 +14,15 @@ function getStorage() {
   }
 }
 
-function readJson(key, fallback) {
-  const storage = getStorage();
+function getSessionStorage() {
+  try {
+    return window.sessionStorage;
+  } catch (error) {
+    return null;
+  }
+}
 
+function readJsonFrom(storage, key, fallback) {
   if (!storage) {
     return fallback;
   }
@@ -28,9 +35,11 @@ function readJson(key, fallback) {
   }
 }
 
-function writeJson(key, value) {
-  const storage = getStorage();
+function readJson(key, fallback) {
+  return readJsonFrom(getStorage(), key, fallback);
+}
 
+function writeJsonTo(storage, key, value) {
   if (!storage) {
     return false;
   }
@@ -41,6 +50,10 @@ function writeJson(key, value) {
   } catch (error) {
     return false;
   }
+}
+
+function writeJson(key, value) {
+  return writeJsonTo(getStorage(), key, value);
 }
 
 function escapeHtml(value) {
@@ -74,6 +87,10 @@ function splitList(value) {
 function createId(prefix, seed) {
   const slug = slugify(seed) || prefix;
   return `${prefix}-${Date.now()}-${slug}`.slice(0, 96);
+}
+
+function createApiUrl(path) {
+  return `${getAuthOrigin()}${path}`;
 }
 
 function readFileAsDataUrl(file) {
@@ -115,6 +132,27 @@ function getStore() {
 
 function setStore(store) {
   return writeJson(STORAGE_KEY, store);
+}
+
+function createBrowserMirror(listing) {
+  const attachments = Array.isArray(listing.attachments)
+    ? listing.attachments.map((item) => ({
+        id: item.id,
+        name: item.name,
+        mimeType: item.mimeType,
+        kind: item.kind,
+      }))
+    : [];
+  const imageSrc =
+    typeof listing.imageSrc === "string" && listing.imageSrc.startsWith("data:")
+      ? "./assets/developer-previews/submitted-professional.svg"
+      : listing.imageSrc;
+
+  return {
+    ...listing,
+    attachments,
+    imageSrc,
+  };
 }
 
 async function createClientListing(formData) {
@@ -195,6 +233,44 @@ async function createProfessionalListing(formData) {
   };
 }
 
+async function createBackendMarketplaceListing(listing) {
+  const session = getAuthSession();
+  const response = await fetch(createApiUrl("/api/marketplace/listings/create"), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      listing,
+      owner: session?.user
+        ? {
+            id: session.user.id,
+            role: session.user.role,
+            fullName: session.user.fullName,
+            email: session.user.email,
+          }
+        : null,
+    }),
+  });
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    throw Object.assign(new Error(data.message || "The listing could not be created."), {
+      code: data.code || "LISTING_CREATE_FAILED",
+    });
+  }
+
+  return data.listing;
+}
+
 export function getMarketplaceListingHref(type, id) {
   if (type === "professional") {
     return `./marketplace-professional-listing.html?id=${encodeURIComponent(id)}`;
@@ -223,20 +299,23 @@ export function getSubmittedListing(type, id) {
 
 export async function saveMarketplaceSubmission(type, formData) {
   const store = getStore();
-  const listing = type === "professional" ? await createProfessionalListing(formData) : await createClientListing(formData);
-  store[type] = [listing, ...(store[type] || [])];
+  const draftListing = type === "professional" ? await createProfessionalListing(formData) : await createClientListing(formData);
+  const listing = await createBackendMarketplaceListing(draftListing);
+  const browserMirror = createBrowserMirror(listing);
+  store[type] = [browserMirror, ...(store[type] || [])];
   const storeSaved = setStore(store);
   const summarySaved = writeJson(LAST_SUBMISSION_KEY, { type, id: listing.id, createdAt: listing.createdAt });
-  const detailSaved = writeJson(LAST_SUBMISSION_DETAIL_KEY, { type, listing });
+  const detailSaved = writeJson(LAST_SUBMISSION_DETAIL_KEY, { type, listing: browserMirror });
+  const sessionDetailSaved = writeJsonTo(getSessionStorage(), LAST_SUBMISSION_DETAIL_KEY, { type, listing });
 
-  if (!storeSaved || !summarySaved || !detailSaved) {
-    throw Object.assign(new Error("The submission could not be saved in this browser."), {
+  if (!storeSaved || !summarySaved || !detailSaved || !sessionDetailSaved) {
+    throw Object.assign(new Error("The listing was created, but the saved result could not be prepared for the redirect."), {
       code: "SUBMISSION_SAVE_FAILED",
     });
   }
 
   if (!getSubmittedListing(type, listing.id)) {
-    throw Object.assign(new Error("The submission could not be retrieved after saving."), {
+    throw Object.assign(new Error("The listing was created, but the saved preview could not be retrieved."), {
       code: "SUBMISSION_SAVE_FAILED",
     });
   }
@@ -249,7 +328,8 @@ export function getLastSubmission() {
 }
 
 export function getLastSubmissionDetail(type, id = "") {
-  const payload = readJson(LAST_SUBMISSION_DETAIL_KEY, null);
+  const sessionPayload = readJsonFrom(getSessionStorage(), LAST_SUBMISSION_DETAIL_KEY, null);
+  const payload = sessionPayload || readJson(LAST_SUBMISSION_DETAIL_KEY, null);
 
   if (!payload?.listing || payload?.type !== type) {
     return null;
@@ -287,6 +367,7 @@ export function deleteMarketplaceListing(type, id) {
     const storage = getStorage();
     storage?.removeItem(LAST_SUBMISSION_KEY);
     storage?.removeItem(LAST_SUBMISSION_DETAIL_KEY);
+    getSessionStorage()?.removeItem(LAST_SUBMISSION_DETAIL_KEY);
   }
 
   return true;
