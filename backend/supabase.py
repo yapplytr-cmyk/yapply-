@@ -257,6 +257,42 @@ def sign_up_with_password(email: str, password: str, metadata: dict[str, Any]) -
   return data
 
 
+def create_user_with_service_role(email: str, password: str, metadata: dict[str, Any]) -> dict[str, Any]:
+  _ensure_service_config()
+
+  response = _supabase_request(
+    "/auth/v1/admin/users",
+    method="POST",
+    use_service_role=True,
+    payload={
+      "email": email.strip().lower(),
+      "password": password,
+      "email_confirm": True,
+      "user_metadata": metadata,
+      "app_metadata": {
+        "role": metadata.get("role"),
+      },
+    },
+  )
+
+  if not isinstance(response, dict):
+    raise SupabaseError(
+      "SUPABASE_INVALID_RESPONSE",
+      "Supabase returned an invalid admin user creation response.",
+      502,
+    )
+
+  user = response.get("user") if isinstance(response.get("user"), dict) else response
+  if not isinstance(user, dict) or not user.get("id"):
+    raise SupabaseError(
+      "ACCOUNT_CREATION_FAILED",
+      "The account could not be created in the authentication service.",
+      502,
+    )
+
+  return user
+
+
 def _normalize_role(role: str | None) -> str:
   normalized = (role or "").strip().lower()
   return normalized if normalized in {"client", "developer", "admin", "moderator"} else ""
@@ -620,16 +656,11 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
     "website": str(payload.get("website") or "").strip() or None,
   }
 
-  session = sign_up_with_password(email, password, metadata)
-  user_payload = session.get("user") if isinstance(session, dict) else None
-  user_id = str(user_payload.get("id") or "").strip() if isinstance(user_payload, dict) else ""
+  created_user = create_user_with_service_role(email, password, metadata)
+  user_id = str(created_user.get("id") or "").strip()
 
   if not user_id:
-    raise SupabaseError(
-      "SESSION_INVALID",
-      "Account creation succeeded but the returned session did not include a valid user id.",
-      502,
-    )
+    raise SupabaseError("ACCOUNT_CREATION_FAILED", "The account could not be created.", 502)
 
   profile = upsert_profile(
     user_id=user_id,
@@ -649,12 +680,7 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
   if profile.get("status") != "active":
     raise SupabaseError("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.", 403)
 
-  if not session.get("access_token") or not session.get("refresh_token"):
-    raise SupabaseError(
-      "EMAIL_CONFIRMATION_REQUIRED",
-      "Supabase email confirmation is enabled. Disable it to preserve the current instant signup flow.",
-      409,
-    )
+  session = sign_in_with_password(email, password)
 
   return {
     "session": {
