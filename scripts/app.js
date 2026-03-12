@@ -136,21 +136,32 @@ function createOpenMarketplacePageContent(content) {
   const session = getAuthSession();
   const role = session?.authenticated ? session.user?.role || "" : "";
   const allowedSubmissionType = getAllowedMarketplaceSubmissionTypeForRole(role);
+  const isAuthenticated = Boolean(session?.authenticated && session?.user);
+  const guestListingHref = "./create-account.html";
   const listingCreateLabel =
     allowedSubmissionType === "professional" ? content.openMarketplacePage.cta.proLabel : content.openMarketplacePage.cta.clientLabel;
   const listingCreateHref =
-    allowedSubmissionType === "professional" ? content.openMarketplacePage.cta.proHref : content.openMarketplacePage.cta.clientHref;
+    allowedSubmissionType === "professional"
+      ? content.openMarketplacePage.cta.proHref
+      : allowedSubmissionType === "client"
+        ? content.openMarketplacePage.cta.clientHref
+        : guestListingHref;
   const navLinks = [...content.openMarketplacePage.nav.links];
   const createLinkIndex = navLinks.findIndex((link) => link.href === "./client-project-submission.html");
 
   if (createLinkIndex >= 0) {
     if (allowedSubmissionType) {
       navLinks[createLinkIndex] = {
-        label: listingCreateLabel,
-        href: listingCreateHref,
-      };
-    } else if (session?.authenticated) {
+          label: listingCreateLabel,
+          href: listingCreateHref,
+        };
+    } else if (isAuthenticated) {
       navLinks.splice(createLinkIndex, 1);
+    } else {
+      navLinks[createLinkIndex] = {
+        label: content.openMarketplacePage.cta.guestLabel,
+        href: guestListingHref,
+      };
     }
   }
 
@@ -170,14 +181,33 @@ function createOpenMarketplacePageContent(content) {
           };
         }
 
-        if (session?.authenticated) {
+        if (isAuthenticated) {
           return null;
         }
 
-        return link;
+        return {
+          ...link,
+          label: content.openMarketplacePage.cta.guestLabel,
+          href: guestListingHref,
+        };
       })
       .filter(Boolean),
   }));
+
+  const heroPrimaryCta = isAuthenticated
+    ? content.openMarketplacePage.hero.primaryCta
+    : {
+        ...content.openMarketplacePage.hero.primaryCta,
+        label: content.openMarketplacePage.cta.guestLabel,
+        href: guestListingHref,
+      };
+  const heroSecondaryCta = isAuthenticated
+    ? content.openMarketplacePage.hero.secondaryCta
+    : {
+        ...content.openMarketplacePage.hero.secondaryCta,
+        label: content.openMarketplacePage.cta.guestSecondaryLabel,
+        href: "./login.html",
+      };
 
   return {
     brand: content.brand,
@@ -194,8 +224,13 @@ function createOpenMarketplacePageContent(content) {
       ...content.openMarketplacePage.footer,
       columns: footerColumns,
     },
+    hero: {
+      ...content.openMarketplacePage.hero,
+      primaryCta: heroPrimaryCta,
+      secondaryCta: heroSecondaryCta,
+    },
     listingAccess: {
-      authenticated: Boolean(session?.authenticated && session?.user),
+      authenticated: isAuthenticated,
       role,
       allowedSubmissionType,
     },
@@ -217,6 +252,7 @@ function createMarketplaceSubmissionPageContent(content, submissionType) {
   const submissionPage = content.marketplaceSubmissionPages[submissionType] || content.marketplaceSubmissionPages.client;
   const session = getAuthSession();
   const role = session?.authenticated ? session.user?.role || "" : "";
+  const isAuthenticated = Boolean(session?.authenticated && session?.user);
 
   return {
     brand: content.brand,
@@ -225,7 +261,7 @@ function createMarketplaceSubmissionPageContent(content, submissionType) {
     nav: withAdminNav(submissionPage.nav, content.adminDashboardPage.navLabel),
     submissionType,
     listingAccess: {
-      authenticated: Boolean(session?.authenticated && session?.user),
+      authenticated: isAuthenticated,
       role,
       allowedSubmissionType: getAllowedMarketplaceSubmissionTypeForRole(role),
     },
