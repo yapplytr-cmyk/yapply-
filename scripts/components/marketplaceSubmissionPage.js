@@ -125,10 +125,30 @@ function createSubmissionForm(pageContent) {
     )
     .join("");
   const access = pageContent.listingAccess || {};
+  const isGuest = !access.authenticated;
   const isWrongRole =
     access.authenticated &&
     access.allowedSubmissionType !== pageContent.submissionType;
-  const roleGateMarkup = isWrongRole
+  const gateMarkup = isGuest
+    ? `
+      <div class="auth-form-error form-field--full">
+        <strong>${pageContent.form.guestGate.title}</strong>
+        <p>${pageContent.form.guestGate.description}</p>
+      </div>
+      <div class="form-actions form-field--full">
+        ${createButton({
+          href: pageContent.form.guestGate.createAccountHref,
+          label: pageContent.form.guestGate.createAccountLabel,
+          variant: "primary",
+        })}
+        ${createButton({
+          href: pageContent.form.guestGate.loginHref,
+          label: pageContent.form.guestGate.loginLabel,
+          variant: "secondary",
+        })}
+      </div>
+    `
+    : isWrongRole
     ? `
       <div class="auth-form-error form-field--full">
         <strong>${pageContent.form.roleGate.title}</strong>
@@ -171,7 +191,7 @@ function createSubmissionForm(pageContent) {
         </article>
 
         <div class="panel application-panel submission-form-panel">
-          ${roleGateMarkup}
+          ${gateMarkup}
         </div>
       </div>
     </section>
