@@ -124,6 +124,40 @@ function createSubmissionForm(pageContent) {
       `
     )
     .join("");
+  const access = pageContent.listingAccess || {};
+  const isWrongRole =
+    access.authenticated &&
+    access.allowedSubmissionType !== pageContent.submissionType;
+  const roleGateMarkup = isWrongRole
+    ? `
+      <div class="auth-form-error form-field--full">
+        <strong>${pageContent.form.roleGate.title}</strong>
+        <p>${pageContent.form.roleGate.description}</p>
+      </div>
+      <div class="form-actions form-field--full">
+        ${createButton({
+          href: pageContent.form.roleGate.actionHref,
+          label: pageContent.form.roleGate.actionLabel,
+          variant: "primary",
+        })}
+      </div>
+    `
+    : `
+      <form class="application-form submission-form" data-marketplace-submission-form novalidate>
+        <div class="auth-form-error form-field--full" data-marketplace-submission-error hidden>
+          <strong data-marketplace-submission-error-title>Submission failed</strong>
+          <p data-marketplace-submission-error-text>The submission could not be saved. Please try again.</p>
+        </div>
+        ${fields}
+        <div class="form-actions form-field--full">
+          <button class="button button--primary" type="submit">${pageContent.form.submitLabel}</button>
+        </div>
+      </form>
+      <div class="form-success submission-success" data-marketplace-submission-success hidden>
+        <h3>${pageContent.form.successTitle}</h3>
+        <p>${pageContent.form.successText}</p>
+      </div>
+    `;
 
   return `
     <section class="section-shell" id="submission-form">
@@ -137,20 +171,7 @@ function createSubmissionForm(pageContent) {
         </article>
 
         <div class="panel application-panel submission-form-panel">
-          <form class="application-form submission-form" data-marketplace-submission-form novalidate>
-            <div class="auth-form-error form-field--full" data-marketplace-submission-error hidden>
-              <strong data-marketplace-submission-error-title>Submission failed</strong>
-              <p data-marketplace-submission-error-text>The submission could not be saved. Please try again.</p>
-            </div>
-            ${fields}
-            <div class="form-actions form-field--full">
-              <button class="button button--primary" type="submit">${pageContent.form.submitLabel}</button>
-            </div>
-          </form>
-          <div class="form-success submission-success" data-marketplace-submission-success hidden>
-            <h3>${pageContent.form.successTitle}</h3>
-            <p>${pageContent.form.successText}</p>
-          </div>
+          ${roleGateMarkup}
         </div>
       </div>
     </section>

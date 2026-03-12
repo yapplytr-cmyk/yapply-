@@ -627,6 +627,12 @@ export const translations = {
           title: "Tell Yapply what you want to build.",
           description:
             "This first version is frontend-only, but the full structure is in place for future moderation, marketplace posting, and lead routing.",
+          roleGate: {
+            title: "This page is reserved for client project request listings.",
+            description: "Developer accounts can only create professional marketplace listings.",
+            actionLabel: "Create Professional Listing",
+            actionHref: "./professional-listing-submission.html",
+          },
           submitLabel: "Submit Project Brief",
           successTitle: "Project brief captured",
           successText: "Your project submission has been recorded in this frontend flow. In the next phase, it can be connected to a live marketplace review and publishing workflow.",
@@ -753,6 +759,12 @@ export const translations = {
           title: "Submit your listing with a clear premium profile.",
           description:
             "This first version is frontend-only, but it is structured for future moderation, profile approval, and marketplace publishing.",
+          roleGate: {
+            title: "This page is reserved for professional marketplace listings.",
+            description: "Client accounts can only create project request listings.",
+            actionLabel: "Post Project Request",
+            actionHref: "./client-project-submission.html",
+          },
           submitLabel: "Submit Professional Listing",
           successTitle: "Professional listing captured",
           successText: "Your professional listing has been recorded in this frontend flow. In the next phase, it can be connected to approval, CRM, and live marketplace publishing.",
@@ -3028,6 +3040,12 @@ export const translations = {
           title: "Yapply’ye ne inşa etmek istediğinizi anlatın.",
           description:
             "Bu ilk versiyon yalnızca frontend akışıdır; ancak moderasyon, pazaryeri yayını ve lead yönlendirmesi için gerekli tam yapı kurulmuştur.",
+          roleGate: {
+            title: "Bu sayfa yalnızca müşteri proje talebi ilanları içindir.",
+            description: "Geliştirici hesapları yalnızca profesyonel pazaryeri ilanı oluşturabilir.",
+            actionLabel: "Profesyonel İlan Oluştur",
+            actionHref: "./professional-listing-submission.html",
+          },
           submitLabel: "Proje Briefini Gönder",
           successTitle: "Proje briefi alındı",
           successText: "Proje gönderiminiz bu frontend akışında kaydedildi. Sonraki fazda canlı pazaryeri değerlendirme ve yayın sürecine bağlanabilir.",
@@ -3154,6 +3172,12 @@ export const translations = {
           title: "İlanınızı net ve premium bir profille gönderin.",
           description:
             "Bu ilk versiyon yalnızca frontend akışıdır; ancak moderasyon, profil onayı ve pazaryeri yayını için uygun şekilde tasarlandı.",
+          roleGate: {
+            title: "Bu sayfa yalnızca profesyonel pazaryeri ilanları içindir.",
+            description: "Müşteri hesapları yalnızca proje talebi ilanı oluşturabilir.",
+            actionLabel: "Proje Talebi Yayınla",
+            actionHref: "./client-project-submission.html",
+          },
           submitLabel: "Profesyonel İlanı Gönder",
           successTitle: "Profesyonel ilan alındı",
           successText: "Profesyonel ilanınız bu frontend akışında kaydedildi. Sonraki fazda onay, CRM ve canlı pazaryeri yayınına bağlanabilir.",

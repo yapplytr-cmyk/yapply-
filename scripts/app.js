@@ -18,7 +18,12 @@ import {
   getManagedMarketplaceCollections,
   getManagedMarketplaceListing,
 } from "./core/adminStore.js";
-import { getLastSubmission, getLastSubmissionDetail, getSubmittedListing } from "./core/marketplaceStore.js";
+import {
+  getAllowedMarketplaceSubmissionTypeForRole,
+  getLastSubmission,
+  getLastSubmissionDetail,
+  getSubmittedListing,
+} from "./core/marketplaceStore.js";
 import { getAuthSession } from "./core/state.js";
 import {
   createProfessionalsBenefits,
@@ -128,12 +133,72 @@ function createOpenMarketplacePageContent(content) {
     content.openMarketplacePage.tabs.client.items,
     content.openMarketplacePage.tabs.developer.items
   );
+  const session = getAuthSession();
+  const role = session?.authenticated ? session.user?.role || "" : "";
+  const allowedSubmissionType = getAllowedMarketplaceSubmissionTypeForRole(role);
+  const listingCreateLabel =
+    allowedSubmissionType === "professional" ? content.openMarketplacePage.cta.proLabel : content.openMarketplacePage.cta.clientLabel;
+  const listingCreateHref =
+    allowedSubmissionType === "professional" ? content.openMarketplacePage.cta.proHref : content.openMarketplacePage.cta.clientHref;
+  const navLinks = [...content.openMarketplacePage.nav.links];
+  const createLinkIndex = navLinks.findIndex((link) => link.href === "./client-project-submission.html");
+
+  if (createLinkIndex >= 0) {
+    if (allowedSubmissionType) {
+      navLinks[createLinkIndex] = {
+        label: listingCreateLabel,
+        href: listingCreateHref,
+      };
+    } else if (session?.authenticated) {
+      navLinks.splice(createLinkIndex, 1);
+    }
+  }
+
+  const footerColumns = content.openMarketplacePage.footer.columns.map((column) => ({
+    ...column,
+    links: column.links
+      .map((link) => {
+        if (link.href !== "./client-project-submission.html") {
+          return link;
+        }
+
+        if (allowedSubmissionType) {
+          return {
+            ...link,
+            label: allowedSubmissionType === "professional" ? listingCreateLabel : link.label,
+            href: listingCreateHref,
+          };
+        }
+
+        if (session?.authenticated) {
+          return null;
+        }
+
+        return link;
+      })
+      .filter(Boolean),
+  }));
 
   return {
     brand: content.brand,
     controls: content.controls,
     ...content.openMarketplacePage,
-    nav: withAdminNav(content.openMarketplacePage.nav, content.adminDashboardPage.navLabel),
+    nav: withAdminNav(
+      {
+        ...content.openMarketplacePage.nav,
+        links: navLinks,
+      },
+      content.adminDashboardPage.navLabel
+    ),
+    footer: {
+      ...content.openMarketplacePage.footer,
+      columns: footerColumns,
+    },
+    listingAccess: {
+      authenticated: Boolean(session?.authenticated && session?.user),
+      role,
+      allowedSubmissionType,
+    },
     tabs: {
       ...content.openMarketplacePage.tabs,
       client: {
@@ -150,12 +215,20 @@ function createOpenMarketplacePageContent(content) {
 
 function createMarketplaceSubmissionPageContent(content, submissionType) {
   const submissionPage = content.marketplaceSubmissionPages[submissionType] || content.marketplaceSubmissionPages.client;
+  const session = getAuthSession();
+  const role = session?.authenticated ? session.user?.role || "" : "";
 
   return {
     brand: content.brand,
     controls: content.controls,
     ...submissionPage,
     nav: withAdminNav(submissionPage.nav, content.adminDashboardPage.navLabel),
+    submissionType,
+    listingAccess: {
+      authenticated: Boolean(session?.authenticated && session?.user),
+      role,
+      allowedSubmissionType: getAllowedMarketplaceSubmissionTypeForRole(role),
+    },
   };
 }
 

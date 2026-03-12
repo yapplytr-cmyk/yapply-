@@ -1,8 +1,50 @@
 import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { createButton, createSectionHeading } from "./primitives.js";
 
+function getMarketplaceCreateActions(content) {
+  const access = content.listingAccess || {};
+
+  if (access.authenticated && !access.allowedSubmissionType) {
+    return [];
+  }
+
+  if (access.allowedSubmissionType === "client") {
+    return [
+      createButton({
+        href: content.cta.clientHref,
+        label: content.cta.clientLabel,
+        variant: "primary",
+      }),
+    ];
+  }
+
+  if (access.allowedSubmissionType === "professional") {
+    return [
+      createButton({
+        href: content.cta.proHref,
+        label: content.cta.proLabel,
+        variant: "primary",
+      }),
+    ];
+  }
+
+  return [
+    createButton({ href: content.cta.clientHref, label: content.cta.clientLabel, variant: "primary" }),
+    createButton({ href: content.cta.proHref, label: content.cta.proLabel, variant: "secondary" }),
+  ];
+}
+
 function createMarketplaceHero(content) {
   const highlights = content.hero.highlights.map((item) => `<span class="chip">${item}</span>`).join("");
+  const access = content.listingAccess || {};
+  const secondaryAction =
+    access.allowedSubmissionType === "client"
+      ? createButton({ href: content.cta.clientHref, label: content.cta.clientLabel, variant: "secondary" })
+      : access.allowedSubmissionType === "professional"
+        ? createButton({ href: content.cta.proHref, label: content.cta.proLabel, variant: "secondary" })
+        : access.authenticated
+          ? ""
+        : createButton({ href: content.hero.secondaryCta.href, label: content.hero.secondaryCta.label, variant: "secondary" });
 
   return `
     <section class="marketplace-hero section-shell">
@@ -13,7 +55,7 @@ function createMarketplaceHero(content) {
           <p class="hero-lead">${content.hero.description}</p>
           <div class="hero-actions">
             ${createButton({ href: content.hero.primaryCta.href, label: content.hero.primaryCta.label, variant: "primary" })}
-            ${createButton({ href: content.hero.secondaryCta.href, label: content.hero.secondaryCta.label, variant: "secondary" })}
+            ${secondaryAction}
           </div>
           <div class="chip-row">${highlights}</div>
         </div>
@@ -180,6 +222,8 @@ function createMarketplaceListings(content) {
 }
 
 function createMarketplaceCta(content) {
+  const actions = getMarketplaceCreateActions(content).join("");
+
   return `
     <section class="section-shell" id="marketplace-create">
       <div class="project-cta-panel panel marketplace-cta-panel">
@@ -189,8 +233,7 @@ function createMarketplaceCta(content) {
           <p class="section-description">${content.cta.description}</p>
         </div>
         <div class="hero-actions">
-          ${createButton({ href: content.cta.clientHref, label: content.cta.clientLabel, variant: "primary" })}
-          ${createButton({ href: content.cta.proHref, label: content.cta.proLabel, variant: "secondary" })}
+          ${actions}
         </div>
       </div>
     </section>

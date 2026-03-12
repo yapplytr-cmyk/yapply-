@@ -93,6 +93,22 @@ function createApiUrl(path) {
   return `${getAuthOrigin()}${path}`;
 }
 
+export function getAllowedMarketplaceSubmissionTypeForRole(role) {
+  if (role === "client") {
+    return "client";
+  }
+
+  if (role === "developer") {
+    return "professional";
+  }
+
+  return null;
+}
+
+export function canRoleCreateMarketplaceSubmission(role, type) {
+  return getAllowedMarketplaceSubmissionTypeForRole(role) === type;
+}
+
 function isLocalFrontend() {
   const { hostname, port } = window.location;
   return (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
@@ -308,12 +324,14 @@ function requireListingOwner(type) {
     throw createSubmissionError("AUTH_REQUIRED", "You need to be signed in before creating a listing.");
   }
 
-  if (type === "client" && session.user.role !== "client") {
-    throw createSubmissionError("ROLE_MISMATCH", "Only client accounts can submit a project request.");
-  }
+  if (!canRoleCreateMarketplaceSubmission(session.user.role, type)) {
+    if (type === "client") {
+      throw createSubmissionError("ROLE_MISMATCH", "Only client accounts can submit a project request.");
+    }
 
-  if (type === "professional" && session.user.role !== "developer") {
-    throw createSubmissionError("ROLE_MISMATCH", "Only developer accounts can publish a professional listing.");
+    if (type === "professional") {
+      throw createSubmissionError("ROLE_MISMATCH", "Only developer accounts can publish a professional listing.");
+    }
   }
 }
 
