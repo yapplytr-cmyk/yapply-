@@ -1,20 +1,5 @@
-function getLocalDevOrigin() {
-  const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}:4174`;
-}
+import { fetchAuthSession, loginAccount } from "./core/auth.js?v=20260312-supabase-auth";
 
-function getAuthOrigin() {
-  const configuredOrigin = window.YAPPLY_AUTH_ORIGIN || document.documentElement.dataset.authOrigin || "";
-
-  if (configuredOrigin) {
-    return configuredOrigin.replace(/\/$/, "");
-  }
-
-  const { hostname, port, origin } = window.location;
-  const isLocalFrontend = (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
-
-  return isLocalFrontend ? getLocalDevOrigin() : origin;
-}
 const REDIRECT_URL = "./admin-dashboard.html";
 const DEFAULT_ERROR_TEXT = "Enter valid moderator credentials to continue.";
 const DEFAULT_SUCCESS_TEXT = "Admin authentication succeeded. Redirecting to the dashboard...";
@@ -33,29 +18,36 @@ function setDebug(message) {
 function resetState() {
   const errorBox = $("#moderator-login-error");
   const successBox = $("#moderator-login-success");
+  const errorText = $("#moderator-login-error-text");
+  const successText = $("#moderator-login-success-text");
+
   errorBox?.setAttribute("hidden", "");
   successBox?.setAttribute("hidden", "");
+
   if (errorBox) {
     errorBox.style.display = "none";
   }
+
   if (successBox) {
     successBox.style.display = "none";
   }
-  const errorText = $("#moderator-login-error-text");
-  const successText = $("#moderator-login-success-text");
+
   if (errorText) {
     errorText.textContent = DEFAULT_ERROR_TEXT;
   }
+
   if (successText) {
     successText.textContent = DEFAULT_SUCCESS_TEXT;
   }
-  const authOrigin = getAuthOrigin();
-  setDebug(`Backend origin: ${authOrigin}`);
+
+  setDebug("");
 }
 
 function showError(message) {
   const box = $("#moderator-login-error");
   const text = $("#moderator-login-error-text");
+  const successBox = $("#moderator-login-success");
+  const successText = $("#moderator-login-success-text");
 
   if (text) {
     text.textContent = message;
@@ -65,12 +57,12 @@ function showError(message) {
   if (box) {
     box.style.display = "grid";
   }
-  const successBox = $("#moderator-login-success");
+
   successBox?.setAttribute("hidden", "");
   if (successBox) {
     successBox.style.display = "none";
   }
-  const successText = $("#moderator-login-success-text");
+
   if (successText) {
     successText.textContent = DEFAULT_SUCCESS_TEXT;
   }
@@ -79,6 +71,8 @@ function showError(message) {
 function showSuccess(message) {
   const box = $("#moderator-login-success");
   const text = $("#moderator-login-success-text");
+  const errorBox = $("#moderator-login-error");
+  const errorText = $("#moderator-login-error-text");
 
   if (text) {
     text.textContent = message;
@@ -88,93 +82,15 @@ function showSuccess(message) {
   if (box) {
     box.style.display = "grid";
   }
-  const errorBox = $("#moderator-login-error");
+
   errorBox?.setAttribute("hidden", "");
   if (errorBox) {
     errorBox.style.display = "none";
   }
-  const errorText = $("#moderator-login-error-text");
+
   if (errorText) {
     errorText.textContent = DEFAULT_ERROR_TEXT;
   }
-}
-
-async function readJson(response) {
-  try {
-    const raw = await response.text();
-    if (!raw) {
-      return {};
-    }
-
-    try {
-      return JSON.parse(raw);
-    } catch (error) {
-      const compact = raw.replace(/\s+/g, " ").trim();
-      return {
-        code: response.ok ? undefined : response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR",
-        message: compact.startsWith("<")
-          ? `Authentication request failed (HTTP ${response.status}).`
-          : compact,
-      };
-    }
-  } catch (error) {
-    return {};
-  }
-}
-
-async function loginModerator(identifier, password) {
-  const authOrigin = getAuthOrigin();
-  setDebug(`POST ${authOrigin}/api/auth/login`);
-
-  const response = await fetch(`${authOrigin}/api/auth/login`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      identifier,
-      password,
-      audience: "admin",
-    }),
-  });
-
-  const data = await readJson(response);
-  setDebug(`Login status: ${response.status}`);
-
-  if (!response.ok) {
-    const error = new Error(data.message || `Authentication request failed (HTTP ${response.status}).`);
-    error.code = data.code || (response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR");
-    error.status = response.status;
-    throw error;
-  }
-
-  return data;
-}
-
-async function verifySession() {
-  const authOrigin = getAuthOrigin();
-  setDebug(`GET ${authOrigin}/api/auth/session`);
-
-  const response = await fetch(`${authOrigin}/api/auth/session`, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  const data = await readJson(response);
-  setDebug(`Session status: ${response.status}`);
-
-  if (!response.ok) {
-    const error = new Error(data.message || `Session verification failed (HTTP ${response.status}).`);
-    error.code = data.code || "SESSION_FAILED";
-    error.status = response.status;
-    throw error;
-  }
-
-  return data;
 }
 
 function getFailureMessage(error) {
@@ -183,24 +99,37 @@ function getFailureMessage(error) {
       return "Please enter the moderator username or email.";
     case "PASSWORD_REQUIRED":
       return "Please enter the moderator password.";
+    case "LOGIN_ACCOUNT_NOT_FOUND":
+      return "The moderator account could not be found in Supabase.";
     case "INVALID_CREDENTIALS":
       return "Moderator username/email or password is incorrect.";
+    case "ACCOUNT_DISABLED":
+      return "This moderator account has been disabled. Please contact support.";
     case "ADMIN_ONLY":
-      return "This login area is reserved for admin or moderator accounts.";
-    case "LOGIN_ACCOUNT_NOT_FOUND":
-      return "The moderator account could not be found in the live auth store.";
-    case "ACCOUNT_NOT_FOUND":
-      return "The moderator account could not be loaded from the live auth store.";
-    case "AUTH_UNAVAILABLE":
-      return `The backend auth server is not available on ${getAuthOrigin()}.`;
-    case "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE":
-      return "The live admin account store is not available right now.";
-    case "SESSION_INVALID":
+      return "This login area is reserved for admin accounts.";
+    case "ADMIN_SESSION_INVALID":
       return "Login succeeded but the admin session could not be confirmed.";
-    case "SERVER_ERROR":
-      return "The admin authentication service encountered an internal error.";
+    case "SUPABASE_NOT_CONFIGURED":
+      return "Supabase auth is not configured for this environment yet.";
+    case "SUPABASE_SERVICE_ROLE_MISSING":
+      return "The admin auth helper is missing the Supabase service role key.";
+    case "AUTH_UNAVAILABLE":
+      return "The authentication service is not available right now.";
     default:
       return error?.message || "Something went wrong during moderator login.";
+  }
+}
+
+async function bootstrapExistingAdminSession() {
+  try {
+    const session = await fetchAuthSession();
+    const role = session?.user?.role;
+
+    if (session?.authenticated && (role === "admin" || role === "moderator")) {
+      window.location.replace(REDIRECT_URL);
+    }
+  } catch (error) {
+    // Keep the login page visible if session boot fails.
   }
 }
 
@@ -213,6 +142,7 @@ function bindModeratorLogin() {
   }
 
   resetState();
+  bootstrapExistingAdminSession();
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -233,21 +163,12 @@ function bindModeratorLogin() {
     }
 
     submitButton.disabled = true;
-    setDebug(`Submitting to ${getAuthOrigin()}`);
+    setDebug("Submitting moderator auth via Supabase...");
 
     try {
-      await loginModerator(identifier, password);
-      const session = await verifySession();
-      const role = session?.user?.role;
-
-      if (!session?.authenticated || (role !== "admin" && role !== "moderator")) {
-        const error = new Error("Login succeeded but the admin session could not be confirmed.");
-        error.code = "SESSION_INVALID";
-        throw error;
-      }
-
-      showSuccess(`Moderator access granted for ${session.user.username || session.user.email}. Redirecting to the dashboard...`);
-      setDebug(`Session confirmed as ${role}. Redirecting...`);
+      const user = await loginAccount({ identifier, password }, "admin");
+      showSuccess(`Moderator access granted for ${user.username || user.email}. Redirecting to the dashboard...`);
+      setDebug(`Admin session confirmed as ${user.role}.`);
 
       window.setTimeout(() => {
         window.location.href = REDIRECT_URL;

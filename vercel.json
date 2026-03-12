@@ -1,12 +1,9 @@
 {
   "rewrites": [
-    { "source": "/api/auth/signup", "destination": "/api/router?route=auth/signup" },
-    { "source": "/api/auth/login", "destination": "/api/router?route=auth/login" },
-    { "source": "/api/auth/logout", "destination": "/api/router?route=auth/logout" },
-    { "source": "/api/auth/session", "destination": "/api/router?route=auth/session" },
+    { "source": "/api/auth/config", "destination": "/api/router?route=auth/config" },
+    { "source": "/api/auth/admin/resolve", "destination": "/api/router?route=auth/admin/resolve" },
     { "source": "/api/admin/accounts", "destination": "/api/router?route=admin/accounts" },
     { "source": "/api/admin/account-store-status", "destination": "/api/router?route=admin/account-store-status" },
-    { "source": "/api/admin/bootstrap-seed", "destination": "/api/router?route=admin/bootstrap-seed" },
     { "source": "/api/admin/accounts/status", "destination": "/api/router?route=admin/accounts/status" },
     { "source": "/api/admin/accounts/delete", "destination": "/api/router?route=admin/accounts/delete" },
     { "source": "/api/marketplace/listings/create", "destination": "/api/router?route=marketplace/listings/create" },

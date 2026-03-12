@@ -1195,6 +1195,11 @@ export const translations = {
         AUTH_UNAVAILABLE: "Authentication is not available right now. Please try again in a moment.",
         PRODUCTION_ACCOUNT_STORE_UNAVAILABLE:
           "The live account store is not configured for shared cross-device login yet. Please contact support.",
+        SUPABASE_NOT_CONFIGURED: "Supabase auth is not configured for this environment yet.",
+        SUPABASE_SERVICE_ROLE_MISSING: "The Supabase service role key is missing for admin account tools.",
+        EMAIL_CONFIRMATION_REQUIRED:
+          "Supabase email confirmation is enabled. Disable it to keep the current instant signup flow.",
+        ACCOUNT_PROFILE_MISSING: "The account profile could not be loaded from Supabase.",
         ADMIN_SESSION_INVALID: "Admin authentication did not produce a valid admin session. Please try again.",
         SESSION_INVALID: "Login succeeded but the session could not be confirmed. Please try again.",
         SESSION_FAILED: "The current session could not be verified. Please try again.",
@@ -1400,12 +1405,12 @@ export const translations = {
         fallback: "Not provided",
         storeStatus: {
           title: "Production Account Store",
-          description: "This shows the runtime account-store source the live deployment is actually using for signup and login.",
+          description: "This shows the active Supabase auth/profile runtime behind the live deployment.",
           loading: "Checking live account-store status...",
           error: "The live account-store status could not be loaded right now.",
           mode: "Active store",
-          remoteConfigured: "KV configured",
-          remoteReachable: "KV reachable",
+          remoteConfigured: "Supabase configured",
+          remoteReachable: "Supabase reachable",
           sourceOfTruth: "Source of truth",
           yes: "Yes",
           no: "No",
@@ -3591,6 +3596,12 @@ export const translations = {
         AUTH_UNAVAILABLE: "Kimlik doğrulama şu anda kullanılamıyor. Lütfen biraz sonra tekrar deneyin.",
         PRODUCTION_ACCOUNT_STORE_UNAVAILABLE:
           "Canlı hesap deposu henüz paylaşımlı cihazlar arası giriş için yapılandırılmadı. Lütfen destek ile iletişime geçin.",
+        SUPABASE_NOT_CONFIGURED: "Supabase kimlik doğrulaması bu ortam için henüz yapılandırılmadı.",
+        SUPABASE_SERVICE_ROLE_MISSING:
+          "Yönetici hesap araçları için Supabase service role anahtarı eksik.",
+        EMAIL_CONFIRMATION_REQUIRED:
+          "Supabase e-posta doğrulaması açık. Mevcut anlık kayıt akışını korumak için bunu kapatın.",
+        ACCOUNT_PROFILE_MISSING: "Hesap profili Supabase üzerinden yüklenemedi.",
         ADMIN_SESSION_INVALID: "Yönetici kimlik doğrulaması geçerli bir yönetici oturumu oluşturmadı. Lütfen tekrar deneyin.",
         SESSION_INVALID: "Giriş başarılı oldu ancak oturum doğrulanamadı. Lütfen tekrar deneyin.",
         SESSION_FAILED: "Mevcut oturum doğrulanamadı. Lütfen tekrar deneyin.",
@@ -3796,12 +3807,12 @@ export const translations = {
         fallback: "Belirtilmedi",
         storeStatus: {
           title: "Canlı Hesap Deposu",
-          description: "Bu alan, canlı dağıtımın kayıt ve giriş için gerçekte hangi hesap deposunu kullandığını gösterir.",
+          description: "Bu alan, canlı dağıtımın arkasındaki aktif Supabase auth/profil çalışma zamanını gösterir.",
           loading: "Canlı hesap deposu durumu kontrol ediliyor...",
           error: "Canlı hesap deposu durumu şu anda yüklenemedi.",
           mode: "Aktif depo",
-          remoteConfigured: "KV yapılandırıldı",
-          remoteReachable: "KV erişilebilir",
+          remoteConfigured: "Supabase yapılandırıldı",
+          remoteReachable: "Supabase erişilebilir",
           sourceOfTruth: "Gerçek kaynak",
           yes: "Evet",
           no: "Hayır",

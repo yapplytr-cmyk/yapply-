@@ -3,19 +3,19 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
 from api._utils import (
-  handle_admin_bootstrap_seed,
+  handle_marketplace_listing_create,
+  handle_marketplace_listing_detail,
+  json_response,
+  run_api_action,
+)
+from api.supabase_utils import (
   handle_admin_account_delete,
   handle_admin_account_store_status,
   handle_admin_account_status,
   handle_admin_accounts,
-  handle_login,
-  handle_logout,
-  handle_marketplace_listing_create,
-  handle_marketplace_listing_detail,
-  handle_session,
-  handle_signup,
-  json_response,
-  run_api_action,
+  handle_admin_identifier_resolve,
+  handle_public_auth_config,
+  run_supabase_action,
 )
 
 
@@ -32,23 +32,23 @@ def resolve_route(path: str) -> str:
 class handler(BaseHTTPRequestHandler):
   def do_OPTIONS(self):
     self.send_response(HTTPStatus.NO_CONTENT)
-    self.send_header("Access-Control-Allow-Headers", "Content-Type")
+    self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
     self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
     self.end_headers()
 
   def do_GET(self):
     route = resolve_route(self.path)
 
-    if route == "auth/session":
-      run_api_action(self, handle_session)
+    if route == "auth/config":
+      run_supabase_action(self, handle_public_auth_config)
       return
 
     if route == "admin/accounts":
-      run_api_action(self, handle_admin_accounts)
+      run_supabase_action(self, handle_admin_accounts)
       return
 
     if route == "admin/account-store-status":
-      run_api_action(self, handle_admin_account_store_status)
+      run_supabase_action(self, handle_admin_account_store_status)
       return
 
     if route == "marketplace/listings/detail":
@@ -64,28 +64,16 @@ class handler(BaseHTTPRequestHandler):
   def do_POST(self):
     route = resolve_route(self.path)
 
-    if route == "auth/signup":
-      run_api_action(self, handle_signup)
-      return
-
-    if route == "auth/login":
-      run_api_action(self, handle_login)
-      return
-
-    if route == "auth/logout":
-      run_api_action(self, handle_logout)
+    if route == "auth/admin/resolve":
+      run_supabase_action(self, handle_admin_identifier_resolve)
       return
 
     if route == "admin/accounts/status":
-      run_api_action(self, handle_admin_account_status)
+      run_supabase_action(self, handle_admin_account_status)
       return
 
     if route == "admin/accounts/delete":
-      run_api_action(self, handle_admin_account_delete)
-      return
-
-    if route == "admin/bootstrap-seed":
-      run_api_action(self, handle_admin_bootstrap_seed)
+      run_supabase_action(self, handle_admin_account_delete)
       return
 
     if route == "marketplace/listings/create":

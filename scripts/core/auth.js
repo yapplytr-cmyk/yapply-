@@ -1,51 +1,5 @@
-import { clearAuthSession, getAuthSession, setAuthSession } from "./state.js";
-
-const PUBLIC_BROWSER_ACCOUNTS_KEY = "yapply-browser-public-accounts-v1";
-const PUBLIC_BROWSER_SESSION_KEY = "yapply-browser-public-session-v1";
-
-function getLocalDevOrigin() {
-  const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}:4174`;
-}
-
-function getStorage() {
-  try {
-    return window.localStorage;
-  } catch (error) {
-    return null;
-  }
-}
-
-function isLocalFrontend() {
-  const { hostname, port } = window.location;
-  return (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
-}
-
-function resolveAuthOrigin() {
-  const configuredOrigin = window.YAPPLY_AUTH_ORIGIN || document.documentElement.dataset.authOrigin || "";
-
-  if (configuredOrigin) {
-    return configuredOrigin.replace(/\/$/, "");
-  }
-
-  return isLocalFrontend() ? getLocalDevOrigin() : window.location.origin;
-}
-
-function createApiUrl(path) {
-  return `${resolveAuthOrigin()}${path}`;
-}
-
-function usesBrowserPublicAuth() {
-  return !isLocalFrontend();
-}
-
-function isPrivilegedRole(role) {
-  return role === "admin" || role === "moderator";
-}
-
-function isBrowserManagedPublicRole(role) {
-  return role === "client" || role === "developer";
-}
+import { clearAuthSession, setAuthSession } from "./state.js";
+import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js";
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -55,10 +9,29 @@ function normalizeEmail(value) {
   return normalizeText(value).toLowerCase();
 }
 
-function createAuthError(code, message) {
+function createAuthError(code, message, cause = null) {
   const error = new Error(message);
   error.code = code;
+  if (cause) {
+    error.cause = cause;
+  }
   return error;
+}
+
+function isPrivilegedRole(role) {
+  return role === "admin" || role === "moderator";
+}
+
+function isPublicRole(role) {
+  return role === "client" || role === "developer";
+}
+
+function validateEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function createApiUrl(path) {
+  return `${getRuntimeApiOrigin()}${path}`;
 }
 
 async function readResponsePayload(response, fallbackMessage) {
@@ -72,10 +45,9 @@ async function readResponsePayload(response, fallbackMessage) {
     try {
       return JSON.parse(raw);
     } catch (error) {
-      const compact = raw.replace(/\s+/g, " ").trim();
       return {
         code: response.ok ? undefined : response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR",
-        message: compact.startsWith("<") ? `${fallbackMessage} (HTTP ${response.status}).` : compact,
+        message: raw.replace(/\s+/g, " ").trim() || fallbackMessage,
       };
     }
   } catch (error) {
@@ -83,254 +55,252 @@ async function readResponsePayload(response, fallbackMessage) {
   }
 }
 
-function requireBrowserStorage() {
-  if (!getStorage()) {
-    throw createAuthError(
-      "AUTH_UNAVAILABLE",
-      "This browser is blocking secure local account storage. Please enable site storage and try again."
-    );
-  }
-}
+function normalizeSessionUser(authUser, profile) {
+  const metadata = authUser.user_metadata || {};
 
-function loadBrowserPublicAccounts() {
-  const raw = getStorage()?.getItem(PUBLIC_BROWSER_ACCOUNTS_KEY);
-
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function saveBrowserPublicAccounts(accounts) {
-  try {
-    getStorage()?.setItem(PUBLIC_BROWSER_ACCOUNTS_KEY, JSON.stringify(accounts));
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-function loadBrowserPublicSession() {
-  const raw = getStorage()?.getItem(PUBLIC_BROWSER_SESSION_KEY);
-
-  if (!raw) {
-    return { authenticated: false, user: null };
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed?.authenticated && parsed?.user ? parsed : { authenticated: false, user: null };
-  } catch (error) {
-    return { authenticated: false, user: null };
-  }
-}
-
-function saveBrowserPublicSession(user) {
-  try {
-    getStorage()?.setItem(
-      PUBLIC_BROWSER_SESSION_KEY,
-      JSON.stringify({
-        authenticated: true,
-        user,
-      })
-    );
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-function clearBrowserPublicSession() {
-  getStorage()?.removeItem(PUBLIC_BROWSER_SESSION_KEY);
-}
-
-function createAccountSortValue(account) {
-  const timestamp = account?.createdAt ? Date.parse(account.createdAt) : 0;
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
-function sortAccountsByCreatedAt(accounts) {
-  return [...accounts].sort((left, right) => {
-    const delta = createAccountSortValue(right) - createAccountSortValue(left);
-
-    if (delta !== 0) {
-      return delta;
-    }
-
-    return String(left.fullName || left.email || "").localeCompare(String(right.fullName || right.email || ""));
-  });
-}
-
-function getMergedAccountKey(account) {
-  if (account?.id) {
-    return `id:${account.id}`;
-  }
-
-  return `email:${normalizeEmail(account?.email || "")}`;
-}
-
-function getBrowserPublicAccountsForAdmin() {
-  return sortAccountsByCreatedAt(
-    loadBrowserPublicAccounts()
-      .filter((account) => isBrowserManagedPublicRole(account.role))
-      .map((account) => ({
-        ...serializeBrowserUser(account),
-        source: "browser-public",
-      }))
-  );
-}
-
-function mergeAccountCollections(primaryAccounts, secondaryAccounts) {
-  const merged = new Map();
-
-  [...primaryAccounts, ...secondaryAccounts].forEach((account) => {
-    if (!account) {
-      return;
-    }
-
-    const key = getMergedAccountKey(account);
-
-    if (!merged.has(key)) {
-      merged.set(key, account);
-    }
-  });
-
-  return sortAccountsByCreatedAt([...merged.values()]);
-}
-
-function syncBrowserManagedSessionForAccount(account) {
-  const storedSession = loadBrowserPublicSession();
-
-  if (!storedSession.authenticated || storedSession.user?.id !== account?.id) {
-    return;
-  }
-
-  if (account.status === "inactive") {
-    clearBrowserPublicSession();
-
-    const activeSession = getAuthSession();
-    if (activeSession?.user?.id === account.id && !isPrivilegedRole(activeSession.user.role)) {
-      clearAuthSession();
-    }
-
-    return;
-  }
-
-  const user = serializeBrowserUser(account);
-
-  if (!saveBrowserPublicSession(user)) {
-    clearBrowserPublicSession();
-
-    const activeSession = getAuthSession();
-    if (activeSession?.user?.id === account.id && !isPrivilegedRole(activeSession.user.role)) {
-      clearAuthSession();
-    }
-
-    return;
-  }
-
-  const activeSession = getAuthSession();
-  if (activeSession?.user?.id === account.id && !isPrivilegedRole(activeSession.user.role)) {
-    setAuthSession({ authenticated: true, user });
-  }
-}
-
-function clearBrowserManagedSessionForUser(userId) {
-  const storedSession = loadBrowserPublicSession();
-
-  if (!storedSession.authenticated || storedSession.user?.id !== userId) {
-    return;
-  }
-
-  clearBrowserPublicSession();
-
-  const activeSession = getAuthSession();
-  if (activeSession?.user?.id === userId && !isPrivilegedRole(activeSession.user.role)) {
-    clearAuthSession();
-  }
-}
-
-function generateRecordId(prefix) {
-  if (window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-async function digestSecret(secret) {
-  if (window.crypto?.subtle?.digest && window.TextEncoder) {
-    const encoded = new TextEncoder().encode(secret);
-    const digest = await window.crypto.subtle.digest("SHA-256", encoded);
-    return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
-  }
-
-  return btoa(unescape(encodeURIComponent(secret)));
-}
-
-function serializeBrowserUser(account) {
   return {
-    id: account.id,
-    username: account.username || null,
-    email: account.email,
-    role: account.role,
-    fullName: account.fullName,
-    phoneNumber: account.phoneNumber || null,
-    companyName: account.companyName || null,
-    professionType: account.professionType || null,
-    serviceArea: account.serviceArea || null,
-    yearsExperience: account.yearsExperience ?? null,
-    specialties: account.specialties || null,
-    preferredRegion: account.preferredRegion || null,
-    website: account.website || null,
-    createdAt: account.createdAt,
-    status: account.status || "active",
+    id: authUser.id,
+    username: profile.username || normalizeText(metadata.username) || null,
+    email: normalizeEmail(profile.email || authUser.email || metadata.email || ""),
+    role: profile.role || normalizeText(metadata.role) || "",
+    status: profile.status || "active",
+    fullName: profile.fullName || normalizeText(metadata.full_name || metadata.fullName) || "",
+    phoneNumber: profile.phoneNumber || normalizeText(metadata.phone_number || metadata.phoneNumber) || null,
+    companyName: profile.companyName || normalizeText(metadata.company_name || metadata.companyName) || null,
+    professionType: profile.professionType || normalizeText(metadata.profession_type || metadata.professionType) || null,
+    serviceArea: profile.serviceArea || normalizeText(metadata.service_area || metadata.serviceArea) || null,
+    yearsExperience:
+      profile.yearsExperience !== null && profile.yearsExperience !== undefined
+        ? profile.yearsExperience
+        : metadata.years_experience ?? metadata.yearsExperience ?? null,
+    specialties: profile.specialties || normalizeText(metadata.specialties) || null,
+    preferredRegion: profile.preferredRegion || normalizeText(metadata.preferred_region || metadata.preferredRegion) || null,
+    website: profile.website || normalizeText(metadata.website) || null,
+    createdAt: profile.createdAt || authUser.created_at || null,
   };
 }
 
-async function mirrorBackendPublicAccountLocally(user, password) {
-  if (!usesBrowserPublicAuth() || !isBrowserManagedPublicRole(user?.role) || !getStorage() || !password) {
-    return;
+function mapSupabaseError(error, fallbackCode = "AUTH_UNAVAILABLE") {
+  const message = normalizeText(error?.message || "");
+
+  if (!message) {
+    return createAuthError(fallbackCode, "Authentication is not available right now.", error);
   }
 
-  const accounts = loadBrowserPublicAccounts();
-  const account = {
-    id: user.id || generateRecordId("acct"),
-    username: user.username || null,
-    email: normalizeEmail(user.email),
-    passwordHash: await digestSecret(password),
-    role: user.role,
-    fullName: user.fullName || "",
-    phoneNumber: user.phoneNumber || null,
-    companyName: user.companyName || null,
-    professionType: user.professionType || null,
-    serviceArea: user.serviceArea || null,
-    yearsExperience: user.yearsExperience ?? null,
-    specialties: user.specialties || null,
-    preferredRegion: user.preferredRegion || null,
-    website: user.website || null,
-    createdAt: user.createdAt || new Date().toISOString(),
-    status: user.status || "active",
+  const lowered = message.toLowerCase();
+
+  if (lowered.includes("invalid login credentials")) {
+    return createAuthError("INVALID_CREDENTIALS", "Email or password is incorrect.", error);
+  }
+
+  if (lowered.includes("user already registered")) {
+    return createAuthError("EMAIL_IN_USE", "An account with this email already exists.", error);
+  }
+
+  if (lowered.includes("email not confirmed")) {
+    return createAuthError(
+      "EMAIL_CONFIRMATION_REQUIRED",
+      "Supabase email confirmation is enabled. Disable email confirmation to keep the current instant signup flow.",
+      error
+    );
+  }
+
+  if (lowered.includes("email address") && lowered.includes("invalid")) {
+    return createAuthError("EMAIL_INVALID", "Please enter a valid email address.", error);
+  }
+
+  if (lowered.includes("network") || lowered.includes("fetch")) {
+    return createAuthError("AUTH_UNAVAILABLE", "Authentication is not available right now. Please try again in a moment.", error);
+  }
+
+  return createAuthError(fallbackCode, message, error);
+}
+
+function mapProfileToUpsert(authUser, metadata, fallbackRole = "") {
+  const role = normalizeText(metadata.role || fallbackRole);
+
+  return {
+    id: authUser.id,
+    email: normalizeEmail(authUser.email || metadata.email || ""),
+    username: normalizeText(metadata.username) || null,
+    role,
+    status: "active",
+    full_name: normalizeText(metadata.full_name || metadata.fullName) || "",
+    phone_number: normalizeText(metadata.phone_number || metadata.phoneNumber) || null,
+    company_name: normalizeText(metadata.company_name || metadata.companyName) || null,
+    profession_type: normalizeText(metadata.profession_type || metadata.professionType) || null,
+    service_area: normalizeText(metadata.service_area || metadata.serviceArea) || null,
+    years_experience:
+      metadata.years_experience === null || metadata.years_experience === undefined || metadata.years_experience === ""
+        ? null
+        : Number(metadata.years_experience),
+    specialties: normalizeText(metadata.specialties) || null,
+    preferred_region: normalizeText(metadata.preferred_region || metadata.preferredRegion) || null,
+    website: normalizeText(metadata.website) || null,
+  };
+}
+
+async function fetchOwnProfile(supabase, userId) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(
+      "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,created_at,updated_at"
+    )
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw mapSupabaseError(error, "ACCOUNT_PROFILE_MISSING");
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    email: data.email,
+    username: data.username,
+    role: data.role,
+    status: data.status,
+    fullName: data.full_name,
+    phoneNumber: data.phone_number,
+    companyName: data.company_name,
+    professionType: data.profession_type,
+    serviceArea: data.service_area,
+    yearsExperience: data.years_experience,
+    specialties: data.specialties,
+    preferredRegion: data.preferred_region,
+    website: data.website,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+}
+
+async function ensureOwnProfile(supabase, authUser, expectedRole = "") {
+  const metadata = authUser.user_metadata || {};
+  let profile = await fetchOwnProfile(supabase, authUser.id);
+
+  if (profile) {
+    return profile;
+  }
+
+  const fallbackRole = normalizeText(expectedRole || metadata.role);
+  if (!isPublicRole(fallbackRole) && !isPrivilegedRole(fallbackRole)) {
+    return null;
+  }
+
+  const payload = mapProfileToUpsert(authUser, metadata, fallbackRole);
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert(payload, { onConflict: "id" })
+    .select(
+      "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,created_at,updated_at"
+    )
+    .single();
+
+  if (error) {
+    throw mapSupabaseError(error, "ACCOUNT_PROFILE_MISSING");
+  }
+
+  profile = {
+    id: data.id,
+    email: data.email,
+    username: data.username,
+    role: data.role,
+    status: data.status,
+    fullName: data.full_name,
+    phoneNumber: data.phone_number,
+    companyName: data.company_name,
+    professionType: data.profession_type,
+    serviceArea: data.service_area,
+    yearsExperience: data.years_experience,
+    specialties: data.specialties,
+    preferredRegion: data.preferred_region,
+    website: data.website,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
   };
 
-  const index = accounts.findIndex((entry) => entry.id === account.id || entry.email === account.email);
+  return profile;
+}
 
-  if (index >= 0) {
-    accounts[index] = {
-      ...accounts[index],
-      ...account,
-    };
-  } else {
-    accounts.unshift(account);
+async function loadConfirmedSession({ expectedRole = "", audience = "public", strict = false } = {}) {
+  const supabase = await getSupabaseClient();
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    if (strict) {
+      throw mapSupabaseError(sessionError, "SESSION_FAILED");
+    }
+
+    clearAuthSession();
+    return { authenticated: false, user: null };
   }
 
-  saveBrowserPublicAccounts(sortAccountsByCreatedAt(accounts));
+  const session = sessionData?.session;
+  if (!session?.user) {
+    clearAuthSession();
+    return { authenticated: false, user: null };
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) {
+    if (strict) {
+      throw mapSupabaseError(userError || new Error("Session verification failed."), "SESSION_FAILED");
+    }
+
+    clearAuthSession();
+    return { authenticated: false, user: null };
+  }
+
+  const authUser = userData.user;
+  const profile = await ensureOwnProfile(supabase, authUser, expectedRole);
+
+  if (!profile) {
+    if (strict) {
+      throw createAuthError("ACCOUNT_PROFILE_MISSING", "The account profile could not be loaded.");
+    }
+
+    clearAuthSession();
+    return { authenticated: false, user: null };
+  }
+
+  const sessionUser = normalizeSessionUser(authUser, profile);
+
+  if (sessionUser.status !== "active") {
+    await supabase.auth.signOut();
+    clearAuthSession();
+
+    if (strict) {
+      throw createAuthError("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.");
+    }
+
+    return { authenticated: false, user: null };
+  }
+
+  if (audience === "admin" && !isPrivilegedRole(sessionUser.role)) {
+    await supabase.auth.signOut();
+    clearAuthSession();
+    throw createAuthError("ADMIN_SESSION_INVALID", "Admin authentication did not produce a valid admin session.");
+  }
+
+  if (audience !== "admin" && isPrivilegedRole(sessionUser.role)) {
+    await supabase.auth.signOut();
+    clearAuthSession();
+    throw createAuthError("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.");
+  }
+
+  if (expectedRole && sessionUser.role !== expectedRole) {
+    await supabase.auth.signOut();
+    clearAuthSession();
+    throw createAuthError("ROLE_MISMATCH", "This account does not match the selected login role.");
+  }
+
+  const confirmedSession = { authenticated: true, user: sessionUser };
+  setAuthSession(confirmedSession);
+  return confirmedSession;
 }
 
 function ensurePublicSignupPayload(payload) {
@@ -338,6 +308,7 @@ function ensurePublicSignupPayload(payload) {
   const fullName = normalizeText(payload.fullName);
   const email = normalizeEmail(payload.email);
   const password = String(payload.password || "");
+  const confirmPassword = String(payload.confirmPassword || "");
   const phoneNumber = normalizeText(payload.phoneNumber);
   const companyName = normalizeText(payload.companyName);
   const professionType = normalizeText(payload.professionType);
@@ -348,7 +319,7 @@ function ensurePublicSignupPayload(payload) {
   const yearsExperienceRaw = normalizeText(payload.yearsExperience || payload.experience);
   const yearsExperience = yearsExperienceRaw === "" ? null : Number(yearsExperienceRaw);
 
-  if (role !== "client" && role !== "developer") {
+  if (!isPublicRole(role)) {
     throw createAuthError("INVALID_ROLE", "Only client and developer accounts can be created here.");
   }
 
@@ -356,12 +327,16 @@ function ensurePublicSignupPayload(payload) {
     throw createAuthError("FULL_NAME_REQUIRED", "Please enter your full name.");
   }
 
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email || !validateEmail(email)) {
     throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
   }
 
   if (password.length < 8) {
     throw createAuthError("PASSWORD_TOO_SHORT", "Password must be at least 8 characters.");
+  }
+
+  if (confirmPassword && password !== confirmPassword) {
+    throw createAuthError("PASSWORD_MISMATCH", "Password confirmation does not match.");
   }
 
   if (!phoneNumber) {
@@ -372,19 +347,15 @@ function ensurePublicSignupPayload(payload) {
     if (!companyName) {
       throw createAuthError("COMPANY_REQUIRED", "Company or professional name is required for developer accounts.");
     }
-
     if (!professionType) {
       throw createAuthError("PROFESSION_REQUIRED", "Profession type is required for developer accounts.");
     }
-
     if (!serviceArea) {
       throw createAuthError("SERVICE_AREA_REQUIRED", "City or service area is required for developer accounts.");
     }
-
     if (yearsExperience === null || Number.isNaN(yearsExperience) || yearsExperience < 0) {
       throw createAuthError("EXPERIENCE_INVALID", "Years of experience must be a valid non-negative number.");
     }
-
     if (!specialties) {
       throw createAuthError("SPECIALTIES_REQUIRED", "Please enter at least one specialty for the developer account.");
     }
@@ -410,285 +381,198 @@ function ensurePublicSignupPayload(payload) {
   };
 }
 
-async function signupBrowserPublicAccount(payload) {
-  requireBrowserStorage();
-  const cleanPayload = ensurePublicSignupPayload(payload);
-  const accounts = loadBrowserPublicAccounts();
-
-  if (accounts.some((account) => account.email === cleanPayload.email)) {
-    throw createAuthError("EMAIL_IN_USE", "An account with this email already exists.");
-  }
-
-  const account = {
-    id: generateRecordId("acct"),
-    username: null,
-    email: cleanPayload.email,
-    passwordHash: await digestSecret(cleanPayload.password),
-    role: cleanPayload.role,
-    fullName: cleanPayload.fullName,
-    phoneNumber: cleanPayload.phoneNumber,
-    companyName: cleanPayload.companyName,
-    professionType: cleanPayload.professionType,
-    serviceArea: cleanPayload.serviceArea,
-    yearsExperience: cleanPayload.yearsExperience,
-    specialties: cleanPayload.specialties,
-    preferredRegion: cleanPayload.preferredRegion,
-    website: cleanPayload.website,
-    createdAt: new Date().toISOString(),
-    status: "active",
-  };
-  const user = serializeBrowserUser(account);
-
-  accounts.unshift(account);
-  if (!saveBrowserPublicAccounts(accounts) || !saveBrowserPublicSession(user)) {
-    throw createAuthError(
-      "AUTH_UNAVAILABLE",
-      "This browser could not persist the new account securely. Please enable site storage and try again."
-    );
-  }
-
-  setAuthSession({ authenticated: true, user });
-  return user;
-}
-
-async function loginBrowserPublicAccount(payload) {
-  requireBrowserStorage();
-  const identifier = normalizeEmail(payload.identifier || payload.email);
-  const password = String(payload.password || "");
-  const expectedRole = normalizeText(payload.role);
-  const accounts = loadBrowserPublicAccounts();
-
-  if (!identifier) {
-    throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
-  }
-
-  if (!password) {
-    throw createAuthError("PASSWORD_REQUIRED", "Please enter your password.");
-  }
-
-  const account = accounts.find((entry) => entry.email === identifier);
-
-  if (!account) {
-    throw createAuthError("LOGIN_ACCOUNT_NOT_FOUND", "No account was found for this email address.");
-  }
-
-  if (expectedRole && account.role !== expectedRole) {
-    throw createAuthError("ROLE_MISMATCH", "This account does not match the selected login role.");
-  }
-
-  if (account.role === "admin" || account.role === "moderator") {
-    throw createAuthError("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.");
-  }
-
-  if (account.status === "inactive") {
-    throw createAuthError("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.");
-  }
-
-  const incomingHash = await digestSecret(password);
-
-  if (incomingHash !== account.passwordHash) {
-    throw createAuthError("INVALID_CREDENTIALS", "Email or password is incorrect.");
-  }
-
-  try {
-    await syncBrowserPublicAccountToBackend(account, password);
-  } catch (error) {
-    // Keep legacy browser-backed login available even if backend sync fails.
-  }
-
-  const user = serializeBrowserUser(account);
-
-  if (!saveBrowserPublicSession(user)) {
-    throw createAuthError(
-      "AUTH_UNAVAILABLE",
-      "This browser could not persist the new login session. Please enable site storage and try again."
-    );
-  }
-
-  setAuthSession({ authenticated: true, user });
-  return user;
-}
-
-async function syncBrowserPublicAccountToBackend(account, password) {
-  if (!usesBrowserPublicAuth()) {
-    return;
-  }
-
-  const signupPayload = {
-    role: account.role,
-    fullName: account.fullName,
-    email: account.email,
-    password,
-    confirmPassword: password,
-    phoneNumber: account.phoneNumber || "",
-    companyName: account.companyName || "",
-    professionType: account.professionType || "",
-    serviceArea: account.serviceArea || "",
-    yearsExperience: account.yearsExperience ?? "",
-    specialties: account.specialties || "",
-    preferredRegion: account.preferredRegion || "",
-    website: account.website || "",
-  };
-
-  try {
-    await requestJson("/api/auth/signup", signupPayload);
-  } catch (error) {
-    if (error?.code === "EMAIL_IN_USE") {
-      return;
-    }
-
-    if (error?.code) {
-      throw error;
-    }
-  }
-}
-
-async function fetchBackendAdminAccounts() {
-  const response = await fetch(createApiUrl("/api/admin/accounts"), {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  const data = await readResponsePayload(response, "Account directory request failed");
-
-  if (!response.ok) {
-    const authError = new Error(data.message || "Account directory request failed.");
-    authError.code = data.code || "UNKNOWN_ERROR";
-    throw authError;
-  }
-
-  return data.accounts || [];
-}
-
-async function fetchBackendAccountStoreStatus() {
-  const response = await fetch(createApiUrl("/api/admin/account-store-status"), {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  const data = await readResponsePayload(response, "Account store status request failed");
-
-  if (!response.ok) {
-    const authError = new Error(data.message || "Account store status request failed.");
-    authError.code = data.code || "UNKNOWN_ERROR";
-    throw authError;
-  }
-
-  return data.status || {};
-}
-
-async function requestJson(path, payload) {
-  const response = await fetch(createApiUrl(path), {
+async function resolveAdminIdentifier(identifier) {
+  const response = await fetch(createApiUrl("/api/auth/admin/resolve"), {
     method: "POST",
-    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ identifier }),
   });
 
-  const data = await readResponsePayload(response, "Authentication request failed");
+  const data = await readResponsePayload(response, "Admin identifier lookup failed.");
 
   if (!response.ok) {
-    const authError = new Error(data.message || `Authentication request failed (HTTP ${response.status}).`);
-    authError.code = data.code || (response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR");
-    authError.status = response.status;
-    throw authError;
+    throw createAuthError(data.code || "LOGIN_ACCOUNT_NOT_FOUND", data.message || "The admin account could not be found.");
+  }
+
+  return data.email;
+}
+
+async function getCurrentAccessToken() {
+  const supabase = await getSupabaseClient();
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error) {
+    throw mapSupabaseError(error, "SESSION_FAILED");
+  }
+
+  const accessToken = data?.session?.access_token;
+  if (!accessToken) {
+    throw createAuthError("AUTH_REQUIRED", "A valid authenticated session is required.");
+  }
+
+  return accessToken;
+}
+
+async function requestAdminJson(path, payload = null, method = "GET") {
+  const token = await getCurrentAccessToken();
+  const response = await fetch(createApiUrl(path), {
+    method,
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(payload ? { "Content-Type": "application/json" } : {}),
+    },
+    body: payload ? JSON.stringify(payload) : undefined,
+  });
+
+  const data = await readResponsePayload(response, "Admin request failed.");
+
+  if (!response.ok) {
+    throw createAuthError(data.code || "UNKNOWN_ERROR", data.message || "Admin request failed.");
   }
 
   return data;
 }
 
 export async function signupAccount(payload) {
-  const signupPayload = {
-    ...payload,
-    role: payload.role || payload.accountRole,
-    yearsExperience: payload.yearsExperience || payload.experience,
-  };
-  delete signupPayload.accountRole;
-  delete signupPayload.experience;
+  const signupPayload = ensurePublicSignupPayload(payload);
+  const supabase = await getSupabaseClient();
 
-  const data = await requestJson("/api/auth/signup", signupPayload);
-  if (usesBrowserPublicAuth()) {
-    await mirrorBackendPublicAccountLocally(data.user, signupPayload.password);
+  const { data, error } = await supabase.auth.signUp({
+    email: signupPayload.email,
+    password: signupPayload.password,
+    options: {
+      data: {
+        role: signupPayload.role,
+        full_name: signupPayload.fullName,
+        phone_number: signupPayload.phoneNumber,
+        company_name: signupPayload.companyName,
+        profession_type: signupPayload.professionType,
+        service_area: signupPayload.serviceArea,
+        years_experience: signupPayload.yearsExperience,
+        specialties: signupPayload.specialties,
+        preferred_region: signupPayload.preferredRegion,
+        website: signupPayload.website,
+      },
+    },
+  });
+
+  if (error) {
+    throw mapSupabaseError(error, "AUTH_UNAVAILABLE");
   }
-  setAuthSession({ authenticated: true, user: data.user });
-  return data.user;
+
+  if (!data?.session || !data?.user) {
+    throw createAuthError(
+      "EMAIL_CONFIRMATION_REQUIRED",
+      "Supabase email confirmation is enabled. Disable it to preserve the current instant signup flow."
+    );
+  }
+
+  const session = await loadConfirmedSession({
+    expectedRole: signupPayload.role,
+    audience: "public",
+    strict: true,
+  });
+
+  if (!session.authenticated) {
+    throw createAuthError("ACCOUNT_SESSION_INVALID", "Your account was created, but the new session could not be confirmed.");
+  }
+
+  return session.user;
 }
 
 export async function loginAccount(payload, audience = "public") {
-  const data = await requestJson("/api/auth/login", { ...payload, audience });
-  if (audience === "public" && usesBrowserPublicAuth()) {
-    await mirrorBackendPublicAccountLocally(data.user, payload.password);
+  const supabase = await getSupabaseClient();
+  const password = String(payload.password || "");
+  const requestedRole = normalizeText(payload.role);
+  const rawIdentifier = normalizeText(payload.identifier || payload.email || payload.username);
+
+  if (!rawIdentifier) {
+    throw createAuthError(
+      audience === "admin" ? "IDENTIFIER_REQUIRED" : "EMAIL_INVALID",
+      audience === "admin" ? "Please enter the moderator username or email." : "Please enter a valid email address."
+    );
   }
-  setAuthSession({ authenticated: true, user: data.user });
-  return data.user;
+
+  if (!password) {
+    throw createAuthError("PASSWORD_REQUIRED", "Please enter your password.");
+  }
+
+  const email =
+    audience === "admin"
+      ? rawIdentifier.includes("@")
+        ? normalizeEmail(rawIdentifier)
+        : await resolveAdminIdentifier(rawIdentifier)
+      : normalizeEmail(rawIdentifier);
+
+  if (!validateEmail(email)) {
+    throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    throw mapSupabaseError(error, "INVALID_CREDENTIALS");
+  }
+
+  const session = await loadConfirmedSession({
+    expectedRole: audience === "admin" ? "" : requestedRole,
+    audience,
+    strict: true,
+  });
+
+  if (!session.authenticated) {
+    throw createAuthError(audience === "admin" ? "ADMIN_SESSION_INVALID" : "SESSION_INVALID", "Session could not be confirmed.");
+  }
+
+  return session.user;
 }
 
 export async function logoutAccount() {
-  await requestJson("/api/auth/logout", {});
-  if (usesBrowserPublicAuth()) {
-    clearBrowserPublicSession();
+  const supabase = await getSupabaseClient();
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    throw mapSupabaseError(error, "AUTH_UNAVAILABLE");
   }
+
   clearAuthSession();
 }
 
 export async function fetchAuthSession() {
   try {
-    const response = await fetch(createApiUrl("/api/auth/session"), {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
-    });
-    const data = await readResponsePayload(response, "Session verification failed");
-
-    if (!response.ok) {
-      const authError = new Error(data.message || `Session verification failed (HTTP ${response.status}).`);
-      authError.code = data.code || "SESSION_FAILED";
-      authError.status = response.status;
-      throw authError;
-    }
-
-    if (usesBrowserPublicAuth() && (!data?.authenticated || !data?.user)) {
-      clearBrowserPublicSession();
-    }
-    setAuthSession(data);
-    return data;
+    return await loadConfirmedSession({ strict: false });
   } catch (error) {
-    if (usesBrowserPublicAuth()) {
-      clearBrowserPublicSession();
-    }
     clearAuthSession();
     return { authenticated: false, user: null };
   }
 }
 
 export function getAuthOrigin() {
-  return resolveAuthOrigin();
+  return getRuntimeApiOrigin();
 }
 
 export async function fetchAdminAccounts() {
-  return fetchBackendAdminAccounts();
+  const data = await requestAdminJson("/api/admin/accounts");
+  return data.accounts || [];
 }
 
 export async function updateAdminAccountStatus(userId, action) {
-  const data = await requestJson("/api/admin/accounts/status", { userId, action });
+  const data = await requestAdminJson("/api/admin/accounts/status", { userId, action }, "POST");
   return data.user;
 }
 
 export async function deleteAdminAccount(userId) {
-  const data = await requestJson("/api/admin/accounts/delete", { userId });
+  const data = await requestAdminJson("/api/admin/accounts/delete", { userId }, "POST");
   return data.deletedUserId;
 }
 
 export async function fetchAdminAccountStoreStatus() {
-  return fetchBackendAccountStoreStatus();
+  const data = await requestAdminJson("/api/admin/account-store-status");
+  return data.status || {};
 }

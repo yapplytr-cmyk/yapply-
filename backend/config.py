@@ -8,6 +8,9 @@ SEED_DB_PATH = DATA_DIR / "yapply.db"
 IS_VERCEL = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
 DB_PATH = Path(os.environ.get("YAPPLY_DB_PATH", "/tmp/yapply.db" if IS_VERCEL else str(SEED_DB_PATH)))
 SESSION_SIGNING_SECRET = os.environ.get("YAPPLY_SESSION_SIGNING_SECRET", "yapply-dev-session-secret")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
 HOST = "127.0.0.1"
 PORT = 4174

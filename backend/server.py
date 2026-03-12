@@ -9,6 +9,16 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from api.supabase_utils import (
+  handle_admin_account_delete as handle_supabase_admin_account_delete,
+  handle_admin_account_store_status as handle_supabase_admin_account_store_status,
+  handle_admin_account_status as handle_supabase_admin_account_status,
+  handle_admin_accounts as handle_supabase_admin_accounts,
+  handle_admin_identifier_resolve,
+  handle_public_auth_config,
+  run_supabase_action,
+)
+
 from .config import (
   ADMIN_ROLES,
   ADMIN_BOOTSTRAP_TOKEN,
@@ -299,12 +309,16 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
   def do_OPTIONS(self):
     self.send_response(HTTPStatus.NO_CONTENT)
     apply_cors_headers(self)
-    self.send_header("Access-Control-Allow-Headers", "Content-Type")
+    self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
     self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
     self.end_headers()
 
   def do_GET(self):
     parsed = urlparse(self.path)
+
+    if parsed.path == "/api/auth/config":
+      run_supabase_action(self, handle_public_auth_config)
+      return
 
     if parsed.path == "/api/auth/session":
       self.handle_auth_session()
@@ -315,15 +329,11 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       return
 
     if parsed.path == "/api/admin/accounts":
-      self.handle_admin_accounts()
+      run_supabase_action(self, handle_supabase_admin_accounts)
       return
 
     if parsed.path == "/api/admin/account-store-status":
-      self.handle_admin_account_store_status()
-      return
-
-    if parsed.path == "/api/admin/bootstrap-seed":
-      self.handle_admin_bootstrap_seed()
+      run_supabase_action(self, handle_supabase_admin_account_store_status)
       return
 
     purge_expired_sessions()
@@ -331,6 +341,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
 
   def do_POST(self):
     parsed = urlparse(self.path)
+
+    if parsed.path == "/api/auth/admin/resolve":
+      run_supabase_action(self, handle_admin_identifier_resolve)
+      return
 
     if parsed.path == "/api/auth/signup":
       self.handle_auth_signup()
@@ -349,15 +363,11 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       return
 
     if parsed.path == "/api/admin/accounts/status":
-      self.handle_admin_account_status()
+      run_supabase_action(self, handle_supabase_admin_account_status)
       return
 
     if parsed.path == "/api/admin/accounts/delete":
-      self.handle_admin_account_delete()
-      return
-
-    if parsed.path == "/api/admin/bootstrap-seed":
-      self.handle_admin_bootstrap_seed()
+      run_supabase_action(self, handle_supabase_admin_account_delete)
       return
 
     self.send_error(HTTPStatus.NOT_FOUND, "Not found")
