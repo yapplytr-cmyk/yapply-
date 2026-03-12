@@ -31,6 +31,7 @@ from .db import (
   delete_user_account,
   delete_session,
   ensure_database,
+  get_account_store_status,
   get_marketplace_listing,
   get_session_user,
   get_user_by_email,
@@ -287,6 +288,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       self.handle_admin_accounts()
       return
 
+    if parsed.path == "/api/admin/account-store-status":
+      self.handle_admin_account_store_status()
+      return
+
     purge_expired_sessions()
     super().do_GET()
 
@@ -332,6 +337,12 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       return
 
     json_response(self, HTTPStatus.OK, {"ok": True, "accounts": list_users()})
+
+  def handle_admin_account_store_status(self) -> None:
+    if not require_admin_user(self):
+      return
+
+    json_response(self, HTTPStatus.OK, {"ok": True, "status": get_account_store_status()})
 
   def resolve_listing_owner(self, payload: dict) -> dict | None:
     session_user = get_authenticated_user(self)

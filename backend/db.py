@@ -5,6 +5,7 @@ import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
+from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, KV_REST_TOKEN, KV_REST_URL, SEED_DB_PATH, SESSION_TTL_SECONDS, USE_REMOTE_USER_STORE
@@ -44,9 +45,12 @@ def _kv_request(command: str, *parts: str, method: str = "GET", payload: str | N
     },
   )
 
-  with urlopen(request, timeout=10) as response:
-    raw = response.read().decode("utf-8")
-    return json.loads(raw) if raw else {"result": None}
+  try:
+    with urlopen(request, timeout=10) as response:
+      raw = response.read().decode("utf-8")
+      return json.loads(raw) if raw else {"result": None}
+  except URLError as error:
+    raise RuntimeError("Remote user store is unavailable.") from error
 
 
 def _kv_get(key: str):
@@ -126,6 +130,27 @@ def _count_remote_active_admin_users(exclude_user_id: str | None = None) -> int:
     if user.get("role") in ADMIN_ROLES and int(user.get("is_active", 1)) == 1:
       count += 1
   return count
+
+
+def get_account_store_status() -> dict:
+  status = {
+    "mode": "remote-kv" if _uses_remote_user_store() else "local-sqlite",
+    "remoteConfigured": _uses_remote_user_store(),
+    "remoteReachable": False,
+    "sourceOfTruth": "shared-remote-kv" if _uses_remote_user_store() else "local-serverless-sqlite",
+  }
+
+  if not _uses_remote_user_store():
+    status["reason"] = "No KV/Upstash REST environment variables were detected at runtime."
+    return status
+
+  try:
+    _kv_get("yapply:healthcheck")
+    status["remoteReachable"] = True
+    return status
+  except RuntimeError as error:
+    status["reason"] = str(error)
+    return status
 
 
 def ensure_database() -> None:

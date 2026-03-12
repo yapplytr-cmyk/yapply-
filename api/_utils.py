@@ -6,7 +6,7 @@ from http import HTTPStatus
 from http.cookies import SimpleCookie
 from urllib.parse import parse_qs, urlparse
 
-from backend.config import ADMIN_ROLES, IS_VERCEL, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS
+from backend.config import ADMIN_ROLES, IS_VERCEL, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS, USE_REMOTE_USER_STORE
 from backend.db import (
   count_active_admin_users,
   create_marketplace_listing,
@@ -15,6 +15,7 @@ from backend.db import (
   delete_session,
   delete_user_account,
   ensure_database,
+  get_account_store_status,
   get_marketplace_listing,
   get_session_user,
   get_user_by_id,
@@ -131,12 +132,48 @@ def handle_signup(handler) -> None:
     json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
     return
 
-  clean_payload, error = validate_signup(payload)
+  try:
+    clean_payload, error = validate_signup(payload)
+  except RuntimeError:
+    json_response(
+      handler,
+      HTTPStatus.SERVICE_UNAVAILABLE,
+      {
+        "ok": False,
+        "code": "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE",
+        "message": "The live account store is currently unavailable. Please try again shortly.",
+      },
+    )
+    return
   if error:
     json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": error[0], "message": error[1]})
     return
 
-  user = create_user(clean_payload)
+  if IS_VERCEL and not USE_REMOTE_USER_STORE:
+    json_response(
+      handler,
+      HTTPStatus.SERVICE_UNAVAILABLE,
+      {
+        "ok": False,
+        "code": "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE",
+        "message": "The live account store is not configured for shared cross-device login yet.",
+      },
+    )
+    return
+
+  try:
+    user = create_user(clean_payload)
+  except RuntimeError:
+    json_response(
+      handler,
+      HTTPStatus.SERVICE_UNAVAILABLE,
+      {
+        "ok": False,
+        "code": "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE",
+        "message": "The live account store is currently unavailable. Please try again shortly.",
+      },
+    )
+    return
   if IS_VERCEL:
     token = issue_signed_session_token(user, SESSION_TTL_SECONDS)
     json_response(handler, HTTPStatus.CREATED, {"ok": True, "user": user}, cookie=build_cookie(token))
@@ -155,7 +192,32 @@ def handle_login(handler) -> None:
     return
 
   audience = normalize_text(payload.get("audience")) or "public"
-  login_payload, error = validate_login(payload, audience)
+
+  if audience == "public" and IS_VERCEL and not USE_REMOTE_USER_STORE:
+    json_response(
+      handler,
+      HTTPStatus.SERVICE_UNAVAILABLE,
+      {
+        "ok": False,
+        "code": "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE",
+        "message": "The live account store is not configured for shared cross-device login yet.",
+      },
+    )
+    return
+
+  try:
+    login_payload, error = validate_login(payload, audience)
+  except RuntimeError:
+    json_response(
+      handler,
+      HTTPStatus.SERVICE_UNAVAILABLE,
+      {
+        "ok": False,
+        "code": "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE",
+        "message": "The live account store is currently unavailable. Please try again shortly.",
+      },
+    )
+    return
   if error:
     json_response(handler, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": error[0], "message": error[1]})
     return
@@ -197,7 +259,24 @@ def handle_admin_accounts(handler) -> None:
   if not require_admin_user(handler):
     return
 
-  json_response(handler, HTTPStatus.OK, {"ok": True, "accounts": list_users()})
+  try:
+    accounts = list_users()
+  except RuntimeError:
+    json_response(
+      handler,
+      HTTPStatus.SERVICE_UNAVAILABLE,
+      {"ok": False, "code": "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE", "message": "The live account store is currently unavailable."},
+    )
+    return
+
+  json_response(handler, HTTPStatus.OK, {"ok": True, "accounts": accounts})
+
+
+def handle_admin_account_store_status(handler) -> None:
+  if not require_admin_user(handler):
+    return
+
+  json_response(handler, HTTPStatus.OK, {"ok": True, "status": get_account_store_status()})
 
 
 def handle_admin_account_status(handler) -> None:

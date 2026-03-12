@@ -305,6 +305,9 @@ function createAccountsSection(content) {
           <h3>${content.accounts.title}</h3>
           <p>${content.accounts.description}</p>
         </div>
+        <div class="panel admin-account-store-status" data-admin-account-store-status>
+          <p class="admin-empty">${content.accounts.storeStatus.loading}</p>
+        </div>
         <div class="admin-account-directory" data-admin-account-directory>
           <p class="admin-empty">${content.accounts.loading}</p>
         </div>

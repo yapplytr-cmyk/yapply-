@@ -5,6 +5,7 @@ from urllib.parse import parse_qs, urlparse
 from api._utils import (
   bootstrap_backend,
   handle_admin_account_delete,
+  handle_admin_account_store_status,
   handle_admin_account_status,
   handle_admin_accounts,
   handle_login,
@@ -46,6 +47,10 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "admin/accounts":
       handle_admin_accounts(self)
+      return
+
+    if route == "admin/account-store-status":
+      handle_admin_account_store_status(self)
       return
 
     if route == "marketplace/listings/detail":

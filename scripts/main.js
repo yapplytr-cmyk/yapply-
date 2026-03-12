@@ -801,12 +801,44 @@ function setupAdminDashboard(content) {
   const professionalSeedItems = content.openMarketplacePage.tabs.developer.items;
   const featuredSeedItems = content.projects.items;
   const accountsRoot = dashboard.querySelector("[data-admin-account-directory]");
+  const accountStoreRoot = dashboard.querySelector("[data-admin-account-store-status]");
   const currentUserId = getAuthSession().user?.id || "";
   const confirmDeleteLabel =
     content.meta.locale === "tr"
       ? "Bu ogeyi silmek istediginize emin misiniz?"
       : "Are you sure you want to delete this item?";
   const accountCopy = content.adminDashboardPage.accounts;
+  const accountStoreCopy = content.adminDashboardPage.accounts.storeStatus;
+
+  const renderAccountStoreStatus = (status = null, state = "loading") => {
+    if (!accountStoreRoot) {
+      return;
+    }
+
+    if (state === "loading") {
+      accountStoreRoot.innerHTML = `<p class="admin-empty">${accountStoreCopy.loading}</p>`;
+      return;
+    }
+
+    if (state === "error" || !status) {
+      accountStoreRoot.innerHTML = `<p class="admin-empty">${accountStoreCopy.error}</p>`;
+      return;
+    }
+
+    accountStoreRoot.innerHTML = `
+      <div class="admin-section-panel__header">
+        <h3>${accountStoreCopy.title}</h3>
+        <p>${accountStoreCopy.description}</p>
+      </div>
+      <div class="admin-record__facts">
+        <div><span>${accountStoreCopy.mode}</span><strong>${escapeHtml(status.mode || "unknown")}</strong></div>
+        <div><span>${accountStoreCopy.remoteConfigured}</span><strong>${status.remoteConfigured ? accountStoreCopy.yes : accountStoreCopy.no}</strong></div>
+        <div><span>${accountStoreCopy.remoteReachable}</span><strong>${status.remoteReachable ? accountStoreCopy.yes : accountStoreCopy.no}</strong></div>
+        <div><span>${accountStoreCopy.sourceOfTruth}</span><strong>${escapeHtml(status.sourceOfTruth || "unknown")}</strong></div>
+      </div>
+      ${status.reason ? `<p class="admin-account-store-status__reason"><strong>${accountStoreCopy.reason}:</strong> ${escapeHtml(status.reason)}</p>` : ""}
+    `;
+  };
 
   const renderAccountDirectory = (accounts = [], state = "ready", notice = null) => {
     if (!accountsRoot) {
@@ -929,18 +961,27 @@ function setupAdminDashboard(content) {
 
   const refreshAccountDirectory = async () => {
     renderAccountDirectory([], "loading", lastAccountNotice);
+    renderAccountStoreStatus(null, "loading");
 
     try {
       const authApi = await loadAuthApi();
       const accounts = await authApi?.fetchAdminAccounts?.();
+      const storeStatus = await authApi?.fetchAdminAccountStoreStatus?.();
 
       if (accounts) {
         renderAccountDirectory(accounts, "ready", lastAccountNotice);
       } else {
         renderAccountDirectory([], "error", lastAccountNotice);
       }
+
+      if (storeStatus) {
+        renderAccountStoreStatus(storeStatus, "ready");
+      } else {
+        renderAccountStoreStatus(null, "error");
+      }
     } catch (error) {
       renderAccountDirectory([], "error", lastAccountNotice);
+      renderAccountStoreStatus(null, "error");
     }
   };
 

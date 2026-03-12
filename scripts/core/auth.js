@@ -547,6 +547,32 @@ async function fetchBackendAdminAccounts() {
   return data.accounts || [];
 }
 
+async function fetchBackendAccountStoreStatus() {
+  const response = await fetch(createApiUrl("/api/admin/account-store-status"), {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const authError = new Error(data.message || "Account store status request failed.");
+    authError.code = data.code || "UNKNOWN_ERROR";
+    throw authError;
+  }
+
+  return data.status || {};
+}
+
 async function requestJson(path, payload) {
   const response = await fetch(createApiUrl(path), {
     method: "POST",
@@ -583,96 +609,32 @@ export async function signupAccount(payload) {
   delete signupPayload.accountRole;
   delete signupPayload.experience;
 
-  if (usesBrowserPublicAuth()) {
-    try {
-      const data = await requestJson("/api/auth/signup", signupPayload);
-      await mirrorBackendPublicAccountLocally(data.user, signupPayload.password);
-      setAuthSession({ authenticated: true, user: data.user });
-      return data.user;
-    } catch (error) {
-      if (error?.code) {
-        throw error;
-      }
-    }
-
-    return signupBrowserPublicAccount(payload);
-  }
-
   const data = await requestJson("/api/auth/signup", signupPayload);
+  if (usesBrowserPublicAuth()) {
+    await mirrorBackendPublicAccountLocally(data.user, signupPayload.password);
+  }
   setAuthSession({ authenticated: true, user: data.user });
   return data.user;
 }
 
 export async function loginAccount(payload, audience = "public") {
-  if (audience === "public" && usesBrowserPublicAuth()) {
-    try {
-      const data = await requestJson("/api/auth/login", { ...payload, audience });
-      await mirrorBackendPublicAccountLocally(data.user, payload.password);
-      setAuthSession({ authenticated: true, user: data.user });
-      return data.user;
-    } catch (error) {
-      if (error?.code && error.code !== "INVALID_CREDENTIALS" && error.code !== "LOGIN_ACCOUNT_NOT_FOUND") {
-        throw error;
-      }
-    }
-
-    return loginBrowserPublicAccount(payload);
-  }
-
   const data = await requestJson("/api/auth/login", { ...payload, audience });
+  if (audience === "public" && usesBrowserPublicAuth()) {
+    await mirrorBackendPublicAccountLocally(data.user, payload.password);
+  }
   setAuthSession({ authenticated: true, user: data.user });
   return data.user;
 }
 
 export async function logoutAccount() {
-  if (usesBrowserPublicAuth()) {
-    requireBrowserStorage();
-    clearBrowserPublicSession();
-
-    try {
-      await requestJson("/api/auth/logout", {});
-    } catch (error) {
-      // Ignore backend logout failures when the active public session is browser-managed.
-    }
-
-    clearAuthSession();
-    return;
-  }
-
   await requestJson("/api/auth/logout", {});
+  if (usesBrowserPublicAuth()) {
+    clearBrowserPublicSession();
+  }
   clearAuthSession();
 }
 
 export async function fetchAuthSession() {
-  if (usesBrowserPublicAuth()) {
-    if (!getStorage()) {
-      clearAuthSession();
-      return { authenticated: false, user: null };
-    }
-
-    try {
-      const response = await fetch(createApiUrl("/api/auth/session"), {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-        },
-      });
-      const data = await response.json();
-
-      if (data?.authenticated && data?.user) {
-        setAuthSession(data);
-        return data;
-      }
-    } catch (error) {
-      // Fall back to the browser-managed public session below.
-    }
-
-    const session = loadBrowserPublicSession();
-    setAuthSession(session);
-    return session;
-  }
-
   try {
     const response = await fetch(createApiUrl("/api/auth/session"), {
       method: "GET",
@@ -682,9 +644,15 @@ export async function fetchAuthSession() {
       },
     });
     const data = await response.json();
+    if (usesBrowserPublicAuth() && (!data?.authenticated || !data?.user)) {
+      clearBrowserPublicSession();
+    }
     setAuthSession(data);
     return data;
   } catch (error) {
+    if (usesBrowserPublicAuth()) {
+      clearBrowserPublicSession();
+    }
     clearAuthSession();
     return { authenticated: false, user: null };
   }
@@ -695,68 +663,19 @@ export function getAuthOrigin() {
 }
 
 export async function fetchAdminAccounts() {
-  const backendAccounts = await fetchBackendAdminAccounts();
-
-  if (!usesBrowserPublicAuth()) {
-    return backendAccounts;
-  }
-
-  return mergeAccountCollections(backendAccounts, getBrowserPublicAccountsForAdmin());
+  return fetchBackendAdminAccounts();
 }
 
 export async function updateAdminAccountStatus(userId, action) {
-  if (usesBrowserPublicAuth()) {
-    const accounts = loadBrowserPublicAccounts();
-    const index = accounts.findIndex((account) => account.id === userId && isBrowserManagedPublicRole(account.role));
-
-    if (index >= 0) {
-      const nextStatus = action === "disable" ? "inactive" : "active";
-      const updatedAccount = {
-        ...accounts[index],
-        status: nextStatus,
-      };
-
-      accounts[index] = updatedAccount;
-      if (!saveBrowserPublicAccounts(accounts)) {
-        throw createAuthError("AUTH_UNAVAILABLE", "The updated account state could not be saved in this browser.");
-      }
-
-      syncBrowserManagedSessionForAccount(updatedAccount);
-
-      return {
-        ...serializeBrowserUser(updatedAccount),
-        source: "browser-public",
-      };
-    }
-  }
-
   const data = await requestJson("/api/admin/accounts/status", { userId, action });
   return data.user;
 }
 
 export async function deleteAdminAccount(userId) {
-  if (usesBrowserPublicAuth()) {
-    const accounts = loadBrowserPublicAccounts();
-    const nextAccounts = accounts.filter((account) => !(account.id === userId && isBrowserManagedPublicRole(account.role)));
-
-    if (nextAccounts.length !== accounts.length) {
-      if (!saveBrowserPublicAccounts(nextAccounts)) {
-        throw createAuthError("AUTH_UNAVAILABLE", "The updated account directory could not be saved in this browser.");
-      }
-
-      clearBrowserManagedSessionForUser(userId);
-
-      try {
-        const marketplaceStore = await import("./marketplaceStore.js");
-        marketplaceStore.deleteOwnedMarketplaceListings?.(userId);
-      } catch (error) {
-        // Keep account deletion resilient even if marketplace cleanup is unavailable.
-      }
-
-      return userId;
-    }
-  }
-
   const data = await requestJson("/api/admin/accounts/delete", { userId });
   return data.deletedUserId;
+}
+
+export async function fetchAdminAccountStoreStatus() {
+  return fetchBackendAccountStoreStatus();
 }

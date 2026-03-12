@@ -2620,6 +2620,18 @@ body[data-submission-type="professional"] .submission-stage__notes {
   color: color-mix(in srgb, var(--text) 86%, #f2beb8 14%);
 }
 
+.admin-account-store-status {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-account-store-status__reason {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
 .admin-account-card {
   display: grid;
   gap: 0;
