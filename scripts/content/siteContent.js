@@ -558,6 +558,9 @@ export const translations = {
         title: "Ready to publish a brief or present your offer?",
         description:
           "This first version is frontend-only, but the structure is already prepared for a future create-listing flow with authentication, moderation, and lead routing.",
+        guestHeaderLabel: "Create Listing",
+        guestHeroPrimaryLabel: "Browse Listings",
+        guestHeroSecondaryLabel: "Create Listing",
         clientLabel: "Post Your Project",
         clientHref: "./client-project-submission.html",
         proLabel: "List Your Services for Contractors",
@@ -2971,6 +2974,9 @@ export const translations = {
         title: "Bir brief yayınlamaya veya teklifinizi sunmaya hazır mısınız?",
         description:
           "Bu ilk versiyon yalnızca frontend yapısıdır; ancak kullanıcı hesabı, moderasyon ve lead yönlendirmesi içeren gerçek ilan oluşturma akışına hazır şekilde kurgulandı.",
+        guestHeaderLabel: "İlan Oluştur",
+        guestHeroPrimaryLabel: "İlanları İncele",
+        guestHeroSecondaryLabel: "İlan Oluştur",
         clientLabel: "Projeni Yayınla",
         clientHref: "./client-project-submission.html",
         proLabel: "Yükleniciler için Hizmetlerini Listele",

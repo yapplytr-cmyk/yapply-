@@ -159,7 +159,7 @@ function createOpenMarketplacePageContent(content) {
       navLinks.splice(createLinkIndex, 1);
     } else {
       navLinks[createLinkIndex] = {
-        label: content.openMarketplacePage.cta.guestLabel,
+        label: content.openMarketplacePage.cta.guestHeaderLabel,
         href: guestListingHref,
       };
     }
@@ -187,7 +187,7 @@ function createOpenMarketplacePageContent(content) {
 
         return {
           ...link,
-          label: content.openMarketplacePage.cta.guestLabel,
+          label: link.label,
           href: guestListingHref,
         };
       })
@@ -198,14 +198,14 @@ function createOpenMarketplacePageContent(content) {
     ? content.openMarketplacePage.hero.primaryCta
     : {
         ...content.openMarketplacePage.hero.primaryCta,
-        label: content.openMarketplacePage.cta.guestLabel,
+        label: content.openMarketplacePage.cta.guestHeroPrimaryLabel,
         href: guestListingHref,
       };
   const heroSecondaryCta = isAuthenticated
     ? content.openMarketplacePage.hero.secondaryCta
     : {
         ...content.openMarketplacePage.hero.secondaryCta,
-        label: content.openMarketplacePage.cta.guestSecondaryLabel,
+        label: content.openMarketplacePage.cta.guestHeroSecondaryLabel,
         href: "./login.html",
       };
 
