@@ -4,6 +4,7 @@ import json
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
+from json import JSONDecodeError
 from urllib.parse import quote
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -48,9 +49,17 @@ def _kv_request(command: str, *parts: str, method: str = "GET", payload: str | N
   try:
     with urlopen(request, timeout=10) as response:
       raw = response.read().decode("utf-8")
-      return json.loads(raw) if raw else {"result": None}
+      if not raw:
+        return {"result": None}
+
+      try:
+        return json.loads(raw)
+      except JSONDecodeError as error:
+        raise RuntimeError("Remote user store returned an invalid response.") from error
   except URLError as error:
     raise RuntimeError("Remote user store is unavailable.") from error
+  except Exception as error:
+    raise RuntimeError("Remote user store could not be used.") from error
 
 
 def _kv_get(key: str):
@@ -242,23 +251,44 @@ def get_connection() -> sqlite3.Connection:
   return connection
 
 
+def get_record_value(record, *keys):
+  if record is None:
+    return None
+
+  for key in keys:
+    try:
+      if isinstance(record, sqlite3.Row):
+        if key in record.keys():
+          return record[key]
+      else:
+        value = record.get(key) if hasattr(record, "get") else None
+        if value is not None:
+          return value
+        if hasattr(record, "__contains__") and key in record:
+          return record[key]
+    except Exception:
+      continue
+
+  return None
+
+
 def serialize_user(row: sqlite3.Row) -> dict:
   return {
-    "id": row["id"],
-    "username": row["username"],
-    "email": row["email"],
-    "role": row["role"],
-    "fullName": row["full_name"],
-    "phoneNumber": row["phone_number"],
-    "companyName": row["company_name"],
-    "professionType": row["profession_type"],
-    "serviceArea": row["service_area"],
-    "yearsExperience": row["years_experience"],
-    "specialties": row["specialties"],
-    "preferredRegion": row["preferred_region"],
-    "website": row["website"],
-    "createdAt": row["created_at"],
-    "status": "active" if row["is_active"] else "inactive",
+    "id": get_record_value(row, "id"),
+    "username": get_record_value(row, "username"),
+    "email": get_record_value(row, "email"),
+    "role": get_record_value(row, "role"),
+    "fullName": get_record_value(row, "full_name", "fullName") or "",
+    "phoneNumber": get_record_value(row, "phone_number", "phoneNumber"),
+    "companyName": get_record_value(row, "company_name", "companyName"),
+    "professionType": get_record_value(row, "profession_type", "professionType"),
+    "serviceArea": get_record_value(row, "service_area", "serviceArea"),
+    "yearsExperience": get_record_value(row, "years_experience", "yearsExperience"),
+    "specialties": get_record_value(row, "specialties"),
+    "preferredRegion": get_record_value(row, "preferred_region", "preferredRegion"),
+    "website": get_record_value(row, "website"),
+    "createdAt": get_record_value(row, "created_at", "createdAt"),
+    "status": "active" if int(get_record_value(row, "is_active", "isActive") or 0) == 1 else "inactive",
   }
 
 

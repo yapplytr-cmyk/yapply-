@@ -34,6 +34,7 @@ from .db import (
   get_account_store_status,
   get_marketplace_listing,
   get_session_user,
+  get_record_value,
   get_user_by_email,
   get_user_by_identifier,
   get_user_by_id,
@@ -234,19 +235,25 @@ def validate_login(payload: dict, audience: str = "public") -> tuple[dict | None
   if not user:
     return None, ("LOGIN_ACCOUNT_NOT_FOUND", "No account was found for this email address.")
 
-  if not verify_password(password, user["password_hash"]):
+  stored_password_hash = get_record_value(user, "password_hash", "passwordHash")
+  if not stored_password_hash:
+    return None, ("ACCOUNT_NOT_FOUND", "The requested account record is incomplete.")
+
+  if not verify_password(password, stored_password_hash):
     return None, ("INVALID_CREDENTIALS", "Email or password is incorrect.")
 
-  if not user["is_active"]:
+  if int(get_record_value(user, "is_active", "isActive") or 0) != 1:
     return None, ("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.")
 
-  if audience != "admin" and user["role"] in ADMIN_ROLES:
+  user_role = get_record_value(user, "role")
+
+  if audience != "admin" and user_role in ADMIN_ROLES:
     return None, ("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.")
 
-  if audience == "admin" and user["role"] not in ADMIN_ROLES:
+  if audience == "admin" and user_role not in ADMIN_ROLES:
     return None, ("ADMIN_ONLY", "This login area is reserved for admin or moderator accounts.")
 
-  if requested_role in PUBLIC_SIGNUP_ROLES and user["role"] != requested_role:
+  if requested_role in PUBLIC_SIGNUP_ROLES and user_role != requested_role:
     return None, ("ROLE_MISMATCH", "This account does not match the selected login role.")
 
   return {"user": user}, None
