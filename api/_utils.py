@@ -19,6 +19,7 @@ from backend.db import (
   get_session_user,
   get_user_by_id,
   list_users,
+  serialize_user,
   update_user_status,
 )
 from backend.security import issue_session_token, issue_signed_session_token, verify_signed_session_token
@@ -118,6 +119,11 @@ def require_admin_user(handler) -> dict | None:
   return user
 
 
+def build_session_user(user_id: str) -> dict | None:
+  user_row = get_user_by_id(user_id)
+  return serialize_user(user_row) if user_row else None
+
+
 def handle_signup(handler) -> None:
   try:
     payload = parse_json_body(handler)
@@ -131,6 +137,11 @@ def handle_signup(handler) -> None:
     return
 
   user = create_user(clean_payload)
+  if IS_VERCEL:
+    token = issue_signed_session_token(user, SESSION_TTL_SECONDS)
+    json_response(handler, HTTPStatus.CREATED, {"ok": True, "user": user}, cookie=build_cookie(token))
+    return
+
   token, token_hash = issue_session_token()
   create_session(user["id"], token_hash, handler.headers.get("User-Agent", ""), handler.client_address[0] if handler.client_address else "")
   json_response(handler, HTTPStatus.CREATED, {"ok": True, "user": user}, cookie=build_cookie(token))
@@ -150,25 +161,11 @@ def handle_login(handler) -> None:
     return
 
   user = login_payload["user"]
-  if IS_VERCEL and user["role"] in ADMIN_ROLES:
-    serialized_user = get_user_by_id(user["id"])
-    session_user = {
-      "id": serialized_user["id"],
-      "username": serialized_user["username"],
-      "email": serialized_user["email"],
-      "role": serialized_user["role"],
-      "fullName": serialized_user["full_name"],
-      "phoneNumber": serialized_user["phone_number"],
-      "companyName": serialized_user["company_name"],
-      "professionType": serialized_user["profession_type"],
-      "serviceArea": serialized_user["service_area"],
-      "yearsExperience": serialized_user["years_experience"],
-      "specialties": serialized_user["specialties"],
-      "preferredRegion": serialized_user["preferred_region"],
-      "website": serialized_user["website"],
-      "createdAt": serialized_user["created_at"],
-      "status": "active" if serialized_user["is_active"] else "inactive",
-    }
+  if IS_VERCEL:
+    session_user = build_session_user(user["id"])
+    if not session_user:
+      json_response(handler, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "ACCOUNT_NOT_FOUND", "message": "The requested account could not be found."})
+      return
     token = issue_signed_session_token(session_user, SESSION_TTL_SECONDS)
     json_response(handler, HTTPStatus.OK, {"ok": True, "user": session_user}, cookie=build_cookie(token))
     return

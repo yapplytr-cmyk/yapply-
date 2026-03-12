@@ -407,8 +407,12 @@ async function loginBrowserPublicAccount(payload) {
 
   const account = accounts.find((entry) => entry.email === identifier);
 
-  if (!account || (expectedRole && account.role !== expectedRole)) {
+  if (!account) {
     throw createAuthError("INVALID_CREDENTIALS", "Email or password is incorrect.");
+  }
+
+  if (expectedRole && account.role !== expectedRole) {
+    throw createAuthError("ROLE_MISMATCH", "This account does not match the selected login role.");
   }
 
   if (account.role === "admin" || account.role === "moderator") {
@@ -425,6 +429,12 @@ async function loginBrowserPublicAccount(payload) {
     throw createAuthError("INVALID_CREDENTIALS", "Email or password is incorrect.");
   }
 
+  try {
+    await syncBrowserPublicAccountToBackend(account, password);
+  } catch (error) {
+    // Keep legacy browser-backed login available even if backend sync fails.
+  }
+
   const user = serializeBrowserUser(account);
 
   if (!saveBrowserPublicSession(user)) {
@@ -436,6 +446,40 @@ async function loginBrowserPublicAccount(payload) {
 
   setAuthSession({ authenticated: true, user });
   return user;
+}
+
+async function syncBrowserPublicAccountToBackend(account, password) {
+  if (!usesBrowserPublicAuth()) {
+    return;
+  }
+
+  const signupPayload = {
+    role: account.role,
+    fullName: account.fullName,
+    email: account.email,
+    password,
+    confirmPassword: password,
+    phoneNumber: account.phoneNumber || "",
+    companyName: account.companyName || "",
+    professionType: account.professionType || "",
+    serviceArea: account.serviceArea || "",
+    yearsExperience: account.yearsExperience ?? "",
+    specialties: account.specialties || "",
+    preferredRegion: account.preferredRegion || "",
+    website: account.website || "",
+  };
+
+  try {
+    await requestJson("/api/auth/signup", signupPayload);
+  } catch (error) {
+    if (error?.code === "EMAIL_IN_USE") {
+      return;
+    }
+
+    if (error?.code) {
+      throw error;
+    }
+  }
 }
 
 async function fetchBackendAdminAccounts() {
@@ -492,10 +536,6 @@ async function requestJson(path, payload) {
 }
 
 export async function signupAccount(payload) {
-  if (usesBrowserPublicAuth()) {
-    return signupBrowserPublicAccount(payload);
-  }
-
   const signupPayload = {
     ...payload,
     role: payload.role || payload.accountRole,
@@ -504,6 +544,20 @@ export async function signupAccount(payload) {
   delete signupPayload.accountRole;
   delete signupPayload.experience;
 
+  if (usesBrowserPublicAuth()) {
+    try {
+      const data = await requestJson("/api/auth/signup", signupPayload);
+      setAuthSession({ authenticated: true, user: data.user });
+      return data.user;
+    } catch (error) {
+      if (error?.code) {
+        throw error;
+      }
+    }
+
+    return signupBrowserPublicAccount(payload);
+  }
+
   const data = await requestJson("/api/auth/signup", signupPayload);
   setAuthSession({ authenticated: true, user: data.user });
   return data.user;
@@ -511,6 +565,16 @@ export async function signupAccount(payload) {
 
 export async function loginAccount(payload, audience = "public") {
   if (audience === "public" && usesBrowserPublicAuth()) {
+    try {
+      const data = await requestJson("/api/auth/login", { ...payload, audience });
+      setAuthSession({ authenticated: true, user: data.user });
+      return data.user;
+    } catch (error) {
+      if (error?.code && error.code !== "INVALID_CREDENTIALS") {
+        throw error;
+      }
+    }
+
     return loginBrowserPublicAccount(payload);
   }
 
