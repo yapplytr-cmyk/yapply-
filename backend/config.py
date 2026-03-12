@@ -20,6 +20,9 @@ FRONTEND_ORIGINS = {
 
 SESSION_COOKIE_NAME = "yapply_session"
 SESSION_TTL_SECONDS = 60 * 60 * 24 * 14
+KV_REST_URL = os.environ.get("KV_REST_API_URL") or os.environ.get("UPSTASH_REDIS_REST_URL") or ""
+KV_REST_TOKEN = os.environ.get("KV_REST_API_TOKEN") or os.environ.get("UPSTASH_REDIS_REST_TOKEN") or ""
+USE_REMOTE_USER_STORE = bool(KV_REST_URL and KV_REST_TOKEN)
 
 PUBLIC_SIGNUP_ROLES = {"developer", "client"}
 ADMIN_ROLES = {"admin", "moderator"}

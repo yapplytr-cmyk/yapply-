@@ -4,8 +4,10 @@ import json
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
-from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, SEED_DB_PATH, SESSION_TTL_SECONDS
+from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, KV_REST_TOKEN, KV_REST_URL, SEED_DB_PATH, SESSION_TTL_SECONDS, USE_REMOTE_USER_STORE
 from .security import hash_password
 
 
@@ -15,6 +17,115 @@ def utc_now() -> datetime:
 
 def utc_iso(dt: datetime | None = None) -> str:
   return (dt or utc_now()).replace(microsecond=0).isoformat()
+
+
+def _uses_remote_user_store() -> bool:
+  return USE_REMOTE_USER_STORE
+
+
+def _kv_command_url(command: str, *parts: str) -> str:
+  encoded_parts = "/".join(quote(str(part), safe="") for part in parts)
+  base = KV_REST_URL.rstrip("/")
+  return f"{base}/{command}{f'/{encoded_parts}' if encoded_parts else ''}"
+
+
+def _kv_request(command: str, *parts: str, method: str = "GET", payload: str | None = None):
+  if not _uses_remote_user_store():
+    raise RuntimeError("Remote user store is not configured.")
+
+  data = payload.encode("utf-8") if payload is not None else None
+  request = Request(
+    _kv_command_url(command, *parts),
+    method=method,
+    data=data,
+    headers={
+      "Authorization": f"Bearer {KV_REST_TOKEN}",
+      "Content-Type": "application/json; charset=utf-8",
+    },
+  )
+
+  with urlopen(request, timeout=10) as response:
+    raw = response.read().decode("utf-8")
+    return json.loads(raw) if raw else {"result": None}
+
+
+def _kv_get(key: str):
+  return _kv_request("get", key).get("result")
+
+
+def _kv_set(key: str, value: str):
+  _kv_request("set", key, method="POST", payload=value)
+
+
+def _kv_delete(*keys: str):
+  if keys:
+    _kv_request("del", *keys)
+
+
+def _kv_sadd(set_key: str, *values: str):
+  if values:
+    _kv_request("sadd", set_key, *values)
+
+
+def _kv_srem(set_key: str, *values: str):
+  if values:
+    _kv_request("srem", set_key, *values)
+
+
+def _kv_smembers(set_key: str) -> list[str]:
+  result = _kv_request("smembers", set_key).get("result")
+  return result if isinstance(result, list) else []
+
+
+def _user_record_key(user_id: str) -> str:
+  return f"yapply:user:{user_id}"
+
+
+def _user_email_key(email: str) -> str:
+  return f"yapply:user-by-email:{email.strip().lower()}"
+
+
+def _user_username_key(username: str) -> str:
+  return f"yapply:user-by-username:{username.strip().lower()}"
+
+
+USER_IDS_KEY = "yapply:user-ids"
+
+
+def _load_remote_user_by_id(user_id: str) -> dict | None:
+  raw = _kv_get(_user_record_key(user_id))
+  if not raw:
+    return None
+
+  try:
+    return json.loads(raw) if isinstance(raw, str) else raw
+  except json.JSONDecodeError:
+    return None
+
+
+def _load_remote_user_by_index(key: str) -> dict | None:
+  user_id = _kv_get(key)
+  if not user_id:
+    return None
+
+  return _load_remote_user_by_id(str(user_id))
+
+
+def _list_remote_users() -> list[dict]:
+  users = [_load_remote_user_by_id(user_id) for user_id in _kv_smembers(USER_IDS_KEY)]
+  filtered = [user for user in users if user]
+  filtered.sort(key=lambda user: (user.get("created_at") or "", user.get("full_name") or ""), reverse=True)
+  return filtered
+
+
+def _count_remote_active_admin_users(exclude_user_id: str | None = None) -> int:
+  count = 0
+  for user in _list_remote_users():
+    if exclude_user_id and user.get("id") == exclude_user_id:
+      continue
+    if user.get("role") in ADMIN_ROLES and int(user.get("is_active", 1)) == 1:
+      count += 1
+  return count
 
 
 def ensure_database() -> None:
@@ -127,6 +238,9 @@ def serialize_user(row: sqlite3.Row) -> dict:
 
 
 def list_users() -> list[dict]:
+  if _uses_remote_user_store():
+    return [serialize_user(row) for row in _list_remote_users()]
+
   with get_connection() as connection:
     rows = connection.execute(
       """
@@ -140,11 +254,17 @@ def list_users() -> list[dict]:
 
 
 def get_user_by_email(email: str) -> sqlite3.Row | None:
+  if _uses_remote_user_store():
+    return _load_remote_user_by_index(_user_email_key(email))
+
   with get_connection() as connection:
     return connection.execute("SELECT * FROM users WHERE lower(email) = lower(?) LIMIT 1", (email.strip(),)).fetchone()
 
 
 def get_user_by_username(username: str) -> sqlite3.Row | None:
+  if _uses_remote_user_store():
+    return _load_remote_user_by_index(_user_username_key(username))
+
   with get_connection() as connection:
     return connection.execute("SELECT * FROM users WHERE lower(username) = lower(?) LIMIT 1", (username.strip(),)).fetchone()
 
@@ -154,11 +274,17 @@ def get_user_by_identifier(identifier: str) -> sqlite3.Row | None:
 
 
 def get_user_by_id(user_id: str) -> sqlite3.Row | None:
+  if _uses_remote_user_store():
+    return _load_remote_user_by_id(user_id)
+
   with get_connection() as connection:
     return connection.execute("SELECT * FROM users WHERE id = ? LIMIT 1", (user_id,)).fetchone()
 
 
 def count_active_admin_users(exclude_user_id: str | None = None) -> int:
+  if _uses_remote_user_store():
+    return _count_remote_active_admin_users(exclude_user_id)
+
   query = "SELECT COUNT(*) FROM users WHERE role IN (?, ?) AND is_active = 1"
   params: list[str] = ["admin", "moderator"]
 
@@ -171,6 +297,16 @@ def count_active_admin_users(exclude_user_id: str | None = None) -> int:
 
 
 def update_user_status(user_id: str, is_active: bool) -> dict | None:
+  if _uses_remote_user_store():
+    record = _load_remote_user_by_id(user_id)
+    if not record:
+      return None
+
+    record["is_active"] = 1 if is_active else 0
+    record["updated_at"] = utc_iso()
+    _kv_set(_user_record_key(user_id), json.dumps(record))
+    return serialize_user(record)
+
   now = utc_iso()
 
   with get_connection() as connection:
@@ -188,6 +324,21 @@ def update_user_status(user_id: str, is_active: bool) -> dict | None:
 
 
 def delete_user_account(user_id: str) -> bool:
+  if _uses_remote_user_store():
+    record = _load_remote_user_by_id(user_id)
+    if not record:
+      return False
+
+    _kv_delete(_user_record_key(user_id))
+    _kv_delete(_user_email_key(record["email"]))
+
+    username = record.get("username")
+    if username:
+      _kv_delete(_user_username_key(username))
+
+    _kv_srem(USER_IDS_KEY, user_id)
+    return True
+
   with get_connection() as connection:
     cursor = connection.execute("DELETE FROM users WHERE id = ?", (user_id,))
 
@@ -201,6 +352,44 @@ def create_user(payload: dict) -> dict:
 
   now = utc_iso()
   user_id = str(uuid.uuid4())
+
+  if _uses_remote_user_store():
+    email = payload["email"].strip().lower()
+    username = (payload.get("username") or "").strip().lower() or None
+
+    if get_user_by_email(email):
+      raise sqlite3.IntegrityError("UNIQUE constraint failed: users.email")
+
+    if username and get_user_by_username(username):
+      raise sqlite3.IntegrityError("UNIQUE constraint failed: users.username")
+
+    record = {
+      "id": user_id,
+      "username": payload.get("username"),
+      "email": email,
+      "password_hash": hash_password(payload["password"]),
+      "role": role,
+      "full_name": payload["fullName"].strip(),
+      "phone_number": payload.get("phoneNumber"),
+      "company_name": payload.get("companyName"),
+      "profession_type": payload.get("professionType"),
+      "service_area": payload.get("serviceArea"),
+      "years_experience": payload.get("yearsExperience"),
+      "specialties": payload.get("specialties"),
+      "preferred_region": payload.get("preferredRegion"),
+      "website": payload.get("website"),
+      "created_at": now,
+      "updated_at": now,
+      "is_active": 1,
+    }
+
+    _kv_set(_user_record_key(user_id), json.dumps(record))
+    _kv_set(_user_email_key(email), user_id)
+    if username:
+      _kv_set(_user_username_key(username), user_id)
+    _kv_sadd(USER_IDS_KEY, user_id)
+
+    return serialize_user(record)
 
   with get_connection() as connection:
     connection.execute(
