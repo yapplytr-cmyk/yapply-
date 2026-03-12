@@ -476,6 +476,107 @@ def list_profiles() -> list[dict[str, Any]]:
   return [profile for row in response if (profile := normalize_profile_row(row))]
 
 
+def _read_auth_user_field(user: dict[str, Any], *keys: str) -> Any:
+  for key in keys:
+    if key in user and user.get(key) not in {None, ""}:
+      return user.get(key)
+
+  metadata_sources = [
+    user.get("user_metadata") if isinstance(user.get("user_metadata"), dict) else {},
+    user.get("raw_user_meta_data") if isinstance(user.get("raw_user_meta_data"), dict) else {},
+    user.get("app_metadata") if isinstance(user.get("app_metadata"), dict) else {},
+  ]
+
+  for metadata in metadata_sources:
+    for key in keys:
+      if key in metadata and metadata.get(key) not in {None, ""}:
+        return metadata.get(key)
+
+  return None
+
+
+def _normalize_auth_user_account(user: dict[str, Any]) -> dict[str, Any] | None:
+  if not isinstance(user, dict) or not user.get("id"):
+    return None
+
+  email = str(_read_auth_user_field(user, "email") or "").strip().lower()
+  role = _normalize_role(
+    _read_auth_user_field(user, "role")
+    or _read_auth_user_field(user, "account_role")
+  )
+  status = str(_read_auth_user_field(user, "status") or "active").strip().lower()
+
+  if status not in {"active", "inactive"}:
+    status = "active"
+
+  return {
+    "id": str(user.get("id")),
+    "username": _read_auth_user_field(user, "username"),
+    "email": email or None,
+    "role": role,
+    "status": status,
+    "fullName": _read_auth_user_field(user, "full_name", "fullName", "name") or "",
+    "phoneNumber": _read_auth_user_field(user, "phone_number", "phoneNumber", "phone"),
+    "companyName": _read_auth_user_field(user, "company_name", "companyName"),
+    "professionType": _read_auth_user_field(user, "profession_type", "professionType"),
+    "serviceArea": _read_auth_user_field(user, "service_area", "serviceArea"),
+    "yearsExperience": _read_auth_user_field(user, "years_experience", "yearsExperience"),
+    "specialties": _read_auth_user_field(user, "specialties"),
+    "preferredRegion": _read_auth_user_field(user, "preferred_region", "preferredRegion"),
+    "website": _read_auth_user_field(user, "website"),
+    "createdAt": user.get("created_at"),
+    "updatedAt": user.get("updated_at") or user.get("last_sign_in_at"),
+  }
+
+
+def list_account_directory() -> list[dict[str, Any]]:
+  profiles = list_profiles()
+  profiles_by_id = {profile["id"]: profile for profile in profiles if profile.get("id")}
+
+  response = _supabase_request(
+    "/auth/v1/admin/users?page=1&per_page=1000",
+    use_service_role=True,
+  )
+  users = response.get("users") if isinstance(response, dict) else []
+
+  merged_accounts: list[dict[str, Any]] = []
+  seen_ids: set[str] = set()
+
+  for user in users if isinstance(users, list) else []:
+    auth_account = _normalize_auth_user_account(user)
+    if not auth_account or not auth_account.get("id"):
+      continue
+
+    account_id = auth_account["id"]
+    profile = profiles_by_id.get(account_id)
+
+    if profile:
+      merged_accounts.append(
+        {
+          **auth_account,
+          **profile,
+          "email": profile.get("email") or auth_account.get("email"),
+          "createdAt": profile.get("createdAt") or auth_account.get("createdAt"),
+          "updatedAt": profile.get("updatedAt") or auth_account.get("updatedAt"),
+        }
+      )
+    else:
+      merged_accounts.append(auth_account)
+
+    seen_ids.add(account_id)
+
+  for profile in profiles:
+    account_id = profile.get("id")
+    if account_id and account_id not in seen_ids:
+      merged_accounts.append(profile)
+
+  return sorted(
+    merged_accounts,
+    key=lambda account: str(account.get("createdAt") or ""),
+    reverse=True,
+  )
+
+
 def count_active_admin_profiles(exclude_user_id: str | None = None) -> int:
   count = 0
   for profile in list_profiles():

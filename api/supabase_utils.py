@@ -12,6 +12,7 @@ from backend.supabase import (
   delete_user_account,
   get_runtime_status,
   get_public_auth_config,
+  list_account_directory,
   list_profiles,
   require_admin_access,
   resolve_admin_email,
@@ -153,7 +154,7 @@ def handle_public_login(handler) -> None:
 
 def handle_admin_accounts(handler) -> None:
   require_admin_access(extract_bearer_token(handler))
-  accounts = list_profiles()
+  accounts = list_account_directory()
   json_response(handler, HTTPStatus.OK, {"ok": True, "accounts": accounts})
 
 
