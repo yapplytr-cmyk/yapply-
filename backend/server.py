@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, urlparse
 
 from api.supabase_utils import (
   handle_admin_account_delete as handle_supabase_admin_account_delete,
+  handle_admin_login,
   handle_admin_account_store_status as handle_supabase_admin_account_store_status,
   handle_admin_account_status as handle_supabase_admin_account_status,
   handle_admin_accounts as handle_supabase_admin_accounts,
@@ -341,6 +342,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
 
   def do_POST(self):
     parsed = urlparse(self.path)
+
+    if parsed.path == "/api/auth/admin/login":
+      run_supabase_action(self, handle_admin_login)
+      return
 
     if parsed.path == "/api/auth/admin/resolve":
       run_supabase_action(self, handle_admin_identifier_resolve)

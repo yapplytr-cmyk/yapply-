@@ -158,6 +158,55 @@ def _supabase_request(
     ) from error
 
 
+def sign_in_with_password(email: str, password: str) -> dict[str, Any]:
+  _ensure_public_config()
+
+  headers = {
+    "Accept": "application/json",
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+    "Content-Type": "application/json; charset=utf-8",
+  }
+  payload = json.dumps(
+    {
+      "email": email.strip().lower(),
+      "password": password,
+    }
+  ).encode("utf-8")
+  request = Request(
+    f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
+    method="POST",
+    data=payload,
+    headers=headers,
+  )
+
+  try:
+    with urlopen(request, timeout=12) as response:
+      data = _decode_json(response.read())
+  except HTTPError as error:
+    raise _extract_error_payload(
+      error.read(),
+      error.code,
+      "INVALID_CREDENTIALS",
+      "Email or password is incorrect.",
+    ) from error
+  except URLError as error:
+    raise SupabaseError(
+      "AUTH_UNAVAILABLE",
+      "Authentication is not available right now. Please try again in a moment.",
+      503,
+    ) from error
+
+  if not isinstance(data, dict) or not data.get("access_token") or not data.get("refresh_token"):
+    raise SupabaseError(
+      "SESSION_INVALID",
+      "Supabase did not return a usable authenticated session.",
+      502,
+    )
+
+  return data
+
+
 def _normalize_role(role: str | None) -> str:
   normalized = (role or "").strip().lower()
   return normalized if normalized in {"client", "developer", "admin", "moderator"} else ""
@@ -334,6 +383,45 @@ def resolve_admin_email(identifier: str) -> dict[str, Any]:
     "email": profile.get("email"),
     "role": profile.get("role"),
     "status": profile.get("status"),
+  }
+
+
+def authenticate_admin(identifier: str, password: str) -> dict[str, Any]:
+  resolved = resolve_admin_email(identifier)
+  session = sign_in_with_password(str(resolved.get("email") or ""), password)
+  user_payload = session.get("user") if isinstance(session, dict) else None
+  user_id = str(user_payload.get("id") or "").strip() if isinstance(user_payload, dict) else ""
+
+  if not user_id:
+    raise SupabaseError(
+      "ADMIN_SESSION_INVALID",
+      "Admin authentication succeeded but the returned session did not include a valid user id.",
+      502,
+    )
+
+  profile = get_profile_by_id(user_id)
+  if not profile:
+    raise SupabaseError("ACCOUNT_PROFILE_MISSING", "The admin profile could not be found.", 404)
+  if profile.get("role") not in ADMIN_ROLES:
+    raise SupabaseError("ADMIN_ONLY", "This login area is reserved for admin accounts.", 403)
+  if profile.get("status") != "active":
+    raise SupabaseError("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.", 403)
+
+  return {
+    "session": {
+      "access_token": session.get("access_token"),
+      "refresh_token": session.get("refresh_token"),
+      "expires_in": session.get("expires_in"),
+      "expires_at": session.get("expires_at"),
+      "token_type": session.get("token_type"),
+    },
+    "user": {
+      "id": profile.get("id"),
+      "email": profile.get("email"),
+      "username": profile.get("username"),
+      "role": profile.get("role"),
+      "status": profile.get("status"),
+    },
   }
 
 

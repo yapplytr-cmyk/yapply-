@@ -445,6 +445,25 @@ async function requestAdminJson(path, payload = null, method = "GET") {
   return data;
 }
 
+async function requestAdminLogin(identifier, password) {
+  const response = await fetch(createApiUrl("/api/auth/admin/login"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ identifier, password }),
+  });
+
+  const data = await readResponsePayload(response, "Admin login failed.");
+
+  if (!response.ok) {
+    throw createAuthError(data.code || "UNKNOWN_ERROR", data.message || "Admin login failed.");
+  }
+
+  return data;
+}
+
 export async function signupAccount(payload) {
   const signupPayload = ensurePublicSignupPayload(payload);
   const supabase = await getSupabaseClient();
@@ -522,6 +541,39 @@ export async function loginAccount(payload, audience = "public") {
 
   if (!validateEmail(email)) {
     throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
+  }
+
+  if (audience === "admin") {
+    const result = await requestAdminLogin(rawIdentifier, password);
+    const sessionPayload = result.session || {};
+
+    if (!sessionPayload.access_token || !sessionPayload.refresh_token) {
+      throw createAuthError(
+        "ADMIN_SESSION_INVALID",
+        "Admin authentication did not return a usable session."
+      );
+    }
+
+    const { error: setSessionError } = await supabase.auth.setSession({
+      access_token: sessionPayload.access_token,
+      refresh_token: sessionPayload.refresh_token,
+    });
+
+    if (setSessionError) {
+      throw mapSupabaseError(setSessionError, "ADMIN_SESSION_INVALID");
+    }
+
+    const session = await loadConfirmedSession({
+      expectedRole: "",
+      audience: "admin",
+      strict: true,
+    });
+
+    if (!session.authenticated) {
+      throw createAuthError("ADMIN_SESSION_INVALID", "Login succeeded but the admin session could not be confirmed.");
+    }
+
+    return session.user;
   }
 
   const { error } = await supabase.auth.signInWithPassword({

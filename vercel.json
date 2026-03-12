@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/auth/config", "destination": "/api/router?route=auth/config" },
+    { "source": "/api/auth/admin/login", "destination": "/api/router?route=auth/admin/login" },
     { "source": "/api/auth/admin/resolve", "destination": "/api/router?route=auth/admin/resolve" },
     { "source": "/api/admin/accounts", "destination": "/api/router?route=admin/accounts" },
     { "source": "/api/admin/account-store-status", "destination": "/api/router?route=admin/account-store-status" },

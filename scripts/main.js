@@ -84,7 +84,7 @@ function renderBootFallback(appRoot, error) {
 
 async function loadAuthApi() {
   if (!authApiPromise) {
-    authApiPromise = import("./core/auth.js?v=20260312-admin-email-fallback").catch(() => null);
+    authApiPromise = import("./core/auth.js?v=20260312-admin-backend-login").catch(() => null);
   }
 
   return authApiPromise;
