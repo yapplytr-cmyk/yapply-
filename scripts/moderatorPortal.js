@@ -1,4 +1,4 @@
-import { fetchAuthSession, loginAccount } from "./core/auth.js?v=20260312-supabase-auth";
+import { fetchAuthSession, loginAccount } from "./core/auth.js?v=20260312-supabase-runtime-fix";
 
 const REDIRECT_URL = "./admin-dashboard.html";
 const DEFAULT_ERROR_TEXT = "Enter valid moderator credentials to continue.";

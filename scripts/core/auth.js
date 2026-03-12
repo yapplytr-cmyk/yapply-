@@ -1,5 +1,5 @@
 import { clearAuthSession, setAuthSession } from "./state.js";
-import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js";
+import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";

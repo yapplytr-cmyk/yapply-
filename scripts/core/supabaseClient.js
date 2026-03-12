@@ -2,21 +2,10 @@ let configPromise = null;
 let modulePromise = null;
 let clientPromise = null;
 
-function getLocalBackendOrigin() {
-  const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}:4174`;
-}
-
 function getBackendOrigin() {
-  const configuredOrigin = window.YAPPLY_AUTH_ORIGIN || document.documentElement.dataset.authOrigin || "";
-
-  if (configuredOrigin) {
-    return configuredOrigin.replace(/\/$/, "");
-  }
-
-  const { hostname, port, origin } = window.location;
+  const { hostname, port, origin, protocol } = window.location;
   const isLocalFrontend = (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
-  return isLocalFrontend ? getLocalBackendOrigin() : origin;
+  return isLocalFrontend ? `${protocol}//${hostname}:4174` : origin;
 }
 
 async function readJson(response, fallbackMessage) {
@@ -47,17 +36,20 @@ export function getRuntimeApiOrigin() {
 export async function getSupabaseRuntimeConfig() {
   if (!configPromise) {
     configPromise = (async () => {
-      const response = await fetch(`${getBackendOrigin()}/api/auth/config`, {
+      const response = await fetch(new URL("/api/auth/config", `${getBackendOrigin()}/`).toString(), {
         method: "GET",
         headers: {
           Accept: "application/json",
         },
+        cache: "no-store",
       });
       const data = await readJson(response, "Supabase configuration could not be loaded.");
 
       if (!response.ok) {
         const error = new Error(data.message || "Supabase configuration could not be loaded.");
         error.code = data.code || "SUPABASE_NOT_CONFIGURED";
+        error.debug = data.debug || null;
+        error.reason = data.reason || null;
         throw error;
       }
 
