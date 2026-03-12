@@ -503,6 +503,40 @@ def seed_admin_account(email: str, password: str, full_name: str, role: str = "a
 
   if existing:
     now = utc_iso()
+    normalized_email = email.strip().lower()
+    normalized_username = (username or "").strip().lower() or None
+
+    if _uses_remote_user_store():
+      previous_email = (existing.get("email") or "").strip().lower()
+      previous_username = (existing.get("username") or "").strip().lower() or None
+      record = {
+        **existing,
+        "username": username,
+        "email": normalized_email,
+        "password_hash": hash_password(password),
+        "role": role,
+        "full_name": full_name.strip(),
+        "updated_at": now,
+        "is_active": 1,
+      }
+
+      _kv_set(_user_record_key(existing["id"]), json.dumps(record))
+      _kv_set(_user_email_key(normalized_email), existing["id"])
+      _kv_sadd(USER_IDS_KEY, existing["id"])
+
+      if previous_email and previous_email != normalized_email:
+        _kv_delete(_user_email_key(previous_email))
+
+      if previous_username and previous_username != normalized_username:
+        _kv_delete(_user_username_key(previous_username))
+
+      if normalized_username:
+        _kv_set(_user_username_key(normalized_username), existing["id"])
+      elif previous_username:
+        _kv_delete(_user_username_key(previous_username))
+
+      return serialize_user(record)
+
     with get_connection() as connection:
       connection.execute(
         """
@@ -510,7 +544,7 @@ def seed_admin_account(email: str, password: str, full_name: str, role: str = "a
         SET username = ?, email = ?, password_hash = ?, role = ?, full_name = ?, updated_at = ?, is_active = 1
         WHERE id = ?
         """,
-        (username, email.strip().lower(), hash_password(password), role, full_name.strip(), now, existing["id"]),
+        (username, normalized_email, hash_password(password), role, full_name.strip(), now, existing["id"]),
       )
       row = connection.execute("SELECT * FROM users WHERE id = ?", (existing["id"],)).fetchone()
     return serialize_user(row)

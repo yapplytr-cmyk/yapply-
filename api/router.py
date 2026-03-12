@@ -32,6 +32,13 @@ def resolve_route(path: str) -> str:
 
 
 class handler(BaseHTTPRequestHandler):
+  def _safe_json_error(self, message: str = "The requested API action failed due to a server error."):
+    json_response(
+      self,
+      HTTPStatus.INTERNAL_SERVER_ERROR,
+      {"ok": False, "code": "SERVER_ERROR", "message": message},
+    )
+
   def do_OPTIONS(self):
     self.send_response(HTTPStatus.NO_CONTENT)
     self.send_header("Access-Control-Allow-Headers", "Content-Type")
@@ -39,59 +46,65 @@ class handler(BaseHTTPRequestHandler):
     self.end_headers()
 
   def do_GET(self):
-    route = resolve_route(self.path)
+    try:
+      route = resolve_route(self.path)
 
-    if route == "auth/session":
-      handle_session(self)
-      return
+      if route == "auth/session":
+        handle_session(self)
+        return
 
-    if route == "admin/accounts":
-      handle_admin_accounts(self)
-      return
+      if route == "admin/accounts":
+        handle_admin_accounts(self)
+        return
 
-    if route == "admin/account-store-status":
-      handle_admin_account_store_status(self)
-      return
+      if route == "admin/account-store-status":
+        handle_admin_account_store_status(self)
+        return
 
-    if route == "marketplace/listings/detail":
-      handle_marketplace_listing_detail(self)
-      return
+      if route == "marketplace/listings/detail":
+        handle_marketplace_listing_detail(self)
+        return
 
-    json_response(
-      self,
-      HTTPStatus.NOT_FOUND,
-      {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
-    )
+      json_response(
+        self,
+        HTTPStatus.NOT_FOUND,
+        {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
+      )
+    except Exception:
+      self._safe_json_error()
 
   def do_POST(self):
-    route = resolve_route(self.path)
+    try:
+      route = resolve_route(self.path)
 
-    if route == "auth/signup":
-      handle_signup(self)
-      return
+      if route == "auth/signup":
+        handle_signup(self)
+        return
 
-    if route == "auth/login":
-      handle_login(self)
-      return
+      if route == "auth/login":
+        handle_login(self)
+        return
 
-    if route == "auth/logout":
-      handle_logout(self)
-      return
+      if route == "auth/logout":
+        handle_logout(self)
+        return
 
-    if route == "admin/accounts/status":
-      handle_admin_account_status(self)
-      return
+      if route == "admin/accounts/status":
+        handle_admin_account_status(self)
+        return
 
-    if route == "admin/accounts/delete":
-      handle_admin_account_delete(self)
-      return
+      if route == "admin/accounts/delete":
+        handle_admin_account_delete(self)
+        return
 
-    if route == "marketplace/listings/create":
-      handle_marketplace_listing_create(self)
-      return
+      if route == "marketplace/listings/create":
+        handle_marketplace_listing_create(self)
+        return
 
-    json_response(
-      self,
-      HTTPStatus.NOT_FOUND,
-      {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
-    )
+      json_response(
+        self,
+        HTTPStatus.NOT_FOUND,
+        {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
+      )
+    except Exception:
+      self._safe_json_error()

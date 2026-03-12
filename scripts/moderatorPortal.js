@@ -31,6 +31,14 @@ function setDebug(message) {
 function resetState() {
   $("#moderator-login-error")?.setAttribute("hidden", "");
   $("#moderator-login-success")?.setAttribute("hidden", "");
+  const errorText = $("#moderator-login-error-text");
+  const successText = $("#moderator-login-success-text");
+  if (errorText) {
+    errorText.textContent = "Enter valid moderator credentials to continue.";
+  }
+  if (successText) {
+    successText.textContent = "Admin authentication succeeded. Redirecting to the dashboard...";
+  }
   const authOrigin = getAuthOrigin();
   setDebug(`Backend origin: ${authOrigin}`);
 }
@@ -61,7 +69,22 @@ function showSuccess(message) {
 
 async function readJson(response) {
   try {
-    return await response.json();
+    const raw = await response.text();
+    if (!raw) {
+      return {};
+    }
+
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      const compact = raw.replace(/\s+/g, " ").trim();
+      return {
+        code: response.ok ? undefined : response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR",
+        message: compact.startsWith("<")
+          ? `Authentication request failed (HTTP ${response.status}).`
+          : compact,
+      };
+    }
   } catch (error) {
     return {};
   }
@@ -88,8 +111,9 @@ async function loginModerator(identifier, password) {
   setDebug(`Login status: ${response.status}`);
 
   if (!response.ok) {
-    const error = new Error(data.message || "Authentication request failed.");
-    error.code = data.code || "UNKNOWN_ERROR";
+    const error = new Error(data.message || `Authentication request failed (HTTP ${response.status}).`);
+    error.code = data.code || (response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR");
+    error.status = response.status;
     throw error;
   }
 
@@ -112,8 +136,9 @@ async function verifySession() {
   setDebug(`Session status: ${response.status}`);
 
   if (!response.ok) {
-    const error = new Error(data.message || "Session verification failed.");
+    const error = new Error(data.message || `Session verification failed (HTTP ${response.status}).`);
     error.code = data.code || "SESSION_FAILED";
+    error.status = response.status;
     throw error;
   }
 
@@ -130,10 +155,18 @@ function getFailureMessage(error) {
       return "Moderator username/email or password is incorrect.";
     case "ADMIN_ONLY":
       return "This login area is reserved for admin or moderator accounts.";
+    case "LOGIN_ACCOUNT_NOT_FOUND":
+      return "The moderator account could not be found in the live auth store.";
+    case "ACCOUNT_NOT_FOUND":
+      return "The moderator account could not be loaded from the live auth store.";
     case "AUTH_UNAVAILABLE":
       return `The backend auth server is not available on ${getAuthOrigin()}.`;
+    case "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE":
+      return "The live admin account store is not available right now.";
     case "SESSION_INVALID":
       return "Login succeeded but the admin session could not be confirmed.";
+    case "SERVER_ERROR":
+      return "The admin authentication service encountered an internal error.";
     default:
       return error?.message || "Something went wrong during moderator login.";
   }
