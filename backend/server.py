@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hmac
 import re
 from http import HTTPStatus
 from http.cookies import SimpleCookie
@@ -10,6 +11,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .config import (
   ADMIN_ROLES,
+  ADMIN_BOOTSTRAP_TOKEN,
   FRONTEND_ORIGINS,
   HOST,
   PORT,
@@ -137,6 +139,27 @@ def require_admin_user(handler: "YapplyRequestHandler") -> dict | None:
     return None
 
   return user
+
+
+def extract_bootstrap_token(handler: "YapplyRequestHandler") -> str:
+  authorization = handler.headers.get("Authorization", "").strip()
+  if authorization.lower().startswith("bearer "):
+    return authorization[7:].strip()
+
+  return handler.headers.get("X-Yapply-Bootstrap-Token", "").strip()
+
+
+def require_bootstrap_token(handler: "YapplyRequestHandler") -> bool:
+  if not ADMIN_BOOTSTRAP_TOKEN:
+    json_response(handler, HTTPStatus.SERVICE_UNAVAILABLE, {"ok": False, "code": "BOOTSTRAP_DISABLED", "message": "The production admin bootstrap token is not configured."})
+    return False
+
+  provided_token = extract_bootstrap_token(handler)
+  if not provided_token or not hmac.compare_digest(provided_token, ADMIN_BOOTSTRAP_TOKEN):
+    json_response(handler, HTTPStatus.FORBIDDEN, {"ok": False, "code": "BOOTSTRAP_TOKEN_INVALID", "message": "A valid bootstrap token is required for this endpoint."})
+    return False
+
+  return True
 
 
 def normalize_text(value: str | None) -> str | None:
@@ -299,6 +322,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       self.handle_admin_account_store_status()
       return
 
+    if parsed.path == "/api/admin/bootstrap-seed":
+      self.handle_admin_bootstrap_seed()
+      return
+
     purge_expired_sessions()
     super().do_GET()
 
@@ -329,6 +356,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       self.handle_admin_account_delete()
       return
 
+    if parsed.path == "/api/admin/bootstrap-seed":
+      self.handle_admin_bootstrap_seed()
+      return
+
     self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
   def handle_auth_session(self) -> None:
@@ -350,6 +381,86 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       return
 
     json_response(self, HTTPStatus.OK, {"ok": True, "status": get_account_store_status()})
+
+  def handle_admin_bootstrap_seed(self) -> None:
+    if not require_bootstrap_token(self):
+      return
+
+    status = get_account_store_status()
+    if status.get("mode") != "remote-kv" or not status.get("remoteConfigured") or not status.get("remoteReachable"):
+      json_response(
+        self,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        {
+          "ok": False,
+          "code": "REMOTE_STORE_REQUIRED",
+          "message": "The active account store is not the live remote KV store.",
+          "status": status,
+        },
+      )
+      return
+
+    existing_user = get_user_by_identifier(SEEDED_ADMIN_EMAIL) or get_user_by_identifier(SEEDED_ADMIN_USERNAME)
+    existed_already = bool(existing_user)
+
+    seeded_user = seed_admin_account(
+      email=SEEDED_ADMIN_EMAIL,
+      password=SEEDED_ADMIN_PASSWORD,
+      full_name=SEEDED_ADMIN_FULL_NAME,
+      role=SEEDED_ADMIN_ROLE,
+      username=SEEDED_ADMIN_USERNAME,
+    )
+
+    verified_user = get_user_by_identifier(SEEDED_ADMIN_USERNAME) or get_user_by_identifier(SEEDED_ADMIN_EMAIL)
+    stored_role = get_record_value(verified_user, "role")
+    stored_hash = get_record_value(verified_user, "password_hash", "passwordHash")
+    password_verified = bool(stored_hash and verify_password(SEEDED_ADMIN_PASSWORD, stored_hash))
+    role_verified = stored_role == SEEDED_ADMIN_ROLE
+    readable = verified_user is not None
+    username_matches = get_record_value(verified_user, "username") == SEEDED_ADMIN_USERNAME
+    email_matches = (get_record_value(verified_user, "email") or "").strip().lower() == SEEDED_ADMIN_EMAIL
+    login_ready = readable and role_verified and password_verified and username_matches and email_matches
+
+    payload = {
+      "ok": login_ready,
+      "status": status,
+      "account": {
+        "identifier": SEEDED_ADMIN_USERNAME,
+        "email": SEEDED_ADMIN_EMAIL,
+        "role": SEEDED_ADMIN_ROLE,
+        "existedAlready": existed_already,
+        "action": "updated" if existed_already else "created",
+        "seededUserId": seeded_user.get("id"),
+        "readBackUserId": get_record_value(verified_user, "id"),
+        "readable": readable,
+        "usernameMatches": username_matches,
+        "emailMatches": email_matches,
+        "roleVerified": role_verified,
+        "passwordVerified": password_verified,
+        "loginShouldNowWork": login_ready,
+      },
+    }
+
+    if not login_ready:
+      json_response(
+        self,
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+        {
+          **payload,
+          "code": "BOOTSTRAP_VERIFY_FAILED",
+          "message": "The admin account was written, but verification against the live KV store failed.",
+        },
+      )
+      return
+
+    json_response(
+      self,
+      HTTPStatus.OK,
+      {
+        **payload,
+        "message": "The admin account is now seeded and verified in the live KV-backed account store.",
+      },
+    )
 
   def resolve_listing_owner(self, payload: dict) -> dict | None:
     session_user = get_authenticated_user(self)

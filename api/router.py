@@ -3,6 +3,7 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
 from api._utils import (
+  handle_admin_bootstrap_seed,
   handle_admin_account_delete,
   handle_admin_account_store_status,
   handle_admin_account_status,
@@ -81,6 +82,10 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "admin/accounts/delete":
       run_api_action(self, handle_admin_account_delete)
+      return
+
+    if route == "admin/bootstrap-seed":
+      run_api_action(self, handle_admin_bootstrap_seed)
       return
 
     if route == "marketplace/listings/create":

@@ -16,6 +16,8 @@ function getAuthOrigin() {
   return isLocalFrontend ? getLocalDevOrigin() : origin;
 }
 const REDIRECT_URL = "./admin-dashboard.html";
+const DEFAULT_ERROR_TEXT = "Enter valid moderator credentials to continue.";
+const DEFAULT_SUCCESS_TEXT = "Admin authentication succeeded. Redirecting to the dashboard...";
 
 function $(selector) {
   return document.querySelector(selector);
@@ -34,10 +36,10 @@ function resetState() {
   const errorText = $("#moderator-login-error-text");
   const successText = $("#moderator-login-success-text");
   if (errorText) {
-    errorText.textContent = "Enter valid moderator credentials to continue.";
+    errorText.textContent = DEFAULT_ERROR_TEXT;
   }
   if (successText) {
-    successText.textContent = "Admin authentication succeeded. Redirecting to the dashboard...";
+    successText.textContent = DEFAULT_SUCCESS_TEXT;
   }
   const authOrigin = getAuthOrigin();
   setDebug(`Backend origin: ${authOrigin}`);
@@ -53,6 +55,10 @@ function showError(message) {
 
   box?.removeAttribute("hidden");
   $("#moderator-login-success")?.setAttribute("hidden", "");
+  const successText = $("#moderator-login-success-text");
+  if (successText) {
+    successText.textContent = DEFAULT_SUCCESS_TEXT;
+  }
 }
 
 function showSuccess(message) {
@@ -65,6 +71,10 @@ function showSuccess(message) {
 
   box?.removeAttribute("hidden");
   $("#moderator-login-error")?.setAttribute("hidden", "");
+  const errorText = $("#moderator-login-error-text");
+  if (errorText) {
+    errorText.textContent = DEFAULT_ERROR_TEXT;
+  }
 }
 
 async function readJson(response) {
