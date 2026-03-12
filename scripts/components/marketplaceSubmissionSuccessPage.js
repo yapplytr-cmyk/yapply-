@@ -19,8 +19,12 @@ function createAttachmentMarkup(attachments = []) {
     return "";
   }
 
-  const imageItems = attachments.filter((item) => item.kind === "image");
-  const fileItems = attachments.filter((item) => item.kind !== "image");
+  const imageItems = attachments.filter((item) => item.kind === "image" && item.dataUrl);
+  const fileItems = attachments.filter((item) => item.kind !== "image" && item.dataUrl);
+
+  if (imageItems.length === 0 && fileItems.length === 0) {
+    return "";
+  }
 
   return `
     <div class="marketplace-success__media">

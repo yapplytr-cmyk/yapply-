@@ -1,4 +1,4 @@
-import { clearAuthSession, setAuthSession } from "./state.js";
+import { clearAuthSession, getAuthSession, setAuthSession } from "./state.js";
 
 const PUBLIC_BROWSER_ACCOUNTS_KEY = "yapply-browser-public-accounts-v1";
 const PUBLIC_BROWSER_SESSION_KEY = "yapply-browser-public-session-v1";
@@ -37,6 +37,14 @@ function createApiUrl(path) {
 
 function usesBrowserPublicAuth() {
   return !isLocalFrontend();
+}
+
+function isPrivilegedRole(role) {
+  return role === "admin" || role === "moderator";
+}
+
+function isBrowserManagedPublicRole(role) {
+  return role === "client" || role === "developer";
 }
 
 function normalizeText(value) {
@@ -78,7 +86,12 @@ function loadBrowserPublicAccounts() {
 }
 
 function saveBrowserPublicAccounts(accounts) {
-  getStorage()?.setItem(PUBLIC_BROWSER_ACCOUNTS_KEY, JSON.stringify(accounts));
+  try {
+    getStorage()?.setItem(PUBLIC_BROWSER_ACCOUNTS_KEY, JSON.stringify(accounts));
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 function loadBrowserPublicSession() {
@@ -97,17 +110,128 @@ function loadBrowserPublicSession() {
 }
 
 function saveBrowserPublicSession(user) {
-  getStorage()?.setItem(
-    PUBLIC_BROWSER_SESSION_KEY,
-    JSON.stringify({
-      authenticated: true,
-      user,
-    })
-  );
+  try {
+    getStorage()?.setItem(
+      PUBLIC_BROWSER_SESSION_KEY,
+      JSON.stringify({
+        authenticated: true,
+        user,
+      })
+    );
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 function clearBrowserPublicSession() {
   getStorage()?.removeItem(PUBLIC_BROWSER_SESSION_KEY);
+}
+
+function createAccountSortValue(account) {
+  const timestamp = account?.createdAt ? Date.parse(account.createdAt) : 0;
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function sortAccountsByCreatedAt(accounts) {
+  return [...accounts].sort((left, right) => {
+    const delta = createAccountSortValue(right) - createAccountSortValue(left);
+
+    if (delta !== 0) {
+      return delta;
+    }
+
+    return String(left.fullName || left.email || "").localeCompare(String(right.fullName || right.email || ""));
+  });
+}
+
+function getMergedAccountKey(account) {
+  if (account?.id) {
+    return `id:${account.id}`;
+  }
+
+  return `email:${normalizeEmail(account?.email || "")}`;
+}
+
+function getBrowserPublicAccountsForAdmin() {
+  return sortAccountsByCreatedAt(
+    loadBrowserPublicAccounts()
+      .filter((account) => isBrowserManagedPublicRole(account.role))
+      .map((account) => ({
+        ...serializeBrowserUser(account),
+        source: "browser-public",
+      }))
+  );
+}
+
+function mergeAccountCollections(primaryAccounts, secondaryAccounts) {
+  const merged = new Map();
+
+  [...primaryAccounts, ...secondaryAccounts].forEach((account) => {
+    if (!account) {
+      return;
+    }
+
+    const key = getMergedAccountKey(account);
+
+    if (!merged.has(key)) {
+      merged.set(key, account);
+    }
+  });
+
+  return sortAccountsByCreatedAt([...merged.values()]);
+}
+
+function syncBrowserManagedSessionForAccount(account) {
+  const storedSession = loadBrowserPublicSession();
+
+  if (!storedSession.authenticated || storedSession.user?.id !== account?.id) {
+    return;
+  }
+
+  if (account.status === "inactive") {
+    clearBrowserPublicSession();
+
+    const activeSession = getAuthSession();
+    if (activeSession?.user?.id === account.id && !isPrivilegedRole(activeSession.user.role)) {
+      clearAuthSession();
+    }
+
+    return;
+  }
+
+  const user = serializeBrowserUser(account);
+
+  if (!saveBrowserPublicSession(user)) {
+    clearBrowserPublicSession();
+
+    const activeSession = getAuthSession();
+    if (activeSession?.user?.id === account.id && !isPrivilegedRole(activeSession.user.role)) {
+      clearAuthSession();
+    }
+
+    return;
+  }
+
+  const activeSession = getAuthSession();
+  if (activeSession?.user?.id === account.id && !isPrivilegedRole(activeSession.user.role)) {
+    setAuthSession({ authenticated: true, user });
+  }
+}
+
+function clearBrowserManagedSessionForUser(userId) {
+  const storedSession = loadBrowserPublicSession();
+
+  if (!storedSession.authenticated || storedSession.user?.id !== userId) {
+    return;
+  }
+
+  clearBrowserPublicSession();
+
+  const activeSession = getAuthSession();
+  if (activeSession?.user?.id === userId && !isPrivilegedRole(activeSession.user.role)) {
+    clearAuthSession();
+  }
 }
 
 function generateRecordId(prefix) {
@@ -255,8 +379,13 @@ async function signupBrowserPublicAccount(payload) {
   const user = serializeBrowserUser(account);
 
   accounts.unshift(account);
-  saveBrowserPublicAccounts(accounts);
-  saveBrowserPublicSession(user);
+  if (!saveBrowserPublicAccounts(accounts) || !saveBrowserPublicSession(user)) {
+    throw createAuthError(
+      "AUTH_UNAVAILABLE",
+      "This browser could not persist the new account securely. Please enable site storage and try again."
+    );
+  }
+
   setAuthSession({ authenticated: true, user });
   return user;
 }
@@ -297,9 +426,42 @@ async function loginBrowserPublicAccount(payload) {
   }
 
   const user = serializeBrowserUser(account);
-  saveBrowserPublicSession(user);
+
+  if (!saveBrowserPublicSession(user)) {
+    throw createAuthError(
+      "AUTH_UNAVAILABLE",
+      "This browser could not persist the new login session. Please enable site storage and try again."
+    );
+  }
+
   setAuthSession({ authenticated: true, user });
   return user;
+}
+
+async function fetchBackendAdminAccounts() {
+  const response = await fetch(createApiUrl("/api/admin/accounts"), {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = {};
+  }
+
+  if (!response.ok) {
+    const authError = new Error(data.message || "Account directory request failed.");
+    authError.code = data.code || "UNKNOWN_ERROR";
+    throw authError;
+  }
+
+  return data.accounts || [];
 }
 
 async function requestJson(path, payload) {
@@ -428,37 +590,68 @@ export function getAuthOrigin() {
 }
 
 export async function fetchAdminAccounts() {
-  const response = await fetch(createApiUrl("/api/admin/accounts"), {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-    },
-  });
+  const backendAccounts = await fetchBackendAdminAccounts();
 
-  let data = {};
-
-  try {
-    data = await response.json();
-  } catch (error) {
-    data = {};
+  if (!usesBrowserPublicAuth()) {
+    return backendAccounts;
   }
 
-  if (!response.ok) {
-    const authError = new Error(data.message || "Account directory request failed.");
-    authError.code = data.code || "UNKNOWN_ERROR";
-    throw authError;
-  }
-
-  return data.accounts || [];
+  return mergeAccountCollections(backendAccounts, getBrowserPublicAccountsForAdmin());
 }
 
 export async function updateAdminAccountStatus(userId, action) {
+  if (usesBrowserPublicAuth()) {
+    const accounts = loadBrowserPublicAccounts();
+    const index = accounts.findIndex((account) => account.id === userId && isBrowserManagedPublicRole(account.role));
+
+    if (index >= 0) {
+      const nextStatus = action === "disable" ? "inactive" : "active";
+      const updatedAccount = {
+        ...accounts[index],
+        status: nextStatus,
+      };
+
+      accounts[index] = updatedAccount;
+      if (!saveBrowserPublicAccounts(accounts)) {
+        throw createAuthError("AUTH_UNAVAILABLE", "The updated account state could not be saved in this browser.");
+      }
+
+      syncBrowserManagedSessionForAccount(updatedAccount);
+
+      return {
+        ...serializeBrowserUser(updatedAccount),
+        source: "browser-public",
+      };
+    }
+  }
+
   const data = await requestJson("/api/admin/accounts/status", { userId, action });
   return data.user;
 }
 
 export async function deleteAdminAccount(userId) {
+  if (usesBrowserPublicAuth()) {
+    const accounts = loadBrowserPublicAccounts();
+    const nextAccounts = accounts.filter((account) => !(account.id === userId && isBrowserManagedPublicRole(account.role)));
+
+    if (nextAccounts.length !== accounts.length) {
+      if (!saveBrowserPublicAccounts(nextAccounts)) {
+        throw createAuthError("AUTH_UNAVAILABLE", "The updated account directory could not be saved in this browser.");
+      }
+
+      clearBrowserManagedSessionForUser(userId);
+
+      try {
+        const marketplaceStore = await import("./marketplaceStore.js");
+        marketplaceStore.deleteOwnedMarketplaceListings?.(userId);
+      } catch (error) {
+        // Keep account deletion resilient even if marketplace cleanup is unavailable.
+      }
+
+      return userId;
+    }
+  }
+
   const data = await requestJson("/api/admin/accounts/delete", { userId });
   return data.deletedUserId;
 }

@@ -93,6 +93,19 @@ function createApiUrl(path) {
   return `${getAuthOrigin()}${path}`;
 }
 
+function isLocalFrontend() {
+  const { hostname, port } = window.location;
+  return (hostname === "127.0.0.1" || hostname === "localhost") && port === "4173";
+}
+
+function usesBrowserManagedListings() {
+  return !isLocalFrontend();
+}
+
+function createSubmissionError(code, message) {
+  return Object.assign(new Error(message), { code });
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -132,6 +145,23 @@ function getStore() {
 
 function setStore(store) {
   return writeJson(STORAGE_KEY, store);
+}
+
+function clearLastSubmissionState(type = "", id = "") {
+  const lastSubmission = getLastSubmission();
+
+  if (!lastSubmission) {
+    return;
+  }
+
+  if ((type && lastSubmission.type !== type) || (id && lastSubmission.id !== id)) {
+    return;
+  }
+
+  const storage = getStorage();
+  storage?.removeItem(LAST_SUBMISSION_KEY);
+  storage?.removeItem(LAST_SUBMISSION_DETAIL_KEY);
+  getSessionStorage()?.removeItem(LAST_SUBMISSION_DETAIL_KEY);
 }
 
 function createBrowserMirror(listing) {
@@ -271,6 +301,49 @@ async function createBackendMarketplaceListing(listing) {
   return data.listing;
 }
 
+function requireListingOwner(type) {
+  const session = getAuthSession();
+
+  if (!session?.authenticated || !session?.user) {
+    throw createSubmissionError("AUTH_REQUIRED", "You need to be signed in before creating a listing.");
+  }
+
+  if (type === "client" && session.user.role !== "client") {
+    throw createSubmissionError("ROLE_MISMATCH", "Only client accounts can submit a project request.");
+  }
+
+  if (type === "professional" && session.user.role !== "developer") {
+    throw createSubmissionError("ROLE_MISMATCH", "Only developer accounts can publish a professional listing.");
+  }
+}
+
+function persistSubmissionArtifacts(type, listing) {
+  const store = getStore();
+  const browserMirror = createBrowserMirror(listing);
+  store[type] = [browserMirror, ...(store[type] || []).filter((item) => item.id !== listing.id)];
+
+  const storeSaved = setStore(store);
+  const summarySaved = writeJson(LAST_SUBMISSION_KEY, { type, id: listing.id, createdAt: listing.createdAt });
+  const detailSaved = writeJson(LAST_SUBMISSION_DETAIL_KEY, { type, listing: browserMirror });
+  writeJsonTo(getSessionStorage(), LAST_SUBMISSION_DETAIL_KEY, { type, listing });
+
+  if (!storeSaved || !summarySaved || !detailSaved) {
+    throw createSubmissionError(
+      "SUBMISSION_SAVE_FAILED",
+      "The listing was created, but the saved result could not be prepared for the redirect."
+    );
+  }
+
+  if (!getSubmittedListing(type, listing.id)) {
+    throw createSubmissionError(
+      "SUBMISSION_SAVE_FAILED",
+      "The listing was created, but the saved preview could not be retrieved."
+    );
+  }
+
+  return listing;
+}
+
 export function getMarketplaceListingHref(type, id) {
   if (type === "professional") {
     return `./marketplace-professional-listing.html?id=${encodeURIComponent(id)}`;
@@ -298,29 +371,11 @@ export function getSubmittedListing(type, id) {
 }
 
 export async function saveMarketplaceSubmission(type, formData) {
-  const store = getStore();
+  requireListingOwner(type);
   const draftListing = type === "professional" ? await createProfessionalListing(formData) : await createClientListing(formData);
-  const listing = await createBackendMarketplaceListing(draftListing);
-  const browserMirror = createBrowserMirror(listing);
-  store[type] = [browserMirror, ...(store[type] || [])];
-  const storeSaved = setStore(store);
-  const summarySaved = writeJson(LAST_SUBMISSION_KEY, { type, id: listing.id, createdAt: listing.createdAt });
-  const detailSaved = writeJson(LAST_SUBMISSION_DETAIL_KEY, { type, listing: browserMirror });
-  const sessionDetailSaved = writeJsonTo(getSessionStorage(), LAST_SUBMISSION_DETAIL_KEY, { type, listing });
+  const listing = usesBrowserManagedListings() ? draftListing : await createBackendMarketplaceListing(draftListing);
 
-  if (!storeSaved || !summarySaved || !detailSaved || !sessionDetailSaved) {
-    throw Object.assign(new Error("The listing was created, but the saved result could not be prepared for the redirect."), {
-      code: "SUBMISSION_SAVE_FAILED",
-    });
-  }
-
-  if (!getSubmittedListing(type, listing.id)) {
-    throw Object.assign(new Error("The listing was created, but the saved preview could not be retrieved."), {
-      code: "SUBMISSION_SAVE_FAILED",
-    });
-  }
-
-  return listing;
+  return persistSubmissionArtifacts(type, listing);
 }
 
 export function getLastSubmission() {
@@ -361,16 +416,32 @@ export function deleteMarketplaceListing(type, id) {
 
   store[type] = nextItems;
   setStore(store);
-
-  const lastSubmission = getLastSubmission();
-  if (lastSubmission?.type === type && lastSubmission?.id === id) {
-    const storage = getStorage();
-    storage?.removeItem(LAST_SUBMISSION_KEY);
-    storage?.removeItem(LAST_SUBMISSION_DETAIL_KEY);
-    getSessionStorage()?.removeItem(LAST_SUBMISSION_DETAIL_KEY);
-  }
+  clearLastSubmissionState(type, id);
 
   return true;
+}
+
+export function deleteOwnedMarketplaceListings(ownerUserId) {
+  if (!ownerUserId) {
+    return 0;
+  }
+
+  const store = getStore();
+  const counts = ["client", "professional"].map((type) => {
+    const items = store[type] || [];
+    const nextItems = items.filter((item) => item.ownerUserId !== ownerUserId);
+    const removedCount = items.length - nextItems.length;
+    store[type] = nextItems;
+
+    items
+      .filter((item) => item.ownerUserId === ownerUserId)
+      .forEach((item) => clearLastSubmissionState(type, item.id));
+
+    return removedCount;
+  });
+
+  setStore(store);
+  return counts.reduce((sum, count) => sum + count, 0);
 }
 
 export function syncMarketplaceAdminMode() {
