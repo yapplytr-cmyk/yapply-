@@ -31,8 +31,16 @@ function setDebug(message) {
 }
 
 function resetState() {
-  $("#moderator-login-error")?.setAttribute("hidden", "");
-  $("#moderator-login-success")?.setAttribute("hidden", "");
+  const errorBox = $("#moderator-login-error");
+  const successBox = $("#moderator-login-success");
+  errorBox?.setAttribute("hidden", "");
+  successBox?.setAttribute("hidden", "");
+  if (errorBox) {
+    errorBox.style.display = "none";
+  }
+  if (successBox) {
+    successBox.style.display = "none";
+  }
   const errorText = $("#moderator-login-error-text");
   const successText = $("#moderator-login-success-text");
   if (errorText) {
@@ -54,7 +62,14 @@ function showError(message) {
   }
 
   box?.removeAttribute("hidden");
-  $("#moderator-login-success")?.setAttribute("hidden", "");
+  if (box) {
+    box.style.display = "grid";
+  }
+  const successBox = $("#moderator-login-success");
+  successBox?.setAttribute("hidden", "");
+  if (successBox) {
+    successBox.style.display = "none";
+  }
   const successText = $("#moderator-login-success-text");
   if (successText) {
     successText.textContent = DEFAULT_SUCCESS_TEXT;
@@ -70,7 +85,14 @@ function showSuccess(message) {
   }
 
   box?.removeAttribute("hidden");
-  $("#moderator-login-error")?.setAttribute("hidden", "");
+  if (box) {
+    box.style.display = "grid";
+  }
+  const errorBox = $("#moderator-login-error");
+  errorBox?.setAttribute("hidden", "");
+  if (errorBox) {
+    errorBox.style.display = "none";
+  }
   const errorText = $("#moderator-login-error-text");
   if (errorText) {
     errorText.textContent = DEFAULT_ERROR_TEXT;
