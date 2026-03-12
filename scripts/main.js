@@ -647,6 +647,7 @@ function setupAuthEntryForms(content) {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       resetErrors();
+      form.hidden = false;
       success.hidden = true;
 
       if (password && confirmPassword) {
@@ -725,6 +726,8 @@ function setupAuthEntryForms(content) {
       const handleError = (error) => {
         const errorCode = error?.code || "UNKNOWN_ERROR";
         const message = content.authFeedback.errors[errorCode] || error?.message || content.authFeedback.errors.UNKNOWN_ERROR;
+        success.hidden = true;
+        form.hidden = false;
         if (errorBox && errorText) {
           errorText.textContent = message;
           errorBox.hidden = false;
@@ -756,6 +759,17 @@ function setupAuthEntryForms(content) {
           if (!session?.authenticated || !session?.user || !role || role !== user?.role) {
             throw Object.assign(new Error("Account session could not be confirmed."), {
               code: "ACCOUNT_SESSION_INVALID",
+            });
+          }
+        }
+
+        if (currentPage === "login" && audience !== "admin") {
+          const session = await authApi.fetchAuthSession();
+          const role = session?.user?.role;
+
+          if (!session?.authenticated || !session?.user || !role || role !== user?.role) {
+            throw Object.assign(new Error("Login session could not be confirmed."), {
+              code: "SESSION_INVALID",
             });
           }
         }

@@ -1196,11 +1196,14 @@ export const translations = {
         PRODUCTION_ACCOUNT_STORE_UNAVAILABLE:
           "The live account store is not configured for shared cross-device login yet. Please contact support.",
         ADMIN_SESSION_INVALID: "Admin authentication did not produce a valid admin session. Please try again.",
+        SESSION_INVALID: "Login succeeded but the session could not be confirmed. Please try again.",
+        SESSION_FAILED: "The current session could not be verified. Please try again.",
         ACCOUNT_SESSION_INVALID: "Your account was created, but the new session could not be confirmed. Please try logging in.",
         INVALID_ACCOUNT_ACTION: "That account action could not be completed.",
         ACCOUNT_NOT_FOUND: "That account could not be found anymore.",
         ACCOUNT_SELF_PROTECTED: "You cannot disable or delete the admin account currently in use.",
         LAST_ADMIN_PROTECTED: "The last remaining admin account cannot be disabled or deleted.",
+        SERVER_ERROR: "The authentication service encountered an internal error. Please try again.",
         UNKNOWN_ERROR: "Something went wrong. Please try again.",
       },
       success: {
@@ -3589,11 +3592,14 @@ export const translations = {
         PRODUCTION_ACCOUNT_STORE_UNAVAILABLE:
           "Canlı hesap deposu henüz paylaşımlı cihazlar arası giriş için yapılandırılmadı. Lütfen destek ile iletişime geçin.",
         ADMIN_SESSION_INVALID: "Yönetici kimlik doğrulaması geçerli bir yönetici oturumu oluşturmadı. Lütfen tekrar deneyin.",
+        SESSION_INVALID: "Giriş başarılı oldu ancak oturum doğrulanamadı. Lütfen tekrar deneyin.",
+        SESSION_FAILED: "Mevcut oturum doğrulanamadı. Lütfen tekrar deneyin.",
         ACCOUNT_SESSION_INVALID: "Hesabınız oluşturuldu ancak yeni oturum doğrulanamadı. Lütfen giriş yapmayı deneyin.",
         INVALID_ACCOUNT_ACTION: "Bu hesap işlemi tamamlanamadı.",
         ACCOUNT_NOT_FOUND: "Bu hesap artık bulunamıyor.",
         ACCOUNT_SELF_PROTECTED: "Kullanmakta olduğunuz yönetici hesabını devre dışı bırakamaz veya silemezsiniz.",
         LAST_ADMIN_PROTECTED: "Son kalan yönetici hesabı devre dışı bırakılamaz veya silinemez.",
+        SERVER_ERROR: "Kimlik doğrulama hizmeti dahili bir hatayla karşılaştı. Lütfen tekrar deneyin.",
         UNKNOWN_ERROR: "Bir sorun oluştu. Lütfen tekrar deneyin.",
       },
       success: {

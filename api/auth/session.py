@@ -1,12 +1,8 @@
 from http.server import BaseHTTPRequestHandler
 
-from api._utils import bootstrap_backend, handle_session
-
-
-bootstrap_backend()
+from api._utils import handle_session, run_api_action
 
 
 class handler(BaseHTTPRequestHandler):
   def do_GET(self):
-    handle_session(self)
-
+    run_api_action(self, handle_session)

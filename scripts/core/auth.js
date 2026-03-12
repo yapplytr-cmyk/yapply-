@@ -61,6 +61,28 @@ function createAuthError(code, message) {
   return error;
 }
 
+async function readResponsePayload(response, fallbackMessage) {
+  try {
+    const raw = await response.text();
+
+    if (!raw) {
+      return {};
+    }
+
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      const compact = raw.replace(/\s+/g, " ").trim();
+      return {
+        code: response.ok ? undefined : response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR",
+        message: compact.startsWith("<") ? `${fallbackMessage} (HTTP ${response.status}).` : compact,
+      };
+    }
+  } catch (error) {
+    return {};
+  }
+}
+
 function requireBrowserStorage() {
   if (!getStorage()) {
     throw createAuthError(
@@ -530,13 +552,7 @@ async function fetchBackendAdminAccounts() {
     },
   });
 
-  let data = {};
-
-  try {
-    data = await response.json();
-  } catch (error) {
-    data = {};
-  }
+  const data = await readResponsePayload(response, "Account directory request failed");
 
   if (!response.ok) {
     const authError = new Error(data.message || "Account directory request failed.");
@@ -556,13 +572,7 @@ async function fetchBackendAccountStoreStatus() {
     },
   });
 
-  let data = {};
-
-  try {
-    data = await response.json();
-  } catch (error) {
-    data = {};
-  }
+  const data = await readResponsePayload(response, "Account store status request failed");
 
   if (!response.ok) {
     const authError = new Error(data.message || "Account store status request failed.");
@@ -583,17 +593,12 @@ async function requestJson(path, payload) {
     body: JSON.stringify(payload),
   });
 
-  let data = {};
-
-  try {
-    data = await response.json();
-  } catch (error) {
-    data = {};
-  }
+  const data = await readResponsePayload(response, "Authentication request failed");
 
   if (!response.ok) {
-    const authError = new Error(data.message || "Authentication request failed.");
-    authError.code = data.code || "UNKNOWN_ERROR";
+    const authError = new Error(data.message || `Authentication request failed (HTTP ${response.status}).`);
+    authError.code = data.code || (response.status >= 500 ? "SERVER_ERROR" : "UNKNOWN_ERROR");
+    authError.status = response.status;
     throw authError;
   }
 
@@ -643,7 +648,15 @@ export async function fetchAuthSession() {
         Accept: "application/json",
       },
     });
-    const data = await response.json();
+    const data = await readResponsePayload(response, "Session verification failed");
+
+    if (!response.ok) {
+      const authError = new Error(data.message || `Session verification failed (HTTP ${response.status}).`);
+      authError.code = data.code || "SESSION_FAILED";
+      authError.status = response.status;
+      throw authError;
+    }
+
     if (usesBrowserPublicAuth() && (!data?.authenticated || !data?.user)) {
       clearBrowserPublicSession();
     }

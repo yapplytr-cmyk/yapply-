@@ -32,6 +32,38 @@ def bootstrap_backend() -> None:
   ensure_seeded_admin_account()
 
 
+def handle_api_failure(handler, error: Exception | None = None) -> None:
+  if isinstance(error, RuntimeError):
+    json_response(
+      handler,
+      HTTPStatus.SERVICE_UNAVAILABLE,
+      {
+        "ok": False,
+        "code": "PRODUCTION_ACCOUNT_STORE_UNAVAILABLE",
+        "message": str(error) or "The live account store is currently unavailable.",
+      },
+    )
+    return
+
+  json_response(
+    handler,
+    HTTPStatus.INTERNAL_SERVER_ERROR,
+    {
+      "ok": False,
+      "code": "SERVER_ERROR",
+      "message": "The requested API action failed due to a server error.",
+    },
+  )
+
+
+def run_api_action(handler, action) -> None:
+  try:
+    bootstrap_backend()
+    action(handler)
+  except Exception as error:
+    handle_api_failure(handler, error)
+
+
 def json_response(handler, status: int, payload: dict, cookie: str | None = None) -> None:
   body = json.dumps(payload).encode("utf-8")
   handler.send_response(status)

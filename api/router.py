@@ -3,7 +3,6 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
 from api._utils import (
-  bootstrap_backend,
   handle_admin_account_delete,
   handle_admin_account_store_status,
   handle_admin_account_status,
@@ -15,10 +14,8 @@ from api._utils import (
   handle_session,
   handle_signup,
   json_response,
+  run_api_action,
 )
-
-
-bootstrap_backend()
 
 
 def resolve_route(path: str) -> str:
@@ -32,13 +29,6 @@ def resolve_route(path: str) -> str:
 
 
 class handler(BaseHTTPRequestHandler):
-  def _safe_json_error(self, message: str = "The requested API action failed due to a server error."):
-    json_response(
-      self,
-      HTTPStatus.INTERNAL_SERVER_ERROR,
-      {"ok": False, "code": "SERVER_ERROR", "message": message},
-    )
-
   def do_OPTIONS(self):
     self.send_response(HTTPStatus.NO_CONTENT)
     self.send_header("Access-Control-Allow-Headers", "Content-Type")
@@ -46,65 +36,59 @@ class handler(BaseHTTPRequestHandler):
     self.end_headers()
 
   def do_GET(self):
-    try:
-      route = resolve_route(self.path)
+    route = resolve_route(self.path)
 
-      if route == "auth/session":
-        handle_session(self)
-        return
+    if route == "auth/session":
+      run_api_action(self, handle_session)
+      return
 
-      if route == "admin/accounts":
-        handle_admin_accounts(self)
-        return
+    if route == "admin/accounts":
+      run_api_action(self, handle_admin_accounts)
+      return
 
-      if route == "admin/account-store-status":
-        handle_admin_account_store_status(self)
-        return
+    if route == "admin/account-store-status":
+      run_api_action(self, handle_admin_account_store_status)
+      return
 
-      if route == "marketplace/listings/detail":
-        handle_marketplace_listing_detail(self)
-        return
+    if route == "marketplace/listings/detail":
+      run_api_action(self, handle_marketplace_listing_detail)
+      return
 
-      json_response(
-        self,
-        HTTPStatus.NOT_FOUND,
-        {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
-      )
-    except Exception:
-      self._safe_json_error()
+    json_response(
+      self,
+      HTTPStatus.NOT_FOUND,
+      {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
+    )
 
   def do_POST(self):
-    try:
-      route = resolve_route(self.path)
+    route = resolve_route(self.path)
 
-      if route == "auth/signup":
-        handle_signup(self)
-        return
+    if route == "auth/signup":
+      run_api_action(self, handle_signup)
+      return
 
-      if route == "auth/login":
-        handle_login(self)
-        return
+    if route == "auth/login":
+      run_api_action(self, handle_login)
+      return
 
-      if route == "auth/logout":
-        handle_logout(self)
-        return
+    if route == "auth/logout":
+      run_api_action(self, handle_logout)
+      return
 
-      if route == "admin/accounts/status":
-        handle_admin_account_status(self)
-        return
+    if route == "admin/accounts/status":
+      run_api_action(self, handle_admin_account_status)
+      return
 
-      if route == "admin/accounts/delete":
-        handle_admin_account_delete(self)
-        return
+    if route == "admin/accounts/delete":
+      run_api_action(self, handle_admin_account_delete)
+      return
 
-      if route == "marketplace/listings/create":
-        handle_marketplace_listing_create(self)
-        return
+    if route == "marketplace/listings/create":
+      run_api_action(self, handle_marketplace_listing_create)
+      return
 
-      json_response(
-        self,
-        HTTPStatus.NOT_FOUND,
-        {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
-      )
-    except Exception:
-      self._safe_json_error()
+    json_response(
+      self,
+      HTTPStatus.NOT_FOUND,
+      {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
+    )
