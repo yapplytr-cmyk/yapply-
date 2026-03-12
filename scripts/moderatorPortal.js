@@ -1,4 +1,4 @@
-import { fetchAuthSession, loginAccount } from "./core/auth.js?v=20260312-supabase-runtime-fix";
+import { fetchAuthSession, loginAccount } from "./core/auth.js?v=20260312-admin-email-fallback";
 
 const REDIRECT_URL = "./admin-dashboard.html";
 const DEFAULT_ERROR_TEXT = "Enter valid moderator credentials to continue.";
@@ -101,6 +101,8 @@ function getFailureMessage(error) {
       return "Please enter the moderator password.";
     case "LOGIN_ACCOUNT_NOT_FOUND":
       return "The moderator account could not be found in Supabase.";
+    case "ADMIN_IDENTIFIER_RESOLUTION_FAILED":
+      return "Moderator username lookup is unavailable right now. Try logging in with the full admin email instead.";
     case "INVALID_CREDENTIALS":
       return "Moderator username/email or password is incorrect.";
     case "ACCOUNT_DISABLED":

@@ -399,6 +399,15 @@ async function resolveAdminIdentifier(identifier) {
   return data.email;
 }
 
+function getModeratorEmailCandidate(identifier) {
+  const value = normalizeText(identifier).toLowerCase();
+  if (!value || value.includes("@")) {
+    return value;
+  }
+
+  return `${value}@yapply.internal`;
+}
+
 async function getCurrentAccessToken() {
   const supabase = await getSupabaseClient();
   const { data, error } = await supabase.auth.getSession();
@@ -500,12 +509,16 @@ export async function loginAccount(payload, audience = "public") {
     throw createAuthError("PASSWORD_REQUIRED", "Please enter your password.");
   }
 
-  const email =
-    audience === "admin"
-      ? rawIdentifier.includes("@")
-        ? normalizeEmail(rawIdentifier)
-        : await resolveAdminIdentifier(rawIdentifier)
-      : normalizeEmail(rawIdentifier);
+  let email;
+  if (audience === "admin") {
+    if (rawIdentifier.includes("@")) {
+      email = normalizeEmail(rawIdentifier);
+    } else {
+      email = getModeratorEmailCandidate(rawIdentifier);
+    }
+  } else {
+    email = normalizeEmail(rawIdentifier);
+  }
 
   if (!validateEmail(email)) {
     throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
@@ -517,6 +530,30 @@ export async function loginAccount(payload, audience = "public") {
   });
 
   if (error) {
+    if (audience === "admin" && !rawIdentifier.includes("@")) {
+      try {
+        const resolvedEmail = await resolveAdminIdentifier(rawIdentifier);
+        const retry = await supabase.auth.signInWithPassword({
+          email: normalizeEmail(resolvedEmail),
+          password,
+        });
+
+        if (retry.error) {
+          throw retry.error;
+        }
+      } catch (resolveError) {
+        if (resolveError?.code === "SUPABASE_UNAVAILABLE") {
+          throw createAuthError(
+            "ADMIN_IDENTIFIER_RESOLUTION_FAILED",
+            "Moderator username lookup is unavailable right now. Try logging in with the full admin email instead.",
+            resolveError
+          );
+        }
+
+        throw mapSupabaseError(resolveError, "INVALID_CREDENTIALS");
+      }
+    }
+
     throw mapSupabaseError(error, "INVALID_CREDENTIALS");
   }
 
