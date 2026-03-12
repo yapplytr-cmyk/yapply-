@@ -8,9 +8,37 @@ SEED_DB_PATH = DATA_DIR / "yapply.db"
 IS_VERCEL = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
 DB_PATH = Path(os.environ.get("YAPPLY_DB_PATH", "/tmp/yapply.db" if IS_VERCEL else str(SEED_DB_PATH)))
 SESSION_SIGNING_SECRET = os.environ.get("YAPPLY_SESSION_SIGNING_SECRET", "yapply-dev-session-secret")
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
-SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+
+
+def _read_first_env(*names: str) -> tuple[str, str]:
+  for name in names:
+    value = os.environ.get(name, "").strip()
+    if value:
+      return value, name
+  return "", ""
+
+
+SUPABASE_URL, SUPABASE_URL_SOURCE = _read_first_env(
+  "SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_URL",
+)
+SUPABASE_URL = SUPABASE_URL.rstrip("/")
+
+SUPABASE_PUBLIC_KEY, SUPABASE_PUBLIC_KEY_SOURCE = _read_first_env(
+  "SUPABASE_ANON_KEY",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "SUPABASE_PUBLISHABLE_KEY",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+)
+
+SUPABASE_SERVICE_KEY, SUPABASE_SERVICE_KEY_SOURCE = _read_first_env(
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEY",
+)
+
+# Backward-compatible aliases for the rest of the codebase.
+SUPABASE_ANON_KEY = SUPABASE_PUBLIC_KEY
+SUPABASE_SERVICE_ROLE_KEY = SUPABASE_SERVICE_KEY
 
 HOST = "127.0.0.1"
 PORT = 4174

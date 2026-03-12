@@ -8,7 +8,14 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .config import SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL
+from .config import (
+  SUPABASE_ANON_KEY,
+  SUPABASE_PUBLIC_KEY_SOURCE,
+  SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_SERVICE_KEY_SOURCE,
+  SUPABASE_URL,
+  SUPABASE_URL_SOURCE,
+)
 
 
 PROFILE_COLUMNS = ",".join(
@@ -49,7 +56,7 @@ def _ensure_public_config() -> None:
   if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     raise SupabaseError(
       "SUPABASE_NOT_CONFIGURED",
-      "Supabase public auth is not configured in this runtime.",
+      "Supabase public auth is not configured in this runtime. Check SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL and SUPABASE_ANON_KEY / NEXT_PUBLIC_SUPABASE_ANON_KEY.",
       503,
     )
 
@@ -59,7 +66,7 @@ def _ensure_service_config() -> None:
   if not SUPABASE_SERVICE_ROLE_KEY:
     raise SupabaseError(
       "SUPABASE_SERVICE_ROLE_MISSING",
-      "The Supabase service role key is not configured in this runtime.",
+      "The Supabase server key is not configured in this runtime. Check SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY.",
       503,
     )
 
@@ -191,6 +198,17 @@ def get_public_auth_config() -> dict[str, Any]:
     "provider": "supabase",
     "supabaseUrl": SUPABASE_URL,
     "supabaseAnonKey": SUPABASE_ANON_KEY,
+    "debug": {
+      "urlDetected": bool(SUPABASE_URL),
+      "publicKeyDetected": bool(SUPABASE_ANON_KEY),
+      "serviceKeyDetected": bool(SUPABASE_SERVICE_ROLE_KEY),
+      "urlSource": SUPABASE_URL_SOURCE or None,
+      "publicKeySource": SUPABASE_PUBLIC_KEY_SOURCE or None,
+      "serviceKeySource": SUPABASE_SERVICE_KEY_SOURCE or None,
+      "publicKeyMode": "publishable" if "PUBLISHABLE" in (SUPABASE_PUBLIC_KEY_SOURCE or "") else "anon",
+      "serviceKeyMode": "secret" if "SECRET" in (SUPABASE_SERVICE_KEY_SOURCE or "") else "service_role",
+      "reason": None,
+    },
   }
 
 
@@ -200,14 +218,24 @@ def get_runtime_status() -> dict[str, Any]:
     "remoteConfigured": bool(SUPABASE_URL and SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY),
     "remoteReachable": False,
     "sourceOfTruth": "supabase-auth+profiles",
+    "detectedEnv": {
+      "urlSource": SUPABASE_URL_SOURCE or None,
+      "publicKeySource": SUPABASE_PUBLIC_KEY_SOURCE or None,
+      "serviceKeySource": SUPABASE_SERVICE_KEY_SOURCE or None,
+      "urlDetected": bool(SUPABASE_URL),
+      "publicKeyDetected": bool(SUPABASE_ANON_KEY),
+      "serviceKeyDetected": bool(SUPABASE_SERVICE_ROLE_KEY),
+      "publicKeyMode": "publishable" if "PUBLISHABLE" in (SUPABASE_PUBLIC_KEY_SOURCE or "") else "anon",
+      "serviceKeyMode": "secret" if "SECRET" in (SUPABASE_SERVICE_KEY_SOURCE or "") else "service_role",
+    },
   }
 
   if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-    status["reason"] = "SUPABASE_URL or SUPABASE_ANON_KEY is missing."
+    status["reason"] = "Supabase URL or public key was not detected. Supported names: SUPABASE_URL, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
     return status
 
   if not SUPABASE_SERVICE_ROLE_KEY:
-    status["reason"] = "SUPABASE_SERVICE_ROLE_KEY is missing."
+    status["reason"] = "Supabase server key was not detected. Supported names: SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SECRET_KEY."
     return status
 
   try:

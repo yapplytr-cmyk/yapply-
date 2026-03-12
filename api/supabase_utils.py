@@ -84,8 +84,22 @@ def run_supabase_action(handler, action) -> None:
 
 
 def handle_public_auth_config(handler) -> None:
-  config = get_public_auth_config()
-  json_response(handler, HTTPStatus.OK, {"ok": True, **config})
+  try:
+    config = get_public_auth_config()
+    json_response(handler, HTTPStatus.OK, {"ok": True, **config})
+  except SupabaseError as error:
+    status = get_runtime_status()
+    json_response(
+      handler,
+      error.status,
+      {
+        "ok": False,
+        "code": error.code,
+        "message": error.message,
+        "debug": status.get("detectedEnv", {}),
+        "reason": status.get("reason"),
+      },
+    )
 
 
 def handle_admin_identifier_resolve(handler) -> None:
