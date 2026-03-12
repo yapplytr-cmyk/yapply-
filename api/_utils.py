@@ -45,7 +45,8 @@ from backend.server import ensure_seeded_admin_account, normalize_text, parse_js
 
 def bootstrap_backend() -> None:
   ensure_database()
-  ensure_seeded_admin_account()
+  if not (IS_VERCEL and USE_REMOTE_USER_STORE):
+    ensure_seeded_admin_account()
 
 
 def handle_api_failure(handler, error: Exception | None = None) -> None:
