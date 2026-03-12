@@ -9,7 +9,7 @@ from urllib.parse import quote
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
-from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, KV_REST_TOKEN, KV_REST_URL, SEED_DB_PATH, SESSION_TTL_SECONDS, USE_REMOTE_USER_STORE
+from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, IS_VERCEL, KV_REST_TOKEN, KV_REST_URL, SEED_DB_PATH, SESSION_TTL_SECONDS, USE_REMOTE_USER_STORE
 from .security import hash_password
 
 
@@ -223,6 +223,9 @@ def get_account_store_status() -> dict:
 
 
 def ensure_database() -> None:
+  if _uses_remote_user_store() and IS_VERCEL:
+    return
+
   DATA_DIR.mkdir(parents=True, exist_ok=True)
 
   if DB_PATH != SEED_DB_PATH and not DB_PATH.exists() and SEED_DB_PATH.exists():
