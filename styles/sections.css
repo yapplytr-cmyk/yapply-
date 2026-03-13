@@ -4078,17 +4078,60 @@ html[data-theme="light"] .auth-role-card.is-active {
     gap: 1rem;
   }
 
-  .hero-stage {
-    order: -1;
-    gap: 0.65rem;
+  .hero-copy {
+    display: contents;
   }
 
-  .hero-copy {
-    padding-top: 0;
+  .hero-stage {
+    order: 3;
+    min-height: auto;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    transform: none;
+    isolation: auto;
+  }
+
+  .hero-stage::before {
+    display: none;
+  }
+
+  .hero .eyebrow {
+    order: 1;
   }
 
   .hero-title {
+    order: 2;
     font-size: 3rem;
+  }
+
+  .hero-lead {
+    order: 4;
+    margin-bottom: 0;
+  }
+
+  .hero-actions {
+    order: 5;
+  }
+
+  .hero-note {
+    order: 6;
+  }
+
+  .chip-row {
+    order: 7;
+  }
+
+  .metric-grid {
+    order: 8;
+  }
+
+  .hero-stage__watermark,
+  .hero-stage__status,
+  .hero-stage__detail,
+  .hero-stage__legend {
+    display: none;
   }
 
   .admin-record__facts {
