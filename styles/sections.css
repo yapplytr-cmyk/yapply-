@@ -4148,23 +4148,19 @@ html[data-theme="light"] .auth-role-card.is-active {
   }
 
   .hero-visual {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: auto;
-    aspect-ratio: auto;
+    min-height: 20rem;
     padding: 0;
     overflow: hidden;
   }
 
   .hero-video {
-    position: relative;
-    inset: auto;
+    position: absolute;
+    inset: 0;
     width: 100%;
-    height: auto;
-    max-height: 70svh;
-    object-fit: contain;
-    object-position: center top;
+    height: 100%;
+    max-height: none;
+    object-fit: cover;
+    object-position: center;
   }
 
   .hero-video-toggle {
