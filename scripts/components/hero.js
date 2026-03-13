@@ -23,13 +23,6 @@ export function createHero(content) {
       `
     )
     .join("");
-  const annotations = content.hero.stage.annotations
-    .map(
-      (label, index) => `
-        <div class="hero-visual__annotation hero-visual__annotation--${String.fromCharCode(97 + index)}">${label}</div>
-      `
-    )
-    .join("");
 
   return `
     <section class="hero section-shell">
@@ -52,7 +45,7 @@ export function createHero(content) {
           <div class="metric-grid">${metrics}</div>
         </div>
 
-        <div class="hero-stage panel" aria-hidden="true">
+        <div class="hero-stage panel">
           <div class="hero-stage__watermark">YAPPLY.</div>
 
           <div class="hero-stage__status">
@@ -60,31 +53,41 @@ export function createHero(content) {
             <p>${content.hero.stage.statusCopy}</p>
           </div>
 
-          <div class="hero-visual" data-hero-visual>
-            <div class="hero-visual__halo"></div>
-            <div class="hero-visual__grid"></div>
-            ${annotations}
-            <canvas class="hero-canvas" data-hero-canvas></canvas>
-
-            <div class="hero-fallback">
-              <div class="hero-fallback__platform"></div>
-              <div class="hero-fallback__villa">
-                <span class="hero-fallback__slab hero-fallback__slab--base"></span>
-                <span class="hero-fallback__slab hero-fallback__slab--upper"></span>
-                <span class="hero-fallback__volume hero-fallback__volume--main"></span>
-                <span class="hero-fallback__volume hero-fallback__volume--wing"></span>
-                <span class="hero-fallback__roof hero-fallback__roof--main"></span>
-                <span class="hero-fallback__roof hero-fallback__roof--wing"></span>
-                <span class="hero-fallback__glass hero-fallback__glass--main"></span>
-                <span class="hero-fallback__glass hero-fallback__glass--side"></span>
-                <span class="hero-fallback__glass hero-fallback__glass--corner"></span>
-                <span class="hero-fallback__frame hero-fallback__frame--a"></span>
-                <span class="hero-fallback__frame hero-fallback__frame--b"></span>
-              </div>
-              <div class="hero-fallback__wire hero-fallback__wire--a"></div>
-              <div class="hero-fallback__wire hero-fallback__wire--b"></div>
-              <div class="hero-fallback__wire hero-fallback__wire--c"></div>
-            </div>
+          <div class="hero-visual hero-visual--video" data-hero-visual>
+            <video
+              class="hero-video"
+              data-hero-video
+              autoplay
+              muted
+              loop
+              playsinline
+              preload="metadata"
+            >
+              <source src="./assets/hero/flow-delpmaspu.mp4" type="video/mp4" />
+            </video>
+            <button
+              class="hero-video-toggle"
+              type="button"
+              data-hero-audio-toggle
+              data-muted="true"
+              aria-label="Enable sound"
+              aria-pressed="false"
+            >
+              <span class="hero-video-toggle__icon hero-video-toggle__icon--muted" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 5 7.8 8H5a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.8L11 19a1 1 0 0 0 1.7-.7V5.7A1 1 0 0 0 11 5Z"/>
+                  <path d="m16.5 9.5 4 5"/>
+                  <path d="m20.5 9.5-4 5"/>
+                </svg>
+              </span>
+              <span class="hero-video-toggle__icon hero-video-toggle__icon--unmuted" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 5 7.8 8H5a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.8L11 19a1 1 0 0 0 1.7-.7V5.7A1 1 0 0 0 11 5Z"/>
+                  <path d="M16.5 9.2a4.8 4.8 0 0 1 0 5.6"/>
+                  <path d="M18.9 7.1a7.8 7.8 0 0 1 0 9.8"/>
+                </svg>
+              </span>
+            </button>
           </div>
 
           <div class="hero-stage__detail">

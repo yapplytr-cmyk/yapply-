@@ -1388,6 +1388,47 @@ function setupDeveloperInquiryForm() {
   });
 }
 
+function setupHeroVideo() {
+  const video = document.querySelector("[data-hero-video]");
+  const toggle = document.querySelector("[data-hero-audio-toggle]");
+
+  if (!video || !toggle) {
+    return;
+  }
+
+  const syncToggleState = () => {
+    const isMuted = video.muted;
+    toggle.setAttribute("data-muted", String(isMuted));
+    toggle.setAttribute("aria-pressed", String(!isMuted));
+    toggle.setAttribute("aria-label", isMuted ? "Enable sound" : "Mute sound");
+  };
+
+  video.defaultMuted = true;
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+  syncToggleState();
+
+  video.play().catch(() => {});
+
+  toggle.addEventListener("click", async () => {
+    const nextMuted = !video.muted;
+    video.muted = nextMuted;
+
+    if (!nextMuted) {
+      try {
+        await video.play();
+      } catch (error) {
+        video.muted = true;
+      }
+    }
+
+    syncToggleState();
+  });
+
+  video.addEventListener("volumechange", syncToggleState);
+}
+
 function bindInteractions(content) {
   cleanupRevealAnimations();
   cleanupParallax();
@@ -1442,6 +1483,7 @@ function bindInteractions(content) {
   setupMarketplaceDeleteActions(content.meta.locale);
   setupDeveloperInquiryForm();
   setupAdminDashboard(content);
+  setupHeroVideo();
   const generation = ++heroSceneGeneration;
   if (getCurrentPage() === "home") {
     loadHeroSceneApi().then((heroSceneApi) => heroSceneApi?.initHeroScene?.()).then((cleanup) => {
