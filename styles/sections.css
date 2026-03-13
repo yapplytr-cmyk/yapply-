@@ -225,7 +225,7 @@
 .hero-video-toggle {
   position: absolute;
   top: 1rem;
-  right: 1rem;
+  left: 1rem;
   z-index: 3;
   display: inline-flex;
   align-items: center;
@@ -233,10 +233,10 @@
   width: 2.9rem;
   height: 2.9rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(8, 12, 20, 0.42);
-  color: rgba(244, 240, 232, 0.88);
-  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(8, 12, 20, 0.58);
+  color: rgba(244, 240, 232, 0.96);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.26);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   transition:
