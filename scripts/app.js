@@ -133,6 +133,15 @@ function createOpenMarketplacePageContent(content, runtimeData = {}) {
     content.openMarketplacePage.tabs.client.items,
     content.openMarketplacePage.tabs.developer.items
   );
+  const publicClientListings = Array.isArray(runtimeData.publicClientListings) ? runtimeData.publicClientListings : [];
+  const mergedClientListings = [...publicClientListings, ...managedCollections.client].filter((item, index, items) => {
+    const itemKey = item?.id || item?.slug || item?.adminKey;
+    if (!itemKey) {
+      return true;
+    }
+
+    return items.findIndex((candidate) => (candidate?.id || candidate?.slug || candidate?.adminKey) === itemKey) === index;
+  });
   const session = getAuthSession();
   const role = session?.authenticated ? session.user?.role || "" : "";
   const allowedSubmissionType = getAllowedMarketplaceSubmissionTypeForRole(role);
@@ -239,7 +248,7 @@ function createOpenMarketplacePageContent(content, runtimeData = {}) {
       ...content.openMarketplacePage.tabs,
       client: {
         ...content.openMarketplacePage.tabs.client,
-        items: Array.isArray(runtimeData.publicClientListings) ? runtimeData.publicClientListings : managedCollections.client,
+        items: mergedClientListings,
       },
       developer: {
         ...content.openMarketplacePage.tabs.developer,
