@@ -63,7 +63,7 @@ export function createHero(content) {
               playsinline
               preload="metadata"
             >
-              <source src="./assets/hero/flow-delpmaspu.mp4" type="video/mp4" />
+              <source src="./assets/hero/wbsite-ekle.mov" type="video/quicktime" />
             </video>
             <button
               class="hero-video-toggle"
