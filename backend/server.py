@@ -535,15 +535,20 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       json_response(self, HTTPStatus.FORBIDDEN, {"ok": False, "code": "OWNER_ROLE_INVALID", "message": "Only developer accounts can create professional listings."})
       return
 
-    stored_listing = create_marketplace_listing(
-      {
-        **listing,
-        "ownerUserId": owner.get("id"),
-        "ownerRole": owner["role"],
-        "ownerName": owner.get("fullName"),
-        "ownerEmail": owner.get("email"),
-      }
-    )
+    try:
+      stored_listing = create_marketplace_listing(
+        {
+          **listing,
+          "ownerUserId": owner.get("id"),
+          "ownerRole": owner["role"],
+          "ownerName": owner.get("fullName"),
+          "ownerEmail": owner.get("email"),
+        }
+      )
+    except ValueError as error:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING", "message": str(error)})
+      return
+
     json_response(self, HTTPStatus.CREATED, {"ok": True, "listing": stored_listing})
 
   def handle_marketplace_listing_detail(self, parsed) -> None:

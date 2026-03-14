@@ -10,6 +10,7 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, IS_VERCEL, KV_REST_TOKEN, KV_REST_URL, SEED_DB_PATH, SESSION_TTL_SECONDS, USE_REMOTE_USER_STORE
+from .marketplace_schema import BID_PREVIEW_LIMIT, validate_marketplace_bid_payload, validate_marketplace_listing_payload
 from .security import hash_password
 
 
@@ -295,6 +296,7 @@ def ensure_database() -> None:
       CREATE INDEX IF NOT EXISTS idx_sessions_hash ON sessions(token_hash);
       CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
       CREATE INDEX IF NOT EXISTS idx_marketplace_listings_owner ON marketplace_listings(owner_user_id);
+      CREATE INDEX IF NOT EXISTS idx_listing_bids_listing ON listing_bids(listing_id);
       CREATE INDEX IF NOT EXISTS idx_listing_bids_bidder ON listing_bids(bidder_user_id);
       """
     )
@@ -699,8 +701,66 @@ def create_listing_shell(owner_user_id: str, owner_role: str, listing_type: str,
   return listing_id
 
 
-def serialize_marketplace_listing(row: sqlite3.Row) -> dict:
-  payload = json.loads(row["payload_json"] or "{}")
+def _load_json_dict(raw_value) -> dict:
+  if not raw_value:
+    return {}
+
+  try:
+    payload = json.loads(raw_value)
+  except (TypeError, JSONDecodeError):
+    return {}
+
+  return payload if isinstance(payload, dict) else {}
+
+
+def serialize_marketplace_bid(row: sqlite3.Row) -> dict:
+  payload = _load_json_dict(row["payload_json"])
+  return {
+    **payload,
+    "id": row["id"],
+    "listingId": row["listing_id"],
+    "status": row["status"],
+    "developerUserId": row["bidder_user_id"],
+    "developerRole": row["bidder_role"],
+    "createdAt": row["created_at"],
+  }
+
+
+def _list_marketplace_bids_for_listing(connection: sqlite3.Connection, listing_id: str, limit: int = BID_PREVIEW_LIMIT) -> list[dict]:
+  rows = connection.execute(
+    """
+    SELECT *
+    FROM listing_bids
+    WHERE listing_id = ?
+    ORDER BY datetime(created_at) DESC, rowid DESC
+    LIMIT ?
+    """,
+    (listing_id, max(1, limit)),
+  ).fetchall()
+
+  return [serialize_marketplace_bid(row) for row in rows]
+
+
+def _count_marketplace_bids_for_listing(connection: sqlite3.Connection, listing_id: str) -> int:
+  row = connection.execute("SELECT COUNT(*) AS count FROM listing_bids WHERE listing_id = ?", (listing_id,)).fetchone()
+  return int(row["count"] or 0) if row else 0
+
+
+def serialize_marketplace_listing(row: sqlite3.Row, connection: sqlite3.Connection | None = None) -> dict:
+  payload = _load_json_dict(row["payload_json"])
+  marketplace_meta = payload.get("marketplaceMeta") if isinstance(payload.get("marketplaceMeta"), dict) else {}
+  own_connection = connection is None
+
+  if own_connection:
+    connection = get_connection()
+
+  try:
+    latest_bids = _list_marketplace_bids_for_listing(connection, row["id"], BID_PREVIEW_LIMIT)
+    bid_count = _count_marketplace_bids_for_listing(connection, row["id"])
+  finally:
+    if own_connection and connection is not None:
+      connection.close()
+
   return {
     **payload,
     "id": row["id"],
@@ -711,17 +771,23 @@ def serialize_marketplace_listing(row: sqlite3.Row) -> dict:
     "ownerRole": row["owner_role"],
     "createdAt": row["created_at"],
     "updatedAt": row["updated_at"],
+    "marketplaceMeta": {
+      **marketplace_meta,
+      "latestBids": latest_bids,
+      "bidCount": bid_count,
+    },
   }
 
 
 def create_marketplace_listing(payload: dict) -> dict:
   listing_id = str(uuid.uuid4())
   now = utc_iso()
-  listing_type = payload["type"]
-  title = payload.get("title") or payload.get("name") or "Marketplace Listing"
-  owner_user_id = payload.get("ownerUserId")
-  owner_role = payload.get("ownerRole")
-  stored_payload = {**payload, "id": listing_id, "createdAt": now, "updatedAt": now}
+  validated_payload = validate_marketplace_listing_payload(payload)
+  listing_type = validated_payload["type"]
+  title = validated_payload.get("title") or validated_payload.get("name") or "Marketplace Listing"
+  owner_user_id = validated_payload.get("ownerUserId")
+  owner_role = validated_payload.get("ownerRole")
+  stored_payload = {**validated_payload, "id": listing_id, "createdAt": now, "updatedAt": now}
 
   with get_connection() as connection:
     connection.execute(
@@ -736,7 +802,7 @@ def create_marketplace_listing(payload: dict) -> dict:
         owner_user_id,
         owner_role,
         listing_type,
-        payload.get("status") or "active",
+        validated_payload.get("status") or "active",
         title,
         json.dumps(stored_payload),
         now,
@@ -745,11 +811,51 @@ def create_marketplace_listing(payload: dict) -> dict:
     )
     row = connection.execute("SELECT * FROM marketplace_listings WHERE id = ? LIMIT 1", (listing_id,)).fetchone()
 
-  return serialize_marketplace_listing(row)
+  return serialize_marketplace_listing(row, connection)
 
 
 def get_marketplace_listing(listing_id: str) -> dict | None:
   with get_connection() as connection:
     row = connection.execute("SELECT * FROM marketplace_listings WHERE id = ? LIMIT 1", (listing_id,)).fetchone()
 
-  return serialize_marketplace_listing(row) if row else None
+    return serialize_marketplace_listing(row, connection) if row else None
+
+
+def create_marketplace_bid(payload: dict) -> dict:
+  validated_payload = validate_marketplace_bid_payload(payload)
+  bid_id = str(uuid.uuid4())
+  now = validated_payload.get("createdAt") or utc_iso()
+  listing_id = validated_payload["listingId"]
+  developer_reference = validated_payload.get("developerProfileReference") or {}
+  bidder_user_id = developer_reference.get("userId")
+
+  with get_connection() as connection:
+    listing_row = connection.execute("SELECT id FROM marketplace_listings WHERE id = ? LIMIT 1", (listing_id,)).fetchone()
+    if not listing_row:
+      raise ValueError("The target marketplace listing could not be found.")
+
+    connection.execute(
+      """
+      INSERT INTO listing_bids (
+        id, listing_id, bidder_user_id, bidder_role, status, payload_json, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      """,
+      (
+        bid_id,
+        listing_id,
+        bidder_user_id,
+        payload.get("bidderRole") or "developer",
+        validated_payload["status"],
+        json.dumps({**validated_payload, "id": bid_id, "createdAt": now}),
+        now,
+      ),
+    )
+    row = connection.execute("SELECT * FROM listing_bids WHERE id = ? LIMIT 1", (bid_id,)).fetchone()
+
+  return serialize_marketplace_bid(row)
+
+
+def list_marketplace_bids(listing_id: str, limit: int = BID_PREVIEW_LIMIT) -> list[dict]:
+  with get_connection() as connection:
+    return _list_marketplace_bids_for_listing(connection, listing_id, limit)

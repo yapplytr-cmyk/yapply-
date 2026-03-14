@@ -1,5 +1,9 @@
 import { getAuthSession } from "./state.js";
 import { getAuthOrigin } from "./auth.js";
+import {
+  createDeveloperProfileReference,
+  validateMarketplaceListingDraft,
+} from "./marketplaceSchema.js";
 
 const STORAGE_KEY = "yapply-marketplace-submissions-v1";
 const LAST_SUBMISSION_KEY = "yapply-marketplace-last-submission-v1";
@@ -214,7 +218,7 @@ async function createClientListing(formData) {
   const plotStatus = escapeHtml(formData.get("plotStatus") || "");
   const attachments = await createAttachments(formData.getAll("referenceUpload"));
 
-  return {
+  return validateMarketplaceListingDraft({
     id: createId("client", rawTitle),
     type: "client",
     source: "submitted",
@@ -239,7 +243,7 @@ async function createClientListing(formData) {
     additionalNotes,
     attachments,
     tags: [projectType, stylePreference, "New Submission"].filter(Boolean).slice(0, 3),
-  };
+  });
 }
 
 async function createProfessionalListing(formData) {
@@ -251,7 +255,7 @@ async function createProfessionalListing(formData) {
   const attachments = await createAttachments(formData.getAll("uploads"));
   const leadImage = attachments.find((item) => item.kind === "image");
 
-  return {
+  return validateMarketplaceListingDraft({
     id: createId("professional", rawCompanyName),
     type: "professional",
     source: "submitted",
@@ -276,7 +280,15 @@ async function createProfessionalListing(formData) {
     attachments,
     tags: [escapeHtml(formData.get("professionType") || ""), location, "New Listing"].filter(Boolean).slice(0, 3),
     imageSrc: leadImage?.dataUrl || "./assets/developer-previews/submitted-professional.svg",
-  };
+    marketplaceMeta: {
+      developerProfileReference: createDeveloperProfileReference({
+        userId: session?.user?.id,
+        companyName: rawCompanyName,
+        specialties,
+        portfolioImages: attachments.filter((item) => item.kind === "image").map((item) => item.dataUrl),
+      }),
+    },
+  });
 }
 
 async function createBackendMarketplaceListing(listing) {
@@ -487,3 +499,5 @@ export function isMarketplaceAdminMode() {
   const storage = getStorage();
   return storage?.getItem(ADMIN_MODE_KEY) === "true";
 }
+
+export { validateMarketplaceBidDraft } from "./marketplaceSchema.js";
