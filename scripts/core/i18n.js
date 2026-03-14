@@ -1,6 +1,6 @@
 import { translations } from "../content/siteContent.js";
 
-const DEFAULT_LOCALE = "en";
+const DEFAULT_LOCALE = "tr";
 const SUPPORTED_LOCALES = ["en", "tr"];
 
 function isObject(value) {
