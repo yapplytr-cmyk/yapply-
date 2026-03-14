@@ -224,7 +224,7 @@ function createBidSubmissionSection(content, listing) {
         <div class="panel application-panel">
           <form class="application-form" data-marketplace-bid-form novalidate>
             <input type="hidden" name="listingId" value="${listing.id}" />
-            <div class="auth-form-error form-field--full" data-marketplace-bid-error hidden>
+            <div class="auth-form-error form-field--full" data-marketplace-bid-error hidden style="display: none;">
               <strong data-marketplace-bid-error-title>${bidForm.errorTitle}</strong>
               <p data-marketplace-bid-error-text>${bidForm.errorFallback}</p>
             </div>
@@ -244,7 +244,7 @@ function createBidSubmissionSection(content, listing) {
               <button class="button button--primary" type="submit">${bidForm.submit}</button>
             </div>
           </form>
-          <div class="form-success" data-marketplace-bid-success hidden>
+          <div class="form-success" data-marketplace-bid-success hidden style="display: none;">
             <h3>${bidForm.successTitle}</h3>
             <p>${bidForm.successText}</p>
           </div>
