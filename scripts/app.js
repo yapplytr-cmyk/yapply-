@@ -300,6 +300,7 @@ function createMarketplaceListingDetailContent(content, listingType, listingId, 
     meta: content.meta,
     brand: content.brand,
     controls: content.controls,
+    viewerSession: getAuthSession(),
     nav: {
       ...withAdminNav(content.openMarketplacePage.nav, content.adminDashboardPage.navLabel),
       cta: content.marketplaceFlow.detail.backToMarketplace,

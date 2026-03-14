@@ -32,6 +32,30 @@ function getDetailCopy(locale) {
       permitsStatus: "İzin / Plan Durumu",
       constructionStarted: "İnşaat Başladı mı?",
       listingStatus: "İlan Durumu",
+      bidForm: {
+        eyebrow: "Geliştirici Teklifi",
+        title: "Bu proje için teklif verin.",
+        description: "Yalnızca giriş yapmış geliştirici hesapları açık müşteri ilanlarına teklif verebilir.",
+        noteTitle: "Güçlü bir teklif için",
+        noteBody: "Net fiyat aralığı, gerçekçi tamamlanma süresi ve kısa ama güven veren bir teklif notu paylaşın.",
+        closedTitle: "Teklif verme kapalı",
+        closedDescription: "Bu ilan şu anda yeni geliştirici tekliflerine açık değil.",
+        guestTitle: "Teklif vermek için geliştirici hesabıyla giriş yapın.",
+        guestDescription: "İlanı inceleyebilirsiniz, ancak teklif göndermek için aktif bir geliştirici hesabı gerekir.",
+        roleTitle: "Yalnızca geliştirici hesapları teklif verebilir.",
+        roleDescription: "Müşteri hesapları bu ilanı görüntüleyebilir fakat teklif gönderemez.",
+        amount: "Teklif Tutarı",
+        timeframe: "Tamamlanma Süresi",
+        proposal: "Teklif Mesajı",
+        amountPlaceholder: "Örn. EUR 480K - 620K",
+        timeframePlaceholder: "Örn. 5-7 ay",
+        proposalPlaceholder: "Kısa yaklaşımınızı, kapsamı nasıl ele alacağınızı ve neden uygun olduğunuzu yazın.",
+        submit: "Teklif Gönder",
+        successTitle: "Teklifiniz gönderildi.",
+        successText: "Teklif şimdi bu ilanın son teklifler alanında görünecek.",
+        errorTitle: "Teklif gönderilemedi",
+        errorFallback: "Teklifiniz şu anda kaydedilemedi. Lütfen tekrar deneyin.",
+      },
       latestBids: {
         eyebrow: "Son Teklifler",
         title: "Bu ilan için son teklifler",
@@ -41,6 +65,9 @@ function getDetailCopy(locale) {
         timeframe: "Tamamlanma Süresi",
         proposal: "Teklif Notu",
         bidder: "Geliştirici",
+        rating: "Puan",
+        submitted: "Gönderildi",
+        noRating: "Henüz puan yok",
       },
     };
   }
@@ -51,6 +78,30 @@ function getDetailCopy(locale) {
     permitsStatus: "Permits / Plans",
     constructionStarted: "Construction Started",
     listingStatus: "Listing Status",
+    bidForm: {
+      eyebrow: "Developer Bid",
+      title: "Submit a bid for this project.",
+      description: "Only signed-in developer accounts can bid on open client project listings.",
+      noteTitle: "For a stronger bid",
+      noteBody: "Share a clear amount range, a realistic delivery window, and a short proposal that builds confidence quickly.",
+      closedTitle: "Bidding is closed",
+      closedDescription: "This listing is not currently accepting new developer bids.",
+      guestTitle: "Sign in with a developer account to place a bid.",
+      guestDescription: "You can review the listing publicly, but bidding requires an active developer account.",
+      roleTitle: "Only developer accounts can submit bids.",
+      roleDescription: "Client accounts can view this listing but cannot place bids.",
+      amount: "Bid Amount",
+      timeframe: "Completion Timeframe",
+      proposal: "Proposal",
+      amountPlaceholder: "Example: EUR 480K - 620K",
+      timeframePlaceholder: "Example: 5-7 months",
+      proposalPlaceholder: "Share your approach, delivery confidence, and why your team is a fit for the project.",
+      submit: "Submit Bid",
+      successTitle: "Your bid was submitted.",
+      successText: "The bid will now appear in the latest bids area for this listing.",
+      errorTitle: "Bid could not be submitted",
+      errorFallback: "Your bid could not be saved right now. Please try again.",
+    },
     latestBids: {
       eyebrow: "Latest bids",
       title: "Recent bids for this listing",
@@ -60,6 +111,9 @@ function getDetailCopy(locale) {
       timeframe: "Completion Timeframe",
       proposal: "Proposal",
       bidder: "Developer",
+      rating: "Rating",
+      submitted: "Submitted",
+      noRating: "No rating yet",
     },
   };
 }
@@ -80,6 +134,135 @@ function getProjectStatusLabel(value, locale, fallback) {
   }
 
   return fallback;
+}
+
+function formatRelativeTime(value, locale, fallback) {
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  const diffMs = date.getTime() - Date.now();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const rtf = new Intl.RelativeTimeFormat(locale === "tr" ? "tr-TR" : "en-US", { numeric: "auto" });
+
+  if (Math.abs(diffMs) < hour) {
+    return rtf.format(Math.round(diffMs / minute), "minute");
+  }
+
+  if (Math.abs(diffMs) < day) {
+    return rtf.format(Math.round(diffMs / hour), "hour");
+  }
+
+  if (Math.abs(diffMs) < week) {
+    return rtf.format(Math.round(diffMs / day), "day");
+  }
+
+  return new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatBidRating(reference, locale, fallback) {
+  const ratingAverage = Number(reference?.ratingAverage);
+  const ratingCount = Number(reference?.ratingCount || 0);
+
+  if (!Number.isFinite(ratingAverage) || ratingAverage <= 0) {
+    return fallback;
+  }
+
+  if (locale === "tr") {
+    return `${ratingAverage.toFixed(1)} / 5${ratingCount > 0 ? ` · ${ratingCount} değerlendirme` : ""}`;
+  }
+
+  return `${ratingAverage.toFixed(1)} / 5${ratingCount > 0 ? ` · ${ratingCount} reviews` : ""}`;
+}
+
+function createBidSubmissionSection(content, listing) {
+  const locale = getDetailLocale(content);
+  const copy = getDetailCopy(locale);
+  const bidForm = copy.bidForm;
+  const viewerSession = content.viewerSession || { authenticated: false, user: null };
+  const viewerRole = viewerSession.user?.role || "";
+  const listingStatus = (listing.marketplaceMeta || {}).listingStatus || listing.status;
+
+  let bodyMarkup = "";
+
+  if (listingStatus !== "open-for-bids") {
+    bodyMarkup = `
+      <div class="marketplace-empty panel">
+        <h3>${bidForm.closedTitle}</h3>
+        <p>${bidForm.closedDescription}</p>
+      </div>
+    `;
+  } else if (!viewerSession.authenticated) {
+    bodyMarkup = `
+      <div class="marketplace-empty panel">
+        <h3>${bidForm.guestTitle}</h3>
+        <p>${bidForm.guestDescription}</p>
+      </div>
+    `;
+  } else if (viewerRole !== "developer") {
+    bodyMarkup = `
+      <div class="marketplace-empty panel">
+        <h3>${bidForm.roleTitle}</h3>
+        <p>${bidForm.roleDescription}</p>
+      </div>
+    `;
+  } else {
+    bodyMarkup = `
+      <div class="project-overview-grid">
+        <article class="project-note panel">
+          <h3>${bidForm.noteTitle}</h3>
+          <p>${bidForm.noteBody}</p>
+        </article>
+        <div class="panel application-panel">
+          <form class="application-form" data-marketplace-bid-form novalidate>
+            <input type="hidden" name="listingId" value="${listing.id}" />
+            <div class="auth-form-error form-field--full" data-marketplace-bid-error hidden>
+              <strong data-marketplace-bid-error-title>${bidForm.errorTitle}</strong>
+              <p data-marketplace-bid-error-text>${bidForm.errorFallback}</p>
+            </div>
+            <label class="form-field">
+              <span>${bidForm.amount}</span>
+              <input type="text" name="bidAmount" placeholder="${bidForm.amountPlaceholder}" required />
+            </label>
+            <label class="form-field">
+              <span>${bidForm.timeframe}</span>
+              <input type="text" name="estimatedCompletionTimeframe" placeholder="${bidForm.timeframePlaceholder}" required />
+            </label>
+            <label class="form-field form-field--full">
+              <span>${bidForm.proposal}</span>
+              <textarea name="proposalMessage" rows="5" placeholder="${bidForm.proposalPlaceholder}" required></textarea>
+            </label>
+            <div class="form-actions form-field--full">
+              <button class="button button--primary" type="submit">${bidForm.submit}</button>
+            </div>
+          </form>
+          <div class="form-success" data-marketplace-bid-success hidden>
+            <h3>${bidForm.successTitle}</h3>
+            <p>${bidForm.successText}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <section class="section-shell" id="listing-bid-submit">
+      ${createSectionHeading({
+        eyebrow: bidForm.eyebrow,
+        title: bidForm.title,
+        description: bidForm.description,
+      })}
+      ${bodyMarkup}
+    </section>
+  `;
 }
 
 function createSummaryGrid(items) {
@@ -191,10 +374,13 @@ function createClientDetail(content, listing) {
         <div class="detail-list-grid marketplace-bids-grid">
           ${latestBids
             .map((bid) => {
+              const developerReference = bid.developerProfileReference || {};
               const developerName =
-                bid.developerProfileReference?.companyName ||
-                bid.developerProfileReference?.userId ||
+                developerReference.companyName ||
+                developerReference.userId ||
                 copy.fallback;
+              const ratingLabel = formatBidRating(developerReference, locale, copy.latestBids.noRating);
+              const submittedLabel = formatRelativeTime(bid.createdAt, locale, copy.fallback);
               return `
                 <article class="detail-list-card marketplace-bid-card">
                   <div class="project-detail-card__facts">
@@ -202,6 +388,8 @@ function createClientDetail(content, listing) {
                       { label: copy.latestBids.bidder, value: developerName },
                       { label: copy.latestBids.amount, value: bid.bidAmount?.label || copy.fallback },
                       { label: copy.latestBids.timeframe, value: bid.estimatedCompletionTimeframe?.label || copy.fallback },
+                      { label: copy.latestBids.rating, value: ratingLabel },
+                      { label: copy.latestBids.submitted, value: submittedLabel },
                     ])}
                   </div>
                   <p><strong>${copy.latestBids.proposal}</strong></p>
@@ -256,6 +444,7 @@ function createClientDetail(content, listing) {
         </article>
       </div>
     </section>
+    ${createBidSubmissionSection(content, listing)}
     <section class="section-shell" id="listing-bids">
       ${createSectionHeading(copy.latestBids)}
       ${latestBidsMarkup}

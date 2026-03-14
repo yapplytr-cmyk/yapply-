@@ -39,6 +39,7 @@ from .config import (
   SESSION_TTL_SECONDS,
 )
 from .db import (
+  create_marketplace_bid,
   count_active_admin_users,
   create_marketplace_listing,
   create_session,
@@ -374,6 +375,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       self.handle_marketplace_listing_create()
       return
 
+    if parsed.path == "/api/marketplace/bids/create":
+      self.handle_marketplace_bid_create()
+      return
+
     if parsed.path == "/api/admin/accounts/status":
       run_supabase_action(self, handle_supabase_admin_account_status)
       return
@@ -555,6 +560,100 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       return
 
     json_response(self, HTTPStatus.CREATED, {"ok": True, "listing": stored_listing})
+
+  def resolve_marketplace_bidder(self, payload: dict) -> dict | None:
+    session_user = get_authenticated_user(self)
+
+    if session_user and session_user.get("role") == "developer":
+      return {
+        "id": session_user.get("id"),
+        "role": session_user.get("role"),
+        "fullName": session_user.get("fullName"),
+        "email": session_user.get("email"),
+        "companyName": session_user.get("companyName"),
+        "specialties": session_user.get("specialties"),
+        "yearsExperience": session_user.get("yearsExperience"),
+      }
+
+    bidder = payload.get("bidder") if isinstance(payload.get("bidder"), dict) else None
+    if not bidder:
+      return None
+
+    role = normalize_text(bidder.get("role"))
+    if role != "developer":
+      return None
+
+    return {
+      "id": normalize_text(bidder.get("id")),
+      "role": role,
+      "fullName": normalize_text(bidder.get("fullName")),
+      "email": normalize_text(bidder.get("email")),
+      "companyName": normalize_text(bidder.get("companyName")),
+      "specialties": normalize_text(bidder.get("specialties")),
+      "yearsExperience": bidder.get("yearsExperience"),
+    }
+
+  def handle_marketplace_bid_create(self) -> None:
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    bid = payload.get("bid") if isinstance(payload.get("bid"), dict) else None
+    if not bid:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_BID", "message": "A valid bid payload is required."})
+      return
+
+    bidder = self.resolve_marketplace_bidder(payload)
+    if not bidder:
+      json_response(self, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "A signed-in developer account is required to submit a bid."})
+      return
+
+    if bidder["role"] != "developer":
+      json_response(self, HTTPStatus.FORBIDDEN, {"ok": False, "code": "BIDDER_ROLE_INVALID", "message": "Only developer accounts can submit bids."})
+      return
+
+    listing_id = normalize_text(bid.get("listingId"))
+    if not listing_id:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_BID", "message": "A listing id is required."})
+      return
+
+    listing = get_marketplace_listing(listing_id)
+    if not listing:
+      json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "code": "LISTING_NOT_FOUND", "message": "The target listing could not be found."})
+      return
+
+    listing_status = (
+      (listing.get("marketplaceMeta") or {}).get("listingStatus")
+      or listing.get("status")
+    )
+    if listing.get("type") != "client":
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_BID_TARGET", "message": "Bids can only be submitted on client project listings."})
+      return
+
+    if listing_status != "open-for-bids":
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "BIDDING_CLOSED", "message": "This listing is not currently open for bids."})
+      return
+
+    try:
+      stored_bid = create_marketplace_bid(
+        {
+          **bid,
+          "bidderRole": "developer",
+          "developerProfileReference": {
+            "userId": bidder.get("id"),
+            "companyName": bidder.get("companyName") or bidder.get("fullName"),
+            "specialties": bidder.get("specialties"),
+          },
+        }
+      )
+    except ValueError as error:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_BID", "message": str(error)})
+      return
+
+    refreshed_listing = get_marketplace_listing(listing_id)
+    json_response(self, HTTPStatus.CREATED, {"ok": True, "bid": stored_bid, "listing": refreshed_listing})
 
   def handle_marketplace_listing_index(self, parsed) -> None:
     query = parse_qs(parsed.query)

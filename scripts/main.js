@@ -15,6 +15,7 @@ import {
   fetchPublicMarketplaceListings,
   getSubmissionSuccessHref,
   saveMarketplaceSubmission,
+  submitMarketplaceBid,
 } from "./core/marketplaceStore.js";
 import { applyTheme, clearAuthSession, getAuthSession, getLocale, getTheme, setAuthSession, setLocale, toggleTheme } from "./core/state.js";
 
@@ -1426,6 +1427,60 @@ function setupMarketplaceListingInquiryForm() {
   });
 }
 
+function setupMarketplaceBidForm(content) {
+  const form = document.querySelector("[data-marketplace-bid-form]");
+  const success = document.querySelector("[data-marketplace-bid-success]");
+  const errorBox = document.querySelector("[data-marketplace-bid-error]");
+  const errorTitle = document.querySelector("[data-marketplace-bid-error-title]");
+  const errorText = document.querySelector("[data-marketplace-bid-error-text]");
+
+  if (!form) {
+    return;
+  }
+
+  const isTurkish = document.documentElement.lang === "tr";
+  const copy = {
+    errorTitle: isTurkish ? "Teklif gönderilemedi" : "Bid could not be submitted",
+    fallback: isTurkish
+      ? "Teklifiniz şu anda kaydedilemedi. Lütfen tekrar deneyin."
+      : "Your bid could not be saved right now. Please try again.",
+  };
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    errorBox?.setAttribute("hidden", "");
+    success?.setAttribute("hidden", "");
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    try {
+      const formData = new FormData(form);
+      await submitMarketplaceBid(formData);
+      form.setAttribute("hidden", "");
+      success?.removeAttribute("hidden");
+
+      window.setTimeout(async () => {
+        await renderPage(content.meta.locale);
+        document.querySelector("#listing-bids")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 650);
+    } catch (error) {
+      if (errorTitle) {
+        errorTitle.textContent = copy.errorTitle;
+      }
+
+      if (errorText) {
+        errorText.textContent = error?.message || copy.fallback;
+      }
+
+      errorBox?.removeAttribute("hidden");
+    }
+  });
+}
+
 function setupMarketplaceDeleteActions(locale) {
   document.querySelectorAll("[data-delete-listing]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1591,6 +1646,7 @@ function bindInteractions(content) {
   setupMarketplacePublicFilters(content.meta.locale);
   setupProjectInquiryForm();
   setupMarketplaceSubmissionForm();
+  setupMarketplaceBidForm(content);
   setupMarketplaceListingInquiryForm();
   setupMarketplaceDeleteActions(content.meta.locale);
   setupDeveloperInquiryForm();

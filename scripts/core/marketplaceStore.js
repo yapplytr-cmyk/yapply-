@@ -2,6 +2,7 @@ import { getAuthSession } from "./state.js";
 import { getAuthOrigin } from "./auth.js";
 import {
   createDeveloperProfileReference,
+  validateMarketplaceBidDraft,
   validateMarketplaceListingDraft,
 } from "./marketplaceSchema.js";
 
@@ -350,6 +351,72 @@ async function createBackendMarketplaceListing(listing) {
   }
 
   return data.listing;
+}
+
+export async function submitMarketplaceBid(formData) {
+  const session = getAuthSession();
+
+  if (!session?.authenticated || !session?.user) {
+    throw createSubmissionError("AUTH_REQUIRED", "Please sign in with a developer account to submit a bid.");
+  }
+
+  if (session.user.role !== "developer") {
+    throw createSubmissionError("BIDDER_ROLE_INVALID", "Only developer accounts can submit bids.");
+  }
+
+  const bid = validateMarketplaceBidDraft({
+    listingId: escapeHtml(formData.get("listingId") || ""),
+    bidAmount: {
+      label: escapeHtml(formData.get("bidAmount") || ""),
+    },
+    estimatedCompletionTimeframe: {
+      label: escapeHtml(formData.get("estimatedCompletionTimeframe") || ""),
+    },
+    proposalMessage: escapeHtml(formData.get("proposalMessage") || ""),
+    developerProfileReference: createDeveloperProfileReference({
+      userId: session.user.id,
+      companyName: session.user.companyName || session.user.fullName || session.user.username || "",
+      specialties: session.user.specialties || "",
+      ratingAverage: session.user.ratingAverage,
+      ratingCount: session.user.ratingCount,
+      portfolioImages: [],
+      portfolioProjects: [],
+    }),
+  });
+
+  const response = await fetch(createApiUrl("/api/marketplace/bids/create"), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      bid,
+      bidder: session?.user
+        ? {
+            id: session.user.id,
+            role: session.user.role,
+            fullName: session.user.fullName,
+            email: session.user.email,
+            companyName: session.user.companyName,
+            specialties: session.user.specialties,
+            yearsExperience: session.user.yearsExperience,
+          }
+        : null,
+    }),
+  });
+  const data = await readJsonResponse(response);
+
+  if (!response.ok) {
+    throw Object.assign(new Error(data.message || "The bid could not be submitted."), {
+      code: data.code || "BID_CREATE_FAILED",
+    });
+  }
+
+  return {
+    bid: data.bid || null,
+    listing: data.listing || null,
+  };
 }
 
 export async function fetchPublicMarketplaceListings({
