@@ -427,7 +427,6 @@ function createMarketplaceListings(content) {
 
   return `
     <section class="section-shell" id="marketplace-listings">
-      ${createSectionHeading(content.tabs.heading)}
       <div class="marketplace-tabs" role="tablist" aria-label="${content.tabs.ariaLabel}">
         <button
           class="marketplace-tab is-active"
@@ -450,7 +449,6 @@ function createMarketplaceListings(content) {
       </div>
 
       <div class="marketplace-panel is-active" data-marketplace-panel="client">
-        ${createClientFilters(content)}
         ${clientPanelBody}
       </div>
 
@@ -482,9 +480,8 @@ function createMarketplaceCta(content) {
 
 export function createOpenMarketplacePage(content) {
   return `
-    ${createMarketplaceHero(content)}
-    ${createMarketplaceIntro(content)}
     ${createMarketplaceListings(content)}
+    ${createMarketplaceIntro(content)}
     ${createMarketplaceCta(content)}
   `;
 }
