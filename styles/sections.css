@@ -1605,15 +1605,183 @@ html[data-loading-locale="en"] .app-loader__text-tr {
   padding: 0.95rem 1rem;
 }
 
+.marketplace-toggle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.95rem;
+  margin-bottom: 1.35rem;
+}
+
+.marketplace-toggle-mascot {
+  display: grid;
+  place-items: center;
+  width: 4.4rem;
+  min-width: 4.4rem;
+  height: 4.4rem;
+  padding: 0.45rem;
+  border-radius: 1.35rem;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 30% 22%, rgba(201, 168, 76, 0.16), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    color-mix(in srgb, var(--bg-panel) 92%, transparent);
+  box-shadow: 0 14px 28px rgba(5, 8, 12, 0.16);
+  overflow: hidden;
+}
+
+.marketplace-toggle-mascot.is-switching .marketplace-toggle-bird__character {
+  animation: marketplace-bird-switch 360ms var(--ease-premium);
+}
+
+.marketplace-toggle-bird {
+  width: 100%;
+  height: 100%;
+}
+
+.marketplace-toggle-bird__shadow {
+  fill: rgba(6, 8, 12, 0.16);
+  animation: marketplace-bird-shadow 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.marketplace-toggle-bird__character {
+  transform-origin: 50% 68%;
+  animation: marketplace-bird-bob 1.8s ease-in-out infinite;
+}
+
+.marketplace-toggle-bird__body,
+.marketplace-toggle-bird__head,
+.marketplace-toggle-bird__tail {
+  fill: color-mix(in srgb, var(--accent) 78%, #fff2c9 22%);
+}
+
+.marketplace-toggle-bird__wing {
+  fill: color-mix(in srgb, var(--accent-strong) 80%, #b98d2e 20%);
+  transform-origin: center;
+  animation: marketplace-bird-wing 1.8s ease-in-out infinite;
+}
+
+.marketplace-toggle-bird__eye {
+  fill: #121317;
+}
+
+.marketplace-toggle-bird__beak,
+.marketplace-toggle-bird__pen-tip {
+  fill: #f4b766;
+}
+
+.marketplace-toggle-bird__leg {
+  stroke: color-mix(in srgb, var(--accent) 74%, #f4d28e 26%);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.marketplace-toggle-bird__pen,
+.marketplace-toggle-bird__helmet {
+  transform-origin: center;
+  transition:
+    opacity 220ms var(--ease-premium),
+    transform 260ms var(--ease-premium);
+}
+
+.marketplace-toggle-bird__pen-body {
+  fill: #f2d17f;
+}
+
+.marketplace-toggle-bird__pen-cap {
+  fill: #fff0bf;
+}
+
+.marketplace-toggle-bird__helmet-shell {
+  fill: color-mix(in srgb, var(--accent) 88%, #fff3c7 12%);
+}
+
+.marketplace-toggle-bird__helmet-rim {
+  fill: color-mix(in srgb, var(--accent-strong) 84%, #b2872e 16%);
+}
+
+.marketplace-toggle-bird__helmet-stripe {
+  fill: #fff4cb;
+}
+
+.marketplace-toggle-mascot[data-mode="client"] .marketplace-toggle-bird__pen {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+}
+
+.marketplace-toggle-mascot[data-mode="client"] .marketplace-toggle-bird__helmet {
+  opacity: 0;
+  transform: translate3d(-4px, -6px, 0) rotate(-10deg) scale(0.8);
+}
+
+.marketplace-toggle-mascot[data-mode="developer"] .marketplace-toggle-bird__pen {
+  opacity: 0;
+  transform: translate3d(4px, 6px, 0) rotate(12deg) scale(0.8);
+}
+
+.marketplace-toggle-mascot[data-mode="developer"] .marketplace-toggle-bird__helmet {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+}
+
 .marketplace-tabs {
   display: inline-flex;
   align-items: center;
+  align-self: center;
   gap: 0.4rem;
   margin-bottom: 1.35rem;
   padding: 0.35rem;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.03);
+  transform: translate3d(0, 0.24rem, 0);
+}
+
+@keyframes marketplace-bird-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0);
+  }
+}
+
+@keyframes marketplace-bird-wing {
+  0%,
+  100% {
+    transform: rotate(-24deg);
+  }
+  50% {
+    transform: rotate(-16deg);
+  }
+}
+
+@keyframes marketplace-bird-shadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.18;
+  }
+  50% {
+    transform: scaleX(0.9);
+    opacity: 0.12;
+  }
+}
+
+@keyframes marketplace-bird-switch {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  35% {
+    transform: translate3d(0, -4px, 0) rotate(-5deg);
+  }
+  70% {
+    transform: translate3d(0, 0, 0) rotate(5deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
 }
 
 .marketplace-tab {
@@ -4208,6 +4376,13 @@ html[data-theme="light"] .auth-role-card.is-active {
 
   .project-cta-panel {
     grid-template-columns: 1fr;
+  }
+
+  .marketplace-toggle-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
   }
 
   .marketplace-tabs {

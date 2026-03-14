@@ -282,6 +282,36 @@ function createMarketplaceIntro(content) {
   `;
 }
 
+function createMarketplaceToggleMascot() {
+  return `
+    <div class="marketplace-toggle-mascot panel" data-marketplace-toggle-mascot data-mode="client" aria-hidden="true">
+      <svg class="marketplace-toggle-bird" viewBox="0 0 120 120" fill="none">
+        <ellipse class="marketplace-toggle-bird__shadow" cx="60" cy="97" rx="18" ry="5"></ellipse>
+        <g class="marketplace-toggle-bird__character">
+          <path class="marketplace-toggle-bird__tail" d="M31 65 20 60 29 73 38 69Z"></path>
+          <ellipse class="marketplace-toggle-bird__body" cx="52" cy="64" rx="23" ry="18"></ellipse>
+          <circle class="marketplace-toggle-bird__head" cx="74" cy="50" r="13"></circle>
+          <ellipse class="marketplace-toggle-bird__wing" cx="49" cy="65" rx="11" ry="15" transform="rotate(-24 49 65)"></ellipse>
+          <circle class="marketplace-toggle-bird__eye" cx="78" cy="47" r="2.2"></circle>
+          <path class="marketplace-toggle-bird__beak" d="M85 50 95 46 88 55Z"></path>
+          <path class="marketplace-toggle-bird__leg" d="M49 81V89"></path>
+          <path class="marketplace-toggle-bird__leg" d="M58 81V89"></path>
+          <g class="marketplace-toggle-bird__pen">
+            <rect class="marketplace-toggle-bird__pen-body" x="67" y="73" width="30" height="5" rx="2.5" transform="rotate(-22 67 73)"></rect>
+            <rect class="marketplace-toggle-bird__pen-cap" x="67" y="73" width="6" height="5" rx="1.2" transform="rotate(-22 67 73)"></rect>
+            <path class="marketplace-toggle-bird__pen-tip" d="M97 61 104 58 101 66Z"></path>
+          </g>
+          <g class="marketplace-toggle-bird__helmet">
+            <path class="marketplace-toggle-bird__helmet-shell" d="M60 42c0-7.4 6-13.4 13.4-13.4 7 0 12.8 5.4 13.4 12.2v2.2H60V42Z"></path>
+            <path class="marketplace-toggle-bird__helmet-rim" d="M58 43h31c1.8 0 3.2 1.4 3.2 3.2 0 1.1-.5 2-1.4 2.7H58.4c-.9-.7-1.4-1.6-1.4-2.7 0-1.8 1.4-3.2 3.2-3.2Z"></path>
+            <path class="marketplace-toggle-bird__helmet-stripe" d="M72 29h4v14h-4z"></path>
+          </g>
+        </g>
+      </svg>
+    </div>
+  `;
+}
+
 function createClientListingCard(listing, labels, locale) {
   const ctaHref = listing.detailHref || getMarketplaceListingHref("client", listing.id || listing.slug);
   const marketplaceMeta = listing.marketplaceMeta || {};
@@ -427,25 +457,28 @@ function createMarketplaceListings(content) {
 
   return `
     <section class="section-shell" id="marketplace-listings">
-      <div class="marketplace-tabs" role="tablist" aria-label="${content.tabs.ariaLabel}">
-        <button
-          class="marketplace-tab is-active"
-          type="button"
-          role="tab"
-          aria-selected="true"
-          data-marketplace-tab="client"
-        >
-          ${content.tabs.client.tabLabel}
-        </button>
-        <button
-          class="marketplace-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-marketplace-tab="developer"
-        >
-          ${content.tabs.developer.tabLabel}
-        </button>
+      <div class="marketplace-toggle-row">
+        ${createMarketplaceToggleMascot()}
+        <div class="marketplace-tabs" role="tablist" aria-label="${content.tabs.ariaLabel}">
+          <button
+            class="marketplace-tab is-active"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            data-marketplace-tab="client"
+          >
+            ${content.tabs.client.tabLabel}
+          </button>
+          <button
+            class="marketplace-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            data-marketplace-tab="developer"
+          >
+            ${content.tabs.developer.tabLabel}
+          </button>
+        </div>
       </div>
 
       <div class="marketplace-panel is-active" data-marketplace-panel="client">

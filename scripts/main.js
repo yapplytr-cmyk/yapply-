@@ -1253,6 +1253,7 @@ function setupAdminDashboard(content) {
 function setupMarketplaceTabs() {
   const tabs = [...document.querySelectorAll("[data-marketplace-tab]")];
   const panels = [...document.querySelectorAll("[data-marketplace-panel]")];
+  const mascot = document.querySelector("[data-marketplace-toggle-mascot]");
   const requestedTab = new URL(window.location.href).searchParams.get("tab");
 
   if (tabs.length === 0 || panels.length === 0) {
@@ -1271,6 +1272,13 @@ function setupMarketplaceTabs() {
       panel.classList.toggle("is-active", isActive);
       panel.hidden = !isActive;
     });
+
+    if (mascot) {
+      mascot.dataset.mode = target === "developer" ? "developer" : "client";
+      mascot.classList.remove("is-switching");
+      void mascot.offsetWidth;
+      mascot.classList.add("is-switching");
+    }
   };
 
   if (requestedTab && tabs.some((tab) => tab.getAttribute("data-marketplace-tab") === requestedTab)) {
