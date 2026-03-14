@@ -1479,11 +1479,25 @@ function setupMarketplaceBidForm(content) {
       : "Your bid could not be saved right now. Please try again.",
   };
 
+  const setBidStatus = (status) => {
+    const isSuccess = status === "success";
+    const isError = status === "error";
+
+    if (success) {
+      success.hidden = !isSuccess;
+    }
+
+    if (errorBox) {
+      errorBox.hidden = !isError;
+    }
+  };
+
+  setBidStatus(null);
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    errorBox?.setAttribute("hidden", "");
-    success?.setAttribute("hidden", "");
+    setBidStatus(null);
 
     if (!form.checkValidity()) {
       form.reportValidity();
@@ -1494,7 +1508,7 @@ function setupMarketplaceBidForm(content) {
       const formData = new FormData(form);
       await submitMarketplaceBid(formData);
       form.setAttribute("hidden", "");
-      success?.removeAttribute("hidden");
+      setBidStatus("success");
 
       window.setTimeout(async () => {
         await renderPage(content.meta.locale);
@@ -1509,7 +1523,7 @@ function setupMarketplaceBidForm(content) {
         errorText.textContent = error?.message || copy.fallback;
       }
 
-      errorBox?.removeAttribute("hidden");
+      setBidStatus("error");
     }
   });
 }
