@@ -1403,13 +1403,18 @@ function setupHeroVideo() {
     toggle.setAttribute("aria-label", isMuted ? "Enable sound" : "Mute sound");
   };
 
-  video.defaultMuted = true;
-  video.muted = true;
+  video.defaultMuted = false;
+  video.muted = false;
   video.loop = true;
   video.playsInline = true;
   syncToggleState();
 
-  video.play().catch(() => {});
+  video.play().catch(() => {
+    video.defaultMuted = true;
+    video.muted = true;
+    syncToggleState();
+    video.play().catch(() => {});
+  });
 
   toggle.addEventListener("click", async () => {
     const nextMuted = !video.muted;

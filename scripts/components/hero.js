@@ -58,20 +58,19 @@ export function createHero(content) {
               class="hero-video"
               data-hero-video
               autoplay
-              muted
               loop
               playsinline
               preload="metadata"
             >
-              <source src="./assets/hero/wbsite-ekle.mov" type="video/quicktime" />
+              <source src="./assets/hero/wbsite-ekle.mov" />
             </video>
             <button
               class="hero-video-toggle"
               type="button"
               data-hero-audio-toggle
-              data-muted="true"
-              aria-label="Enable sound"
-              aria-pressed="false"
+              data-muted="false"
+              aria-label="Mute sound"
+              aria-pressed="true"
             >
               <span class="hero-video-toggle__icon hero-video-toggle__icon--muted" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
