@@ -276,6 +276,7 @@ function createBrowserMirror(listing) {
         name: item.name,
         mimeType: item.mimeType,
         kind: item.kind,
+        dataUrl: item.kind === "image" ? item.dataUrl : undefined,
       }))
     : [];
   const imageSrc =

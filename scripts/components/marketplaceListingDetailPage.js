@@ -58,8 +58,8 @@ function getDetailCopy(locale) {
       },
       latestBids: {
         eyebrow: "Son Teklifler",
-        title: "Bu ilan için son teklifler",
-        description: "Canlı teklif akışı ilerledikçe en yeni 3-4 geliştirici teklifi burada görünecek.",
+        title: "Son Teklifler",
+        description: "",
         empty: "Henüz teklif yok.",
         amount: "Teklif Tutarı",
         timeframe: "Tamamlanma Süresi",
@@ -104,8 +104,8 @@ function getDetailCopy(locale) {
     },
     latestBids: {
       eyebrow: "Latest bids",
-      title: "Recent bids for this listing",
-      description: "When live developer bidding begins, the latest 3-4 proposals will appear here.",
+      title: "Latest Bids",
+      description: "",
       empty: "No bids yet.",
       amount: "Bid Amount",
       timeframe: "Completion Timeframe",
@@ -254,14 +254,14 @@ function createBidSubmissionSection(content, listing) {
   }
 
   return `
-    <section class="section-shell" id="listing-bid-submit">
+    <div class="marketplace-detail-stack marketplace-bid-submit" id="listing-bid-submit">
       ${createSectionHeading({
         eyebrow: bidForm.eyebrow,
         title: bidForm.title,
         description: bidForm.description,
       })}
       ${bodyMarkup}
-    </section>
+    </div>
   `;
 }
 
@@ -293,22 +293,33 @@ function createMediaSection(detailContent, listing) {
   }
 
   const galleryMarkup =
-    imageItems.length > 0
+    imageItems.length === 1
       ? `
-        <div class="marketplace-media-grid">
-          ${imageItems
-            .map(
-              (item) => `
-                <a class="marketplace-media-card panel" href="${item.dataUrl}" target="_blank" rel="noreferrer">
-                  <img src="${item.dataUrl}" alt="${item.name}" />
-                  <span>${item.name}</span>
-                </a>
-              `
-            )
-            .join("")}
+        <div class="marketplace-media-gallery marketplace-media-gallery--single">
+          <a class="marketplace-media-feature panel" href="${imageItems[0].dataUrl}" target="_blank" rel="noreferrer">
+            <img src="${imageItems[0].dataUrl}" alt="${imageItems[0].name}" />
+            <span>${imageItems[0].name}</span>
+          </a>
         </div>
       `
-      : "";
+      : imageItems.length > 1
+        ? `
+          <div class="marketplace-media-gallery" data-marketplace-media-gallery>
+            <div class="marketplace-media-track">
+              ${imageItems
+                .map(
+                  (item) => `
+                    <a class="marketplace-media-slide panel" href="${item.dataUrl}" target="_blank" rel="noreferrer">
+                      <img src="${item.dataUrl}" alt="${item.name}" />
+                      <span>${item.name}</span>
+                    </a>
+                  `
+                )
+                .join("")}
+            </div>
+          </div>
+        `
+        : "";
   const fileMarkup =
     fileItems.length > 0
       ? `
@@ -407,21 +418,14 @@ function createClientDetail(content, listing) {
       : `<div class="marketplace-empty panel"><p>${copy.latestBids.empty}</p></div>`;
 
   return `
-    <section class="marketplace-detail-hero section-shell">
+    <section class="marketplace-detail-hero marketplace-detail-hero--client section-shell">
       <div class="marketplace-detail-hero__layout">
         <div class="marketplace-detail-hero__copy">
           <p class="eyebrow">${detailContent.eyebrow}</p>
-          <h1 class="hero-title">${listing.title}</h1>
+          <h1 class="hero-title marketplace-detail-hero__title marketplace-detail-hero__title--compact">${listing.title}</h1>
           <p class="hero-lead marketplace-detail-hero__lead">${listing.brief}</p>
-          <div class="chip-row">
-            ${(listing.tags || []).map((tag) => `<span class="chip">${tag}</span>`).join("")}
-          </div>
-          <div class="hero-actions">
-            ${createButton({ href: "./professional-listing-submission.html", label: detailContent.primaryCta, variant: "primary" })}
-            ${createButton({ href: "./open-marketplace.html?tab=client", label: detailContent.secondaryCta, variant: "secondary" })}
-          </div>
         </div>
-        <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client panel">
+        <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact panel">
           <div class="project-hero-visual__grid"></div>
           <div class="project-hero-board">
             <span>${detailContent.boardTitle}</span>
@@ -432,26 +436,33 @@ function createClientDetail(content, listing) {
       </div>
     </section>
 
-    <section class="section-shell">
-      ${createSectionHeading(detailContent.overview)}
-      <div class="project-overview-grid">
-        <article class="project-detail-card panel">
-          <div class="project-detail-card__facts">
-            ${createSummaryGrid(summaryItems)}
+    <section class="section-shell marketplace-client-detail-layout">
+      <div class="marketplace-client-detail-layout__left">
+        ${createBidSubmissionSection(content, listing)}
+        <div class="marketplace-detail-stack" id="listing-bids">
+          ${createSectionHeading(copy.latestBids)}
+          ${latestBidsMarkup}
+        </div>
+      </div>
+
+      <div class="marketplace-client-detail-layout__right">
+        <div class="marketplace-detail-stack marketplace-detail-stack--overview">
+          <div class="section-heading marketplace-detail-section-heading">
+            <p class="eyebrow">${detailContent.overview.eyebrow}</p>
           </div>
-        </article>
-        <article class="project-note panel">
+          <article class="project-detail-card panel">
+            <div class="project-detail-card__facts">
+              ${createSummaryGrid(summaryItems)}
+            </div>
+          </article>
+        </div>
+        <article class="project-note panel marketplace-detail-notes">
           <h3>${detailContent.styleTitle}</h3>
           <p>${listing.stylePreference || detailContent.fallback}</p>
           <h3>${detailContent.notesTitle}</h3>
           <p>${listing.additionalNotes || detailContent.noNotes}</p>
         </article>
       </div>
-    </section>
-    ${createBidSubmissionSection(content, listing)}
-    <section class="section-shell" id="listing-bids">
-      ${createSectionHeading(copy.latestBids)}
-      ${latestBidsMarkup}
     </section>
     ${createMediaSection(detailContent, listing)}
   `;
