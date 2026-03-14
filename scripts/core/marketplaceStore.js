@@ -135,6 +135,63 @@ function createSubmissionError(code, message) {
   return Object.assign(new Error(message), { code });
 }
 
+function normalizeMarketplaceImageItem(item, index = 0) {
+  if (typeof item === "string" && item.trim()) {
+    return {
+      id: `listing-image-${index + 1}`,
+      name: `Project image ${index + 1}`,
+      src: item.trim(),
+    };
+  }
+
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const srcCandidates = [item.dataUrl, item.url, item.src, item.href];
+  const src = srcCandidates.find((value) => typeof value === "string" && value.trim());
+  if (!src) {
+    return null;
+  }
+
+  return {
+    id: item.id || `listing-image-${index + 1}`,
+    name: item.name || `Project image ${index + 1}`,
+    src,
+  };
+}
+
+export function normalizeMarketplaceListing(listing) {
+  if (!listing || typeof listing !== "object") {
+    return listing;
+  }
+
+  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
+  const marketplaceMeta = listing.marketplaceMeta && typeof listing.marketplaceMeta === "object"
+    ? listing.marketplaceMeta
+    : {};
+  const photoReferences = Array.isArray(marketplaceMeta.photoReferences) ? marketplaceMeta.photoReferences : [];
+  const existingImages = Array.isArray(listing.images) ? listing.images : [];
+
+  const imageCandidates = [
+    ...attachments.filter((item) => item && item.kind === "image"),
+    ...photoReferences,
+    ...(typeof listing.imageSrc === "string" && listing.imageSrc.trim() ? [listing.imageSrc] : []),
+    ...existingImages,
+  ];
+
+  const seenSources = new Set();
+  const images = imageCandidates
+    .map((item, index) => normalizeMarketplaceImageItem(item, index))
+    .filter((item) => item && !seenSources.has(item.src) && seenSources.add(item.src));
+
+  return {
+    ...listing,
+    marketplaceMeta,
+    images,
+  };
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -285,7 +342,7 @@ function createBrowserMirror(listing) {
       : listing.imageSrc;
 
   return {
-    ...listing,
+    ...normalizeMarketplaceListing(listing),
     attachments,
     imageSrc,
   };
@@ -552,7 +609,7 @@ export async function fetchPublicMarketplaceListings({
     });
   }
 
-  return Array.isArray(data.listings) ? data.listings : [];
+  return Array.isArray(data.listings) ? data.listings.map((listing) => normalizeMarketplaceListing(listing)) : [];
 }
 
 export async function fetchPublicMarketplaceListing(listingId) {
@@ -577,7 +634,7 @@ export async function fetchPublicMarketplaceListing(listingId) {
     });
   }
 
-  return data.listing || null;
+  return data.listing ? normalizeMarketplaceListing(data.listing) : null;
 }
 
 function requireListingOwner(type) {
@@ -644,7 +701,9 @@ export function getSubmissionSuccessHref(type, id) {
 export function getSubmittedListings(type) {
   const store = getStore();
   const items = store[type] || [];
-  return [...items].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+  return [...items]
+    .map((item) => normalizeMarketplaceListing(item))
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }
 
 export function getSubmittedListing(type, id) {
@@ -685,7 +744,7 @@ export function getLastSubmissionDetail(type, id = "") {
     return null;
   }
 
-  return payload.listing;
+  return normalizeMarketplaceListing(payload.listing);
 }
 
 export function getOwnedSubmittedListings(type, ownerUserId) {

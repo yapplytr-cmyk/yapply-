@@ -140,8 +140,8 @@ function getClientListingCopy(locale) {
 }
 
 function getClientPreviewImage(listing) {
-  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
-  return attachments.find((item) => item.kind === "image" && item.dataUrl)?.dataUrl || "";
+  const images = Array.isArray(listing.images) ? listing.images : [];
+  return images[0]?.src || "";
 }
 
 function createClientFilters(content) {

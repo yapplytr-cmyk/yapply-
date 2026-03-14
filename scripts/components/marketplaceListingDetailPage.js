@@ -305,6 +305,16 @@ function normalizeListingImageItem(item, index) {
 }
 
 function getListingImageItems(listing) {
+  const normalizedImages = Array.isArray(listing.images)
+    ? listing.images
+        .map((item, index) => normalizeListingImageItem(item, index))
+        .filter(Boolean)
+    : [];
+
+  if (normalizedImages.length > 0) {
+    return normalizedImages;
+  }
+
   const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
   const attachmentImages = attachments
     .filter((item) => item && item.kind === "image")
@@ -371,13 +381,8 @@ function createClientVisual(detailContent, listing) {
 }
 
 function createMediaSection(detailContent, listing) {
-  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
-
-  if (attachments.length === 0) {
-    return "";
-  }
-
   const imageItems = getListingImageItems(listing);
+  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
   const fileItems = attachments.filter((item) => item.kind !== "image" && item.dataUrl);
 
   if (imageItems.length === 0 && fileItems.length === 0) {
