@@ -104,6 +104,23 @@ def _user_username_key(username: str) -> str:
 
 
 USER_IDS_KEY = "yapply:user-ids"
+MARKETPLACE_LISTING_IDS_KEY = "yapply:marketplace:listing-ids"
+
+
+def _uses_remote_marketplace_store() -> bool:
+  return _uses_remote_user_store() and IS_VERCEL
+
+
+def _marketplace_listing_record_key(listing_id: str) -> str:
+  return f"yapply:marketplace:listing:{listing_id}"
+
+
+def _marketplace_bid_record_key(bid_id: str) -> str:
+  return f"yapply:marketplace:bid:{bid_id}"
+
+
+def _marketplace_listing_bid_ids_key(listing_id: str) -> str:
+  return f"yapply:marketplace:listing-bids:{listing_id}"
 
 
 def _normalize_remote_user_record(record) -> dict | None:
@@ -200,6 +217,44 @@ def _count_remote_active_admin_users(exclude_user_id: str | None = None) -> int:
     if get_record_value(user, "role") in ADMIN_ROLES and int(get_record_value(user, "is_active", "isActive") or 1) == 1:
       count += 1
   return count
+
+
+def _load_remote_json_record(key: str) -> dict | None:
+  raw = _kv_get(key)
+  if not raw:
+    return None
+
+  try:
+    parsed = json.loads(raw) if isinstance(raw, str) else raw
+  except json.JSONDecodeError:
+    return None
+
+  return parsed if isinstance(parsed, dict) else None
+
+
+def _load_remote_marketplace_listing_record(listing_id: str) -> dict | None:
+  return _load_remote_json_record(_marketplace_listing_record_key(listing_id))
+
+
+def _load_remote_marketplace_bid_record(bid_id: str) -> dict | None:
+  return _load_remote_json_record(_marketplace_bid_record_key(bid_id))
+
+
+def _list_remote_marketplace_bid_records(listing_id: str) -> list[dict]:
+  bids = [_load_remote_marketplace_bid_record(bid_id) for bid_id in _kv_smembers(_marketplace_listing_bid_ids_key(listing_id))]
+  filtered = [bid for bid in bids if bid]
+  filtered.sort(key=lambda bid: (get_record_value(bid, "created_at", "createdAt") or "", get_record_value(bid, "id") or ""), reverse=True)
+  return filtered
+
+
+def _list_remote_marketplace_listing_records() -> list[dict]:
+  records = [_load_remote_marketplace_listing_record(listing_id) for listing_id in _kv_smembers(MARKETPLACE_LISTING_IDS_KEY)]
+  filtered = [record for record in records if record]
+  filtered.sort(
+    key=lambda record: (get_record_value(record, "created_at", "createdAt") or "", get_record_value(record, "id") or ""),
+    reverse=True,
+  )
+  return filtered
 
 
 def get_account_store_status() -> dict:
@@ -746,20 +801,33 @@ def _count_marketplace_bids_for_listing(connection: sqlite3.Connection, listing_
   return int(row["count"] or 0) if row else 0
 
 
+def _list_remote_marketplace_bids_for_listing(listing_id: str, limit: int = BID_PREVIEW_LIMIT) -> list[dict]:
+  rows = _list_remote_marketplace_bid_records(listing_id)[: max(1, limit)]
+  return [serialize_marketplace_bid(row) for row in rows]
+
+
+def _count_remote_marketplace_bids_for_listing(listing_id: str) -> int:
+  return len(_list_remote_marketplace_bid_records(listing_id))
+
+
 def serialize_marketplace_listing(row: sqlite3.Row, connection: sqlite3.Connection | None = None) -> dict:
   payload = _load_json_dict(row["payload_json"])
   marketplace_meta = payload.get("marketplaceMeta") if isinstance(payload.get("marketplaceMeta"), dict) else {}
   own_connection = connection is None
 
-  if own_connection:
-    connection = get_connection()
+  if _uses_remote_marketplace_store() and not isinstance(row, sqlite3.Row):
+    latest_bids = _list_remote_marketplace_bids_for_listing(row["id"], BID_PREVIEW_LIMIT)
+    bid_count = _count_remote_marketplace_bids_for_listing(row["id"])
+  else:
+    if own_connection:
+      connection = get_connection()
 
-  try:
-    latest_bids = _list_marketplace_bids_for_listing(connection, row["id"], BID_PREVIEW_LIMIT)
-    bid_count = _count_marketplace_bids_for_listing(connection, row["id"])
-  finally:
-    if own_connection and connection is not None:
-      connection.close()
+    try:
+      latest_bids = _list_marketplace_bids_for_listing(connection, row["id"], BID_PREVIEW_LIMIT)
+      bid_count = _count_marketplace_bids_for_listing(connection, row["id"])
+    finally:
+      if own_connection and connection is not None:
+        connection.close()
 
   return {
     **payload,
@@ -788,6 +856,22 @@ def create_marketplace_listing(payload: dict) -> dict:
   owner_user_id = validated_payload.get("ownerUserId")
   owner_role = validated_payload.get("ownerRole")
   stored_payload = {**validated_payload, "id": listing_id, "createdAt": now, "updatedAt": now}
+
+  if _uses_remote_marketplace_store():
+    record = {
+      "id": listing_id,
+      "owner_user_id": owner_user_id,
+      "owner_role": owner_role,
+      "listing_type": listing_type,
+      "status": validated_payload.get("status") or "active",
+      "title": title,
+      "payload_json": json.dumps(stored_payload),
+      "created_at": now,
+      "updated_at": now,
+    }
+    _kv_set(_marketplace_listing_record_key(listing_id), json.dumps(record))
+    _kv_sadd(MARKETPLACE_LISTING_IDS_KEY, listing_id)
+    return serialize_marketplace_listing(record)
 
   with get_connection() as connection:
     relational_owner_user_id = owner_user_id
@@ -821,6 +905,10 @@ def create_marketplace_listing(payload: dict) -> dict:
 
 
 def get_marketplace_listing(listing_id: str) -> dict | None:
+  if _uses_remote_marketplace_store():
+    row = _load_remote_marketplace_listing_record(listing_id)
+    return serialize_marketplace_listing(row) if row else None
+
   with get_connection() as connection:
     row = connection.execute("SELECT * FROM marketplace_listings WHERE id = ? LIMIT 1", (listing_id,)).fetchone()
 
@@ -833,6 +921,27 @@ def list_marketplace_listings(
   category: str | None = None,
   limit: int = 48,
 ) -> list[dict]:
+  if _uses_remote_marketplace_store():
+    records = _list_remote_marketplace_listing_records()
+
+    if listing_type:
+      records = [record for record in records if get_record_value(record, "listing_type") == listing_type]
+
+    if status:
+      records = [record for record in records if get_record_value(record, "status") == status]
+
+    listings = [serialize_marketplace_listing(record) for record in records[: max(1, limit)]]
+
+    if category:
+      listings = [
+        listing
+        for listing in listings
+        if isinstance(listing.get("marketplaceMeta"), dict)
+        and listing["marketplaceMeta"].get("category") == category
+      ]
+
+    return listings
+
   clauses: list[str] = []
   params: list[object] = []
 
@@ -879,6 +988,24 @@ def create_marketplace_bid(payload: dict) -> dict:
   developer_reference = validated_payload.get("developerProfileReference") or {}
   bidder_user_id = developer_reference.get("userId")
 
+  if _uses_remote_marketplace_store():
+    listing_row = _load_remote_marketplace_listing_record(listing_id)
+    if not listing_row:
+      raise ValueError("The target marketplace listing could not be found.")
+
+    record = {
+      "id": bid_id,
+      "listing_id": listing_id,
+      "bidder_user_id": bidder_user_id,
+      "bidder_role": payload.get("bidderRole") or "developer",
+      "status": validated_payload["status"],
+      "payload_json": json.dumps({**validated_payload, "id": bid_id, "createdAt": now}),
+      "created_at": now,
+    }
+    _kv_set(_marketplace_bid_record_key(bid_id), json.dumps(record))
+    _kv_sadd(_marketplace_listing_bid_ids_key(listing_id), bid_id)
+    return serialize_marketplace_bid(record)
+
   with get_connection() as connection:
     listing_row = connection.execute("SELECT id FROM marketplace_listings WHERE id = ? LIMIT 1", (listing_id,)).fetchone()
     if not listing_row:
@@ -907,5 +1034,8 @@ def create_marketplace_bid(payload: dict) -> dict:
 
 
 def list_marketplace_bids(listing_id: str, limit: int = BID_PREVIEW_LIMIT) -> list[dict]:
+  if _uses_remote_marketplace_store():
+    return _list_remote_marketplace_bids_for_listing(listing_id, limit)
+
   with get_connection() as connection:
     return _list_marketplace_bids_for_listing(connection, listing_id, limit)
