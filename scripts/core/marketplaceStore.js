@@ -176,6 +176,37 @@ function setStore(store) {
   return writeJson(STORAGE_KEY, store);
 }
 
+function updateStoredListing(type, listingId, updater) {
+  if (!type || !listingId || typeof updater !== "function") {
+    return null;
+  }
+
+  const store = getStore();
+  const items = Array.isArray(store[type]) ? [...store[type]] : [];
+  const index = items.findIndex((item) => item?.id === listingId);
+
+  if (index === -1) {
+    return null;
+  }
+
+  const nextListing = updater({ ...items[index] });
+  if (!nextListing) {
+    return null;
+  }
+
+  items[index] = nextListing;
+  store[type] = items;
+  setStore(store);
+
+  const lastSubmission = getLastSubmission();
+  if (lastSubmission?.type === type && lastSubmission?.id === listingId) {
+    writeJson(LAST_SUBMISSION_DETAIL_KEY, { type, listing: nextListing });
+    writeJsonTo(getSessionStorage(), LAST_SUBMISSION_DETAIL_KEY, { type, listing: nextListing });
+  }
+
+  return nextListing;
+}
+
 function clearLastSubmissionState(type = "", id = "") {
   const lastSubmission = getLastSubmission();
 
@@ -384,33 +415,70 @@ export async function submitMarketplaceBid(formData) {
     }),
   });
 
-  const response = await fetch(createApiUrl("/api/marketplace/bids/create"), {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      bid,
-      bidder: session?.user
-        ? {
-            id: session.user.id,
-            role: session.user.role,
-            fullName: session.user.fullName,
-            email: session.user.email,
-            companyName: session.user.companyName,
-            specialties: session.user.specialties,
-            yearsExperience: session.user.yearsExperience,
-          }
-        : null,
-    }),
-  });
-  const data = await readJsonResponse(response);
+  const bidder = session?.user
+    ? {
+        id: session.user.id,
+        role: session.user.role,
+        fullName: session.user.fullName,
+        email: session.user.email,
+        companyName: session.user.companyName,
+        specialties: session.user.specialties,
+        yearsExperience: session.user.yearsExperience,
+      }
+    : null;
 
-  if (!response.ok) {
-    throw Object.assign(new Error(data.message || "The bid could not be submitted."), {
-      code: data.code || "BID_CREATE_FAILED",
+  let data = {};
+  try {
+    const response = await fetch(createApiUrl("/api/marketplace/bids/create"), {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        bid,
+        bidder,
+      }),
     });
+    data = await readJsonResponse(response);
+
+    if (!response.ok) {
+      throw Object.assign(new Error(data.message || "The bid could not be submitted."), {
+        code: data.code || "BID_CREATE_FAILED",
+      });
+    }
+  } catch (error) {
+    if (error?.code !== "LISTING_NOT_FOUND") {
+      throw error;
+    }
+
+    const localBid = {
+      ...bid,
+      id: createId("bid", `${bid.listingId}-${session.user.id}`),
+      createdAt: new Date().toISOString(),
+    };
+    const localListing = updateStoredListing("client", bid.listingId, (listing) => {
+      const existingMeta = listing.marketplaceMeta && typeof listing.marketplaceMeta === "object" ? listing.marketplaceMeta : {};
+      const existingBids = Array.isArray(existingMeta.latestBids) ? existingMeta.latestBids : [];
+
+      return {
+        ...listing,
+        marketplaceMeta: {
+          ...existingMeta,
+          latestBids: [localBid, ...existingBids].slice(0, 4),
+          bidCount: Number(existingMeta.bidCount || 0) + 1,
+        },
+      };
+    });
+
+    if (!localListing) {
+      throw error;
+    }
+
+    return {
+      bid: localBid,
+      listing: localListing,
+    };
   }
 
   return {
