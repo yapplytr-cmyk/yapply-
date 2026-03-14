@@ -22,10 +22,68 @@ let appApiPromise = null;
 let i18nApiPromise = null;
 let heroSceneApiPromise = null;
 
+function getLoadingCopy(locale = "tr") {
+  if (locale === "en") {
+    return {
+      eyebrow: "Yapply",
+      text: "Preparing...",
+    };
+  }
+
+  return {
+    eyebrow: "Yapply",
+    text: "Hazırlanıyor...",
+  };
+}
+
+function getLoadingBirdMarkup() {
+  return `
+    <svg class="loading-bird" viewBox="0 0 120 120" fill="none" aria-hidden="true">
+      <ellipse class="loading-bird__shadow" cx="60" cy="95" rx="19" ry="5"></ellipse>
+      <g class="loading-bird__bob">
+        <path class="loading-bird__tail" d="M32 63 21 58 30 71 38 67Z"></path>
+        <ellipse class="loading-bird__body" cx="52" cy="62" rx="23" ry="18"></ellipse>
+        <circle class="loading-bird__head" cx="73" cy="49" r="13"></circle>
+        <ellipse class="loading-bird__wing" cx="49" cy="63" rx="11" ry="15" transform="rotate(-24 49 63)"></ellipse>
+        <circle class="loading-bird__eye" cx="77" cy="46" r="2.3"></circle>
+        <path class="loading-bird__beak" d="M84 49 94 45 87 54Z"></path>
+        <path class="loading-bird__leg" d="M49 79V88"></path>
+        <path class="loading-bird__leg" d="M58 79V88"></path>
+        <g class="loading-bird__tool">
+          <rect class="loading-bird__pencil" x="66" y="71" width="30" height="5" rx="2.5" transform="rotate(-22 66 71)"></rect>
+          <rect class="loading-bird__pencil-eraser" x="66" y="71" width="6" height="5" rx="1.2" transform="rotate(-22 66 71)"></rect>
+          <path class="loading-bird__pencil-tip" d="M96 59 103 56 100 64Z"></path>
+        </g>
+      </g>
+    </svg>
+  `;
+}
+
+function createLoadingMarkup({ eyebrow, locale = "tr" } = {}) {
+  const copy = getLoadingCopy(locale);
+
+  return `
+    <div class="page-shell">
+      <main class="section-shell">
+        <div class="panel application-panel application-panel--loading">
+          <div class="app-loader" aria-live="polite">
+            <p class="app-loader__brand">${escapeHtml(eyebrow || copy.eyebrow)}</p>
+            <div class="app-loader__bird">${getLoadingBirdMarkup()}</div>
+            <p class="app-loader__text">
+              <span class="app-loader__text-tr">Hazırlanıyor...</span>
+              <span class="app-loader__text-en">Preparing...</span>
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+  `;
+}
+
 function createBootFallbackMarkup({
-  eyebrow = "Yapply",
-  title = "Loading the interface...",
-  description = "The site is initializing.",
+  eyebrow = "Yapply Recovery",
+  title = "The interface is recovering.",
+  description = "A runtime or module-load error interrupted the page render. The app shell is visible again while the failing module is bypassed.",
   debug = "",
 } = {}) {
   const debugMarkup = debug ? `<p class="section-description"><strong>Debug:</strong> ${debug}</p>` : "";
@@ -75,9 +133,6 @@ function renderBootFallback(appRoot, error) {
   }
 
   appRoot.innerHTML = createBootFallbackMarkup({
-    eyebrow: "Yapply Recovery",
-    title: "The interface is recovering.",
-    description: "A runtime or module-load error interrupted the page render. The app shell is visible again while the failing module is bypassed.",
     debug: getBootErrorMessage(error),
   });
 }
@@ -1532,7 +1587,7 @@ async function renderPage(localeOverride) {
   }
 
   if (!appRoot.children.length) {
-    appRoot.innerHTML = createBootFallbackMarkup();
+    appRoot.innerHTML = createLoadingMarkup({ locale: getLocale("tr") });
   }
 
   cleanupRevealAnimations();
