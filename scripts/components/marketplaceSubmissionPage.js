@@ -1,10 +1,27 @@
 import { createButton, createSectionHeading } from "./primitives.js";
 
 function createSelectOptions(options) {
-  return options.map((option) => `<option value="${option}">${option}</option>`).join("");
+  return options
+    .map((option) => {
+      if (typeof option === "string") {
+        return `<option value="${option}">${option}</option>`;
+      }
+
+      return `<option value="${option.value}">${option.label}</option>`;
+    })
+    .join("");
 }
 
 function createField(fieldKey, field, pageContent) {
+  if (field.type === "group") {
+    return `
+      <div class="form-field form-field--full">
+        <span>${field.label}</span>
+        ${field.description ? `<small>${field.description}</small>` : ""}
+      </div>
+    `;
+  }
+
   const commonAttributes = [`name="${fieldKey}"`];
 
   if (field.placeholder && field.type !== "select" && field.type !== "file" && field.type !== "textarea") {

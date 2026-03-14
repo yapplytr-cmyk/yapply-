@@ -258,6 +258,7 @@ def validate_marketplace_listing_payload(payload: dict) -> dict:
   title = _normalize_text(payload.get("title") or payload.get("name"))
   location = _normalize_text(payload.get("location"))
   description = _normalize_text(payload.get("brief") or payload.get("summary") or payload.get("portfolioSummary"))
+  marketplace_meta = deepcopy(payload.get("marketplaceMeta") or {})
 
   if listing_type not in {CLIENT_LISTING_TYPE, PROFESSIONAL_LISTING_TYPE}:
     raise ValueError("A valid marketplace listing type is required.")
@@ -293,17 +294,29 @@ def validate_marketplace_listing_payload(payload: dict) -> dict:
     or payload.get("deliveryRange")
   )
   photo_references = create_marketplace_photo_references(payload.get("attachments"))
-  marketplace_meta = deepcopy(payload.get("marketplaceMeta") or {})
   latest_bids = marketplace_meta.get("latestBids") if isinstance(marketplace_meta.get("latestBids"), list) else []
   bid_count = marketplace_meta.get("bidCount")
+  permits_status = _normalize_text(marketplace_meta.get("permitsStatus") or payload.get("permitsStatus"))
+  construction_started = _normalize_text(marketplace_meta.get("constructionStarted") or payload.get("constructionStarted"))
 
   try:
     bid_count = int(bid_count) if bid_count is not None else len(latest_bids)
   except (TypeError, ValueError):
     bid_count = len(latest_bids)
 
+  if listing_type == CLIENT_LISTING_TYPE:
+    if not _normalize_text(payload.get("marketplaceCategory") or payload.get("projectType")):
+      raise ValueError("A client listing category is required.")
+    if not _normalize_text(payload.get("marketplaceProjectStatus") or payload.get("plotStatus")):
+      raise ValueError("A land or project status is required.")
+    if not construction_started:
+      raise ValueError("Please indicate whether construction has started.")
+    if len(photo_references) == 0:
+      raise ValueError("At least one area or project photo is required.")
+
   normalized_payload = dict(payload)
   normalized_payload["marketplaceMeta"] = {
+    **marketplace_meta,
     "schemaVersion": 1,
     "category": category,
     "subcategory": subcategory if _slugify_value(subcategory) != category else "",
@@ -312,6 +325,8 @@ def validate_marketplace_listing_payload(payload: dict) -> dict:
     "desiredTimeframe": desired_timeframe,
     "projectStatus": project_status,
     "listingStatus": listing_status,
+    "permitsStatus": permits_status,
+    "constructionStarted": construction_started,
     "photoReferences": photo_references,
     "latestBids": latest_bids[:BID_PREVIEW_LIMIT],
     "bidCount": bid_count,

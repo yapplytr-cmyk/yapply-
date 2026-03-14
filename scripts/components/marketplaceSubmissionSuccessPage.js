@@ -131,8 +131,8 @@ export function createMarketplaceSubmissionSuccessPage(content, listing, submiss
                 { label: pageContent.summary.type, value: listing.projectType },
                 { label: pageContent.summary.location, value: listing.location },
                 { label: pageContent.summary.budget, value: listing.budget },
-                { label: "Timeline", value: listing.timeline },
-                { label: "Plot Status", value: listing.plotStatus },
+                { label: pageContent.summary.timeline || "Timeline", value: listing.timeline },
+                { label: pageContent.summary.plotStatus || "Plot Status", value: listing.plotStatus },
               ])}
             </div>
           </article>

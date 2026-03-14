@@ -209,19 +209,24 @@ async function createClientListing(formData) {
   const session = getAuthSession();
   const rawTitle = formData.get("projectTitle") || "Client Project";
   const projectType = escapeHtml(formData.get("projectType") || "");
+  const marketplaceSubcategory = escapeHtml(formData.get("marketplaceSubcategory") || "");
   const stylePreference = escapeHtml(formData.get("stylePreference") || "");
   const location = escapeHtml(formData.get("preferredLocation") || "");
   const projectBrief = escapeHtml(formData.get("projectBrief") || "");
+  const estimatedBudget = escapeHtml(formData.get("estimatedBudget") || "");
   const desiredTimeline = escapeHtml(formData.get("desiredTimeline") || "");
   const additionalNotes = escapeHtml(formData.get("additionalNotes") || "");
   const projectSize = escapeHtml(formData.get("projectSize") || "");
   const plotStatus = escapeHtml(formData.get("plotStatus") || "");
+  const permitsStatus = escapeHtml(formData.get("permitsStatus") || "");
+  const constructionStarted = escapeHtml(formData.get("constructionStarted") || "");
   const attachments = await createAttachments(formData.getAll("referenceUpload"));
 
   return validateMarketplaceListingDraft({
     id: createId("client", rawTitle),
     type: "client",
     source: "submitted",
+    status: "open-for-bids",
     createdAt: new Date().toISOString(),
     ownerUserId: session?.user?.id || null,
     ownerRole: session?.user?.role || "client",
@@ -232,17 +237,27 @@ async function createClientListing(formData) {
     },
     title: escapeHtml(rawTitle),
     projectType,
+    marketplaceCategory: projectType,
+    marketplaceSubcategory,
     location,
-    budget: escapeHtml(formData.get("estimatedBudget") || ""),
+    budget: estimatedBudget,
     startDate: desiredTimeline,
     timeline: desiredTimeline,
     plotStatus,
+    marketplaceProjectStatus: plotStatus,
     brief: projectBrief,
     projectSize,
     stylePreference,
+    permitsStatus,
+    constructionStarted,
     additionalNotes,
     attachments,
-    tags: [projectType, stylePreference, "New Submission"].filter(Boolean).slice(0, 3),
+    tags: [projectType, location, plotStatus].filter(Boolean).slice(0, 3),
+    marketplaceMeta: {
+      permitsStatus,
+      constructionStarted,
+      listingStatus: "open-for-bids",
+    },
   });
 }
 

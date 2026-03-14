@@ -249,6 +249,8 @@ export function validateMarketplaceListingDraft(listing) {
   const title = normalizeText(listing.title || listing.name);
   const location = normalizeText(listing.location);
   const description = normalizeText(listing.brief || listing.summary || listing.portfolioSummary);
+  const existingMarketplaceMeta =
+    listing.marketplaceMeta && typeof listing.marketplaceMeta === "object" ? listing.marketplaceMeta : {};
 
   if (listingType !== CLIENT_LISTING_TYPE && listingType !== PROFESSIONAL_LISTING_TYPE) {
     throw Object.assign(new Error("A valid marketplace listing type is required."), { code: "INVALID_LISTING" });
@@ -284,14 +286,35 @@ export function validateMarketplaceListingDraft(listing) {
     listing.marketplaceDesiredTimeframe?.label || listing.timeline || listing.startDate || listing.deliveryRange
   );
   const photoReferences = createMarketplacePhotoReferences(listing.attachments);
-  const latestBids = Array.isArray(listing.marketplaceMeta?.latestBids)
-    ? listing.marketplaceMeta.latestBids.slice(0, BID_PREVIEW_LIMIT)
+  const latestBids = Array.isArray(existingMarketplaceMeta.latestBids)
+    ? existingMarketplaceMeta.latestBids.slice(0, BID_PREVIEW_LIMIT)
     : [];
-  const bidCount = Number.isFinite(Number(listing.marketplaceMeta?.bidCount)) ? Number(listing.marketplaceMeta.bidCount) : 0;
+  const bidCount = Number.isFinite(Number(existingMarketplaceMeta.bidCount)) ? Number(existingMarketplaceMeta.bidCount) : 0;
+  const permitsStatus = normalizeText(existingMarketplaceMeta.permitsStatus || listing.permitsStatus);
+  const constructionStarted = normalizeText(existingMarketplaceMeta.constructionStarted || listing.constructionStarted);
+
+  if (listingType === CLIENT_LISTING_TYPE) {
+    if (!normalizeText(listing.marketplaceCategory || listing.projectType)) {
+      throw Object.assign(new Error("A client listing category is required."), { code: "INVALID_LISTING" });
+    }
+
+    if (!normalizeText(listing.marketplaceProjectStatus || listing.plotStatus)) {
+      throw Object.assign(new Error("A land or project status is required."), { code: "INVALID_LISTING" });
+    }
+
+    if (!constructionStarted) {
+      throw Object.assign(new Error("Please indicate whether construction has started."), { code: "INVALID_LISTING" });
+    }
+
+    if (photoReferences.length === 0) {
+      throw Object.assign(new Error("At least one area or project photo is required."), { code: "INVALID_LISTING" });
+    }
+  }
 
   return {
     ...listing,
     marketplaceMeta: {
+      ...existingMarketplaceMeta,
       schemaVersion: 1,
       category,
       subcategory: subcategory && slugifyValue(subcategory) !== category ? subcategory : "",
@@ -300,6 +323,8 @@ export function validateMarketplaceListingDraft(listing) {
       desiredTimeframe,
       projectStatus,
       listingStatus,
+      permitsStatus,
+      constructionStarted,
       photoReferences,
       latestBids,
       bidCount,

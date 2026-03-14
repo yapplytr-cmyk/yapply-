@@ -1,3 +1,115 @@
+const clientMarketplaceCategoryOptionsEn = [
+  "Pool Renovation",
+  "Pool Construction",
+  "Wall Construction",
+  "Interior Renovation",
+  "Kitchen Renovation",
+  "Bathroom Renovation",
+  "Full Villa Construction",
+  "Landscaping",
+  "Exterior Renovation",
+  "Roofing",
+  "Flooring",
+  "Painting",
+  "Tiling",
+  "Plumbing",
+  "Electrical",
+  "Facade Work",
+  "Garden Design",
+  "Pergola / Outdoor Structures",
+  "Demolition / Site Prep",
+  "General Construction",
+  "Architecture / Design",
+  "Custom Project",
+];
+
+const clientMarketplaceCategoryOptionsTr = [
+  "Havuz Renovasyonu",
+  "Havuz Yapımı",
+  "Duvar Yapımı",
+  "İç Mekan Renovasyonu",
+  "Mutfak Renovasyonu",
+  "Banyo Renovasyonu",
+  "Komple Villa Yapımı",
+  "Peyzaj",
+  "Dış Cephe Renovasyonu",
+  "Çatı",
+  "Zemin Kaplama",
+  "Boya",
+  "Seramik / Fayans",
+  "Sıhhi Tesisat",
+  "Elektrik",
+  "Cephe Uygulaması",
+  "Bahçe Tasarımı",
+  "Pergola / Dış Mekan Yapıları",
+  "Yıkım / Saha Hazırlığı",
+  "Genel İnşaat",
+  "Mimarlık / Tasarım",
+  "Özel Proje",
+];
+
+const clientMarketplaceProjectStatusOptionsEn = [
+  "Not Started",
+  "Planning Stage",
+  "In Construction",
+  "Renovation Needed",
+  "Shell Structure Complete",
+  "Interior Work Needed",
+  "Exterior Work Needed",
+  "Landscape Needed",
+  "Other",
+];
+
+const clientMarketplaceProjectStatusOptionsTr = [
+  "Başlanmadı",
+  "Planlama Aşaması",
+  "İnşaat Halinde",
+  "Renovasyon Gerekli",
+  "Kaba Yapı Tamam",
+  "İç Mekan İşleri Gerekli",
+  "Dış Mekan İşleri Gerekli",
+  "Peyzaj Gerekli",
+  "Diğer",
+];
+
+const clientMarketplaceBudgetOptionsEn = [
+  "Under EUR 300K",
+  "EUR 300K - 800K",
+  "EUR 800K - 1.5M",
+  "EUR 1.5M - 3M",
+  "EUR 3M+",
+];
+
+const clientMarketplaceBudgetOptionsTr = [
+  "EUR 300K altı",
+  "EUR 300K - 800K",
+  "EUR 800K - 1.5M",
+  "EUR 1.5M - 3M",
+  "EUR 3M+",
+];
+
+const clientMarketplacePermitsOptionsEn = [
+  "Plans and permits are ready",
+  "Some plans exist, permits are still pending",
+  "No plans or permits yet",
+];
+
+const clientMarketplacePermitsOptionsTr = [
+  "Planlar ve izinler hazır",
+  "Bazı planlar mevcut, izinler beklemede",
+  "Henüz plan veya izin yok",
+];
+
+const clientMarketplaceStartedOptionsEn = [
+  "No, construction has not started",
+  "Yes, construction has already started",
+];
+
+const clientMarketplaceStartedOptionsTr = [
+  "Hayır, inşaat henüz başlamadı",
+  "Evet, inşaat başladı",
+];
+
 export const translations = {
   en: {
     meta: {
@@ -627,74 +739,109 @@ export const translations = {
         },
         form: {
           eyebrow: "Client intake form",
-          title: "Tell Yapply what you want to build.",
+          title: "Create a live client project listing.",
           description:
-            "This first version is frontend-only, but the full structure is in place for future moderation, marketplace posting, and lead routing.",
+            "Publish a structured project request so qualified developers can evaluate the opportunity and prepare future bids with the right context.",
           roleGate: {
             title: "This page is reserved for client project request listings.",
             description: "Developer accounts can only create professional marketplace listings.",
             actionLabel: "Create Professional Listing",
             actionHref: "./professional-listing-submission.html",
           },
-          submitLabel: "Submit Project Brief",
-          successTitle: "Project brief captured",
-          successText: "Your project submission has been recorded in this frontend flow. In the next phase, it can be connected to a live marketplace review and publishing workflow.",
+          submitLabel: "Publish Project Listing",
+          successTitle: "Project listing published",
+          successText: "Your client listing is now saved and marked open for bids in the marketplace flow.",
           summary: {
-            eyebrow: "Submission intent",
-            title: "A serious luxury construction intake",
+            eyebrow: "Listing intent",
+            title: "A client request built for live bidding.",
             description:
-              "The form captures the core signals professionals need: project type, location, land readiness, budget, timing, design preference, and build ambition.",
+              "The form captures category, project status, location, budget, timing, visuals, and planning context so future developer bids are grounded in the right details.",
             items: [
               { label: "Audience", value: "Architects, developers, contractors" },
-              { label: "Use case", value: "Marketplace brief publishing" },
-              { label: "Flow", value: "Frontend only for now" },
+              { label: "Use case", value: "Live client listing" },
+              { label: "Status", value: "Open for bids" },
             ],
           },
           fields: {
-            fullName: { label: "Full Name", placeholder: "Your full name", autocomplete: "name", required: true },
-            email: { label: "Email", type: "email", placeholder: "name@email.com", autocomplete: "email", required: true },
-            phone: { label: "Phone Number", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
-            projectTitle: { label: "Project Title", placeholder: "Private coastal villa, boutique renovation, mixed-use concept...", required: true },
-            projectType: {
-              label: "Project Type",
-              type: "select",
-              placeholder: "Select the project type",
-              options: ["Villa Build", "Apartment Renovation", "Commercial Project", "Residential Development", "Hospitality Concept"],
-              required: true,
+            projectOverviewGroup: {
+              type: "group",
+              label: "Project overview",
+              description: "Define the scope and listing category before developers see the request.",
+              full: true,
             },
-            preferredLocation: { label: "Preferred Location / City", placeholder: "Istanbul, Izmir, Bodrum...", required: true },
-            estimatedBudget: {
-              label: "Estimated Budget",
-              type: "select",
-              placeholder: "Select your estimated range",
-              options: ["Under EUR 300K", "EUR 300K - 800K", "EUR 800K - 1.5M", "EUR 1.5M - 3M", "EUR 3M+"],
-              required: true,
-            },
-            desiredTimeline: { label: "Desired Timeline / Start", placeholder: "Q3 2026, within 6 months, after land closing...", required: true },
-            plotStatus: {
-              label: "Plot Ownership Status",
-              type: "select",
-              placeholder: "Select your current land status",
-              options: ["I already own the plot", "Plot reserved / under review", "Looking for land options", "Need advisory support on land and feasibility"],
-              required: true,
-            },
-            projectSize: { label: "Project Size / Square Meter Goal", placeholder: "Approx. 280 m2 interior / 900 m2 plot", required: true },
-            stylePreference: { label: "Style Preference", placeholder: "Mediterranean modern, warm minimal, contemporary hillside...", required: true },
+            projectTitle: { label: "Project Title", placeholder: "Private coastal villa, pool restoration, kitchen renovation...", required: true },
             projectBrief: {
-              label: "Short Project Brief / What You Want Built",
+              label: "Project Description",
               type: "textarea",
-              placeholder: "Describe the project, lifestyle intent, required spaces, and what matters most in the build.",
+              placeholder: "Describe what you want built, renovated, or completed and what matters most for the outcome.",
               rows: 5,
               full: true,
               required: true,
             },
+            projectType: {
+              label: "Category",
+              type: "select",
+              placeholder: "Select a construction category",
+              options: clientMarketplaceCategoryOptionsEn,
+              required: true,
+            },
+            marketplaceSubcategory: {
+              label: "Optional Subcategory",
+              placeholder: "Example: Infinity-edge pool, natural stone facade, luxury outdoor kitchen...",
+            },
+            siteDetailsGroup: {
+              type: "group",
+              label: "Site and planning details",
+              description: "Share the location, current project status, and any planning readiness signals.",
+              full: true,
+            },
+            fullName: { label: "Full Name", placeholder: "Your full name", autocomplete: "name", required: true },
+            email: { label: "Email", type: "email", placeholder: "name@email.com", autocomplete: "email", required: true },
+            phone: { label: "Phone Number", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+            preferredLocation: { label: "Location", placeholder: "Istanbul, Izmir, Bodrum...", required: true },
+            estimatedBudget: {
+              label: "Budget Range",
+              type: "select",
+              placeholder: "Optional budget range",
+              options: clientMarketplaceBudgetOptionsEn,
+            },
+            desiredTimeline: { label: "Desired Timeframe", placeholder: "Optional timing target, start window, or completion expectation..." },
+            plotStatus: {
+              label: "Land / Project Status",
+              type: "select",
+              placeholder: "Select the current project status",
+              options: clientMarketplaceProjectStatusOptionsEn,
+              required: true,
+            },
+            permitsStatus: {
+              label: "Permits / Plans Status",
+              type: "select",
+              placeholder: "Optional planning status",
+              options: clientMarketplacePermitsOptionsEn,
+            },
+            constructionStarted: {
+              label: "Has construction started?",
+              type: "select",
+              placeholder: "Select the current construction state",
+              options: clientMarketplaceStartedOptionsEn,
+              required: true,
+            },
+            projectSize: { label: "Project Size / Area (optional)", placeholder: "Approx. 280 m2 interior / 900 m2 plot" },
+            stylePreference: { label: "Style Preference (optional)", placeholder: "Mediterranean modern, warm minimal, contemporary hillside..." },
+            mediaGroup: {
+              type: "group",
+              label: "Photos and extra context",
+              description: "Add area photos, reference images, and any supporting notes for future bidders.",
+              full: true,
+            },
             referenceUpload: {
-              label: "Reference Image Upload",
+              label: "Area / Project Photos",
               type: "file",
-              placeholder: "Upload inspiration images or reference material",
-              hint: "Frontend placeholder only for now. Future versions can store images directly in the marketplace workflow.",
+              placeholder: "Upload site photos or project reference images",
+              hint: "Images are stored with the listing so the next bidding phase can show the project context clearly.",
               full: true,
               multiple: true,
+              required: true,
             },
             additionalNotes: {
               label: "Additional Notes",
@@ -707,7 +854,7 @@ export const translations = {
         },
         footer: {
           description:
-            "Client project submission pages on Yapply are designed to turn high-intent briefs into a structured listing flow prepared for future marketplace publishing.",
+            "Client project submission pages on Yapply now translate high-intent briefs into structured marketplace listings prepared for live bidding.",
           columns: [
             {
               title: "Submission",
@@ -724,7 +871,7 @@ export const translations = {
               ],
             },
           ],
-          note: "This page is frontend-only for now and prepared for future moderation, publishing, and lead-routing flows.",
+          note: "This client flow now saves a structured marketplace request and keeps it ready for the next live bidding phase.",
           contact: "hello@yapply.com",
           copyrightLabel: "Yapply",
         },
@@ -1472,10 +1619,10 @@ export const translations = {
       success: {
         client: {
           eyebrow: "Submission received",
-          title: "Your project brief is now part of the marketplace flow.",
+          title: "Your client project listing is now open for bids.",
           description:
-            "This MVP stores your submission locally in the current browser and immediately makes it visible in Yapply’s client listings board.",
-          note: "For this frontend MVP, submissions remain visible on this device and browser through local storage.",
+            "Your structured project request has been saved in the marketplace flow and is now marked open for future developer bids.",
+          note: "The listing keeps your category, location, budget, timing, planning status, and uploaded visuals together so the next bidding phase can use the full brief.",
           viewListing: "View My Listing",
           backToMarketplace: "Back to Marketplace",
           submitAnother: "Submit Another",
@@ -1485,9 +1632,12 @@ export const translations = {
           missingDescription: "Submit a project brief first, then come back here to review the listing summary.",
           summary: {
             project: "Project",
-            type: "Type",
+            type: "Category",
             location: "Location",
             budget: "Budget",
+            timeline: "Timeframe",
+            plotStatus: "Project Status",
+            status: "Listing Status",
           },
         },
         professional: {
@@ -3043,74 +3193,109 @@ export const translations = {
         },
         form: {
           eyebrow: "Müşteri intake formu",
-          title: "Yapply’ye ne inşa etmek istediğinizi anlatın.",
+          title: "Canlı bir müşteri proje ilanı oluşturun.",
           description:
-            "Bu ilk versiyon yalnızca frontend akışıdır; ancak moderasyon, pazaryeri yayını ve lead yönlendirmesi için gerekli tam yapı kurulmuştur.",
+            "Nitelikli geliştiricilerin fırsatı doğru bağlamla değerlendirebilmesi ve gelecekte teklif hazırlayabilmesi için yapılandırılmış proje talebinizi yayınlayın.",
           roleGate: {
             title: "Bu sayfa yalnızca müşteri proje talebi ilanları içindir.",
             description: "Geliştirici hesapları yalnızca profesyonel pazaryeri ilanı oluşturabilir.",
             actionLabel: "Profesyonel İlan Oluştur",
             actionHref: "./professional-listing-submission.html",
           },
-          submitLabel: "Proje Briefini Gönder",
-          successTitle: "Proje briefi alındı",
-          successText: "Proje gönderiminiz bu frontend akışında kaydedildi. Sonraki fazda canlı pazaryeri değerlendirme ve yayın sürecine bağlanabilir.",
+          submitLabel: "Proje İlanını Yayınla",
+          successTitle: "Proje ilanı yayınlandı",
+          successText: "Müşteri ilanınız artık pazaryeri akışında kaydedildi ve tekliflere açık olarak işaretlendi.",
           summary: {
-            eyebrow: "Gönderim amacı",
-            title: "Ciddi bir lüks yapı intake akışı",
+            eyebrow: "İlan amacı",
+            title: "Canlı teklif akışı için hazırlanmış bir müşteri talebi.",
             description:
-              "Form; proje tipi, bölge, arsa hazırlığı, bütçe, zamanlama, stil tercihi ve yapı hedefi gibi profesyonellerin ihtiyaç duyduğu temel sinyalleri toplar.",
+              "Form; kategori, proje durumu, konum, bütçe, zamanlama, görseller ve planlama bağlamını toplar; böylece gelecekteki geliştirici teklifleri doğru detaylarla hazırlanabilir.",
             items: [
               { label: "Hedef kitle", value: "Mimarlar, geliştiriciler, yükleniciler" },
-              { label: "Kullanım", value: "Pazaryerinde brief yayını" },
-              { label: "Akış", value: "Şimdilik yalnızca frontend" },
+              { label: "Kullanım", value: "Canlı müşteri ilanı" },
+              { label: "Durum", value: "Tekliflere açık" },
             ],
           },
           fields: {
-            fullName: { label: "Ad Soyad", placeholder: "Adınız ve soyadınız", autocomplete: "name", required: true },
-            email: { label: "E-posta", type: "email", placeholder: "isim@email.com", autocomplete: "email", required: true },
-            phone: { label: "Telefon Numarası", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
-            projectTitle: { label: "Proje Başlığı", placeholder: "Özel sahil villası, butik renovasyon, karma kullanım konsepti...", required: true },
-            projectType: {
-              label: "Proje Türü",
-              type: "select",
-              placeholder: "Proje türünü seçin",
-              options: ["Villa Yapımı", "Daire Renovasyonu", "Ticari Proje", "Konut Geliştirme", "Konaklama Konsepti"],
-              required: true,
+            projectOverviewGroup: {
+              type: "group",
+              label: "Proje özeti",
+              description: "Geliştiriciler ilanı görmeden önce kapsamı ve kategori yapısını netleştirin.",
+              full: true,
             },
-            preferredLocation: { label: "Tercih Edilen Lokasyon / Şehir", placeholder: "İstanbul, İzmir, Bodrum...", required: true },
-            estimatedBudget: {
-              label: "Tahmini Bütçe",
-              type: "select",
-              placeholder: "Tahmini aralığınızı seçin",
-              options: ["EUR 300K altı", "EUR 300K - 800K", "EUR 800K - 1.5M", "EUR 1.5M - 3M", "EUR 3M+"],
-              required: true,
-            },
-            desiredTimeline: { label: "İstenen Takvim / Başlangıç", placeholder: "2026 3. çeyrek, 6 ay içinde, arsa kapanışından sonra...", required: true },
-            plotStatus: {
-              label: "Arsa Sahiplik Durumu",
-              type: "select",
-              placeholder: "Mevcut arsa durumunuzu seçin",
-              options: ["Arsa bana ait", "Arsa rezerve / inceleme aşamasında", "Arsa seçenekleri aranıyor", "Arsa ve fizibilite danışmanlığına ihtiyacım var"],
-              required: true,
-            },
-            projectSize: { label: "Proje Ölçeği / m2 Hedefi", placeholder: "Yaklaşık 280 m2 iç alan / 900 m2 arsa", required: true },
-            stylePreference: { label: "Stil Tercihi", placeholder: "Akdeniz modern, sıcak minimal, çağdaş yamaç evi...", required: true },
+            projectTitle: { label: "Proje Başlığı", placeholder: "Özel sahil villası, havuz restorasyonu, mutfak renovasyonu...", required: true },
             projectBrief: {
-              label: "Kısa Proje Briefi / Ne İnşa Etmek İstiyorsunuz?",
+              label: "Proje Açıklaması",
               type: "textarea",
-              placeholder: "Projeyi, yaşam hedefini, gerekli mekanları ve yapıdaki önceliklerinizi anlatın.",
+              placeholder: "Ne inşa etmek, yenilemek veya tamamlamak istediğinizi ve sonuçta en çok neyin önemli olduğunu anlatın.",
               rows: 5,
               full: true,
               required: true,
             },
+            projectType: {
+              label: "Kategori",
+              type: "select",
+              placeholder: "İnşaat kategorisi seçin",
+              options: clientMarketplaceCategoryOptionsTr,
+              required: true,
+            },
+            marketplaceSubcategory: {
+              label: "İsteğe Bağlı Alt Kategori",
+              placeholder: "Örnek: sonsuzluk havuzu, doğal taş cephe, lüks dış mekan mutfağı...",
+            },
+            siteDetailsGroup: {
+              type: "group",
+              label: "Saha ve planlama detayları",
+              description: "Konum, mevcut proje durumu ve planlama hazırlığını paylaşın.",
+              full: true,
+            },
+            fullName: { label: "Ad Soyad", placeholder: "Adınız ve soyadınız", autocomplete: "name", required: true },
+            email: { label: "E-posta", type: "email", placeholder: "isim@email.com", autocomplete: "email", required: true },
+            phone: { label: "Telefon Numarası", type: "tel", placeholder: "+90 5XX XXX XX XX", autocomplete: "tel", required: true },
+            preferredLocation: { label: "Konum", placeholder: "İstanbul, İzmir, Bodrum...", required: true },
+            estimatedBudget: {
+              label: "Bütçe Aralığı",
+              type: "select",
+              placeholder: "İsteğe bağlı bütçe aralığı",
+              options: clientMarketplaceBudgetOptionsTr,
+            },
+            desiredTimeline: { label: "İstenen Zamanlama", placeholder: "İsteğe bağlı başlangıç penceresi, hedef teslim tarihi veya zaman beklentisi..." },
+            plotStatus: {
+              label: "Arsa / Proje Durumu",
+              type: "select",
+              placeholder: "Mevcut proje durumunu seçin",
+              options: clientMarketplaceProjectStatusOptionsTr,
+              required: true,
+            },
+            permitsStatus: {
+              label: "İzin / Plan Durumu",
+              type: "select",
+              placeholder: "İsteğe bağlı planlama durumu",
+              options: clientMarketplacePermitsOptionsTr,
+            },
+            constructionStarted: {
+              label: "İnşaat başladı mı?",
+              type: "select",
+              placeholder: "Mevcut inşaat durumunu seçin",
+              options: clientMarketplaceStartedOptionsTr,
+              required: true,
+            },
+            projectSize: { label: "Proje Büyüklüğü / Alan (isteğe bağlı)", placeholder: "Yaklaşık 280 m2 iç mekan / 900 m2 arsa" },
+            stylePreference: { label: "Stil Tercihi (isteğe bağlı)", placeholder: "Akdeniz modern, sıcak minimal, çağdaş yamaç evi..." },
+            mediaGroup: {
+              type: "group",
+              label: "Fotoğraflar ve ek bağlam",
+              description: "Alan fotoğrafları, referans görseller ve destekleyici notlar ekleyin.",
+              full: true,
+            },
             referenceUpload: {
-              label: "Referans Görsel Yükleme",
+              label: "Alan / Proje Fotoğrafları",
               type: "file",
-              placeholder: "İlham görselleri veya referans materyal yükleyin",
-              hint: "Şimdilik yalnızca frontend placeholder alanıdır. Gelecek versiyonlarda görseller doğrudan pazaryeri akışına alınabilir.",
+              placeholder: "Saha fotoğrafları veya proje referans görselleri yükleyin",
+              hint: "Görseller ilanla birlikte saklanır; böylece sonraki teklif aşaması proje bağlamını net görebilir.",
               full: true,
               multiple: true,
+              required: true,
             },
             additionalNotes: {
               label: "Ek Notlar",
@@ -3123,7 +3308,7 @@ export const translations = {
         },
         footer: {
           description:
-            "Yapply müşteri proje gönderim sayfaları; yüksek niyetli briefleri gelecekte pazaryerinde yayınlanabilecek yapılandırılmış bir akışa dönüştürmek için tasarlandı.",
+            "Yapply müşteri proje gönderim sayfaları artık yüksek niyetli briefleri canlı teklif akışına hazırlanmış yapılandırılmış pazaryeri ilanlarına dönüştürür.",
           columns: [
             {
               title: "Gönderim",
@@ -3140,7 +3325,7 @@ export const translations = {
               ],
             },
           ],
-          note: "Bu sayfa şimdilik yalnızca frontend akışıdır ve gelecekte moderasyon, yayın ve lead yönlendirme sistemlerine hazırdır.",
+          note: "Bu müşteri akışı artık yapılandırılmış bir pazaryeri talebini kaydeder ve onu bir sonraki canlı teklif fazına hazır tutar.",
           contact: "hello@yapply.com",
           copyrightLabel: "Yapply",
         },
@@ -3889,10 +4074,10 @@ export const translations = {
       success: {
         client: {
           eyebrow: "Gönderim alındı",
-          title: "Proje briefiniz artık pazaryeri akışının bir parçası.",
+          title: "Müşteri proje ilanınız artık tekliflere açık.",
           description:
-            "Bu MVP sürümü gönderiminizi mevcut tarayıcıda yerel olarak saklar ve Yapply müşteri ilan panosunda anında görünür hale getirir.",
-          note: "Bu frontend MVP’de gönderimler bu cihaz ve tarayıcı içinde local storage üzerinden görünür kalır.",
+            "Yapılandırılmış proje talebiniz pazaryeri akışına kaydedildi ve gelecekteki geliştirici tekliflerine açık olarak işaretlendi.",
+          note: "İlan; kategori, konum, bütçe, zamanlama, proje durumu ve yüklenen görselleri birlikte saklar, böylece sonraki teklif aşaması tam brief ile ilerleyebilir.",
           viewListing: "İlanımı Gör",
           backToMarketplace: "Pazaryerine Dön",
           submitAnother: "Yeni Gönderim Yap",
@@ -3902,9 +4087,12 @@ export const translations = {
           missingDescription: "Önce bir proje briefi gönderin, ardından bu sayfaya dönerek ilan özetini inceleyin.",
           summary: {
             project: "Proje",
-            type: "Tür",
+            type: "Kategori",
             location: "Konum",
             budget: "Bütçe",
+            timeline: "Takvim",
+            plotStatus: "Proje Durumu",
+            status: "İlan Durumu",
           },
         },
         professional: {
