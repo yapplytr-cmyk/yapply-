@@ -821,6 +821,50 @@ def get_marketplace_listing(listing_id: str) -> dict | None:
     return serialize_marketplace_listing(row, connection) if row else None
 
 
+def list_marketplace_listings(
+  listing_type: str | None = None,
+  status: str | None = None,
+  category: str | None = None,
+  limit: int = 48,
+) -> list[dict]:
+  clauses: list[str] = []
+  params: list[object] = []
+
+  if listing_type:
+    clauses.append("listing_type = ?")
+    params.append(listing_type)
+
+  if status:
+    clauses.append("status = ?")
+    params.append(status)
+
+  where_clause = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+
+  with get_connection() as connection:
+    rows = connection.execute(
+      f"""
+      SELECT *
+      FROM marketplace_listings
+      {where_clause}
+      ORDER BY datetime(created_at) DESC, rowid DESC
+      LIMIT ?
+      """,
+      (*params, max(1, limit)),
+    ).fetchall()
+
+    listings = [serialize_marketplace_listing(row, connection) for row in rows]
+
+  if category:
+    listings = [
+      listing
+      for listing in listings
+      if isinstance(listing.get("marketplaceMeta"), dict)
+      and listing["marketplaceMeta"].get("category") == category
+    ]
+
+  return listings
+
+
 def create_marketplace_bid(payload: dict) -> dict:
   validated_payload = validate_marketplace_bid_payload(payload)
   bid_id = str(uuid.uuid4())

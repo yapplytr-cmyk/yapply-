@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlparse
 
 from api._utils import (
   handle_marketplace_listing_create,
+  handle_marketplace_listing_index,
   handle_marketplace_listing_detail,
   json_response,
   run_api_action,
@@ -71,6 +72,10 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "marketplace/listings/detail":
       run_api_action(self, handle_marketplace_listing_detail)
+      return
+
+    if route == "marketplace/listings":
+      run_api_action(self, handle_marketplace_listing_index)
       return
 
     json_response(

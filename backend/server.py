@@ -48,6 +48,7 @@ from .db import (
   ensure_database,
   get_account_store_status,
   get_marketplace_listing,
+  list_marketplace_listings,
   get_session_user,
   get_record_value,
   get_user_by_email,
@@ -327,6 +328,10 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       self.handle_auth_session()
       return
 
+    if parsed.path == "/api/marketplace/listings":
+      self.handle_marketplace_listing_index(parsed)
+      return
+
     if parsed.path == "/api/marketplace/listings/detail":
       self.handle_marketplace_listing_detail(parsed)
       return
@@ -550,6 +555,33 @@ class YapplyRequestHandler(SimpleHTTPRequestHandler):
       return
 
     json_response(self, HTTPStatus.CREATED, {"ok": True, "listing": stored_listing})
+
+  def handle_marketplace_listing_index(self, parsed) -> None:
+    query = parse_qs(parsed.query)
+    listing_type = normalize_text(query.get("type", ["client"])[0]) or "client"
+    status = normalize_text(query.get("status", ["open-for-bids"])[0])
+    category = normalize_text(query.get("category", [""])[0])
+
+    if listing_type not in {"client", "professional"}:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING_TYPE", "message": "A valid listing type is required."})
+      return
+
+    if status == "all":
+      status = ""
+
+    try:
+      limit = int(query.get("limit", ["24"])[0] or "24")
+    except ValueError:
+      limit = 24
+
+    listings = list_marketplace_listings(
+      listing_type=listing_type,
+      status=status,
+      category=category,
+      limit=min(max(limit, 1), 60),
+    )
+
+    json_response(self, HTTPStatus.OK, {"ok": True, "listings": listings})
 
   def handle_marketplace_listing_detail(self, parsed) -> None:
     listing_id = parse_qs(parsed.query).get("id", [""])[0]

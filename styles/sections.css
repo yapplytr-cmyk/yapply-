@@ -1683,6 +1683,22 @@ html[data-loading-locale="en"] .app-loader__text-tr {
   padding: 0.9rem;
 }
 
+.marketplace-card__media--client img {
+  object-fit: cover;
+  padding: 0;
+}
+
+.marketplace-card__media-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .marketplace-card__top {
   display: flex;
   flex-wrap: wrap;
@@ -1695,6 +1711,20 @@ html[data-loading-locale="en"] .app-loader__text-tr {
   color: var(--text-dim);
   font-size: 0.8rem;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.marketplace-card__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.68rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -1785,6 +1815,25 @@ html[data-loading-locale="en"] .app-loader__text-tr {
 .marketplace-card__timeline {
   display: grid;
   gap: 0.28rem;
+}
+
+.marketplace-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.marketplace-empty {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1.2rem;
+  text-align: center;
+}
+
+.marketplace-empty p {
+  color: var(--text-muted);
 }
 
 .marketplace-card__timeline span {
@@ -3087,6 +3136,20 @@ html[data-theme="light"] .auth-role-card.is-active {
   gap: 1rem;
 }
 
+.marketplace-bids-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.marketplace-bid-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.marketplace-bid-card p {
+  color: var(--text-muted);
+  line-height: 1.75;
+}
+
 .marketplace-media-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -4332,6 +4395,10 @@ html[data-theme="light"] .auth-role-card.is-active {
 
   .project-hero-visual {
     min-height: 18rem;
+  }
+
+  .marketplace-filters {
+    grid-template-columns: 1fr;
   }
 }
 

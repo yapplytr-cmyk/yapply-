@@ -128,7 +128,7 @@ function createModeratorLoginPageContent(content) {
   };
 }
 
-function createOpenMarketplacePageContent(content) {
+function createOpenMarketplacePageContent(content, runtimeData = {}) {
   const managedCollections = getManagedMarketplaceCollections(
     content.openMarketplacePage.tabs.client.items,
     content.openMarketplacePage.tabs.developer.items
@@ -210,6 +210,7 @@ function createOpenMarketplacePageContent(content) {
       };
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.openMarketplacePage,
@@ -238,13 +239,15 @@ function createOpenMarketplacePageContent(content) {
       ...content.openMarketplacePage.tabs,
       client: {
         ...content.openMarketplacePage.tabs.client,
-        items: managedCollections.client,
+        items: Array.isArray(runtimeData.publicClientListings) ? runtimeData.publicClientListings : managedCollections.client,
       },
       developer: {
         ...content.openMarketplacePage.tabs.developer,
         items: managedCollections.professional,
       },
     },
+    publicListingFilters: runtimeData.publicListingFilters || { category: "", status: "open-for-bids" },
+    publicListingError: Boolean(runtimeData.publicListingError),
   };
 }
 
@@ -284,7 +287,7 @@ function createMarketplaceSubmissionSuccessContent(content, submissionType, list
   };
 }
 
-function createMarketplaceListingDetailContent(content, listingType, listingId) {
+function createMarketplaceListingDetailContent(content, listingType, listingId, runtimeData = {}) {
   const managedListing = getManagedMarketplaceListing(
     listingType,
     listingId,
@@ -294,6 +297,7 @@ function createMarketplaceListingDetailContent(content, listingType, listingId) 
   const submittedListing = getSubmittedListing(listingType, listingId) || getLastSubmissionDetail(listingType, listingId);
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     nav: {
@@ -303,7 +307,7 @@ function createMarketplaceListingDetailContent(content, listingType, listingId) 
     },
     footer: content.openMarketplacePage.footer,
     marketplaceFlow: content.marketplaceFlow,
-    listing: managedListing || submittedListing,
+    listing: runtimeData.publicListing || managedListing || submittedListing,
   };
 }
 
@@ -401,8 +405,8 @@ function createProjectDetail(content, locale, projectSlug) {
   `;
 }
 
-function createMarketplace(content, locale) {
-  const pageContent = createOpenMarketplacePageContent(content);
+function createMarketplace(content, locale, runtimeData) {
+  const pageContent = createOpenMarketplacePageContent(content, runtimeData);
 
   return `
     <div class="page-shell">
@@ -443,8 +447,8 @@ function createMarketplaceSubmissionSuccess(content, locale, submissionType, lis
   `;
 }
 
-function createMarketplaceListingDetail(content, locale, listingType, listingId) {
-  const pageContent = createMarketplaceListingDetailContent(content, listingType, listingId);
+function createMarketplaceListingDetail(content, locale, listingType, listingId, runtimeData) {
+  const pageContent = createMarketplaceListingDetailContent(content, listingType, listingId, runtimeData);
 
   return `
     <div class="page-shell">
@@ -528,7 +532,7 @@ function createAdminDashboard(content, locale) {
   `;
 }
 
-export function createApp(content, locale, page = "home", projectSlug = "", submissionType = "", developerSlug = "", listingType = "", listingId = "") {
+export function createApp(content, locale, page = "home", projectSlug = "", submissionType = "", developerSlug = "", listingType = "", listingId = "", runtimeData = {}) {
   if (page === "create-account") {
     return createAccountPage(content, locale);
   }
@@ -550,7 +554,7 @@ export function createApp(content, locale, page = "home", projectSlug = "", subm
   }
 
   if (page === "open-marketplace") {
-    return createMarketplace(content, locale);
+    return createMarketplace(content, locale, runtimeData);
   }
 
   if (page === "marketplace-submission") {
@@ -562,7 +566,7 @@ export function createApp(content, locale, page = "home", projectSlug = "", subm
   }
 
   if (page === "marketplace-listing-detail") {
-    return createMarketplaceListingDetail(content, locale, listingType, listingId);
+    return createMarketplaceListingDetail(content, locale, listingType, listingId, runtimeData);
   }
 
   if (page === "developer-profile") {

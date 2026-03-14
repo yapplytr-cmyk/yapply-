@@ -97,6 +97,14 @@ function createApiUrl(path) {
   return `${getAuthOrigin()}${path}`;
 }
 
+async function readJsonResponse(response) {
+  try {
+    return await response.json();
+  } catch (error) {
+    return {};
+  }
+}
+
 export function getAllowedMarketplaceSubmissionTypeForRole(role) {
   if (role === "client") {
     return "client";
@@ -342,6 +350,68 @@ async function createBackendMarketplaceListing(listing) {
   }
 
   return data.listing;
+}
+
+export async function fetchPublicMarketplaceListings({
+  type = "client",
+  status = "open-for-bids",
+  category = "",
+  limit = 24,
+} = {}) {
+  const params = new URLSearchParams();
+
+  if (type) {
+    params.set("type", type);
+  }
+
+  if (status) {
+    params.set("status", status);
+  }
+
+  if (category) {
+    params.set("category", category);
+  }
+
+  params.set("limit", String(limit));
+
+  const response = await fetch(createApiUrl(`/api/marketplace/listings?${params.toString()}`), {
+    method: "GET",
+    credentials: "include",
+  });
+  const data = await readJsonResponse(response);
+
+  if (!response.ok) {
+    throw Object.assign(new Error(data.message || "Marketplace listings could not be loaded."), {
+      code: data.code || "LISTINGS_LOAD_FAILED",
+    });
+  }
+
+  return Array.isArray(data.listings) ? data.listings : [];
+}
+
+export async function fetchPublicMarketplaceListing(listingId) {
+  if (!listingId) {
+    return null;
+  }
+
+  const params = new URLSearchParams({ id: listingId });
+  const response = await fetch(createApiUrl(`/api/marketplace/listings/detail?${params.toString()}`), {
+    method: "GET",
+    credentials: "include",
+  });
+  const data = await readJsonResponse(response);
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw Object.assign(new Error(data.message || "Marketplace listing could not be loaded."), {
+      code: data.code || "LISTING_LOAD_FAILED",
+    });
+  }
+
+  return data.listing || null;
 }
 
 function requireListingOwner(type) {

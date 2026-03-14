@@ -1,6 +1,177 @@
 import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { createButton, createSectionHeading } from "./primitives.js";
 
+const CLIENT_CATEGORY_OPTIONS = [
+  { value: "pool-renovation", en: "Pool Renovation", tr: "Havuz Renovasyonu" },
+  { value: "pool-construction", en: "Pool Construction", tr: "Havuz Yapımı" },
+  { value: "wall-construction", en: "Wall Construction", tr: "Duvar Yapımı" },
+  { value: "interior-renovation", en: "Interior Renovation", tr: "İç Mekan Renovasyonu" },
+  { value: "kitchen-renovation", en: "Kitchen Renovation", tr: "Mutfak Renovasyonu" },
+  { value: "bathroom-renovation", en: "Bathroom Renovation", tr: "Banyo Renovasyonu" },
+  { value: "full-villa-construction", en: "Full Villa Construction", tr: "Komple Villa Yapımı" },
+  { value: "landscaping", en: "Landscaping", tr: "Peyzaj" },
+  { value: "exterior-renovation", en: "Exterior Renovation", tr: "Dış Cephe Renovasyonu" },
+  { value: "roofing", en: "Roofing", tr: "Çatı" },
+  { value: "flooring", en: "Flooring", tr: "Zemin Kaplama" },
+  { value: "painting", en: "Painting", tr: "Boya" },
+  { value: "tiling", en: "Tiling", tr: "Seramik / Fayans" },
+  { value: "plumbing", en: "Plumbing", tr: "Sıhhi Tesisat" },
+  { value: "electrical", en: "Electrical", tr: "Elektrik" },
+  { value: "facade-work", en: "Facade Work", tr: "Cephe Uygulaması" },
+  { value: "garden-design", en: "Garden Design", tr: "Bahçe Tasarımı" },
+  { value: "pergola-outdoor-structures", en: "Pergola / Outdoor Structures", tr: "Pergola / Dış Mekan Yapıları" },
+  { value: "demolition-site-prep", en: "Demolition / Site Prep", tr: "Yıkım / Saha Hazırlığı" },
+  { value: "general-construction", en: "General Construction", tr: "Genel İnşaat" },
+  { value: "architecture-design", en: "Architecture / Design", tr: "Mimarlık / Tasarım" },
+  { value: "custom-project", en: "Custom Project", tr: "Özel Proje" },
+];
+
+const LISTING_STATUS_OPTIONS = [
+  { value: "open-for-bids", en: "Open for Bids", tr: "Tekliflere Açık" },
+  { value: "closed", en: "Closed", tr: "Kapalı" },
+  { value: "awarded", en: "Awarded", tr: "Verildi" },
+  { value: "in-progress", en: "In Progress", tr: "Sürüyor" },
+  { value: "completed", en: "Completed", tr: "Tamamlandı" },
+];
+
+const PROJECT_STATUS_OPTIONS = [
+  { value: "not-started", en: "Not Started", tr: "Başlanmadı" },
+  { value: "planning-stage", en: "Planning Stage", tr: "Planlama Aşaması" },
+  { value: "in-construction", en: "In Construction", tr: "İnşaat Halinde" },
+  { value: "renovation-needed", en: "Renovation Needed", tr: "Renovasyon Gerekli" },
+  { value: "shell-structure-complete", en: "Shell Structure Complete", tr: "Kaba Yapı Tamam" },
+  { value: "interior-work-needed", en: "Interior Work Needed", tr: "İç Mekan İşleri Gerekli" },
+  { value: "exterior-work-needed", en: "Exterior Work Needed", tr: "Dış Mekan İşleri Gerekli" },
+  { value: "landscape-needed", en: "Landscape Needed", tr: "Peyzaj Gerekli" },
+  { value: "other", en: "Other", tr: "Diğer" },
+];
+
+function getMarketplaceLocale(content) {
+  return content.meta?.locale === "tr" ? "tr" : "en";
+}
+
+function humanizeSlug(value) {
+  return String(value || "")
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getLocalizedLabel(options, value, locale, fallback = "") {
+  const match = options.find((item) => item.value === value);
+  if (match) {
+    return locale === "tr" ? match.tr : match.en;
+  }
+
+  return fallback || humanizeSlug(value);
+}
+
+function getClientListingCopy(locale) {
+  if (locale === "tr") {
+    return {
+      fallback: "Belirtilmedi",
+      status: "İlan Durumu",
+      location: "Konum",
+      filters: {
+        category: "Kategoriye Göre Filtrele",
+        status: "Duruma Göre Filtrele",
+        allCategories: "Tüm kategoriler",
+        allStatuses: "Tüm durumlar",
+      },
+      empty: {
+        title: "Henüz yayında tekliflere açık müşteri ilanı yok.",
+        description: "İlk müşteri proje talebi yayınlandığında burada görünecek.",
+      },
+      error: {
+        title: "İlanlar şu anda yüklenemiyor.",
+        description: "Lütfen biraz sonra tekrar deneyin.",
+      },
+      mediaFallback: "Proje Görseli",
+    };
+  }
+
+  return {
+    fallback: "Not provided",
+    status: "Listing Status",
+    location: "Location",
+    filters: {
+      category: "Filter by Category",
+      status: "Filter by Status",
+      allCategories: "All categories",
+      allStatuses: "All statuses",
+    },
+    empty: {
+      title: "No open client listings are live yet.",
+      description: "The first published client project request will appear here.",
+    },
+    error: {
+      title: "Listings could not be loaded right now.",
+      description: "Please try again in a moment.",
+    },
+    mediaFallback: "Project Visual",
+  };
+}
+
+function getClientPreviewImage(listing) {
+  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
+  return attachments.find((item) => item.kind === "image" && item.dataUrl)?.dataUrl || "";
+}
+
+function createClientFilters(content) {
+  const locale = getMarketplaceLocale(content);
+  const copy = getClientListingCopy(locale);
+  const filters = content.publicListingFilters || {};
+  const statusValue = filters.status || "open-for-bids";
+  const categoryValue = filters.category || "";
+
+  return `
+    <form class="marketplace-filters panel" data-marketplace-client-filters>
+      <label class="form-field">
+        <span>${copy.filters.category}</span>
+        <select name="category">
+          <option value="">${copy.filters.allCategories}</option>
+          ${CLIENT_CATEGORY_OPTIONS
+            .map(
+              (option) =>
+                `<option value="${option.value}" ${option.value === categoryValue ? "selected" : ""}>${
+                  locale === "tr" ? option.tr : option.en
+                }</option>`
+            )
+            .join("")}
+        </select>
+      </label>
+      <label class="form-field">
+        <span>${copy.filters.status}</span>
+        <select name="status">
+          <option value="all" ${statusValue === "all" ? "selected" : ""}>${copy.filters.allStatuses}</option>
+          ${LISTING_STATUS_OPTIONS
+            .map(
+              (option) =>
+                `<option value="${option.value}" ${option.value === statusValue ? "selected" : ""}>${
+                  locale === "tr" ? option.tr : option.en
+                }</option>`
+            )
+            .join("")}
+        </select>
+      </label>
+    </form>
+  `;
+}
+
+function createClientEmptyState(content, tone = "empty") {
+  const locale = getMarketplaceLocale(content);
+  const copy = getClientListingCopy(locale);
+  const stateCopy = tone === "error" ? copy.error : copy.empty;
+
+  return `
+    <div class="marketplace-empty panel">
+      <h3>${stateCopy.title}</h3>
+      <p>${stateCopy.description}</p>
+    </div>
+  `;
+}
+
 function getMarketplaceCreateActions(content) {
   const access = content.listingAccess || {};
 
@@ -85,38 +256,65 @@ function createMarketplaceIntro(content) {
   `;
 }
 
-function createClientListingCard(listing, labels) {
+function createClientListingCard(listing, labels, locale) {
   const ctaHref = listing.detailHref || getMarketplaceListingHref("client", listing.id || listing.slug);
+  const marketplaceMeta = listing.marketplaceMeta || {};
+  const previewImage = getClientPreviewImage(listing);
+  const copy = getClientListingCopy(locale);
+  const categoryLabel =
+    listing.projectType ||
+    getLocalizedLabel(CLIENT_CATEGORY_OPTIONS, marketplaceMeta.category, locale, copy.fallback);
+  const locationLabel = listing.location || marketplaceMeta.location || copy.fallback;
+  const budgetLabel = listing.budget || marketplaceMeta.budgetRange?.label || copy.fallback;
+  const timeframeLabel = listing.timeline || listing.startDate || marketplaceMeta.desiredTimeframe?.label || copy.fallback;
+  const projectStatusLabel =
+    listing.plotStatus ||
+    getLocalizedLabel(PROJECT_STATUS_OPTIONS, marketplaceMeta.projectStatus, locale, copy.fallback);
+  const listingStatusLabel = getLocalizedLabel(
+    LISTING_STATUS_OPTIONS,
+    marketplaceMeta.listingStatus || listing.status,
+    locale,
+    copy.fallback
+  );
+  const tags = [...new Set([marketplaceMeta.subcategory, ...(listing.tags || [])].filter(Boolean))].slice(0, 4);
 
   return `
     <article class="marketplace-card panel">
+      <a class="marketplace-card__media marketplace-card__media--client" href="${ctaHref}" aria-label="${listing.title}">
+        ${
+          previewImage
+            ? `<img src="${previewImage}" alt="${listing.title}" />`
+            : `<span class="marketplace-card__media-placeholder">${copy.mediaFallback}</span>`
+        }
+      </a>
       <div class="marketplace-card__top">
-        <span class="project-badge">${listing.projectType}</span>
-        <span class="marketplace-card__location">${listing.location}</span>
+        <span class="project-badge">${categoryLabel}</span>
+        <span class="marketplace-card__status">${listingStatusLabel}</span>
+        <span class="marketplace-card__location">${locationLabel}</span>
       </div>
       <h3>${listing.title}</h3>
       <p class="marketplace-card__brief">${listing.brief}</p>
       <div class="marketplace-card__tags">
-        ${listing.tags.map((tag) => `<span class="marketplace-tag">${tag}</span>`).join("")}
+        ${tags.map((tag) => `<span class="marketplace-tag">${tag}</span>`).join("")}
       </div>
       <div class="marketplace-card__facts">
         <div>
-          <span>${labels.budget}</span>
-          <strong>${listing.budget}</strong>
+          <span>${labels.location || copy.location}</span>
+          <strong>${locationLabel}</strong>
         </div>
         <div>
-          <span>${labels.startDate}</span>
-          <strong>${listing.startDate}</strong>
+          <span>${labels.budget}</span>
+          <strong>${budgetLabel}</strong>
         </div>
         <div>
           <span>${labels.plotStatus}</span>
-          <strong>${listing.plotStatus}</strong>
+          <strong>${projectStatusLabel}</strong>
         </div>
       </div>
       <div class="marketplace-card__footer">
         <div class="marketplace-card__timeline">
           <span>${labels.timeline}</span>
-          <strong>${listing.timeline}</strong>
+          <strong>${timeframeLabel}</strong>
         </div>
         <a class="button button--secondary marketplace-card__cta" href="${ctaHref}">${listing.ctaLabel || labels.viewListing}</a>
       </div>
@@ -179,12 +377,18 @@ function createDeveloperListingCard(listing, labels) {
 }
 
 function createMarketplaceListings(content) {
+  const locale = getMarketplaceLocale(content);
   const clientCards = content.tabs.client.items
-    .map((item) => createClientListingCard(item, content.tabs.client.labels))
+    .map((item) => createClientListingCard(item, content.tabs.client.labels, locale))
     .join("");
   const developerCards = content.tabs.developer.items
     .map((item) => createDeveloperListingCard(item, content.tabs.developer.labels))
     .join("");
+  const clientPanelBody = content.publicListingError
+    ? createClientEmptyState(content, "error")
+    : content.tabs.client.items.length > 0
+      ? `<div class="marketplace-grid">${clientCards}</div>`
+      : createClientEmptyState(content);
 
   return `
     <section class="section-shell" id="marketplace-listings">
@@ -211,7 +415,8 @@ function createMarketplaceListings(content) {
       </div>
 
       <div class="marketplace-panel is-active" data-marketplace-panel="client">
-        <div class="marketplace-grid">${clientCards}</div>
+        ${createClientFilters(content)}
+        ${clientPanelBody}
       </div>
 
       <div class="marketplace-panel" data-marketplace-panel="developer" hidden>

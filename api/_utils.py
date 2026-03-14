@@ -30,6 +30,7 @@ from backend.db import (
   ensure_database,
   get_account_store_status,
   get_marketplace_listing,
+  list_marketplace_listings,
   get_session_user,
   get_record_value,
   get_user_by_identifier,
@@ -593,6 +594,35 @@ def handle_marketplace_listing_create(handler) -> None:
     return
 
   json_response(handler, HTTPStatus.CREATED, {"ok": True, "listing": stored_listing})
+
+
+def handle_marketplace_listing_index(handler) -> None:
+  parsed = urlparse(handler.path)
+  query = parse_qs(parsed.query)
+  listing_type = normalize_text(query.get("type", ["client"])[0]) or "client"
+  status = normalize_text(query.get("status", ["open-for-bids"])[0])
+  category = normalize_text(query.get("category", [""])[0])
+
+  if listing_type not in {"client", "professional"}:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING_TYPE", "message": "A valid listing type is required."})
+    return
+
+  if status == "all":
+    status = ""
+
+  try:
+    limit = int(query.get("limit", ["24"])[0] or "24")
+  except ValueError:
+    limit = 24
+
+  listings = list_marketplace_listings(
+    listing_type=listing_type,
+    status=status,
+    category=category,
+    limit=min(max(limit, 1), 60),
+  )
+
+  json_response(handler, HTTPStatus.OK, {"ok": True, "listings": listings})
 
 
 def handle_marketplace_listing_detail(handler) -> None:

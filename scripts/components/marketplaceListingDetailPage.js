@@ -1,5 +1,87 @@
 import { createButton, createSectionHeading } from "./primitives.js";
 
+const LISTING_STATUS_LABELS = {
+  "open-for-bids": { en: "Open for Bids", tr: "Tekliflere Açık" },
+  closed: { en: "Closed", tr: "Kapalı" },
+  awarded: { en: "Awarded", tr: "Verildi" },
+  "in-progress": { en: "In Progress", tr: "Sürüyor" },
+  completed: { en: "Completed", tr: "Tamamlandı" },
+};
+
+const PROJECT_STATUS_LABELS = {
+  "not-started": { en: "Not Started", tr: "Başlanmadı" },
+  "planning-stage": { en: "Planning Stage", tr: "Planlama Aşaması" },
+  "in-construction": { en: "In Construction", tr: "İnşaat Halinde" },
+  "renovation-needed": { en: "Renovation Needed", tr: "Renovasyon Gerekli" },
+  "shell-structure-complete": { en: "Shell Structure Complete", tr: "Kaba Yapı Tamam" },
+  "interior-work-needed": { en: "Interior Work Needed", tr: "İç Mekan İşleri Gerekli" },
+  "exterior-work-needed": { en: "Exterior Work Needed", tr: "Dış Mekan İşleri Gerekli" },
+  "landscape-needed": { en: "Landscape Needed", tr: "Peyzaj Gerekli" },
+  other: { en: "Other", tr: "Diğer" },
+};
+
+function getDetailLocale(content) {
+  return content.meta?.locale === "tr" ? "tr" : "en";
+}
+
+function getDetailCopy(locale) {
+  if (locale === "tr") {
+    return {
+      fallback: "Belirtilmedi",
+      subcategory: "Alt Kategori",
+      permitsStatus: "İzin / Plan Durumu",
+      constructionStarted: "İnşaat Başladı mı?",
+      listingStatus: "İlan Durumu",
+      latestBids: {
+        eyebrow: "Son Teklifler",
+        title: "Bu ilan için son teklifler",
+        description: "Canlı teklif akışı ilerledikçe en yeni 3-4 geliştirici teklifi burada görünecek.",
+        empty: "Henüz teklif yok.",
+        amount: "Teklif Tutarı",
+        timeframe: "Tamamlanma Süresi",
+        proposal: "Teklif Notu",
+        bidder: "Geliştirici",
+      },
+    };
+  }
+
+  return {
+    fallback: "Not provided",
+    subcategory: "Subcategory",
+    permitsStatus: "Permits / Plans",
+    constructionStarted: "Construction Started",
+    listingStatus: "Listing Status",
+    latestBids: {
+      eyebrow: "Latest bids",
+      title: "Recent bids for this listing",
+      description: "When live developer bidding begins, the latest 3-4 proposals will appear here.",
+      empty: "No bids yet.",
+      amount: "Bid Amount",
+      timeframe: "Completion Timeframe",
+      proposal: "Proposal",
+      bidder: "Developer",
+    },
+  };
+}
+
+function getListingStatusLabel(value, locale, fallback) {
+  const labels = LISTING_STATUS_LABELS[value];
+  if (labels) {
+    return locale === "tr" ? labels.tr : labels.en;
+  }
+
+  return fallback;
+}
+
+function getProjectStatusLabel(value, locale, fallback) {
+  const labels = PROJECT_STATUS_LABELS[value];
+  if (labels) {
+    return locale === "tr" ? labels.tr : labels.en;
+  }
+
+  return fallback;
+}
+
 function createSummaryGrid(items) {
   return items
     .map(
@@ -76,14 +158,61 @@ function createMediaSection(detailContent, listing) {
 
 function createClientDetail(content, listing) {
   const detailContent = content.marketplaceFlow.detail.client;
+  const locale = getDetailLocale(content);
+  const copy = getDetailCopy(locale);
+  const marketplaceMeta = listing.marketplaceMeta || {};
+  const categoryLabel = listing.projectType || copy.fallback;
+  const locationLabel = listing.location || marketplaceMeta.location || copy.fallback;
+  const budgetLabel = listing.budget || marketplaceMeta.budgetRange?.label || copy.fallback;
+  const timeframeLabel = listing.timeline || marketplaceMeta.desiredTimeframe?.label || listing.startDate || copy.fallback;
+  const projectStatusLabel = listing.plotStatus
+    || getProjectStatusLabel(marketplaceMeta.projectStatus, locale, copy.fallback);
+  const listingStatus = getListingStatusLabel(
+    marketplaceMeta.listingStatus || listing.status,
+    locale,
+    listing.status || copy.fallback
+  );
   const summaryItems = [
-    { label: detailContent.summary.type, value: listing.projectType },
-    { label: detailContent.summary.location, value: listing.location },
-    { label: detailContent.summary.budget, value: listing.budget },
-    { label: detailContent.summary.timeline, value: listing.timeline },
-    { label: detailContent.summary.plotStatus, value: listing.plotStatus },
+    { label: detailContent.summary.type, value: categoryLabel },
+    { label: copy.subcategory, value: marketplaceMeta.subcategory || copy.fallback },
+    { label: detailContent.summary.location, value: locationLabel },
+    { label: detailContent.summary.budget, value: budgetLabel },
+    { label: detailContent.summary.timeline, value: timeframeLabel },
+    { label: detailContent.summary.plotStatus, value: projectStatusLabel },
     { label: detailContent.summary.size, value: listing.projectSize || detailContent.fallback },
+    { label: copy.permitsStatus, value: marketplaceMeta.permitsStatus || listing.permitsStatus || copy.fallback },
+    { label: copy.constructionStarted, value: marketplaceMeta.constructionStarted || listing.constructionStarted || copy.fallback },
+    { label: copy.listingStatus, value: listingStatus },
   ];
+  const latestBids = Array.isArray(marketplaceMeta.latestBids) ? marketplaceMeta.latestBids.slice(0, 4) : [];
+  const latestBidsMarkup =
+    latestBids.length > 0
+      ? `
+        <div class="detail-list-grid marketplace-bids-grid">
+          ${latestBids
+            .map((bid) => {
+              const developerName =
+                bid.developerProfileReference?.companyName ||
+                bid.developerProfileReference?.userId ||
+                copy.fallback;
+              return `
+                <article class="detail-list-card marketplace-bid-card">
+                  <div class="project-detail-card__facts">
+                    ${createSummaryGrid([
+                      { label: copy.latestBids.bidder, value: developerName },
+                      { label: copy.latestBids.amount, value: bid.bidAmount?.label || copy.fallback },
+                      { label: copy.latestBids.timeframe, value: bid.estimatedCompletionTimeframe?.label || copy.fallback },
+                    ])}
+                  </div>
+                  <p><strong>${copy.latestBids.proposal}</strong></p>
+                  <p>${bid.proposalMessage || copy.fallback}</p>
+                </article>
+              `;
+            })
+            .join("")}
+        </div>
+      `
+      : `<div class="marketplace-empty panel"><p>${copy.latestBids.empty}</p></div>`;
 
   return `
     <section class="marketplace-detail-hero section-shell">
@@ -126,6 +255,10 @@ function createClientDetail(content, listing) {
           <p>${listing.additionalNotes || detailContent.noNotes}</p>
         </article>
       </div>
+    </section>
+    <section class="section-shell" id="listing-bids">
+      ${createSectionHeading(copy.latestBids)}
+      ${latestBidsMarkup}
     </section>
     ${createMediaSection(detailContent, listing)}
   `;

@@ -9,7 +9,13 @@ import {
   updateManagedFeaturedProject,
   updateManagedListing,
 } from "./core/adminStore.js";
-import { deleteMarketplaceListing, getSubmissionSuccessHref, saveMarketplaceSubmission } from "./core/marketplaceStore.js";
+import {
+  deleteMarketplaceListing,
+  fetchPublicMarketplaceListing,
+  fetchPublicMarketplaceListings,
+  getSubmissionSuccessHref,
+  saveMarketplaceSubmission,
+} from "./core/marketplaceStore.js";
 import { applyTheme, clearAuthSession, getAuthSession, getLocale, getTheme, setAuthSession, setLocale, toggleTheme } from "./core/state.js";
 
 let cleanupRevealAnimations = () => {};
@@ -198,6 +204,15 @@ function getCurrentListingType() {
 function getCurrentListingId() {
   const url = new URL(window.location.href);
   return url.searchParams.get("id") || "";
+}
+
+function getCurrentMarketplaceFilters() {
+  const url = new URL(window.location.href);
+
+  return {
+    category: url.searchParams.get("category") || "",
+    status: url.searchParams.get("status") || "open-for-bids",
+  };
 }
 
 function updateThemeToggleLabel(content) {
@@ -1274,6 +1289,42 @@ function setupMarketplaceTabs() {
   });
 }
 
+function setupMarketplacePublicFilters(locale) {
+  const form = document.querySelector("[data-marketplace-client-filters]");
+  if (!form) {
+    return;
+  }
+
+  const categoryField = form.querySelector('[name="category"]');
+  const statusField = form.querySelector('[name="status"]');
+
+  const applyFilters = () => {
+    const nextUrl = new URL(window.location.href);
+    const category = categoryField?.value || "";
+    const status = statusField?.value || "open-for-bids";
+
+    nextUrl.searchParams.set("tab", "client");
+
+    if (category) {
+      nextUrl.searchParams.set("category", category);
+    } else {
+      nextUrl.searchParams.delete("category");
+    }
+
+    if (status && status !== "open-for-bids") {
+      nextUrl.searchParams.set("status", status);
+    } else {
+      nextUrl.searchParams.delete("status");
+    }
+
+    window.history.replaceState({}, "", nextUrl.toString());
+    void renderPage(locale);
+  };
+
+  categoryField?.addEventListener("change", applyFilters);
+  statusField?.addEventListener("change", applyFilters);
+}
+
 function setupProjectInquiryForm() {
   const form = document.querySelector("[data-project-inquiry-form]");
   const success = document.querySelector("[data-project-inquiry-success]");
@@ -1537,6 +1588,7 @@ function bindInteractions(content) {
   setupAuthRoleSelection();
   setupAuthEntryForms(content);
   setupMarketplaceTabs();
+  setupMarketplacePublicFilters(content.meta.locale);
   setupProjectInquiryForm();
   setupMarketplaceSubmissionForm();
   setupMarketplaceListingInquiryForm();
@@ -1580,6 +1632,47 @@ async function syncAuthState() {
   }
 }
 
+async function loadMarketplaceRuntimeData(page, listingType, listingId) {
+  if (page === "open-marketplace") {
+    const filters = getCurrentMarketplaceFilters();
+
+    try {
+      const publicClientListings = await fetchPublicMarketplaceListings({
+        type: "client",
+        status: filters.status || "open-for-bids",
+        category: filters.category || "",
+        limit: 24,
+      });
+
+      return {
+        publicClientListings,
+        publicListingFilters: filters,
+        publicListingError: false,
+      };
+    } catch (error) {
+      return {
+        publicClientListings: [],
+        publicListingFilters: filters,
+        publicListingError: true,
+      };
+    }
+  }
+
+  if (page === "marketplace-listing-detail" && listingType === "client" && listingId) {
+    try {
+      return {
+        publicListing: await fetchPublicMarketplaceListing(listingId),
+      };
+    } catch (error) {
+      return {
+        publicListing: null,
+      };
+    }
+  }
+
+  return {};
+}
+
 async function renderPage(localeOverride) {
   const appRoot = document.querySelector("#app");
   if (!appRoot) {
@@ -1611,10 +1704,11 @@ async function renderPage(localeOverride) {
     const developer = getCurrentDeveloper();
     const listingType = getCurrentListingType();
     const listingId = getCurrentListingId();
+    const runtimeData = await loadMarketplaceRuntimeData(page, listingType, listingId);
 
     document.documentElement.lang = content.meta.locale;
     applyTheme(getTheme());
-    appRoot.innerHTML = createApp(content, locale, page, project, submissionType, developer, listingType, listingId);
+    appRoot.innerHTML = createApp(content, locale, page, project, submissionType, developer, listingType, listingId, runtimeData);
     updateThemeToggleLabel(content);
     bindInteractions(content);
   } catch (error) {
