@@ -67,6 +67,23 @@ function normalizeFilterValue(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+function resolveClientCategoryValue(listing) {
+  const marketplaceMeta = listing?.marketplaceMeta || {};
+  const projectType = listing?.projectType || "";
+  const normalizedProjectType = normalizeFilterValue(projectType);
+  const matchedOption = CLIENT_CATEGORY_OPTIONS.find(
+    (option) =>
+      normalizedProjectType &&
+      (normalizeFilterValue(option.en) === normalizedProjectType || normalizeFilterValue(option.tr) === normalizedProjectType)
+  );
+
+  if (matchedOption) {
+    return matchedOption.value;
+  }
+
+  return marketplaceMeta.category || normalizedProjectType;
+}
+
 function getLocalizedLabel(options, value, locale, fallback = "") {
   const match = options.find((item) => item.value === value);
   if (match) {
@@ -270,7 +287,7 @@ function createClientListingCard(listing, labels, locale) {
   const marketplaceMeta = listing.marketplaceMeta || {};
   const previewImage = getClientPreviewImage(listing);
   const copy = getClientListingCopy(locale);
-  const categoryValue = marketplaceMeta.category || normalizeFilterValue(listing.projectType);
+  const categoryValue = resolveClientCategoryValue(listing);
   const categoryLabel =
     listing.projectType ||
     getLocalizedLabel(CLIENT_CATEGORY_OPTIONS, marketplaceMeta.category, locale, copy.fallback);
