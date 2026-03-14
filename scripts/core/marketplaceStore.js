@@ -128,7 +128,7 @@ function isLocalFrontend() {
 }
 
 function usesBrowserManagedListings() {
-  return !isLocalFrontend();
+  return isLocalFrontend();
 }
 
 function createSubmissionError(code, message) {
@@ -555,7 +555,17 @@ export function getSubmittedListing(type, id) {
 export async function saveMarketplaceSubmission(type, formData) {
   requireListingOwner(type);
   const draftListing = type === "professional" ? await createProfessionalListing(formData) : await createClientListing(formData);
-  const listing = usesBrowserManagedListings() ? draftListing : await createBackendMarketplaceListing(draftListing);
+  let listing;
+
+  if (usesBrowserManagedListings()) {
+    try {
+      listing = await createBackendMarketplaceListing(draftListing);
+    } catch (error) {
+      listing = draftListing;
+    }
+  } else {
+    listing = await createBackendMarketplaceListing(draftListing);
+  }
 
   return persistSubmissionArtifacts(type, listing);
 }
