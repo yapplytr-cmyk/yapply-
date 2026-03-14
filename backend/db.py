@@ -767,7 +767,7 @@ def serialize_marketplace_listing(row: sqlite3.Row, connection: sqlite3.Connecti
     "type": row["listing_type"],
     "status": row["status"],
     "title": payload.get("title") or row["title"],
-    "ownerUserId": row["owner_user_id"],
+    "ownerUserId": row["owner_user_id"] or payload.get("ownerUserId"),
     "ownerRole": row["owner_role"],
     "createdAt": row["created_at"],
     "updatedAt": row["updated_at"],
@@ -790,6 +790,12 @@ def create_marketplace_listing(payload: dict) -> dict:
   stored_payload = {**validated_payload, "id": listing_id, "createdAt": now, "updatedAt": now}
 
   with get_connection() as connection:
+    relational_owner_user_id = owner_user_id
+    if relational_owner_user_id:
+      owner_row = connection.execute("SELECT id FROM users WHERE id = ? LIMIT 1", (relational_owner_user_id,)).fetchone()
+      if not owner_row:
+        relational_owner_user_id = None
+
     connection.execute(
       """
       INSERT INTO marketplace_listings (
@@ -799,7 +805,7 @@ def create_marketplace_listing(payload: dict) -> dict:
       """,
       (
         listing_id,
-        owner_user_id,
+        relational_owner_user_id,
         owner_role,
         listing_type,
         validated_payload.get("status") or "active",
