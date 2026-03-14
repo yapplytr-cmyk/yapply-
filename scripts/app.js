@@ -199,7 +199,7 @@ function createOpenMarketplacePageContent(content) {
     : {
         ...content.openMarketplacePage.hero.primaryCta,
         label: content.openMarketplacePage.cta.guestHeroPrimaryLabel,
-        href: guestListingHref,
+        href: "./open-marketplace.html#marketplace-listings",
       };
   const heroSecondaryCta = isAuthenticated
     ? content.openMarketplacePage.hero.secondaryCta
