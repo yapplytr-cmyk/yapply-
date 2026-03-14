@@ -1298,11 +1298,28 @@ function setupMarketplacePublicFilters(locale) {
 
   const categoryField = form.querySelector('[name="category"]');
   const statusField = form.querySelector('[name="status"]');
+  const cards = Array.from(document.querySelectorAll("[data-marketplace-client-card]"));
+  const grid = document.querySelector("[data-marketplace-client-grid]");
+  const emptyState = document.querySelector("[data-marketplace-client-empty]");
 
   const applyFilters = () => {
-    const nextUrl = new URL(window.location.href);
     const category = categoryField?.value || "";
     const status = statusField?.value || "open-for-bids";
+    const nextUrl = new URL(window.location.href);
+    let visibleCount = 0;
+
+    cards.forEach((card) => {
+      const cardCategory = card.getAttribute("data-marketplace-category") || "";
+      const cardStatus = card.getAttribute("data-marketplace-status") || "";
+      const matchesCategory = !category || cardCategory === category;
+      const matchesStatus = status === "all" || !status || cardStatus === status;
+      const visible = matchesCategory && matchesStatus;
+
+      card.hidden = !visible;
+      if (visible) {
+        visibleCount += 1;
+      }
+    });
 
     nextUrl.searchParams.set("tab", "client");
 
@@ -1318,10 +1335,18 @@ function setupMarketplacePublicFilters(locale) {
       nextUrl.searchParams.delete("status");
     }
 
+    if (grid) {
+      grid.hidden = visibleCount === 0;
+    }
+
+    if (emptyState) {
+      emptyState.hidden = visibleCount !== 0;
+    }
+
     window.history.replaceState({}, "", nextUrl.toString());
-    void renderPage(locale);
   };
 
+  applyFilters();
   categoryField?.addEventListener("change", applyFilters);
   statusField?.addEventListener("change", applyFilters);
 }

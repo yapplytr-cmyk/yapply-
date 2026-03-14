@@ -367,7 +367,11 @@ function createClientDetail(content, listing) {
     { label: copy.constructionStarted, value: marketplaceMeta.constructionStarted || listing.constructionStarted || copy.fallback },
     { label: copy.listingStatus, value: listingStatus },
   ];
-  const latestBids = Array.isArray(marketplaceMeta.latestBids) ? marketplaceMeta.latestBids.slice(0, 4) : [];
+  const latestBids = Array.isArray(listing.bids)
+    ? listing.bids.slice(0, 4)
+    : Array.isArray(marketplaceMeta.latestBids)
+      ? marketplaceMeta.latestBids.slice(0, 4)
+      : [];
   const latestBidsMarkup =
     latestBids.length > 0
       ? `

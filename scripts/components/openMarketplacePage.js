@@ -58,6 +58,15 @@ function humanizeSlug(value) {
     .join(" ");
 }
 
+function normalizeFilterValue(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function getLocalizedLabel(options, value, locale, fallback = "") {
   const match = options.find((item) => item.value === value);
   if (match) {
@@ -261,6 +270,7 @@ function createClientListingCard(listing, labels, locale) {
   const marketplaceMeta = listing.marketplaceMeta || {};
   const previewImage = getClientPreviewImage(listing);
   const copy = getClientListingCopy(locale);
+  const categoryValue = marketplaceMeta.category || normalizeFilterValue(listing.projectType);
   const categoryLabel =
     listing.projectType ||
     getLocalizedLabel(CLIENT_CATEGORY_OPTIONS, marketplaceMeta.category, locale, copy.fallback);
@@ -279,7 +289,12 @@ function createClientListingCard(listing, labels, locale) {
   const tags = [...new Set([marketplaceMeta.subcategory, ...(listing.tags || [])].filter(Boolean))].slice(0, 4);
 
   return `
-    <article class="marketplace-card panel">
+    <article
+      class="marketplace-card panel"
+      data-marketplace-client-card
+      data-marketplace-category="${categoryValue}"
+      data-marketplace-status="${marketplaceMeta.listingStatus || listing.status || ""}"
+    >
       <a class="marketplace-card__media marketplace-card__media--client" href="${ctaHref}" aria-label="${listing.title}">
         ${
           previewImage
@@ -387,7 +402,10 @@ function createMarketplaceListings(content) {
   const clientPanelBody = content.publicListingError
     ? createClientEmptyState(content, "error")
     : content.tabs.client.items.length > 0
-      ? `<div class="marketplace-grid">${clientCards}</div>`
+      ? `
+        <div class="marketplace-grid" data-marketplace-client-grid>${clientCards}</div>
+        <div data-marketplace-client-empty hidden>${createClientEmptyState(content)}</div>
+      `
       : createClientEmptyState(content);
 
   return `

@@ -207,6 +207,51 @@ function updateStoredListing(type, listingId, updater) {
   return nextListing;
 }
 
+function createStoredBidRecord(bid, user) {
+  const companyName = user?.companyName || user?.fullName || user?.username || user?.email || "";
+
+  return {
+    ...bid,
+    id: createId("bid", `${bid.listingId}-${user?.id || "developer"}`),
+    developerId: user?.id || "",
+    developerName: user?.fullName || user?.username || user?.email || companyName,
+    companyName,
+    timeframe: bid.estimatedCompletionTimeframe?.label || "",
+    proposal: bid.proposalMessage || "",
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function saveBidIntoStoredClientListing(listingId, bid, user) {
+  const storedBid = createStoredBidRecord(bid, user);
+  const storedListing = updateStoredListing("client", listingId, (listing) => {
+    const existingMeta = listing.marketplaceMeta && typeof listing.marketplaceMeta === "object" ? listing.marketplaceMeta : {};
+    const existingBids = Array.isArray(listing.bids) ? listing.bids : Array.isArray(existingMeta.latestBids) ? existingMeta.latestBids : [];
+    const nextBids = [storedBid, ...existingBids]
+      .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime())
+      .slice(0, 4);
+
+    return {
+      ...listing,
+      bids: nextBids,
+      marketplaceMeta: {
+        ...existingMeta,
+        latestBids: nextBids,
+        bidCount: Number(existingMeta.bidCount || 0) + 1,
+      },
+    };
+  });
+
+  if (!storedListing) {
+    return null;
+  }
+
+  return {
+    bid: storedBid,
+    listing: storedListing,
+  };
+}
+
 function clearLastSubmissionState(type = "", id = "") {
   const lastSubmission = getLastSubmission();
 
@@ -427,6 +472,14 @@ export async function submitMarketplaceBid(formData) {
       }
     : null;
 
+  const localListing = getSubmittedListing("client", bid.listingId) || getLastSubmissionDetail("client", bid.listingId);
+  if (localListing) {
+    const storedResult = saveBidIntoStoredClientListing(bid.listingId, bid, session.user);
+    if (storedResult) {
+      return storedResult;
+    }
+  }
+
   let data = {};
   try {
     const response = await fetch(createApiUrl("/api/marketplace/bids/create"), {
@@ -451,34 +504,11 @@ export async function submitMarketplaceBid(formData) {
     if (error?.code !== "LISTING_NOT_FOUND") {
       throw error;
     }
-
-    const localBid = {
-      ...bid,
-      id: createId("bid", `${bid.listingId}-${session.user.id}`),
-      createdAt: new Date().toISOString(),
-    };
-    const localListing = updateStoredListing("client", bid.listingId, (listing) => {
-      const existingMeta = listing.marketplaceMeta && typeof listing.marketplaceMeta === "object" ? listing.marketplaceMeta : {};
-      const existingBids = Array.isArray(existingMeta.latestBids) ? existingMeta.latestBids : [];
-
-      return {
-        ...listing,
-        marketplaceMeta: {
-          ...existingMeta,
-          latestBids: [localBid, ...existingBids].slice(0, 4),
-          bidCount: Number(existingMeta.bidCount || 0) + 1,
-        },
-      };
-    });
-
-    if (!localListing) {
-      throw error;
+    const storedResult = saveBidIntoStoredClientListing(bid.listingId, bid, session.user);
+    if (storedResult) {
+      return storedResult;
     }
-
-    return {
-      bid: localBid,
-      listing: localListing,
-    };
+    throw error;
   }
 
   return {
