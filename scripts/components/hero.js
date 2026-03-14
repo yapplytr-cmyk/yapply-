@@ -62,7 +62,7 @@ export function createHero(content) {
               playsinline
               preload="metadata"
             >
-              <source src="./assets/hero/wbsite-ekle.mov" />
+              <source src="./assets/hero/wbsite-ekle-yeni.mov" />
             </video>
             <button
               class="hero-video-toggle"
