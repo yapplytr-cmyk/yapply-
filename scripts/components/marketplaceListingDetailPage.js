@@ -278,6 +278,98 @@ function createSummaryGrid(items) {
     .join("");
 }
 
+function normalizeListingImageItem(item, index) {
+  if (typeof item === "string" && item.trim()) {
+    return {
+      id: `listing-image-${index + 1}`,
+      name: `Project image ${index + 1}`,
+      src: item.trim(),
+    };
+  }
+
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const srcCandidates = [item.dataUrl, item.url, item.src, item.href];
+  const src = srcCandidates.find((value) => typeof value === "string" && value.trim());
+  if (!src) {
+    return null;
+  }
+
+  return {
+    id: item.id || `listing-image-${index + 1}`,
+    name: item.name || `Project image ${index + 1}`,
+    src,
+  };
+}
+
+function getListingImageItems(listing) {
+  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
+  const attachmentImages = attachments
+    .filter((item) => item && item.kind === "image")
+    .map((item, index) => normalizeListingImageItem(item, index))
+    .filter(Boolean);
+
+  const marketplaceMeta = listing.marketplaceMeta && typeof listing.marketplaceMeta === "object"
+    ? listing.marketplaceMeta
+    : {};
+  const photoReferences = Array.isArray(marketplaceMeta.photoReferences) ? marketplaceMeta.photoReferences : [];
+  const photoImages = photoReferences
+    .map((item, index) => normalizeListingImageItem(item, attachmentImages.length + index))
+    .filter(Boolean);
+
+  const fallbackImages = [];
+  if (typeof listing.imageSrc === "string" && listing.imageSrc.trim() && !listing.imageSrc.includes("submitted-professional")) {
+    const fallbackImage = normalizeListingImageItem(listing.imageSrc, attachmentImages.length + photoImages.length);
+    if (fallbackImage) {
+      fallbackImages.push(fallbackImage);
+    }
+  }
+
+  const seenSources = new Set();
+  return [...attachmentImages, ...photoImages, ...fallbackImages].filter((item) => {
+    if (seenSources.has(item.src)) {
+      return false;
+    }
+    seenSources.add(item.src);
+    return true;
+  });
+}
+
+function createClientVisual(detailContent, listing) {
+  const imageItems = getListingImageItems(listing);
+
+  if (imageItems.length === 0) {
+    return `
+      <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact panel">
+        <div class="project-hero-visual__grid"></div>
+        <div class="project-hero-board">
+          <span>${detailContent.boardTitle}</span>
+          <strong>${listing.projectType}</strong>
+          <p>${listing.location}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact marketplace-detail-visual--media panel">
+      <div class="marketplace-detail-visual-gallery${imageItems.length === 1 ? " marketplace-detail-visual-gallery--single" : ""}">
+        ${imageItems
+          .map(
+            (item) => `
+              <div class="marketplace-detail-visual-slide" data-marketplace-detail-visual-slide>
+                <img src="${item.src}" alt="${item.name}" />
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
 function createMediaSection(detailContent, listing) {
   const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
 
@@ -285,7 +377,7 @@ function createMediaSection(detailContent, listing) {
     return "";
   }
 
-  const imageItems = attachments.filter((item) => item.kind === "image" && item.dataUrl);
+  const imageItems = getListingImageItems(listing);
   const fileItems = attachments.filter((item) => item.kind !== "image" && item.dataUrl);
 
   if (imageItems.length === 0 && fileItems.length === 0) {
@@ -296,8 +388,8 @@ function createMediaSection(detailContent, listing) {
     imageItems.length === 1
       ? `
         <div class="marketplace-media-gallery marketplace-media-gallery--single">
-          <a class="marketplace-media-feature panel" href="${imageItems[0].dataUrl}" target="_blank" rel="noreferrer">
-            <img src="${imageItems[0].dataUrl}" alt="${imageItems[0].name}" />
+          <a class="marketplace-media-feature panel" href="${imageItems[0].src}" target="_blank" rel="noreferrer">
+            <img src="${imageItems[0].src}" alt="${imageItems[0].name}" />
             <span>${imageItems[0].name}</span>
           </a>
         </div>
@@ -309,8 +401,8 @@ function createMediaSection(detailContent, listing) {
               ${imageItems
                 .map(
                   (item) => `
-                    <a class="marketplace-media-slide panel" href="${item.dataUrl}" target="_blank" rel="noreferrer">
-                      <img src="${item.dataUrl}" alt="${item.name}" />
+                    <a class="marketplace-media-slide panel" href="${item.src}" target="_blank" rel="noreferrer">
+                      <img src="${item.src}" alt="${item.name}" />
                       <span>${item.name}</span>
                     </a>
                   `
@@ -425,14 +517,7 @@ function createClientDetail(content, listing) {
           <h1 class="hero-title marketplace-detail-hero__title marketplace-detail-hero__title--compact">${listing.title}</h1>
           <p class="hero-lead marketplace-detail-hero__lead">${listing.brief}</p>
         </div>
-        <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact panel">
-          <div class="project-hero-visual__grid"></div>
-          <div class="project-hero-board">
-            <span>${detailContent.boardTitle}</span>
-            <strong>${listing.projectType}</strong>
-            <p>${listing.location}</p>
-          </div>
-        </div>
+        ${createClientVisual(detailContent, listing)}
       </div>
     </section>
 
