@@ -1485,10 +1485,12 @@ function setupMarketplaceBidForm(content) {
 
     if (success) {
       success.hidden = !isSuccess;
+      success.style.display = isSuccess ? "" : "none";
     }
 
     if (errorBox) {
       errorBox.hidden = !isError;
+      errorBox.style.display = isError ? "" : "none";
     }
   };
 
