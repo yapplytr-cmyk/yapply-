@@ -6,10 +6,10 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from json import JSONDecodeError
 from urllib.parse import quote
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, IS_VERCEL, KV_REST_TOKEN, KV_REST_URL, SEED_DB_PATH, SESSION_TTL_SECONDS, USE_REMOTE_USER_STORE
+from .config import ADMIN_ROLES, ALL_ROLES, DATA_DIR, DB_PATH, IS_VERCEL, KV_REST_TOKEN, KV_REST_URL, SEED_DB_PATH, SESSION_TTL_SECONDS, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL, USE_REMOTE_USER_STORE
 from .marketplace_schema import BID_PREVIEW_LIMIT, validate_marketplace_bid_payload, validate_marketplace_listing_payload
 from .security import hash_password
 
@@ -91,6 +91,137 @@ def _kv_smembers(set_key: str) -> list[str]:
   return result if isinstance(result, list) else []
 
 
+def _supabase_marketplace_request(
+  path: str,
+  *,
+  method: str = "GET",
+  payload: dict | list | None = None,
+  raw_payload: bytes | None = None,
+  extra_headers: dict[str, str] | None = None,
+  expect_json: bool = True,
+):
+  if not _uses_supabase_marketplace_store():
+    raise RuntimeError("Remote marketplace store is not configured.")
+
+  headers = {
+    "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+    "apikey": SUPABASE_SERVICE_ROLE_KEY,
+    "Accept": "application/json",
+  }
+
+  data = raw_payload
+  if payload is not None:
+    data = json.dumps(payload).encode("utf-8")
+    headers["Content-Type"] = "application/json; charset=utf-8"
+
+  if extra_headers:
+    headers.update(extra_headers)
+
+  request = Request(
+    f"{SUPABASE_URL}{path}",
+    method=method,
+    data=data,
+    headers=headers,
+  )
+
+  try:
+    with urlopen(request, timeout=12) as response:
+      raw = response.read()
+      if not expect_json:
+        return raw
+      if not raw:
+        return {}
+      return json.loads(raw.decode("utf-8"))
+  except HTTPError as error:
+    raw = error.read()
+    if expect_json and raw:
+      try:
+        payload = json.loads(raw.decode("utf-8"))
+      except (UnicodeDecodeError, JSONDecodeError):
+        payload = {}
+    else:
+      payload = {}
+    message = payload.get("message") if isinstance(payload, dict) else ""
+    raise RuntimeError(message or "Remote marketplace store request failed.") from error
+  except URLError as error:
+    raise RuntimeError("Remote marketplace store is unavailable.") from error
+
+
+def _ensure_supabase_marketplace_bucket() -> None:
+  global _SUPABASE_MARKETPLACE_BUCKET_READY
+
+  if _SUPABASE_MARKETPLACE_BUCKET_READY or not _uses_supabase_marketplace_store():
+    return
+
+  try:
+    _supabase_marketplace_request(
+      "/storage/v1/bucket",
+      method="POST",
+      payload={
+        "id": SUPABASE_MARKETPLACE_BUCKET,
+        "name": SUPABASE_MARKETPLACE_BUCKET,
+        "public": False,
+      },
+    )
+  except RuntimeError as error:
+    if "already exists" not in str(error).lower():
+      raise
+
+  _SUPABASE_MARKETPLACE_BUCKET_READY = True
+
+
+def _list_supabase_storage_objects(prefix: str) -> list[dict]:
+  _ensure_supabase_marketplace_bucket()
+  response = _supabase_marketplace_request(
+    f"/storage/v1/object/list/{SUPABASE_MARKETPLACE_BUCKET}",
+    method="POST",
+    payload={
+      "prefix": prefix,
+      "limit": 1000,
+      "offset": 0,
+      "sortBy": {"column": "name", "order": "desc"},
+    },
+  )
+  return response if isinstance(response, list) else []
+
+
+def _upload_supabase_storage_json(path: str, record: dict) -> None:
+  _ensure_supabase_marketplace_bucket()
+  _supabase_marketplace_request(
+    f"/storage/v1/object/{SUPABASE_MARKETPLACE_BUCKET}/{path}",
+    method="POST",
+    raw_payload=json.dumps(record).encode("utf-8"),
+    extra_headers={
+      "Content-Type": "application/json; charset=utf-8",
+      "x-upsert": "true",
+    },
+  )
+
+
+def _download_supabase_storage_json(path: str) -> dict | None:
+  _ensure_supabase_marketplace_bucket()
+
+  try:
+    raw = _supabase_marketplace_request(
+      f"/storage/v1/object/authenticated/{SUPABASE_MARKETPLACE_BUCKET}/{path}",
+      expect_json=False,
+    )
+  except RuntimeError as error:
+    if "not found" in str(error).lower():
+      return None
+    raise
+
+  if not raw:
+    return None
+
+  try:
+    parsed = json.loads(raw.decode("utf-8"))
+  except (UnicodeDecodeError, JSONDecodeError):
+    return None
+
+  return parsed if isinstance(parsed, dict) else None
+
+
 def _user_record_key(user_id: str) -> str:
   return f"yapply:user:{user_id}"
 
@@ -105,10 +236,22 @@ def _user_username_key(username: str) -> str:
 
 USER_IDS_KEY = "yapply:user-ids"
 MARKETPLACE_LISTING_IDS_KEY = "yapply:marketplace:listing-ids"
+SUPABASE_MARKETPLACE_BUCKET = "yapply-marketplace"
+SUPABASE_MARKETPLACE_LISTINGS_PREFIX = "listings"
+SUPABASE_MARKETPLACE_BIDS_PREFIX = "bids"
+_SUPABASE_MARKETPLACE_BUCKET_READY = False
+
+
+def _uses_remote_kv_marketplace_store() -> bool:
+  return _uses_remote_user_store() and IS_VERCEL
+
+
+def _uses_supabase_marketplace_store() -> bool:
+  return IS_VERCEL and bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
 
 
 def _uses_remote_marketplace_store() -> bool:
-  return _uses_remote_user_store() and IS_VERCEL
+  return _uses_remote_kv_marketplace_store() or _uses_supabase_marketplace_store()
 
 
 def _marketplace_listing_record_key(listing_id: str) -> str:
@@ -121,6 +264,27 @@ def _marketplace_bid_record_key(bid_id: str) -> str:
 
 def _marketplace_listing_bid_ids_key(listing_id: str) -> str:
   return f"yapply:marketplace:listing-bids:{listing_id}"
+
+
+def _supabase_marketplace_listing_path(listing_id: str) -> str:
+  return f"{SUPABASE_MARKETPLACE_LISTINGS_PREFIX}/{listing_id}.json"
+
+
+def _supabase_marketplace_bid_path(listing_id: str, bid_id: str) -> str:
+  return f"{SUPABASE_MARKETPLACE_BIDS_PREFIX}/{listing_id}/{bid_id}.json"
+
+
+def _resolve_supabase_storage_object_path(prefix: str, name: str) -> str:
+  normalized_prefix = prefix.strip().strip("/")
+  normalized_name = str(name or "").strip().lstrip("/")
+
+  if not normalized_prefix:
+    return normalized_name
+
+  if normalized_name.startswith(f"{normalized_prefix}/") or normalized_name == normalized_prefix:
+    return normalized_name
+
+  return f"{normalized_prefix}/{normalized_name}"
 
 
 def _normalize_remote_user_record(record) -> dict | None:
@@ -233,14 +397,41 @@ def _load_remote_json_record(key: str) -> dict | None:
 
 
 def _load_remote_marketplace_listing_record(listing_id: str) -> dict | None:
+  if _uses_remote_kv_marketplace_store():
+    return _load_remote_json_record(_marketplace_listing_record_key(listing_id))
+
+  if _uses_supabase_marketplace_store():
+    return _download_supabase_storage_json(_supabase_marketplace_listing_path(listing_id))
+
   return _load_remote_json_record(_marketplace_listing_record_key(listing_id))
 
 
 def _load_remote_marketplace_bid_record(bid_id: str) -> dict | None:
+  if _uses_remote_kv_marketplace_store():
+    return _load_remote_json_record(_marketplace_bid_record_key(bid_id))
   return _load_remote_json_record(_marketplace_bid_record_key(bid_id))
 
 
 def _list_remote_marketplace_bid_records(listing_id: str) -> list[dict]:
+  if _uses_remote_kv_marketplace_store():
+    bids = [_load_remote_marketplace_bid_record(bid_id) for bid_id in _kv_smembers(_marketplace_listing_bid_ids_key(listing_id))]
+    filtered = [bid for bid in bids if bid]
+    filtered.sort(key=lambda bid: (get_record_value(bid, "created_at", "createdAt") or "", get_record_value(bid, "id") or ""), reverse=True)
+    return filtered
+
+  if _uses_supabase_marketplace_store():
+    objects = _list_supabase_storage_objects(f"{SUPABASE_MARKETPLACE_BIDS_PREFIX}/{listing_id}")
+    bids = []
+    for item in objects:
+      name = item.get("name") if isinstance(item, dict) else None
+      if not name:
+        continue
+      record = _download_supabase_storage_json(_resolve_supabase_storage_object_path(f"{SUPABASE_MARKETPLACE_BIDS_PREFIX}/{listing_id}", name))
+      if record:
+        bids.append(record)
+    bids.sort(key=lambda bid: (get_record_value(bid, "created_at", "createdAt") or "", get_record_value(bid, "id") or ""), reverse=True)
+    return bids
+
   bids = [_load_remote_marketplace_bid_record(bid_id) for bid_id in _kv_smembers(_marketplace_listing_bid_ids_key(listing_id))]
   filtered = [bid for bid in bids if bid]
   filtered.sort(key=lambda bid: (get_record_value(bid, "created_at", "createdAt") or "", get_record_value(bid, "id") or ""), reverse=True)
@@ -248,6 +439,31 @@ def _list_remote_marketplace_bid_records(listing_id: str) -> list[dict]:
 
 
 def _list_remote_marketplace_listing_records() -> list[dict]:
+  if _uses_remote_kv_marketplace_store():
+    records = [_load_remote_marketplace_listing_record(listing_id) for listing_id in _kv_smembers(MARKETPLACE_LISTING_IDS_KEY)]
+    filtered = [record for record in records if record]
+    filtered.sort(
+      key=lambda record: (get_record_value(record, "created_at", "createdAt") or "", get_record_value(record, "id") or ""),
+      reverse=True,
+    )
+    return filtered
+
+  if _uses_supabase_marketplace_store():
+    objects = _list_supabase_storage_objects(SUPABASE_MARKETPLACE_LISTINGS_PREFIX)
+    records = []
+    for item in objects:
+      name = item.get("name") if isinstance(item, dict) else None
+      if not name:
+        continue
+      record = _download_supabase_storage_json(_resolve_supabase_storage_object_path(SUPABASE_MARKETPLACE_LISTINGS_PREFIX, name))
+      if record:
+        records.append(record)
+    records.sort(
+      key=lambda record: (get_record_value(record, "created_at", "createdAt") or "", get_record_value(record, "id") or ""),
+      reverse=True,
+    )
+    return records
+
   records = [_load_remote_marketplace_listing_record(listing_id) for listing_id in _kv_smembers(MARKETPLACE_LISTING_IDS_KEY)]
   filtered = [record for record in records if record]
   filtered.sort(
@@ -857,7 +1073,7 @@ def create_marketplace_listing(payload: dict) -> dict:
   owner_role = validated_payload.get("ownerRole")
   stored_payload = {**validated_payload, "id": listing_id, "createdAt": now, "updatedAt": now}
 
-  if _uses_remote_marketplace_store():
+  if _uses_remote_kv_marketplace_store():
     record = {
       "id": listing_id,
       "owner_user_id": owner_user_id,
@@ -871,6 +1087,21 @@ def create_marketplace_listing(payload: dict) -> dict:
     }
     _kv_set(_marketplace_listing_record_key(listing_id), json.dumps(record))
     _kv_sadd(MARKETPLACE_LISTING_IDS_KEY, listing_id)
+    return serialize_marketplace_listing(record)
+
+  if _uses_supabase_marketplace_store():
+    record = {
+      "id": listing_id,
+      "owner_user_id": owner_user_id,
+      "owner_role": owner_role,
+      "listing_type": listing_type,
+      "status": validated_payload.get("status") or "active",
+      "title": title,
+      "payload_json": json.dumps(stored_payload),
+      "created_at": now,
+      "updated_at": now,
+    }
+    _upload_supabase_storage_json(_supabase_marketplace_listing_path(listing_id), record)
     return serialize_marketplace_listing(record)
 
   with get_connection() as connection:
@@ -988,7 +1219,7 @@ def create_marketplace_bid(payload: dict) -> dict:
   developer_reference = validated_payload.get("developerProfileReference") or {}
   bidder_user_id = developer_reference.get("userId")
 
-  if _uses_remote_marketplace_store():
+  if _uses_remote_kv_marketplace_store():
     listing_row = _load_remote_marketplace_listing_record(listing_id)
     if not listing_row:
       raise ValueError("The target marketplace listing could not be found.")
@@ -1004,6 +1235,23 @@ def create_marketplace_bid(payload: dict) -> dict:
     }
     _kv_set(_marketplace_bid_record_key(bid_id), json.dumps(record))
     _kv_sadd(_marketplace_listing_bid_ids_key(listing_id), bid_id)
+    return serialize_marketplace_bid(record)
+
+  if _uses_supabase_marketplace_store():
+    listing_row = _load_remote_marketplace_listing_record(listing_id)
+    if not listing_row:
+      raise ValueError("The target marketplace listing could not be found.")
+
+    record = {
+      "id": bid_id,
+      "listing_id": listing_id,
+      "bidder_user_id": bidder_user_id,
+      "bidder_role": payload.get("bidderRole") or "developer",
+      "status": validated_payload["status"],
+      "payload_json": json.dumps({**validated_payload, "id": bid_id, "createdAt": now}),
+      "created_at": now,
+    }
+    _upload_supabase_storage_json(_supabase_marketplace_bid_path(listing_id, bid_id), record)
     return serialize_marketplace_bid(record)
 
   with get_connection() as connection:
