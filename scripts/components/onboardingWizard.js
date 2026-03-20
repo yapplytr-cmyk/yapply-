@@ -1,6 +1,6 @@
 /**
  * Onboarding Wizard — Step-by-step account creation flow for native app.
- * Steps: 1) Theme pick  2) Role pick  3) Form fields  4) Success redirect
+ * Steps: 1) Theme pick  2) Role pick  3) Form fields  4) Email verification  5) Success redirect
  */
 
 /* ── Inline SVG: bird with cool sunglasses (used in "Harika seçim" feedback) ── */
@@ -79,6 +79,29 @@ const BIRD_CLIENT_SUCCESS_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bi
   <rect class="ob-c4" x="150" y="160" width="5" height="3" rx="1" fill="#c9a84c"/>
   <circle class="ob-c1" cx="170" cy="50" r="3" fill="#e8823a" opacity="0.8"/>
   <circle class="ob-c3" cx="30" cy="140" r="3" fill="#6b6e76" opacity="0.6"/>
+</svg>`;
+
+/* ── Bird with envelope (email verification step) ── */
+const BIRD_EMAIL_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-svg">
+  <style>
+    @keyframes ob-envelope-bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+    .ob-envelope-bob{animation:ob-envelope-bob 2s ease-in-out infinite}
+  </style>
+  <circle cx="100" cy="100" r="96" fill="#e8f0e0" stroke="#333" stroke-width="3"/>
+  <g class="ob-envelope-bob">
+    <ellipse cx="100" cy="120" rx="42" ry="32" fill="#e8823a"/>
+    <circle cx="100" cy="80" r="28" fill="#e8823a"/>
+    <circle cx="112" cy="72" r="4" fill="#222"/><circle cx="112" cy="72" r="1.5" fill="#fff"/>
+    <path d="M126 80l14-5-9 12z" fill="#f0a030"/>
+  </g>
+  <!-- Envelope in bird's wing area -->
+  <g transform="translate(60, 115)">
+    <rect x="0" y="0" width="80" height="52" rx="6" fill="#f5f0e0" stroke="#c9a84c" stroke-width="2"/>
+    <path d="M0 0l40 28 40-28" fill="none" stroke="#c9a84c" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M0 52l28-20M80 52l-28-20" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- @ symbol on envelope -->
+    <text x="40" y="38" text-anchor="middle" fill="#c9a84c" font-size="18" font-weight="bold" font-family="system-ui">@</text>
+  </g>
 </svg>`;
 
 export function createOnboardingWizard(content, locale) {
@@ -213,8 +236,46 @@ export function createOnboardingWizard(content, locale) {
         </div>
       </div>
 
-      <!-- Step 4: Success -->
+      <!-- Step 4: Email Verification -->
       <div class="onboarding-step" data-onboarding-step="4" hidden>
+        <div class="onboarding-step__content" style="text-align:center">
+          <div class="onboarding-email-bird" style="width:140px;height:140px;margin:0 auto 16px">
+            ${BIRD_EMAIL_SVG}
+          </div>
+          <h2 class="onboarding-step__title">${isTr ? "E-postanızı Doğrulayın" : "Verify Your Email"}</h2>
+          <p class="onboarding-step__desc" data-onboarding-verify-desc>
+            ${isTr ? "Doğrulama kodunu e-postanıza gönderdik." : "We sent a verification code to your email."}
+          </p>
+          <p class="onboarding-verify-email-display" data-onboarding-verify-email style="font-weight:600;color:var(--accent,#c9a84c);margin:4px 0 18px;font-size:0.95rem"></p>
+
+          <div class="onboarding-form-error" data-onboarding-otp-error hidden style="margin-bottom:12px">
+            <p data-onboarding-otp-error-text></p>
+          </div>
+
+          <div class="onboarding-otp-inputs" data-onboarding-otp-container style="display:flex;justify-content:center;gap:8px;margin-bottom:20px">
+            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="0" autocomplete="one-time-code" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
+            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="1" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
+            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="2" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
+            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="3" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
+            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="4" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
+            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="5" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
+          </div>
+
+          <button class="button button--primary onboarding-verify-btn" type="button" data-onboarding-verify-btn disabled style="width:100%;margin-bottom:12px">
+            ${isTr ? "Doğrula" : "Verify"}
+          </button>
+
+          <p style="font-size:0.85rem;color:var(--text-muted,#9ca3af);margin-top:8px">
+            ${isTr ? "Kod gelmedi mi?" : "Didn't receive the code?"}
+            <button type="button" data-onboarding-resend-btn style="background:none;border:none;color:var(--accent,#c9a84c);font-weight:600;cursor:pointer;font-size:0.85rem;text-decoration:underline;padding:0 4px">
+              ${isTr ? "Tekrar Gönder" : "Resend"}
+            </button>
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 5: Success -->
+      <div class="onboarding-step" data-onboarding-step="5" hidden>
         <div class="onboarding-step__content onboarding-success">
           <div class="onboarding-success__bird" data-onboarding-success-bird></div>
           <h2 class="onboarding-step__title" data-onboarding-success-title></h2>
@@ -231,6 +292,7 @@ export function createOnboardingWizard(content, locale) {
         <span class="onboarding-dot" data-onboarding-dot="2"></span>
         <span class="onboarding-dot" data-onboarding-dot="3"></span>
         <span class="onboarding-dot" data-onboarding-dot="4"></span>
+        <span class="onboarding-dot" data-onboarding-dot="5"></span>
       </div>
     </div>
   `;
@@ -243,6 +305,11 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   const isTr = document.documentElement.lang === "tr" || localStorage.getItem("yapply-locale") === "tr";
   let currentStep = 1;
   let selectedRole = "client";
+
+  // Pending verification state (set when signup returns PENDING_EMAIL_VERIFICATION)
+  let pendingEmail = "";
+  let pendingPassword = "";
+  let pendingRole = "";
 
   function goToStep(step) {
     // Hide all steps
@@ -265,6 +332,45 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       dot.classList.toggle("onboarding-dot--done", dotStep < step);
     });
     currentStep = step;
+  }
+
+  // ─── Shared: show success step (step 5) ───
+  function showSuccessStep() {
+    const successBird = wizard.querySelector("[data-onboarding-success-bird]");
+    const successTitle = wizard.querySelector("[data-onboarding-success-title]");
+    const successDesc = wizard.querySelector("[data-onboarding-success-desc]");
+    const goBtn = wizard.querySelector("[data-onboarding-go]");
+
+    if (successBird) {
+      successBird.innerHTML = selectedRole === "developer" ? BIRD_DEV_SUCCESS_SVG : BIRD_CLIENT_SUCCESS_SVG;
+    }
+
+    if (selectedRole === "developer") {
+      if (successTitle) successTitle.textContent = isTr ? "Hoş geldiniz!" : "Welcome!";
+      if (successDesc) successDesc.textContent = isTr
+        ? "İlk ilanınıza göz atın ve teklif verin"
+        : "Browse and bid on your first listing";
+    } else {
+      if (successTitle) successTitle.textContent = isTr ? "Hoş geldiniz!" : "Welcome!";
+      if (successDesc) successDesc.textContent = isTr
+        ? "İlk proje ilanınızı oluşturun"
+        : "Create your first project listing";
+    }
+
+    if (goBtn) {
+      goBtn.addEventListener("click", () => {
+        const target = selectedRole === "developer"
+          ? "./open-marketplace.html"
+          : "./client-project-submission.html";
+        if (typeof window.navigateTo === "function") {
+          window.navigateTo(target);
+        } else {
+          window.location.href = target;
+        }
+      });
+    }
+
+    goToStep(5);
   }
 
   // Step 1: Theme selection
@@ -388,43 +494,28 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
           setDocumentAuthState(session);
         }
 
-        // Show success step
-        const successBird = wizard.querySelector("[data-onboarding-success-bird]");
-        const successTitle = wizard.querySelector("[data-onboarding-success-title]");
-        const successDesc = wizard.querySelector("[data-onboarding-success-desc]");
-        const goBtn = wizard.querySelector("[data-onboarding-go]");
-
-        if (successBird) {
-          successBird.innerHTML = selectedRole === "developer" ? BIRD_DEV_SUCCESS_SVG : BIRD_CLIENT_SUCCESS_SVG;
-        }
-
-        if (selectedRole === "developer") {
-          if (successTitle) successTitle.textContent = isTr ? "Hoş geldiniz!" : "Welcome!";
-          if (successDesc) successDesc.textContent = isTr
-            ? "İlk ilanınıza göz atın ve teklif verin"
-            : "Browse and bid on your first listing";
-        } else {
-          if (successTitle) successTitle.textContent = isTr ? "Hoş geldiniz!" : "Welcome!";
-          if (successDesc) successDesc.textContent = isTr
-            ? "İlk proje ilanınızı oluşturun"
-            : "Create your first project listing";
-        }
-
-        if (goBtn) {
-          goBtn.addEventListener("click", () => {
-            const target = selectedRole === "developer"
-              ? "./open-marketplace.html"
-              : "./client-project-submission.html";
-            if (typeof window.navigateTo === "function") {
-              window.navigateTo(target);
-            } else {
-              window.location.href = target;
-            }
-          });
-        }
-
-        goToStep(4);
+        // No email verification needed — go straight to success
+        showSuccessStep();
       } catch (err) {
+        // Handle email verification flow
+        if (err?.code === "PENDING_EMAIL_VERIFICATION") {
+          pendingEmail = err.email || form.querySelector('[name="email"]')?.value || "";
+          pendingPassword = err.password || form.querySelector('[name="password"]')?.value || "";
+          pendingRole = err.role || selectedRole;
+
+          // Show the email on the verify step
+          const emailDisplay = wizard.querySelector("[data-onboarding-verify-email]");
+          if (emailDisplay) emailDisplay.textContent = pendingEmail;
+
+          // Focus first OTP input when transitioning
+          goToStep(4);
+          setTimeout(() => {
+            const firstOtp = wizard.querySelector('[data-otp-digit="0"]');
+            if (firstOtp) firstOtp.focus();
+          }, 400);
+          return;
+        }
+
         if (errorEl && errorText) {
           errorText.textContent = err?.message || (isTr ? "Bir hata oluştu" : "An error occurred");
           errorEl.hidden = false;
@@ -432,6 +523,142 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = isTr ? "Hesap Oluştur" : "Create Account";
+        }
+      }
+    });
+  }
+
+  // ─── Step 4: OTP digit inputs ───
+  const otpContainer = wizard.querySelector("[data-onboarding-otp-container]");
+  const verifyBtn = wizard.querySelector("[data-onboarding-verify-btn]");
+  const otpDigits = wizard.querySelectorAll(".onboarding-otp-digit");
+
+  function getOtpValue() {
+    return Array.from(otpDigits).map((d) => d.value).join("");
+  }
+
+  function updateVerifyBtnState() {
+    const code = getOtpValue();
+    if (verifyBtn) verifyBtn.disabled = code.length < 6;
+  }
+
+  // Wire up OTP digit auto-advance, backspace, and paste
+  otpDigits.forEach((digit, idx) => {
+    digit.addEventListener("input", (e) => {
+      const val = e.target.value.replace(/[^0-9]/g, "");
+      e.target.value = val.slice(0, 1);
+      if (val && idx < otpDigits.length - 1) {
+        otpDigits[idx + 1].focus();
+      }
+      updateVerifyBtnState();
+
+      // Highlight border when filled
+      e.target.style.borderColor = val ? "var(--accent,#c9a84c)" : "var(--surface-300,#d1d5db)";
+    });
+
+    digit.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !e.target.value && idx > 0) {
+        otpDigits[idx - 1].focus();
+        otpDigits[idx - 1].value = "";
+        otpDigits[idx - 1].style.borderColor = "var(--surface-300,#d1d5db)";
+        updateVerifyBtnState();
+      }
+      // Allow Enter to submit when all 6 digits filled
+      if (e.key === "Enter") {
+        const code = getOtpValue();
+        if (code.length === 6 && verifyBtn) verifyBtn.click();
+      }
+    });
+
+    // Handle paste: fill all 6 digits from clipboard
+    digit.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const pasted = (e.clipboardData.getData("text") || "").replace(/[^0-9]/g, "").slice(0, 6);
+      pasted.split("").forEach((ch, i) => {
+        if (otpDigits[i]) {
+          otpDigits[i].value = ch;
+          otpDigits[i].style.borderColor = ch ? "var(--accent,#c9a84c)" : "var(--surface-300,#d1d5db)";
+        }
+      });
+      if (pasted.length > 0 && otpDigits[Math.min(pasted.length, 5)]) {
+        otpDigits[Math.min(pasted.length, 5)].focus();
+      }
+      updateVerifyBtnState();
+    });
+  });
+
+  // Verify button click
+  if (verifyBtn) {
+    verifyBtn.addEventListener("click", async () => {
+      const code = getOtpValue();
+      if (code.length < 6) return;
+
+      const otpError = wizard.querySelector("[data-onboarding-otp-error]");
+      const otpErrorText = wizard.querySelector("[data-onboarding-otp-error-text]");
+      if (otpError) otpError.hidden = true;
+
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = isTr ? "Doğrulanıyor..." : "Verifying...";
+
+      try {
+        const authApi = await loadAuthApi();
+        if (!authApi) throw new Error("Auth unavailable");
+
+        const user = await authApi.verifySignupOtp(pendingEmail, code, pendingPassword);
+        const session = await authApi.fetchAuthSession();
+
+        if (session?.authenticated && session?.user) {
+          setAuthSession(session);
+          setDocumentAuthState(session);
+        }
+
+        // Verified — go to success
+        showSuccessStep();
+      } catch (err) {
+        if (otpError && otpErrorText) {
+          otpErrorText.textContent = err?.message || (isTr ? "Geçersiz veya süresi dolmuş kod" : "Invalid or expired code");
+          otpError.hidden = false;
+        }
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = isTr ? "Doğrula" : "Verify";
+
+        // Clear OTP inputs on error so user can retry
+        otpDigits.forEach((d) => {
+          d.value = "";
+          d.style.borderColor = "var(--surface-300,#d1d5db)";
+        });
+        otpDigits[0]?.focus();
+      }
+    });
+  }
+
+  // Resend button
+  const resendBtn = wizard.querySelector("[data-onboarding-resend-btn]");
+  if (resendBtn) {
+    resendBtn.addEventListener("click", async () => {
+      if (!pendingEmail) return;
+
+      resendBtn.disabled = true;
+      resendBtn.textContent = isTr ? "Gönderiliyor..." : "Sending...";
+
+      try {
+        const authApi = await loadAuthApi();
+        if (authApi?.resendSignupOtp) {
+          await authApi.resendSignupOtp(pendingEmail);
+        }
+        resendBtn.textContent = isTr ? "Gönderildi!" : "Sent!";
+        setTimeout(() => {
+          resendBtn.textContent = isTr ? "Tekrar Gönder" : "Resend";
+          resendBtn.disabled = false;
+        }, 3000);
+      } catch (err) {
+        resendBtn.textContent = isTr ? "Tekrar Gönder" : "Resend";
+        resendBtn.disabled = false;
+        const otpError = wizard.querySelector("[data-onboarding-otp-error]");
+        const otpErrorText = wizard.querySelector("[data-onboarding-otp-error-text]");
+        if (otpError && otpErrorText) {
+          otpErrorText.textContent = err?.message || (isTr ? "Kod gönderilemedi" : "Could not resend code");
+          otpError.hidden = false;
         }
       }
     });
