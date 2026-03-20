@@ -256,6 +256,11 @@ let i18nApiPromise = null;
 let heroSceneApiPromise = null;
 let tabBarApiPromise = null;
 
+/* ── Eagerly preload critical modules so they're ready when renderPage runs ─── */
+appApiPromise = import("./app.js").catch(() => null);
+i18nApiPromise = import("./core/i18n.js").catch(() => null);
+authApiPromise = import("./core/auth.js?v=20260312-public-auth-backend").catch(() => null);
+
 function getLoadingCopy(locale = "tr") {
   if (locale === "en") {
     return {
@@ -2257,16 +2262,13 @@ function setupMarketplaceListingInquiryForm() {
   const success = document.querySelector("[data-marketplace-listing-inquiry-success]");
   const successName = document.querySelector("[data-marketplace-listing-success-name]");
   const listingName = document.querySelector("[data-marketplace-listing-name-field]");
+  const ownerIdField = document.querySelector("[data-marketplace-listing-owner-id]");
 
-  if (!form || !success || !listingName) {
+  if (!form) {
     return;
   }
 
-  if (successName) {
-    successName.textContent = listingName.value;
-  }
-
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (!form.checkValidity()) {
@@ -2274,8 +2276,33 @@ function setupMarketplaceListingInquiryForm() {
       return;
     }
 
-    form.hidden = true;
-    success.hidden = false;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "...";
+    }
+
+    const formData = new FormData(form);
+    const inquiry = {
+      listingId: getCurrentListingId(),
+      fullName: formData.get("fullName") || "",
+      email: formData.get("email") || "",
+      message: formData.get("message") || "",
+    };
+
+    // Send inquiry to backend (fire-and-forget — redirect even if it fails)
+    try {
+      const { getAuthOrigin } = await import("./core/auth.js?v=20260312-public-auth-backend");
+      const origin = getAuthOrigin();
+      await fetch(`${origin}/api/marketplace/inquiry/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inquiry }),
+      });
+    } catch (_) {}
+
+    // Redirect to kesfet page after submission
+    navigateTo("./open-marketplace.html");
   });
 }
 
@@ -3987,12 +4014,14 @@ async function renderPage(localeOverride) {
     document.documentElement.lang = content.meta.locale;
     applyTheme(getTheme());
 
-    // Fast-path pages: auth runs in background, render from cache instantly
+    // Fast-path pages: render from cache instantly (SWR pattern)
     const fastPathPages = new Set(["open-marketplace", "developer-dashboard", "client-dashboard", "client-bids", "marketplace-listing-detail"]);
+    // Auth-dependent fast-path pages: need auth resolved before first render
+    const authFastPathPages = new Set(["developer-dashboard", "client-dashboard", "client-bids"]);
 
     if (fastPathPages.has(page)) {
       // Show skeleton placeholders immediately while loading (native app only)
-      if (IS_NATIVE_APP && (page === "developer-dashboard" || page === "client-dashboard" || page === "client-bids")) {
+      if (IS_NATIVE_APP && authFastPathPages.has(page)) {
         try {
           const skeletonMod = page === "developer-dashboard"
             ? await import("./components/developerDashboardPage.js")
@@ -4010,9 +4039,14 @@ async function renderPage(localeOverride) {
         } catch (_) {}
       }
 
-      // Start auth in background — don't block render on auth
+      // Auth-dependent pages: await auth so getAuthSession() is valid during render
+      // Public pages: start auth in background, don't block render
       const authSyncPromise = syncAuthState();
-      // Load data in parallel with auth (SWR cache returns instantly if fresh)
+      if (authFastPathPages.has(page)) {
+        await authSyncPromise.catch(() => {});
+      }
+
+      // Load data in parallel (SWR cache returns instantly if available)
       const runtimeData = await loadMarketplaceRuntimeData(page, listingType, listingId);
       const initialSession = getAuthSession();
 
@@ -4039,14 +4073,16 @@ async function renderPage(localeOverride) {
         }).catch(() => {});
       }
 
-      // Once auth resolves, re-render if session changed (e.g. user logged in/out)
-      authSyncPromise
-        .then((session) => {
-          if (!areSessionsEquivalent(initialSession, session)) {
-            renderPage(content.meta.locale);
-          }
-        })
-        .catch(() => {});
+      // For public pages: once auth resolves, re-render if session changed
+      if (!authFastPathPages.has(page)) {
+        authSyncPromise
+          .then((session) => {
+            if (!areSessionsEquivalent(initialSession, session)) {
+              renderPage(content.meta.locale);
+            }
+          })
+          .catch(() => {});
+      }
     } else {
       // Other pages that depend on auth state for data loading must await auth first
       const authDependentPages = new Set(["hesabim"]);

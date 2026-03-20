@@ -705,42 +705,32 @@ function createProfessionalDetail(content, listing) {
     </section>
 
     <section class="section-shell" id="listing-contact">
-      ${createSectionHeading(detailContent.contact)}
-      <div class="project-inquiry-layout">
-        <article class="panel project-inquiry-summary developer-inquiry-summary">
-          <span class="project-inquiry-summary__eyebrow">${detailContent.contactSummary}</span>
-          <h3>${listing.name}</h3>
-          <div class="project-inquiry-summary__grid">
-            ${createSummaryGrid(summaryItems)}
+      <div class="panel application-panel project-inquiry-panel">
+        <div class="project-inquiry-panel__intro">
+          <h3>${detailContent.contact.formTitle}</h3>
+        </div>
+        <form class="application-form project-inquiry-form" data-marketplace-listing-inquiry-form novalidate>
+          <input type="hidden" name="professionalName" value="${listing.name}" data-marketplace-listing-name-field />
+          <input type="hidden" name="listingOwnerUserId" value="${listing.ownerUserId || ""}" data-marketplace-listing-owner-id />
+          <label class="form-field">
+            <span>${detailContent.contact.fields.fullName}</span>
+            <input type="text" name="fullName" placeholder="${detailContent.contact.placeholders.fullName}" required />
+          </label>
+          <label class="form-field">
+            <span>${detailContent.contact.fields.email}</span>
+            <input type="email" name="email" placeholder="${detailContent.contact.placeholders.email}" required />
+          </label>
+          <label class="form-field">
+            <span>${detailContent.contact.fields.message}</span>
+            <textarea name="message" rows="5" placeholder="${detailContent.contact.placeholders.message}" required></textarea>
+          </label>
+          <div class="form-actions form-field--full">
+            <button class="button button--primary" type="submit">${detailContent.contact.submitLabel}</button>
           </div>
-        </article>
-        <div class="panel application-panel project-inquiry-panel">
-          <div class="project-inquiry-panel__intro">
-            <h3>${detailContent.contact.formTitle}</h3>
-            <p>${detailContent.contact.formIntro}</p>
-          </div>
-          <form class="application-form project-inquiry-form" data-marketplace-listing-inquiry-form novalidate>
-            <input type="hidden" name="professionalName" value="${listing.name}" data-marketplace-listing-name-field />
-            <label class="form-field">
-              <span>${detailContent.contact.fields.fullName}</span>
-              <input type="text" name="fullName" placeholder="${detailContent.contact.placeholders.fullName}" required />
-            </label>
-            <label class="form-field">
-              <span>${detailContent.contact.fields.email}</span>
-              <input type="email" name="email" placeholder="${detailContent.contact.placeholders.email}" required />
-            </label>
-            <label class="form-field">
-              <span>${detailContent.contact.fields.message}</span>
-              <textarea name="message" rows="5" placeholder="${detailContent.contact.placeholders.message}" required></textarea>
-            </label>
-            <div class="form-actions form-field--full">
-              <button class="button button--primary" type="submit">${detailContent.contact.submitLabel}</button>
-            </div>
-          </form>
-          <div class="form-success project-inquiry-success" data-marketplace-listing-inquiry-success hidden>
-            <h3>${detailContent.contact.successTitle}</h3>
-            <p>${detailContent.contact.successText} <strong data-marketplace-listing-success-name>${listing.name}</strong>.</p>
-          </div>
+        </form>
+        <div class="form-success project-inquiry-success" data-marketplace-listing-inquiry-success hidden style="display: none;">
+          <h3>${detailContent.contact.successTitle}</h3>
+          <p>${detailContent.contact.successText} <strong data-marketplace-listing-success-name>${listing.name}</strong>.</p>
         </div>
       </div>
     </section>

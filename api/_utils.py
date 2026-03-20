@@ -802,6 +802,48 @@ def handle_marketplace_bid_create(handler) -> None:
   json_response(handler, HTTPStatus.CREATED, {"ok": True, "bid": stored_bid, "listing": refreshed_listing})
 
 
+def handle_marketplace_inquiry_create(handler) -> None:
+  """Handle a client inquiry submission for a professional listing.
+  Sends an email notification to the developer who owns the listing."""
+  try:
+    payload = parse_json_body(handler)
+  except ValueError:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+    return
+
+  inquiry = payload.get("inquiry") if isinstance(payload.get("inquiry"), dict) else None
+  if not inquiry:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_INQUIRY", "message": "A valid inquiry payload is required."})
+    return
+
+  listing_id = normalize_text(inquiry.get("listingId") or "")
+  if not listing_id:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_INQUIRY", "message": "A listing id is required."})
+    return
+
+  full_name = normalize_text(inquiry.get("fullName") or "")
+  email = normalize_text(inquiry.get("email") or "")
+  message = (inquiry.get("message") or "").strip()
+
+  if not full_name or not email:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_INQUIRY", "message": "Name and email are required."})
+    return
+
+  listing = get_marketplace_listing(listing_id)
+  if not listing:
+    json_response(handler, HTTPStatus.NOT_FOUND, {"ok": False, "code": "LISTING_NOT_FOUND", "message": "The target listing could not be found."})
+    return
+
+  # Send email to the listing owner (developer)
+  try:
+    from backend.email import send_inquiry_received
+    send_inquiry_received(listing, {"fullName": full_name, "email": email, "message": message})
+  except Exception:
+    pass
+
+  json_response(handler, HTTPStatus.CREATED, {"ok": True, "message": "Inquiry sent successfully."})
+
+
 def _strip_listing_to_card_fields(listing: dict) -> dict:
   """Return only the fields needed to render a marketplace card."""
   meta = listing.get("marketplaceMeta") if isinstance(listing.get("marketplaceMeta"), dict) else {}
