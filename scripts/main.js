@@ -137,7 +137,8 @@ if (IS_NATIVE_APP) {
         delete document.body.dataset.project;
         if (route.listingType) document.body.dataset.listingType = route.listingType;
         if (route.submissionType) document.body.dataset.submissionType = route.submissionType;
-        window.scrollTo(0, 0);
+        // Only scroll to top if not coming from swipe-back (swipe already handles position)
+        if (!_swipeBackInProgress) window.scrollTo(0, 0);
         renderPage();
       }
     }
@@ -151,10 +152,13 @@ function navigateTo(href) {
 }
 
 /* ── Swipe-back gesture: left edge → right with visible slide animation ─── */
+let _swipeBackInProgress = false; // exposed so renderPage can detect swipe-back transitions
 if (IS_NATIVE_APP) {
   let _swipeStartX = 0;
   let _swipeStartY = 0;
   let _swiping = false;
+  let _swipeLocked = false; // true once direction is decided (horizontal vs vertical)
+  let _swipeIsHorizontal = false;
   let _swipeOverlay = null;
 
   function _getSwipeOverlay() {
@@ -162,8 +166,8 @@ if (IS_NATIVE_APP) {
     _swipeOverlay = document.createElement("div");
     _swipeOverlay.style.cssText = `
       position:fixed;inset:0;z-index:9998;pointer-events:none;
-      background:linear-gradient(to right, rgba(0,0,0,0.15) 0%, transparent 40%);
-      opacity:0;transition:opacity 150ms ease;
+      background:linear-gradient(to right, rgba(0,0,0,0.12) 0%, transparent 35%);
+      opacity:0;will-change:opacity;
     `;
     document.body.appendChild(_swipeOverlay);
     return _swipeOverlay;
@@ -179,6 +183,11 @@ if (IS_NATIVE_APP) {
     _swipeStartX = touch.clientX;
     _swipeStartY = touch.clientY;
     _swiping = true;
+    _swipeLocked = false;
+    _swipeIsHorizontal = false;
+    // Prepare app root for GPU-accelerated transform
+    const appRoot = document.getElementById("app");
+    if (appRoot) appRoot.style.willChange = "transform, opacity";
   }, { passive: true });
 
   document.addEventListener("touchmove", (e) => {
@@ -186,19 +195,30 @@ if (IS_NATIVE_APP) {
     const touch = e.touches[0];
     const dx = touch.clientX - _swipeStartX;
     const dy = Math.abs(touch.clientY - _swipeStartY);
-    // Cancel if swiping more vertically
-    if (dy > dx * 1.2 && dx < 40) { _swiping = false; return; }
-    if (dx > 8) {
+
+    // Lock direction after a small threshold
+    if (!_swipeLocked && (dx > 10 || dy > 10)) {
+      _swipeLocked = true;
+      _swipeIsHorizontal = dx > dy;
+      if (!_swipeIsHorizontal) {
+        _swiping = false;
+        const appRoot = document.getElementById("app");
+        if (appRoot) appRoot.style.willChange = "";
+        return;
+      }
+    }
+
+    if (_swipeIsHorizontal && dx > 4) {
       const appRoot = document.getElementById("app");
       const progress = Math.min(dx / window.innerWidth, 1);
-      const translateX = dx * 0.85;
+      const translateX = dx * 0.88;
       if (appRoot) {
         appRoot.style.transition = "none";
-        appRoot.style.transform = `translateX(${translateX}px)`;
-        appRoot.style.opacity = String(1 - progress * 0.3);
+        appRoot.style.transform = `translate3d(${translateX}px, 0, 0)`;
+        appRoot.style.opacity = String(1 - progress * 0.25);
       }
       const overlay = _getSwipeOverlay();
-      overlay.style.opacity = String(progress * 0.8);
+      overlay.style.opacity = String(progress * 0.7);
     }
   }, { passive: true });
 
@@ -213,28 +233,34 @@ if (IS_NATIVE_APP) {
     const didSwipeEnough = dx > screenW * 0.3 && dx > dy * 1.2;
 
     if (didSwipeEnough) {
+      _swipeBackInProgress = true;
       // Animate off-screen then navigate
       if (appRoot) {
-        appRoot.style.transition = "transform 200ms ease-out, opacity 200ms ease-out";
-        appRoot.style.transform = `translateX(${screenW}px)`;
-        appRoot.style.opacity = "0";
+        appRoot.style.transition = "transform 220ms cubic-bezier(0.2, 0, 0, 1), opacity 220ms ease-out";
+        appRoot.style.transform = `translate3d(${screenW}px, 0, 0)`;
+        appRoot.style.opacity = "0.4";
       }
       if (_swipeOverlay) _swipeOverlay.style.opacity = "0";
       setTimeout(() => {
-        if (appRoot) { appRoot.style.transition = ""; appRoot.style.transform = ""; appRoot.style.opacity = ""; }
+        // Reset styles before navigation rebuilds DOM
+        if (appRoot) {
+          appRoot.style.cssText = "";
+        }
         if (window.history.state?.softNav) {
           window.history.back();
         } else {
           navigateTo("./open-marketplace.html");
         }
-      }, 200);
+        // Allow renderPage to detect we came from swipe-back for 400ms
+        setTimeout(() => { _swipeBackInProgress = false; }, 400);
+      }, 220);
     } else {
-      // Snap back
+      // Snap back with spring-like easing
       if (appRoot) {
-        appRoot.style.transition = "transform 250ms ease, opacity 250ms ease";
+        appRoot.style.transition = "transform 280ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 280ms ease";
         appRoot.style.transform = "";
         appRoot.style.opacity = "";
-        setTimeout(() => { if (appRoot) { appRoot.style.transition = ""; } }, 260);
+        setTimeout(() => { if (appRoot) appRoot.style.cssText = ""; }, 300);
       }
       if (_swipeOverlay) _swipeOverlay.style.opacity = "0";
     }
@@ -1863,6 +1889,13 @@ function setupMarketplaceTabs() {
       }
 
       setActiveTab(target);
+
+      // Persist active tab in URL so pull-to-refresh restores it
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", target);
+        window.history.replaceState(window.history.state, "", url.toString());
+      } catch (_) {}
     });
   });
 }
