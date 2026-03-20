@@ -3546,7 +3546,7 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
     const devCacheId = "dev-dashboard";
     const cached = swrRead(devCacheId);
-    const hasFreshCache = cached && !swrIsStale(cached) && cached.data;
+    const hasAnyCache = cached && cached.data;
 
     // Start network fetch for revalidation regardless
     const fetchPromise = (async () => {
@@ -3571,8 +3571,8 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
       }
     })();
 
-    if (hasFreshCache) {
-      // Return cached data instantly, revalidate in background & re-render if changed
+    // Return ANY cached data instantly (fresh or stale) — revalidate in background
+    if (hasAnyCache) {
       fetchPromise.then((freshData) => {
         const oldIds = JSON.stringify((cached.data.developerOwnedListings || []).map(l => l.id));
         const newIds = JSON.stringify((freshData.developerOwnedListings || []).map(l => l.id));
@@ -3586,7 +3586,7 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
       return cached.data;
     }
 
-    // No cache or stale — wait for network
+    // No cache at all — wait for network (first ever load only)
     return await fetchPromise;
   }
 
