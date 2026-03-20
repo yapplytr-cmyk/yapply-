@@ -1,0 +1,465 @@
+import { createButton, createSectionHeading } from "./primitives.js";
+import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
+import { getUnreadNotifications, markAllRead } from "../core/notifications.js";
+
+function getDeveloperDashboardLocale(content) {
+  return content.meta?.locale === "tr" ? "tr" : "en";
+}
+
+function getListingPreviewImage(listing) {
+  if (Array.isArray(listing?.images) && listing.images[0]?.src) {
+    return listing.images[0].src;
+  }
+
+  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
+  return attachments.find((item) => item?.kind === "image")?.dataUrl || listing.imageSrc || "";
+}
+
+function formatDashboardDate(value, locale, fallback) {
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  return new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function getDeveloperListingStatusLabel(listing, content) {
+  const rawStatus = String(listing?.marketplaceMeta?.listingStatus || listing?.status || "").trim().toLowerCase();
+
+  if (rawStatus === "active" || rawStatus === "live" || rawStatus === "open-for-bids") {
+    return content.status.active;
+  }
+
+  if (rawStatus === "draft") {
+    return content.status.draft;
+  }
+
+  if (rawStatus === "hidden") {
+    return content.status.hidden;
+  }
+
+  return content.status.active;
+}
+
+function getBidStatusLabel(bid, content) {
+  const rawStatus = String(bid?.status || "").trim().toLowerCase();
+
+  if (rawStatus === "accepted") {
+    return content.bidStatus.accepted;
+  }
+
+  if (rawStatus === "rejected") {
+    return content.bidStatus.rejected;
+  }
+
+  if (rawStatus === "withdrawn") {
+    return content.bidStatus.withdrawn;
+  }
+
+  return content.bidStatus.submitted;
+}
+
+function createImageManager(listing, copy) {
+  const imageAttachments = (Array.isArray(listing.attachments) ? listing.attachments : []).filter((item) => item?.kind === "image");
+
+  if (imageAttachments.length === 0) {
+    return `<p class="client-dashboard-edit__hint">${copy.images.empty}</p>`;
+  }
+
+  return `
+    <div class="client-dashboard-image-list">
+      ${imageAttachments
+        .map(
+          (item) => `
+            <label class="client-dashboard-image-item panel">
+              <img src="${item.dataUrl}" alt="${item.name}" loading="lazy" decoding="async" fetchpriority="low" />
+              <span>${item.name}</span>
+              <span class="client-dashboard-image-item__remove">
+                <input type="checkbox" name="removeAttachmentIds" value="${item.id}" />
+                ${copy.images.remove}
+              </span>
+            </label>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function createDeveloperOverviewSection(content, session, listingCount, bidCount) {
+  const user = session.user || {};
+  const profileName = user.companyName || user.username || user.fullName || user.email || content.fallback;
+  const workDescription = user.workDescription || content.profileOverview.emptyDescription;
+  const specialties = user.specialties || content.fallback;
+  const serviceArea = user.serviceArea || content.fallback;
+  const professionType = user.professionType || content.fallback;
+  const avatar = user.profilePictureSrc || "";
+
+  return `
+    <section class="section-shell" id="developer-dashboard-overview">
+      ${createSectionHeading(content.profileOverview.heading)}
+      <div class="developer-dashboard-overview">
+        <article class="panel developer-dashboard-profile">
+          <div class="developer-dashboard-profile__header">
+            <div class="account-settings-avatar developer-dashboard-profile__avatar">
+              <img src="${avatar}" alt="${profileName}" loading="lazy" decoding="async" fetchpriority="low" />
+            </div>
+            <div class="developer-dashboard-profile__copy">
+              <p class="eyebrow">${content.profileOverview.eyebrow}</p>
+              <h3>${profileName}</h3>
+              <p>${workDescription}</p>
+            </div>
+          </div>
+          <div class="project-detail-card__facts developer-dashboard-profile__facts">
+            <div>
+              <span>${content.profileOverview.labels.profileType}</span>
+              <strong>${content.profileOverview.profileType}</strong>
+            </div>
+            <div>
+              <span>${content.profileOverview.labels.professionType}</span>
+              <strong>${professionType}</strong>
+            </div>
+            <div>
+              <span>${content.profileOverview.labels.specialties}</span>
+              <strong>${specialties}</strong>
+            </div>
+            <div>
+              <span>${content.profileOverview.labels.serviceArea}</span>
+              <strong>${serviceArea}</strong>
+            </div>
+            <div>
+              <span>${content.profileOverview.labels.listingCount}</span>
+              <strong>${listingCount}</strong>
+            </div>
+            <div>
+              <span>${content.profileOverview.labels.bidCount}</span>
+              <strong>${bidCount}</strong>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  `;
+}
+
+function createBidCard(bid, content) {
+  const locale = getDeveloperDashboardLocale(content);
+  const listingHref = getMarketplaceListingHref("client", bid.listing?.id || bid.listingId || "");
+  const listingTitle = bid.listing?.title || content.fallback;
+  const dateLabel = formatDashboardDate(bid.createdAt, locale, content.fallback);
+
+  return `
+    <article class="detail-list-card marketplace-bid-accordion panel" data-bid-item>
+      <button class="marketplace-bid-row" type="button" data-bid-trigger aria-expanded="false">
+        <span class="marketplace-bid-row__amount"><strong>${bid.bidAmount?.label || content.fallback}</strong> — ${listingTitle}</span>
+        <span class="dev-bid-row__status">${getBidStatusLabel(bid, content)}</span>
+        <span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
+      </button>
+      <div class="marketplace-bid-detail" data-bid-panel hidden>
+        <div class="project-detail-card__facts developer-dashboard-bid-card__facts">
+          <div>
+            <span>${content.bidLabels.amount}</span>
+            <strong>${bid.bidAmount?.label || content.fallback}</strong>
+          </div>
+          <div>
+            <span>${content.bidLabels.timeline}</span>
+            <strong>${bid.estimatedCompletionTimeframe?.label || bid.timeframe || content.fallback}</strong>
+          </div>
+          <div>
+            <span>${content.bidLabels.date}</span>
+            <strong>${dateLabel}</strong>
+          </div>
+          <div>
+            <span>${content.bidLabels.location}</span>
+            <strong>${bid.listing?.location || content.fallback}</strong>
+          </div>
+        </div>
+        <p class="developer-dashboard-bid-card__proposal">${bid.proposalMessage || bid.proposal || content.fallback}</p>
+        <div class="hero-actions developer-dashboard-bid-card__actions">
+          ${createButton({ href: listingHref, label: content.actions.viewRelatedListing, variant: "primary" })}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function createWonBidCard(bid, content) {
+  const locale = getDeveloperDashboardLocale(content);
+  const listingHref = getMarketplaceListingHref("client", bid.listing?.id || bid.listingId || "");
+  const contact = bid.clientContact || {};
+  const clientName = contact.name || content.fallback;
+  const clientEmail = contact.email || content.fallback;
+  const clientPhone = contact.phone || content.fallback;
+  const wonLabel = locale === "tr" ? "Kazanılan Teklif" : "Won Bid";
+  const dateLabel = formatDashboardDate(bid.createdAt, locale, content.fallback);
+
+  return `
+    <article class="detail-list-card marketplace-bid-accordion panel" data-bid-item>
+      <button class="marketplace-bid-row" type="button" data-bid-trigger aria-expanded="false">
+        <span class="marketplace-bid-row__amount"><strong>${bid.bidAmount?.label || content.fallback}</strong> — ${bid.listing?.title || content.fallback}</span>
+        <span class="dev-bid-row__status dev-bid-row__status--won">${wonLabel}</span>
+        <span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
+      </button>
+      <div class="marketplace-bid-detail" data-bid-panel hidden>
+        <div class="project-detail-card__facts developer-dashboard-bid-card__facts">
+          <div>
+            <span>${locale === "tr" ? "Müşteri" : "Client"}</span>
+            <strong>${clientName}</strong>
+          </div>
+          <div>
+            <span>${locale === "tr" ? "E-posta" : "Email"}</span>
+            <strong>${clientEmail}</strong>
+          </div>
+          <div>
+            <span>${locale === "tr" ? "Telefon" : "Phone"}</span>
+            <strong>${clientPhone}</strong>
+          </div>
+          <div>
+            <span>${content.bidLabels.amount}</span>
+            <strong>${bid.bidAmount?.label || content.fallback}</strong>
+          </div>
+          <div>
+            <span>${content.bidLabels.timeline}</span>
+            <strong>${bid.estimatedCompletionTimeframe?.label || bid.timeframe || content.fallback}</strong>
+          </div>
+          <div>
+            <span>${content.bidLabels.date}</span>
+            <strong>${dateLabel}</strong>
+          </div>
+          <div>
+            <span>${content.bidLabels.location}</span>
+            <strong>${bid.listing?.location || content.fallback}</strong>
+          </div>
+        </div>
+        <p class="developer-dashboard-bid-card__proposal">${bid.proposalMessage || bid.proposal || content.fallback}</p>
+        <div class="hero-actions developer-dashboard-bid-card__actions">
+          ${createButton({ href: listingHref, label: content.actions.viewRelatedListing, variant: "primary" })}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function createWonBidsSection(content, wonBids) {
+  const locale = getDeveloperDashboardLocale(content);
+  const heading = locale === "tr" ? "Kazanılan Teklifler" : "Won Bids";
+  const emptyText = locale === "tr" ? "Henüz kazanılan teklif yok." : "No won bids yet.";
+
+  return `
+    <section class="section-shell" id="developer-dashboard-won-bids">
+      ${createSectionHeading({ eyebrow: locale === "tr" ? "Geliştirici Paneli" : "Developer Panel", title: heading, description: locale === "tr" ? "Kabul edilen teklifleriniz" : "Your accepted bids" })}
+      ${
+        wonBids.length
+          ? `<div class="developer-dashboard-bids-list">${wonBids.map((bid) => createWonBidCard(bid, content)).join("")}</div>`
+          : `<div class="marketplace-empty panel"><p>${emptyText}</p></div>`
+      }
+    </section>
+  `;
+}
+
+function createBidsSection(content, bids) {
+  return `
+    <section class="section-shell" id="developer-dashboard-bids">
+      ${createSectionHeading(content.bidsSection)}
+      ${
+        bids.length
+          ? `<div class="developer-dashboard-bids-list">${bids.map((bid) => createBidCard(bid, content)).join("")}</div>`
+          : `<div class="marketplace-empty panel"><p>${content.bidsSection.empty}</p></div>`
+      }
+    </section>
+  `;
+}
+
+function createEditPanel(listing, content) {
+  const copy = content.editPanel;
+  const specialties = Array.isArray(listing.services) ? listing.services.join(", ") : "";
+
+  return `
+    <section class="client-dashboard-card__panel panel" data-developer-dashboard-panel="edit" data-listing-id="${listing.id}" hidden>
+      ${createSectionHeading(copy.heading)}
+      <form class="application-form developer-dashboard-edit-form" data-developer-dashboard-edit-form novalidate>
+        <input type="hidden" name="listingId" value="${listing.id}" />
+        <div class="auth-form-error form-field--full" data-developer-dashboard-error hidden style="display: none;">
+          <strong data-developer-dashboard-error-title>${copy.errorTitle}</strong>
+          <p data-developer-dashboard-error-text>${copy.errorFallback}</p>
+        </div>
+        <div class="form-success form-field--full" data-developer-dashboard-success hidden style="display: none;">
+          <h3>${copy.successTitle}</h3>
+          <p>${copy.successText}</p>
+        </div>
+        <label class="form-field form-field--full">
+          <span>${copy.fields.title}</span>
+          <input type="text" name="title" value="${listing.name || listing.title || ""}" required />
+        </label>
+        <label class="form-field">
+          <span>${copy.fields.category}</span>
+          <input type="text" name="category" value="${listing.specialty || ""}" required />
+        </label>
+        <label class="form-field">
+          <span>${copy.fields.serviceArea}</span>
+          <input type="text" name="serviceArea" value="${listing.location || ""}" required />
+        </label>
+        <label class="form-field">
+          <span>${copy.fields.pricing}</span>
+          <input type="text" name="pricing" value="${listing.startingPrice || ""}" />
+        </label>
+        <label class="form-field form-field--full">
+          <span>${copy.fields.specialties}</span>
+          <input type="text" name="specialties" value="${specialties}" />
+        </label>
+        <label class="form-field form-field--full">
+          <span>${copy.fields.description}</span>
+          <textarea name="description" rows="5" required>${listing.summary || listing.portfolioSummary || ""}</textarea>
+        </label>
+        <div class="form-field form-field--full">
+          <span>${copy.fields.currentImages}</span>
+          ${createImageManager(listing, copy)}
+        </div>
+        <label class="form-field form-field--full">
+          <span>${copy.fields.uploadImages}</span>
+          <input type="file" name="newImages" accept="image/*" multiple />
+          <small>${copy.uploadHint}</small>
+        </label>
+        <div class="form-actions form-field--full client-dashboard-card__panel-actions">
+          <button class="button button--primary" type="submit">${copy.saveLabel}</button>
+        </div>
+      </form>
+    </section>
+  `;
+}
+
+function createListingCard(listing, content) {
+  const previewImage = getListingPreviewImage(listing);
+  const detailHref = getMarketplaceListingHref("professional", listing.id);
+
+  return `
+    <article class="client-dashboard-card panel">
+      <div class="client-dashboard-card__summary">
+        <a class="client-dashboard-card__media" href="${detailHref}" aria-label="${listing.name || listing.title || content.fallback}">
+          ${
+            previewImage
+              ? `<img src="${previewImage}" alt="${listing.name || listing.title || content.fallback}" loading="lazy" decoding="async" fetchpriority="low" />`
+              : `<span class="marketplace-card__media-placeholder">${content.mediaFallback}</span>`
+          }
+        </a>
+        <div class="client-dashboard-card__content">
+          <div class="client-dashboard-card__top">
+            <span class="project-badge">${listing.specialty || content.fallback}</span>
+            <span class="marketplace-card__status">${getDeveloperListingStatusLabel(listing, content)}</span>
+          </div>
+          <h3>${listing.name || listing.title || content.fallback}</h3>
+          <div class="project-detail-card__facts client-dashboard-card__facts">
+            <div>
+              <span>${content.labels.location}</span>
+              <strong>${listing.location || content.fallback}</strong>
+            </div>
+            <div>
+              <span>${content.labels.status}</span>
+              <strong>${getDeveloperListingStatusLabel(listing, content)}</strong>
+            </div>
+            <div>
+              <span>${content.labels.category}</span>
+              <strong>${listing.specialty || content.fallback}</strong>
+            </div>
+            <div>
+              <span>${content.labels.pricing}</span>
+              <strong>${listing.startingPrice || content.fallback}</strong>
+            </div>
+          </div>
+          <div class="hero-actions client-dashboard-card__actions">
+            ${createButton({ href: detailHref, label: content.actions.viewListing, variant: "secondary" })}
+            <button class="button button--secondary" type="button" data-developer-dashboard-toggle="edit" data-listing-id="${listing.id}">${content.actions.editListing}</button>
+          </div>
+        </div>
+      </div>
+      ${createEditPanel(listing, content)}
+    </article>
+  `;
+}
+
+function createListingsSection(content, listings) {
+  return `
+    <section class="section-shell" id="developer-dashboard-listings">
+      ${createSectionHeading(content.listingsSection)}
+      ${
+        listings.length
+          ? listings.map((listing) => createListingCard(listing, content)).join("")
+          : `<div class="marketplace-empty panel"><p>${content.listingsSection.empty}</p></div>`
+      }
+    </section>
+  `;
+}
+
+function createAccessDenied(content) {
+  return `
+    <section class="section-shell marketplace-success">
+      <div class="project-cta-panel panel marketplace-success-panel">
+        <div>
+          <p class="eyebrow">${content.accessDenied.eyebrow}</p>
+          <h1 class="hero-title marketplace-success__title">${content.accessDenied.title}</h1>
+          <p class="hero-lead">${content.accessDenied.description}</p>
+        </div>
+        <div class="hero-actions">
+          ${createButton({ href: "./open-marketplace.html?tab=developer", label: content.accessDenied.backLabel, variant: "primary" })}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+export function createDeveloperDashboardSkeleton() {
+  const skeletonCard = `<div class="client-dashboard-card panel" style="opacity:0.5;pointer-events:none">
+    <div class="client-dashboard-card__summary">
+      <div style="background:var(--surface-200,#e5e7eb);height:140px;border-radius:8px;flex-shrink:0;width:120px"></div>
+      <div class="client-dashboard-card__content" style="flex:1;padding:12px">
+        <div style="background:var(--surface-200,#e5e7eb);height:16px;border-radius:4px;width:60%;margin-bottom:10px"></div>
+        <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:80%;margin-bottom:8px"></div>
+        <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:40%"></div>
+      </div>
+    </div>
+  </div>`;
+  const skeletonBid = `<div class="detail-list-card panel" style="opacity:0.5;pointer-events:none;padding:16px">
+    <div style="background:var(--surface-200,#e5e7eb);height:14px;border-radius:4px;width:70%;margin-bottom:8px"></div>
+    <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:50%"></div>
+  </div>`;
+  return `
+    <section class="section-shell"><div style="padding:16px">${Array(2).fill(skeletonBid).join("")}</div></section>
+    <section class="section-shell">${Array(2).fill(skeletonCard).join("")}</section>
+  `;
+}
+
+export function createDeveloperDashboardPage(content) {
+  const session = content.viewerSession || { authenticated: false, user: null };
+
+  if (!session.authenticated || session.user?.role !== "developer") {
+    return createAccessDenied(content);
+  }
+
+  const notifications = getUnreadNotifications(session.user.id).filter((n) => n.type === "bid-accepted");
+  const notificationBanner = notifications.length > 0
+    ? `<div class="dashboard-notification-banner" data-dashboard-notifications>
+        ${notifications.map((n) => `<a class="dashboard-notification-item" href="${n.href || "#"}">${n.message}</a>`).join("")}
+      </div>`
+    : "";
+
+  if (notifications.length > 0) {
+    markAllRead(session.user.id);
+  }
+
+  const allBids = content.bidEntries || [];
+  const wonBids = allBids.filter((bid) => String(bid.status || "").toLowerCase() === "accepted");
+  const otherBids = allBids.filter((bid) => String(bid.status || "").toLowerCase() !== "accepted");
+
+  return `
+    ${notificationBanner}
+    ${createDeveloperOverviewSection(content, session, content.ownedListings.length, allBids.length)}
+    ${createWonBidsSection(content, wonBids)}
+    ${createBidsSection(content, otherBids)}
+    ${createListingsSection(content, content.ownedListings)}
+  `;
+}

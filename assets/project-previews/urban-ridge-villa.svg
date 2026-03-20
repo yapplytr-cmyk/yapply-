@@ -1,0 +1,54 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgUrban" x1="102" y1="70" x2="1048" y2="708" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101317"/>
+      <stop offset="0.55" stop-color="#19202A"/>
+      <stop offset="1" stop-color="#2B3746"/>
+    </linearGradient>
+    <radialGradient id="urbanGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(884 144) rotate(133) scale(290 230)">
+      <stop stop-color="#C9A84C" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#C9A84C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="urbanBody" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#F0EEE9"/>
+      <stop offset="1" stop-color="#BEB8B1"/>
+    </linearGradient>
+    <linearGradient id="urbanGlass" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#D4F4FF" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#68869B" stop-opacity="0.18"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" rx="40" fill="url(#bgUrban)"/>
+  <rect width="1200" height="760" rx="40" fill="url(#urbanGlow)"/>
+  <g opacity="0.22" stroke="#EDF3F8" stroke-width="1">
+    <path d="M0 120H1200"/>
+    <path d="M0 220H1200"/>
+    <path d="M0 320H1200"/>
+    <path d="M0 420H1200"/>
+    <path d="M0 520H1200"/>
+    <path d="M0 620H1200"/>
+    <path d="M150 0V760"/>
+    <path d="M320 0V760"/>
+    <path d="M490 0V760"/>
+    <path d="M660 0V760"/>
+    <path d="M830 0V760"/>
+    <path d="M1000 0V760"/>
+  </g>
+  <g opacity="0.42" stroke="#C9A84C" stroke-width="2" stroke-dasharray="8 10">
+    <path d="M190 580H1022"/>
+    <path d="M314 502L424 404H632"/>
+    <path d="M770 264H938L1012 388"/>
+  </g>
+  <path d="M154 592L434 430H796L1044 568L760 672H402L154 592Z" fill="#D5CDC2" fill-opacity="0.16" stroke="#F0EADF" stroke-opacity="0.34" stroke-width="2"/>
+  <rect x="466" y="154" width="198" height="260" rx="16" fill="url(#urbanBody)" stroke="#FAF7F0" stroke-opacity="0.6" stroke-width="3"/>
+  <rect x="640" y="238" width="154" height="286" rx="16" fill="url(#urbanBody)" stroke="#FAF7F0" stroke-opacity="0.6" stroke-width="3"/>
+  <rect x="332" y="268" width="136" height="160" rx="14" fill="url(#urbanBody)" stroke="#FAF7F0" stroke-opacity="0.52" stroke-width="3"/>
+  <rect x="446" y="138" width="234" height="18" rx="9" fill="#1C232B" stroke="#F7E4AF" stroke-opacity="0.42" stroke-width="2"/>
+  <rect x="618" y="220" width="196" height="16" rx="8" fill="#1C232B" stroke="#F7E4AF" stroke-opacity="0.42" stroke-width="2"/>
+  <rect x="518" y="232" width="76" height="146" rx="8" fill="url(#urbanGlass)" stroke="#DDF5FF" stroke-opacity="0.82" stroke-width="2"/>
+  <rect x="602" y="232" width="38" height="182" rx="8" fill="url(#urbanGlass)" stroke="#DDF5FF" stroke-opacity="0.82" stroke-width="2"/>
+  <rect x="682" y="304" width="72" height="156" rx="8" fill="url(#urbanGlass)" stroke="#DDF5FF" stroke-opacity="0.82" stroke-width="2"/>
+  <path d="M224 548H954" stroke="#FFE7A7" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="1012" cy="388" r="8" fill="#C9A84C"/>
+  <circle cx="314" cy="502" r="8" fill="#C9A84C"/>
+</svg>

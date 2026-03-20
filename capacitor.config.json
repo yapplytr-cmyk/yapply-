@@ -1,0 +1,26 @@
+{
+  "appId": "com.yapply.app",
+  "appName": "Yapply",
+  "webDir": "www",
+  "server": {
+    "allowNavigation": [
+      "yapplytr.com",
+      "*.yapplytr.com",
+      "*.supabase.co",
+      "cdn.jsdelivr.net",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com"
+    ]
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#060709",
+    "scrollEnabled": true,
+    "allowsLinkPreview": false
+  }
+}

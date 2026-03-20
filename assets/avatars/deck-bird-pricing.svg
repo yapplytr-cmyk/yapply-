@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- True Market Pricing bird - handshake / balance, warm coral/peach -->
+  <!-- Shadow -->
+  <ellipse cx="100" cy="178" rx="42" ry="8" fill="#f0d8cc" opacity="0.5"/>
+  <!-- Body -->
+  <ellipse cx="100" cy="120" rx="52" ry="50" fill="#e8845c"/>
+  <ellipse cx="100" cy="118" rx="52" ry="50" fill="#f09872"/>
+  <!-- Belly -->
+  <ellipse cx="100" cy="132" rx="34" ry="30" fill="#fce4d4"/>
+  <!-- Head -->
+  <circle cx="100" cy="68" r="38" fill="#f09872"/>
+  <!-- Cheeks -->
+  <ellipse cx="78" cy="78" rx="10" ry="7" fill="#f5c4c0" opacity="0.6"/>
+  <ellipse cx="122" cy="78" rx="10" ry="7" fill="#f5c4c0" opacity="0.6"/>
+  <!-- Eyes - winking -->
+  <circle cx="88" cy="70" r="5" fill="#fff"/>
+  <circle cx="89" cy="71" r="3" fill="#3d2418"/>
+  <circle cx="88" cy="69" r="1.2" fill="#fff"/>
+  <path d="M106 68c4-5 10-5 14 0" stroke="#3d2418" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- Beak -->
+  <path d="M94 80l6 8 6-8" fill="#f5a623" stroke="#e8961e" stroke-width="1"/>
+  <!-- Smile -->
+  <path d="M90 87c5 5 15 5 20 0" stroke="#8b4530" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Feet -->
+  <path d="M82 168l-8 12M82 168l0 14M82 168l8 10" stroke="#e8961e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M118 168l-8 10M118 168l0 14M118 168l8 12" stroke="#e8961e" stroke-width="3" stroke-linecap="round"/>
+  <!-- Wings extended for handshake -->
+  <ellipse cx="50" cy="108" rx="16" ry="22" fill="#e8845c" transform="rotate(30 50 108)"/>
+  <ellipse cx="150" cy="108" rx="16" ry="22" fill="#e8845c" transform="rotate(-30 150 108)"/>
+  <!-- Balance/scale above head -->
+  <line x1="76" y1="34" x2="124" y2="34" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="100" y1="28" x2="100" y2="38" stroke="#c9a84c" stroke-width="2.5"/>
+  <polygon points="100,26 96,28 104,28" fill="#c9a84c"/>
+  <!-- Left pan -->
+  <line x1="76" y1="34" x2="76" y2="44" stroke="#c9a84c" stroke-width="1.5"/>
+  <path d="M66 44q10 6 20 0" stroke="#c9a84c" stroke-width="2" fill="none"/>
+  <!-- Right pan -->
+  <line x1="124" y1="34" x2="124" y2="44" stroke="#c9a84c" stroke-width="1.5"/>
+  <path d="M114 44q10 6 20 0" stroke="#c9a84c" stroke-width="2" fill="none"/>
+  <!-- Sparkles -->
+  <path d="M44 56l1.5-4.5 1.5 4.5 4.5 1.5-4.5 1.5-1.5 4.5-1.5-4.5-4.5-1.5z" fill="#f5d76e"/>
+  <path d="M152 80l1.5-4.5 1.5 4.5 4.5 1.5-4.5 1.5-1.5 4.5-1.5-4.5-4.5-1.5z" fill="#f5d76e"/>
+</svg>

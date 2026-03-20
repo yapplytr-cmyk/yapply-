@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Any Project Size bird - with wrench & hammer, green with hard hat -->
+  <!-- Shadow -->
+  <ellipse cx="100" cy="178" rx="42" ry="8" fill="#d5e4c8" opacity="0.5"/>
+  <!-- Body -->
+  <ellipse cx="100" cy="120" rx="52" ry="50" fill="#6aab5c"/>
+  <ellipse cx="100" cy="118" rx="52" ry="50" fill="#7dbd6e"/>
+  <!-- Belly -->
+  <ellipse cx="100" cy="132" rx="34" ry="30" fill="#d8f0cf"/>
+  <!-- Tool belt -->
+  <rect x="68" y="140" width="64" height="10" rx="4" fill="#8b6b42"/>
+  <rect x="86" y="138" width="10" height="14" rx="2" fill="#a07850"/>
+  <rect x="104" y="138" width="10" height="14" rx="2" fill="#a07850"/>
+  <!-- Head -->
+  <circle cx="100" cy="68" r="38" fill="#7dbd6e"/>
+  <!-- Hard hat -->
+  <path d="M64 62c2-18 18-30 36-30 18 0 34 12 36 30H64Z" fill="#f5a623"/>
+  <rect x="60" y="58" width="80" height="8" rx="4" fill="#e8961e"/>
+  <!-- Cheeks -->
+  <ellipse cx="78" cy="78" rx="10" ry="7" fill="#f5c4c0" opacity="0.5"/>
+  <ellipse cx="122" cy="78" rx="10" ry="7" fill="#f5c4c0" opacity="0.5"/>
+  <!-- Eyes - happy open -->
+  <circle cx="88" cy="70" r="5" fill="#fff"/>
+  <circle cx="112" cy="70" r="5" fill="#fff"/>
+  <circle cx="89" cy="71" r="3" fill="#1e3a1e"/>
+  <circle cx="113" cy="71" r="3" fill="#1e3a1e"/>
+  <circle cx="88" cy="69" r="1.2" fill="#fff"/>
+  <circle cx="112" cy="69" r="1.2" fill="#fff"/>
+  <!-- Beak -->
+  <path d="M94 80l6 8 6-8" fill="#f5a623" stroke="#e8961e" stroke-width="1"/>
+  <!-- Smile -->
+  <path d="M92 86c4 4 12 4 16 0" stroke="#3d6e34" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Feet -->
+  <path d="M82 168l-8 12M82 168l0 14M82 168l8 10" stroke="#e8961e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M118 168l-8 10M118 168l0 14M118 168l8 12" stroke="#e8961e" stroke-width="3" stroke-linecap="round"/>
+  <!-- Wings -->
+  <ellipse cx="52" cy="112" rx="14" ry="22" fill="#6aab5c" transform="rotate(20 52 112)"/>
+  <ellipse cx="148" cy="112" rx="14" ry="22" fill="#6aab5c" transform="rotate(-20 148 112)"/>
+  <!-- Wrench in right wing -->
+  <g transform="translate(148, 95) rotate(30)">
+    <rect x="-2" y="-18" width="4" height="22" rx="2" fill="#8a9bae"/>
+    <circle cx="0" cy="-18" r="6" fill="none" stroke="#8a9bae" stroke-width="3"/>
+  </g>
+  <!-- Hammer in left wing -->
+  <g transform="translate(52, 95) rotate(-30)">
+    <rect x="-2" y="-16" width="4" height="22" rx="2" fill="#c4956a"/>
+    <rect x="-7" y="-22" width="14" height="8" rx="2" fill="#7a8a9e"/>
+  </g>
+</svg>

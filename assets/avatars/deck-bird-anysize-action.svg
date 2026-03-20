@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Any Size bird ACTION: looking at blueprints/project with magnifying glass -->
+  <ellipse cx="100" cy="178" rx="42" ry="8" fill="#d5e4c8" opacity="0.5"/>
+  <!-- Body -->
+  <ellipse cx="100" cy="120" rx="52" ry="50" fill="#7dbd6e"/>
+  <!-- Belly -->
+  <ellipse cx="100" cy="132" rx="34" ry="30" fill="#d8f0cf"/>
+  <!-- Tool belt -->
+  <rect x="68" y="140" width="64" height="10" rx="4" fill="#8b6b42"/>
+  <rect x="90" y="138" width="10" height="14" rx="2" fill="#a07850"/>
+  <!-- Head -->
+  <circle cx="100" cy="68" r="38" fill="#7dbd6e"/>
+  <!-- Hard hat -->
+  <path d="M64 62c2-18 18-30 36-30 18 0 34 12 36 30H64Z" fill="#f5a623"/>
+  <rect x="60" y="58" width="80" height="8" rx="4" fill="#e8961e"/>
+  <!-- Cheeks -->
+  <ellipse cx="78" cy="78" rx="10" ry="7" fill="#f5c4c0" opacity="0.5"/>
+  <ellipse cx="122" cy="78" rx="10" ry="7" fill="#f5c4c0" opacity="0.5"/>
+  <!-- Eyes - focused, one looking through magnifier -->
+  <circle cx="88" cy="70" r="5" fill="#fff"/>
+  <circle cx="89" cy="71" r="3" fill="#1e3a1e"/>
+  <circle cx="88" cy="69" r="1.2" fill="#fff"/>
+  <!-- Right eye bigger (magnified) -->
+  <circle cx="116" cy="70" r="8" fill="#fff"/>
+  <circle cx="117" cy="71" r="4" fill="#1e3a1e"/>
+  <circle cx="115" cy="69" r="1.5" fill="#fff"/>
+  <!-- Beak -->
+  <path d="M94 82l6 8 6-8" fill="#f5a623" stroke="#e8961e" stroke-width="1"/>
+  <!-- Focused expression -->
+  <path d="M94 88c3 3 9 3 12 0" stroke="#3d6e34" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Feet -->
+  <path d="M82 168l-8 12M82 168l0 14M82 168l8 10" stroke="#e8961e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M118 168l-8 10M118 168l0 14M118 168l8 12" stroke="#e8961e" stroke-width="3" stroke-linecap="round"/>
+  <!-- Wings -->
+  <ellipse cx="52" cy="112" rx="14" ry="22" fill="#6aab5c" transform="rotate(20 52 112)"/>
+  <ellipse cx="148" cy="105" rx="14" ry="22" fill="#6aab5c" transform="rotate(-25 148 105)"/>
+  <!-- Magnifying glass held by right wing -->
+  <g transform="translate(130, 58)">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#7a8a9e" stroke-width="3"/>
+    <circle cx="0" cy="0" r="11" fill="rgba(200,220,255,0.2)"/>
+    <line x1="10" y1="10" x2="22" y2="22" stroke="#7a8a9e" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <!-- Blueprints on ground -->
+  <g transform="translate(36, 148)">
+    <rect x="0" y="0" width="28" height="20" rx="2" fill="#ddeeff" stroke="#8aaed0" stroke-width="1"/>
+    <line x1="4" y1="5" x2="14" y2="5" stroke="#8aaed0" stroke-width="1"/>
+    <line x1="4" y1="9" x2="20" y2="9" stroke="#8aaed0" stroke-width="1"/>
+    <rect x="16" y="12" width="8" height="5" rx="1" fill="none" stroke="#8aaed0" stroke-width="1"/>
+  </g>
+</svg>

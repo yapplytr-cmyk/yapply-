@@ -1,0 +1,34 @@
+{
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" },
+        { "key": "Access-Control-Allow-Credentials", "value": "true" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/auth/config", "destination": "/api/router?route=auth/config" },
+    { "source": "/api/auth/signup", "destination": "/api/router?route=auth/signup" },
+    { "source": "/api/auth/verify", "destination": "/api/router?route=auth/verify" },
+    { "source": "/api/auth/resend-otp", "destination": "/api/router?route=auth/resend-otp" },
+    { "source": "/api/auth/login", "destination": "/api/router?route=auth/login" },
+    { "source": "/api/account/settings", "destination": "/api/router?route=account/settings" },
+    { "source": "/api/account/client-dashboard", "destination": "/api/router?route=account/client-dashboard" },
+    { "source": "/api/account/developer-dashboard", "destination": "/api/router?route=account/developer-dashboard" },
+    { "source": "/api/auth/admin/login", "destination": "/api/router?route=auth/admin/login" },
+    { "source": "/api/auth/admin/resolve", "destination": "/api/router?route=auth/admin/resolve" },
+    { "source": "/api/admin/accounts", "destination": "/api/router?route=admin/accounts" },
+    { "source": "/api/admin/account-store-status", "destination": "/api/router?route=admin/account-store-status" },
+    { "source": "/api/admin/accounts/status", "destination": "/api/router?route=admin/accounts/status" },
+    { "source": "/api/admin/accounts/delete", "destination": "/api/router?route=admin/accounts/delete" },
+    { "source": "/api/marketplace/listings", "destination": "/api/router?route=marketplace/listings" },
+    { "source": "/api/marketplace/listings/create", "destination": "/api/router?route=marketplace/listings/create" },
+    { "source": "/api/marketplace/listings/detail", "destination": "/api/router?route=marketplace/listings/detail" },
+    { "source": "/api/marketplace/listings/update-status", "destination": "/api/router?route=marketplace/listings/update-status" },
+    { "source": "/api/marketplace/listings/delete", "destination": "/api/router?route=marketplace/listings/delete" }
+  ]
+}

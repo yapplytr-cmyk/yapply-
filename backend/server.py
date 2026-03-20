@@ -1,0 +1,887 @@
+from __future__ import annotations
+
+import json
+import hmac
+import re
+from http import HTTPStatus
+from http.cookies import SimpleCookie
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+from api.supabase_utils import (
+  handle_admin_account_delete as handle_supabase_admin_account_delete,
+  handle_admin_login,
+  handle_admin_account_store_status as handle_supabase_admin_account_store_status,
+  handle_admin_account_status as handle_supabase_admin_account_status,
+  handle_admin_accounts as handle_supabase_admin_accounts,
+  handle_admin_identifier_resolve,
+  handle_public_login,
+  handle_public_auth_config,
+  handle_public_signup,
+  run_supabase_action,
+)
+from .supabase import SupabaseError, require_public_access
+
+from .config import (
+  ADMIN_ROLES,
+  ADMIN_BOOTSTRAP_TOKEN,
+  FRONTEND_ORIGINS,
+  HOST,
+  PORT,
+  PUBLIC_SIGNUP_ROLES,
+  ROOT_DIR,
+  SEEDED_ADMIN_EMAIL,
+  SEEDED_ADMIN_FULL_NAME,
+  SEEDED_ADMIN_PASSWORD,
+  SEEDED_ADMIN_ROLE,
+  SEEDED_ADMIN_USERNAME,
+  SESSION_COOKIE_NAME,
+  SESSION_TTL_SECONDS,
+)
+from .db import (
+  create_marketplace_bid,
+  count_active_admin_users,
+  create_marketplace_listing,
+  create_session,
+  create_user,
+  delete_user_account,
+  delete_session,
+  ensure_database,
+  get_account_store_status,
+  get_marketplace_listing,
+  list_marketplace_listings,
+  list_marketplace_bids_for_bidder,
+  get_session_user,
+  get_record_value,
+  get_user_by_email,
+  get_user_by_identifier,
+  get_user_by_id,
+  list_users,
+  purge_expired_sessions,
+  seed_admin_account,
+  update_user_status,
+)
+from .security import issue_session_token, verify_password
+
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def parse_json_body(handler: "YapplyRequestHandler") -> dict:
+  content_length = int(handler.headers.get("Content-Length", "0") or "0")
+  if content_length <= 0:
+    return {}
+  raw_body = handler.rfile.read(content_length)
+  if not raw_body:
+    return {}
+  try:
+    return json.loads(raw_body.decode("utf-8"))
+  except json.JSONDecodeError as exc:
+    raise ValueError("Invalid JSON payload.") from exc
+
+
+def json_response(handler: "YapplyRequestHandler", status: int, payload: dict) -> None:
+  body = json.dumps(payload).encode("utf-8")
+  handler.send_response(status)
+  apply_cors_headers(handler)
+  handler.send_header("Content-Type", "application/json; charset=utf-8")
+  handler.send_header("Cache-Control", "no-store")
+  handler.send_header("Content-Length", str(len(body)))
+  handler.end_headers()
+  handler.wfile.write(body)
+
+
+def get_allowed_origin(handler: "YapplyRequestHandler") -> str | None:
+  origin = handler.headers.get("Origin", "").strip()
+  return origin if origin in FRONTEND_ORIGINS else None
+
+
+def apply_cors_headers(handler: "YapplyRequestHandler") -> None:
+  origin = get_allowed_origin(handler)
+
+  if not origin:
+    return
+
+  handler.send_header("Access-Control-Allow-Origin", origin)
+  handler.send_header("Access-Control-Allow-Credentials", "true")
+  handler.send_header("Vary", "Origin")
+
+
+def build_cookie(token: str, max_age: int = SESSION_TTL_SECONDS) -> str:
+  cookie = SimpleCookie()
+  cookie[SESSION_COOKIE_NAME] = token
+  cookie[SESSION_COOKIE_NAME]["path"] = "/"
+  cookie[SESSION_COOKIE_NAME]["httponly"] = True
+  cookie[SESSION_COOKIE_NAME]["samesite"] = "Lax"
+  cookie[SESSION_COOKIE_NAME]["max-age"] = max_age
+  return cookie.output(header="").strip()
+
+
+def clear_cookie() -> str:
+  return build_cookie("", 0)
+
+
+def get_session_token(handler: "YapplyRequestHandler") -> str | None:
+  raw_cookie = handler.headers.get("Cookie", "")
+  if not raw_cookie:
+    return None
+  cookie = SimpleCookie()
+  cookie.load(raw_cookie)
+  morsel = cookie.get(SESSION_COOKIE_NAME)
+  return morsel.value if morsel else None
+
+
+def get_authenticated_user(handler: "YapplyRequestHandler") -> dict | None:
+  import hashlib
+
+  token = get_session_token(handler)
+
+  if not token:
+    return None
+
+  token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+  return get_session_user(token_hash)
+
+
+def require_admin_user(handler: "YapplyRequestHandler") -> dict | None:
+  user = get_authenticated_user(handler)
+
+  if not user:
+    json_response(handler, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "Admin authentication is required."})
+    return None
+
+  if user["role"] not in ADMIN_ROLES:
+    json_response(handler, HTTPStatus.FORBIDDEN, {"ok": False, "code": "ADMIN_ONLY", "message": "This endpoint is available only to admin users."})
+    return None
+
+  return user
+
+
+def extract_bootstrap_token(handler: "YapplyRequestHandler") -> str:
+  authorization = handler.headers.get("Authorization", "").strip()
+  if authorization.lower().startswith("bearer "):
+    return authorization[7:].strip()
+
+  return handler.headers.get("X-Yapply-Bootstrap-Token", "").strip()
+
+
+def require_bootstrap_token(handler: "YapplyRequestHandler") -> bool:
+  if not ADMIN_BOOTSTRAP_TOKEN:
+    json_response(handler, HTTPStatus.SERVICE_UNAVAILABLE, {"ok": False, "code": "BOOTSTRAP_DISABLED", "message": "The production admin bootstrap token is not configured."})
+    return False
+
+  provided_token = extract_bootstrap_token(handler)
+  if not provided_token or not hmac.compare_digest(provided_token, ADMIN_BOOTSTRAP_TOKEN):
+    json_response(handler, HTTPStatus.FORBIDDEN, {"ok": False, "code": "BOOTSTRAP_TOKEN_INVALID", "message": "A valid bootstrap token is required for this endpoint."})
+    return False
+
+  return True
+
+
+def normalize_text(value: str | None) -> str | None:
+  if value is None:
+    return None
+  stripped = str(value).strip()
+  return stripped or None
+
+
+def extract_bearer_token(handler: "YapplyRequestHandler") -> str:
+  authorization = handler.headers.get("Authorization", "").strip()
+  if authorization.lower().startswith("bearer "):
+    return authorization[7:].strip()
+  return ""
+
+
+def validate_signup(payload: dict) -> tuple[dict | None, tuple[str, str] | None]:
+  role = normalize_text(payload.get("role"))
+  full_name = normalize_text(payload.get("fullName"))
+  email = normalize_text(payload.get("email"))
+  password = str(payload.get("password") or "")
+  confirm_password = str(payload.get("confirmPassword") or "")
+
+  if role not in PUBLIC_SIGNUP_ROLES:
+    return None, ("INVALID_ROLE", "Only developer and client accounts can be created publicly.")
+  if not full_name:
+    return None, ("FULL_NAME_REQUIRED", "Full name is required.")
+  if not email or not EMAIL_RE.match(email):
+    return None, ("EMAIL_INVALID", "A valid email address is required.")
+  if len(password) < 8:
+    return None, ("PASSWORD_TOO_SHORT", "Password must be at least 8 characters.")
+  if password != confirm_password:
+    return None, ("PASSWORD_MISMATCH", "Password confirmation does not match.")
+  if get_user_by_email(email):
+    return None, ("EMAIL_IN_USE", "An account with this email already exists.")
+
+  base_payload = {
+    "role": role,
+    "fullName": full_name,
+    "email": email.lower(),
+    "password": password,
+    "phoneNumber": normalize_text(payload.get("phoneNumber")),
+    "companyName": normalize_text(payload.get("companyName")),
+    "professionType": normalize_text(payload.get("professionType")),
+    "serviceArea": normalize_text(payload.get("serviceArea")),
+    "specialties": normalize_text(payload.get("specialties")),
+    "preferredRegion": normalize_text(payload.get("preferredRegion")),
+    "website": normalize_text(payload.get("website")),
+  }
+
+  years_experience = normalize_text(payload.get("yearsExperience"))
+  if years_experience is not None:
+    try:
+      parsed_experience = int(years_experience)
+    except ValueError:
+      return None, ("EXPERIENCE_INVALID", "Years of experience must be a whole number.")
+    if parsed_experience < 0:
+      return None, ("EXPERIENCE_INVALID", "Years of experience cannot be negative.")
+    base_payload["yearsExperience"] = parsed_experience
+  else:
+    base_payload["yearsExperience"] = None
+
+  if role == "developer":
+    required_fields = {
+      "phoneNumber": "PHONE_REQUIRED",
+      "companyName": "COMPANY_REQUIRED",
+      "professionType": "PROFESSION_REQUIRED",
+      "serviceArea": "SERVICE_AREA_REQUIRED",
+      "specialties": "SPECIALTIES_REQUIRED",
+    }
+    for key, code in required_fields.items():
+      if not base_payload.get(key):
+        return None, (code, f"{key} is required for developer accounts.")
+    if base_payload["yearsExperience"] is None:
+      return None, ("EXPERIENCE_REQUIRED", "Years of experience is required for developer accounts.")
+  else:
+    if not base_payload.get("phoneNumber"):
+      return None, ("PHONE_REQUIRED", "Phone number is required.")
+    if not base_payload.get("preferredRegion"):
+      return None, ("REGION_REQUIRED", "Preferred city or region is required.")
+    base_payload["professionType"] = None
+    base_payload["serviceArea"] = None
+    base_payload["specialties"] = None
+    base_payload["website"] = None
+    base_payload["yearsExperience"] = None
+
+  return base_payload, None
+
+
+def validate_login(payload: dict, audience: str = "public") -> tuple[dict | None, tuple[str, str] | None]:
+  identifier = normalize_text(payload.get("identifier") or payload.get("email") or payload.get("username"))
+  password = str(payload.get("password") or "")
+  requested_role = normalize_text(payload.get("role"))
+
+  if not identifier:
+    return None, ("IDENTIFIER_REQUIRED", "Username or email is required.")
+  if audience != "admin" and not EMAIL_RE.match(identifier):
+    return None, ("EMAIL_INVALID", "A valid email address is required.")
+  if not password:
+    return None, ("PASSWORD_REQUIRED", "Password is required.")
+
+  user = get_user_by_identifier(identifier)
+  if not user:
+    return None, ("LOGIN_ACCOUNT_NOT_FOUND", "No account was found for this email address.")
+
+  stored_password_hash = get_record_value(user, "password_hash", "passwordHash")
+  if not stored_password_hash:
+    return None, ("ACCOUNT_NOT_FOUND", "The requested account record is incomplete.")
+
+  if not verify_password(password, stored_password_hash):
+    return None, ("INVALID_CREDENTIALS", "Email or password is incorrect.")
+
+  if int(get_record_value(user, "is_active", "isActive") or 0) != 1:
+    return None, ("ACCOUNT_DISABLED", "This account has been disabled. Please contact support.")
+
+  user_role = get_record_value(user, "role")
+
+  if audience != "admin" and user_role in ADMIN_ROLES:
+    return None, ("ADMIN_USE_INTERNAL", "Admin accounts must use the internal moderator login.")
+
+  if audience == "admin" and user_role not in ADMIN_ROLES:
+    return None, ("ADMIN_ONLY", "This login area is reserved for admin or moderator accounts.")
+
+  if requested_role in PUBLIC_SIGNUP_ROLES and user_role != requested_role:
+    return None, ("ROLE_MISMATCH", "This account does not match the selected login role.")
+
+  return {"user": user}, None
+
+
+def ensure_seeded_admin_account() -> None:
+  seed_admin_account(
+    email=SEEDED_ADMIN_EMAIL,
+    password=SEEDED_ADMIN_PASSWORD,
+    full_name=SEEDED_ADMIN_FULL_NAME,
+    role=SEEDED_ADMIN_ROLE,
+    username=SEEDED_ADMIN_USERNAME,
+  )
+
+
+class YapplyRequestHandler(SimpleHTTPRequestHandler):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, directory=str(ROOT_DIR), **kwargs)
+
+  def do_OPTIONS(self):
+    self.send_response(HTTPStatus.NO_CONTENT)
+    apply_cors_headers(self)
+    self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    self.end_headers()
+
+  def do_GET(self):
+    parsed = urlparse(self.path)
+
+    if parsed.path == "/api/auth/config":
+      run_supabase_action(self, handle_public_auth_config)
+      return
+
+    if parsed.path == "/api/auth/session":
+      self.handle_auth_session()
+      return
+
+    if parsed.path == "/api/marketplace/listings":
+      self.handle_marketplace_listing_index(parsed)
+      return
+
+    if parsed.path == "/api/marketplace/listings/detail":
+      self.handle_marketplace_listing_detail(parsed)
+      return
+
+    if parsed.path == "/api/admin/accounts":
+      run_supabase_action(self, handle_supabase_admin_accounts)
+      return
+
+    if parsed.path == "/api/account/developer-dashboard":
+      self.handle_developer_dashboard()
+      return
+
+    if parsed.path == "/api/admin/account-store-status":
+      run_supabase_action(self, handle_supabase_admin_account_store_status)
+      return
+
+    purge_expired_sessions()
+    super().do_GET()
+
+  def do_POST(self):
+    parsed = urlparse(self.path)
+
+    if parsed.path == "/api/auth/admin/login":
+      run_supabase_action(self, handle_admin_login)
+      return
+
+    if parsed.path == "/api/auth/admin/resolve":
+      run_supabase_action(self, handle_admin_identifier_resolve)
+      return
+
+    if parsed.path == "/api/auth/signup":
+      run_supabase_action(self, handle_public_signup)
+      return
+
+    if parsed.path == "/api/auth/login":
+      run_supabase_action(self, handle_public_login)
+      return
+
+    if parsed.path == "/api/auth/logout":
+      self.handle_auth_logout()
+      return
+
+    if parsed.path == "/api/marketplace/listings/create":
+      self.handle_marketplace_listing_create()
+      return
+
+    if parsed.path == "/api/marketplace/bids/create":
+      self.handle_marketplace_bid_create()
+      return
+
+    if parsed.path == "/api/admin/accounts/status":
+      run_supabase_action(self, handle_supabase_admin_account_status)
+      return
+
+    if parsed.path == "/api/admin/accounts/delete":
+      run_supabase_action(self, handle_supabase_admin_account_delete)
+      return
+
+    self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+
+  def handle_auth_session(self) -> None:
+    user = get_authenticated_user(self)
+    if not user:
+      json_response(self, HTTPStatus.OK, {"authenticated": False, "user": None})
+      return
+
+    json_response(self, HTTPStatus.OK, {"authenticated": True, "user": user})
+
+  def handle_admin_accounts(self) -> None:
+    if not require_admin_user(self):
+      return
+
+    json_response(self, HTTPStatus.OK, {"ok": True, "accounts": list_users()})
+
+  def handle_admin_account_store_status(self) -> None:
+    if not require_admin_user(self):
+      return
+
+    json_response(self, HTTPStatus.OK, {"ok": True, "status": get_account_store_status()})
+
+  def handle_admin_bootstrap_seed(self) -> None:
+    if not require_bootstrap_token(self):
+      return
+
+    status = get_account_store_status()
+    if status.get("mode") != "remote-kv" or not status.get("remoteConfigured") or not status.get("remoteReachable"):
+      json_response(
+        self,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        {
+          "ok": False,
+          "code": "REMOTE_STORE_REQUIRED",
+          "message": "The active account store is not the live remote KV store.",
+          "status": status,
+        },
+      )
+      return
+
+    existing_user = get_user_by_identifier(SEEDED_ADMIN_EMAIL) or get_user_by_identifier(SEEDED_ADMIN_USERNAME)
+    existed_already = bool(existing_user)
+
+    seeded_user = seed_admin_account(
+      email=SEEDED_ADMIN_EMAIL,
+      password=SEEDED_ADMIN_PASSWORD,
+      full_name=SEEDED_ADMIN_FULL_NAME,
+      role=SEEDED_ADMIN_ROLE,
+      username=SEEDED_ADMIN_USERNAME,
+    )
+
+    verified_user = get_user_by_identifier(SEEDED_ADMIN_USERNAME) or get_user_by_identifier(SEEDED_ADMIN_EMAIL)
+    stored_role = get_record_value(verified_user, "role")
+    stored_hash = get_record_value(verified_user, "password_hash", "passwordHash")
+    password_verified = bool(stored_hash and verify_password(SEEDED_ADMIN_PASSWORD, stored_hash))
+    role_verified = stored_role == SEEDED_ADMIN_ROLE
+    readable = verified_user is not None
+    username_matches = get_record_value(verified_user, "username") == SEEDED_ADMIN_USERNAME
+    email_matches = (get_record_value(verified_user, "email") or "").strip().lower() == SEEDED_ADMIN_EMAIL
+    login_ready = readable and role_verified and password_verified and username_matches and email_matches
+
+    payload = {
+      "ok": login_ready,
+      "status": status,
+      "account": {
+        "identifier": SEEDED_ADMIN_USERNAME,
+        "email": SEEDED_ADMIN_EMAIL,
+        "role": SEEDED_ADMIN_ROLE,
+        "existedAlready": existed_already,
+        "action": "updated" if existed_already else "created",
+        "seededUserId": seeded_user.get("id"),
+        "readBackUserId": get_record_value(verified_user, "id"),
+        "readable": readable,
+        "usernameMatches": username_matches,
+        "emailMatches": email_matches,
+        "roleVerified": role_verified,
+        "passwordVerified": password_verified,
+        "loginShouldNowWork": login_ready,
+      },
+    }
+
+    if not login_ready:
+      json_response(
+        self,
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+        {
+          **payload,
+          "code": "BOOTSTRAP_VERIFY_FAILED",
+          "message": "The admin account was written, but verification against the live KV store failed.",
+        },
+      )
+      return
+
+    json_response(
+      self,
+      HTTPStatus.OK,
+      {
+        **payload,
+        "message": "The admin account is now seeded and verified in the live KV-backed account store.",
+      },
+    )
+
+  def resolve_listing_owner(self, payload: dict) -> dict | None:
+    session_user = get_authenticated_user(self)
+
+    if session_user and session_user.get("role") in {"client", "developer", "admin", "moderator"}:
+      return {
+        "id": session_user.get("id"),
+        "role": session_user.get("role"),
+        "fullName": session_user.get("fullName"),
+        "email": session_user.get("email"),
+      }
+
+    owner = payload.get("owner") if isinstance(payload.get("owner"), dict) else None
+    if not owner:
+      return None
+
+    role = normalize_text(owner.get("role"))
+    if role not in {"client", "developer"}:
+      return None
+
+    return {
+      "id": normalize_text(owner.get("id")),
+      "role": role,
+      "fullName": normalize_text(owner.get("fullName")),
+      "email": normalize_text(owner.get("email")),
+    }
+
+  def handle_marketplace_listing_create(self) -> None:
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    listing = payload.get("listing") if isinstance(payload.get("listing"), dict) else None
+    if not listing:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING", "message": "A valid listing payload is required."})
+      return
+
+    listing_type = normalize_text(listing.get("type"))
+    if listing_type not in {"client", "professional"}:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING", "message": "A valid marketplace listing type is required."})
+      return
+
+    owner = self.resolve_listing_owner(payload)
+    if not owner:
+      json_response(self, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "A signed-in account is required to create a listing."})
+      return
+
+    if listing_type == "client" and owner["role"] != "client":
+      json_response(self, HTTPStatus.FORBIDDEN, {"ok": False, "code": "OWNER_ROLE_INVALID", "message": "Only client accounts can create project request listings."})
+      return
+
+    if listing_type == "professional" and owner["role"] != "developer":
+      json_response(self, HTTPStatus.FORBIDDEN, {"ok": False, "code": "OWNER_ROLE_INVALID", "message": "Only developer accounts can create professional listings."})
+      return
+
+    try:
+      stored_listing = create_marketplace_listing(
+        {
+          **listing,
+          "ownerUserId": owner.get("id"),
+          "ownerRole": owner["role"],
+          "ownerName": owner.get("fullName"),
+          "ownerEmail": owner.get("email"),
+        }
+      )
+    except ValueError as error:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING", "message": str(error)})
+      return
+
+    json_response(self, HTTPStatus.CREATED, {"ok": True, "listing": stored_listing})
+
+  def resolve_marketplace_bidder(self, payload: dict) -> dict | None:
+    session_user = get_authenticated_user(self)
+
+    if session_user and session_user.get("role") == "developer":
+      return {
+        "id": session_user.get("id"),
+        "role": session_user.get("role"),
+        "fullName": session_user.get("fullName"),
+        "email": session_user.get("email"),
+        "companyName": session_user.get("companyName"),
+        "specialties": session_user.get("specialties"),
+        "yearsExperience": session_user.get("yearsExperience"),
+      }
+
+    bidder = payload.get("bidder") if isinstance(payload.get("bidder"), dict) else None
+    if not bidder:
+      return None
+
+    role = normalize_text(bidder.get("role"))
+    if role != "developer":
+      return None
+
+    return {
+      "id": normalize_text(bidder.get("id")),
+      "role": role,
+      "fullName": normalize_text(bidder.get("fullName")),
+      "email": normalize_text(bidder.get("email")),
+      "companyName": normalize_text(bidder.get("companyName")),
+      "specialties": normalize_text(bidder.get("specialties")),
+      "yearsExperience": bidder.get("yearsExperience"),
+    }
+
+  def handle_marketplace_bid_create(self) -> None:
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    bid = payload.get("bid") if isinstance(payload.get("bid"), dict) else None
+    if not bid:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_BID", "message": "A valid bid payload is required."})
+      return
+
+    bidder = self.resolve_marketplace_bidder(payload)
+    if not bidder:
+      json_response(self, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "A signed-in developer account is required to submit a bid."})
+      return
+
+    if bidder["role"] != "developer":
+      json_response(self, HTTPStatus.FORBIDDEN, {"ok": False, "code": "BIDDER_ROLE_INVALID", "message": "Only developer accounts can submit bids."})
+      return
+
+    listing_id = normalize_text(bid.get("listingId"))
+    if not listing_id:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_BID", "message": "A listing id is required."})
+      return
+
+    listing = get_marketplace_listing(listing_id)
+    if not listing:
+      json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "code": "LISTING_NOT_FOUND", "message": "The target listing could not be found."})
+      return
+
+    listing_status = (
+      (listing.get("marketplaceMeta") or {}).get("listingStatus")
+      or listing.get("status")
+    )
+    if listing.get("type") != "client":
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_BID_TARGET", "message": "Bids can only be submitted on client project listings."})
+      return
+
+    if listing_status != "open-for-bids":
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "BIDDING_CLOSED", "message": "This listing is not currently open for bids."})
+      return
+
+    try:
+      stored_bid = create_marketplace_bid(
+        {
+          **bid,
+          "bidderRole": "developer",
+          "developerProfileReference": {
+            "userId": bidder.get("id"),
+            "companyName": bidder.get("companyName") or bidder.get("fullName"),
+            "specialties": bidder.get("specialties"),
+          },
+        }
+      )
+    except ValueError as error:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_BID", "message": str(error)})
+      return
+
+    refreshed_listing = get_marketplace_listing(listing_id)
+    json_response(self, HTTPStatus.CREATED, {"ok": True, "bid": stored_bid, "listing": refreshed_listing})
+
+  def handle_marketplace_listing_index(self, parsed) -> None:
+    query = parse_qs(parsed.query)
+    listing_type = normalize_text(query.get("type", ["client"])[0]) or "client"
+    status = normalize_text(query.get("status", ["open-for-bids"])[0])
+    category = normalize_text(query.get("category", [""])[0])
+
+    if listing_type not in {"client", "professional"}:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING_TYPE", "message": "A valid listing type is required."})
+      return
+
+    if status == "all":
+      status = ""
+
+    try:
+      limit = int(query.get("limit", ["24"])[0] or "24")
+    except ValueError:
+      limit = 24
+
+    listings = list_marketplace_listings(
+      listing_type=listing_type,
+      status=status,
+      category=category,
+      limit=min(max(limit, 1), 60),
+    )
+
+    json_response(self, HTTPStatus.OK, {"ok": True, "listings": listings})
+
+  def handle_marketplace_listing_detail(self, parsed) -> None:
+    listing_id = parse_qs(parsed.query).get("id", [""])[0]
+
+    if not listing_id:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_LISTING", "message": "A listing id is required."})
+      return
+
+    listing = get_marketplace_listing(listing_id)
+    if not listing:
+      json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "code": "LISTING_NOT_FOUND", "message": "The requested listing could not be found."})
+      return
+
+    json_response(self, HTTPStatus.OK, {"ok": True, "listing": listing})
+
+  def handle_developer_dashboard(self) -> None:
+    try:
+      _, profile = require_public_access(extract_bearer_token(self), "developer")
+    except SupabaseError as error:
+      json_response(self, error.status, {"ok": False, "code": error.code, "message": error.message})
+      return
+
+    owner_user_id = str(profile.get("id") or "").strip()
+    listings = [
+      listing
+      for listing in list_marketplace_listings(listing_type="professional", status="", limit=200)
+      if str(listing.get("ownerUserId") or "") == owner_user_id
+    ]
+    bids = list_marketplace_bids_for_bidder(owner_user_id, limit=200)
+
+    json_response(self, HTTPStatus.OK, {"ok": True, "listings": listings, "bids": bids})
+
+  def handle_admin_account_status(self) -> None:
+    current_user = require_admin_user(self)
+    if not current_user:
+      return
+
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    user_id = normalize_text(payload.get("userId"))
+    action = normalize_text(payload.get("action"))
+
+    if not user_id or action not in {"disable", "enable"}:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_ACCOUNT_ACTION", "message": "A valid account action is required."})
+      return
+
+    target_user = get_user_by_id(user_id)
+    if not target_user:
+      json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "code": "ACCOUNT_NOT_FOUND", "message": "The requested account could not be found."})
+      return
+
+    if action == "disable":
+      if target_user["id"] == current_user["id"]:
+        json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "ACCOUNT_SELF_PROTECTED", "message": "You cannot disable your own admin account."})
+        return
+
+      if target_user["role"] in ADMIN_ROLES and count_active_admin_users(exclude_user_id=target_user["id"]) == 0:
+        json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "LAST_ADMIN_PROTECTED", "message": "The last active admin account cannot be disabled."})
+        return
+
+      updated_user = update_user_status(user_id, False)
+      json_response(self, HTTPStatus.OK, {"ok": True, "user": updated_user})
+      return
+
+    updated_user = update_user_status(user_id, True)
+    json_response(self, HTTPStatus.OK, {"ok": True, "user": updated_user})
+
+  def handle_admin_account_delete(self) -> None:
+    current_user = require_admin_user(self)
+    if not current_user:
+      return
+
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    user_id = normalize_text(payload.get("userId"))
+
+    if not user_id:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_ACCOUNT_ACTION", "message": "A valid account id is required."})
+      return
+
+    target_user = get_user_by_id(user_id)
+    if not target_user:
+      json_response(self, HTTPStatus.NOT_FOUND, {"ok": False, "code": "ACCOUNT_NOT_FOUND", "message": "The requested account could not be found."})
+      return
+
+    if target_user["id"] == current_user["id"]:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "ACCOUNT_SELF_PROTECTED", "message": "You cannot delete your own admin account."})
+      return
+
+    if target_user["role"] in ADMIN_ROLES and count_active_admin_users(exclude_user_id=target_user["id"]) == 0:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "LAST_ADMIN_PROTECTED", "message": "The last active admin account cannot be deleted."})
+      return
+
+    delete_user_account(user_id)
+    json_response(self, HTTPStatus.OK, {"ok": True, "deletedUserId": user_id})
+
+  def handle_auth_signup(self) -> None:
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    clean_payload, error = validate_signup(payload)
+    if error:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": error[0], "message": error[1]})
+      return
+
+    user = create_user(clean_payload)
+    token, token_hash = issue_session_token()
+    create_session(user["id"], token_hash, self.headers.get("User-Agent", ""), self.client_address[0] if self.client_address else "")
+
+    body = json.dumps({"ok": True, "user": user}).encode("utf-8")
+    self.send_response(HTTPStatus.CREATED)
+    apply_cors_headers(self)
+    self.send_header("Set-Cookie", build_cookie(token))
+    self.send_header("Content-Type", "application/json; charset=utf-8")
+    self.send_header("Cache-Control", "no-store")
+    self.send_header("Content-Length", str(len(body)))
+    self.end_headers()
+    self.wfile.write(body)
+
+  def handle_auth_login(self) -> None:
+    try:
+      payload = parse_json_body(self)
+    except ValueError:
+      json_response(self, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_JSON", "message": "Invalid JSON payload."})
+      return
+
+    audience = normalize_text(payload.get("audience")) or "public"
+    login_payload, error = validate_login(payload, audience)
+    if error:
+      json_response(self, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": error[0], "message": error[1]})
+      return
+
+    user = login_payload["user"]
+    token, token_hash = issue_session_token()
+    create_session(user["id"], token_hash, self.headers.get("User-Agent", ""), self.client_address[0] if self.client_address else "")
+
+    body = json.dumps({"ok": True, "user": get_session_user(token_hash)}).encode("utf-8")
+    self.send_response(HTTPStatus.OK)
+    apply_cors_headers(self)
+    self.send_header("Set-Cookie", build_cookie(token))
+    self.send_header("Content-Type", "application/json; charset=utf-8")
+    self.send_header("Cache-Control", "no-store")
+    self.send_header("Content-Length", str(len(body)))
+    self.end_headers()
+    self.wfile.write(body)
+
+  def handle_auth_logout(self) -> None:
+    import hashlib
+
+    token = get_session_token(self)
+    if token:
+      token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+      delete_session(token_hash)
+
+    body = json.dumps({"ok": True}).encode("utf-8")
+    self.send_response(HTTPStatus.OK)
+    apply_cors_headers(self)
+    self.send_header("Set-Cookie", clear_cookie())
+    self.send_header("Content-Type", "application/json; charset=utf-8")
+    self.send_header("Cache-Control", "no-store")
+    self.send_header("Content-Length", str(len(body)))
+    self.end_headers()
+    self.wfile.write(body)
+
+
+def run() -> None:
+  ensure_database()
+  ensure_seeded_admin_account()
+  server = ThreadingHTTPServer((HOST, PORT), YapplyRequestHandler)
+  print(f"Yapply backend running on http://{HOST}:{PORT}")
+  try:
+    server.serve_forever()
+  except KeyboardInterrupt:
+    pass
+  finally:
+    server.server_close()
+
+
+if __name__ == "__main__":
+  run()

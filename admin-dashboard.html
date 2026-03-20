@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#060709" />
+    <title>Yapply | Admin Dashboard</title>
+    <meta
+      name="description"
+      content="Protected Yapply admin dashboard for managing marketplace listings and homepage featured projects."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260312-supabase-auth" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260312-supabase-auth" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260312-supabase-auth" />
+    <link rel="stylesheet" href="./styles/sections.css?v=20260312-supabase-auth" />
+    <link rel="stylesheet" href="./styles/app-shell.css" />
+
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem("yapply-theme") || "dark";
+        document.documentElement.dataset.loadingLocale = localStorage.getItem("yapply-locale") || "tr";
+      } catch (error) {
+        document.documentElement.dataset.theme = "dark";
+        document.documentElement.dataset.loadingLocale = "tr";
+      }
+      // Detect Capacitor native app
+      (function() {
+        var origin = window.location.origin;
+        var hostname = window.location.hostname;
+        var port = window.location.port;
+        var isNative = origin === "capacitor://localhost" || (hostname === "localhost" && !port);
+        if (isNative) {
+          document.documentElement.classList.add("has-tab-bar");
+          // Prevent pinch-to-zoom
+          document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+          document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+          // Sync bg color with theme
+          var t = localStorage.getItem('yapply-theme') || 'dark';
+          var bgc = t === 'light' ? '#f3efe6' : '#060709';
+          document.documentElement.style.backgroundColor = bgc;
+          var tc = document.querySelector('meta[name="theme-color"]');
+          if (tc) tc.content = bgc;
+        }
+      })();
+    
+    </script>
+  </head>
+  <body data-page="admin-dashboard">
+    
+    <div id="app">
+      <div class="page-shell">
+        <main class="section-shell">
+          <div class="panel application-panel application-panel--loading">
+            <div class="app-loader" aria-live="polite">
+              <p class="app-loader__brand">Yapply Admin</p>
+              <div class="app-loader__bird" aria-hidden="true">
+                <svg class="loading-bird" viewBox="0 0 120 120" fill="none">
+                  <ellipse class="loading-bird__shadow" cx="60" cy="95" rx="19" ry="5"></ellipse>
+                  <g class="loading-bird__bob">
+                    <path class="loading-bird__tail" d="M32 63 21 58 30 71 38 67Z"></path>
+                    <ellipse class="loading-bird__body" cx="52" cy="62" rx="23" ry="18"></ellipse>
+                    <circle class="loading-bird__head" cx="73" cy="49" r="13"></circle>
+                    <ellipse class="loading-bird__wing" cx="49" cy="63" rx="11" ry="15" transform="rotate(-24 49 63)"></ellipse>
+                    <circle class="loading-bird__eye" cx="77" cy="46" r="2.3"></circle>
+                    <path class="loading-bird__beak" d="M84 49 94 45 87 54Z"></path>
+                    <path class="loading-bird__leg" d="M49 79V88"></path>
+                    <path class="loading-bird__leg" d="M58 79V88"></path>
+                    <g class="loading-bird__tool">
+                      <rect class="loading-bird__pencil" x="66" y="71" width="30" height="5" rx="2.5" transform="rotate(-22 66 71)"></rect>
+                      <rect class="loading-bird__pencil-eraser" x="66" y="71" width="6" height="5" rx="1.2" transform="rotate(-22 66 71)"></rect>
+                      <path class="loading-bird__pencil-tip" d="M96 59 103 56 100 64Z"></path>
+                    </g>
+                  </g>
+                </svg>
+              </div>
+              <p class="app-loader__text">
+                <span class="app-loader__text-tr">Hazırlanıyor...</span>
+                <span class="app-loader__text-en">Preparing...</span>
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="./scripts/main.js?v=20260312-admin-session-fix"></script>
+  </body>
+</html>

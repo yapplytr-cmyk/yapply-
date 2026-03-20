@@ -1,0 +1,15 @@
+{
+  "name": "yapply",
+  "version": "1.0.0",
+  "description": "Yapply - Premium Construction Marketplace in Turkey",
+  "private": true,
+  "scripts": {
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/ios": "^8.2.0"
+  }
+}

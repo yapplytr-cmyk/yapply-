@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Step 1 bird: sitting at laptop creating a project -->
+  <!-- Shadow -->
+  <ellipse cx="100" cy="178" rx="50" ry="7" fill="#b8d4e3" opacity="0.35"/>
+  <!-- Laptop base -->
+  <rect x="52" y="148" width="96" height="6" rx="3" fill="#4a6a7a" />
+  <rect x="48" y="153" width="104" height="4" rx="2" fill="#3d5a6a" />
+  <!-- Laptop screen -->
+  <rect x="58" y="105" width="84" height="46" rx="4" fill="#2d4a5e"/>
+  <rect x="62" y="109" width="76" height="38" rx="2" fill="#1a2f3d"/>
+  <!-- Screen content - little project lines -->
+  <rect x="68" y="116" width="30" height="3" rx="1.5" fill="#8ed4ae" opacity="0.8"/>
+  <rect x="68" y="123" width="22" height="3" rx="1.5" fill="#c9a84c" opacity="0.6"/>
+  <rect x="68" y="130" width="26" height="3" rx="1.5" fill="#8ed4ae" opacity="0.5"/>
+  <!-- Small image placeholder on screen -->
+  <rect x="104" y="115" width="28" height="20" rx="2" fill="#3d6e6e" opacity="0.5"/>
+  <circle cx="112" cy="122" r="3" fill="#8ed4ae" opacity="0.6"/>
+  <!-- Body -->
+  <ellipse cx="100" cy="98" rx="38" ry="36" fill="#6ab8d4"/>
+  <!-- Belly -->
+  <ellipse cx="100" cy="106" rx="24" ry="22" fill="#d4eef8"/>
+  <!-- Head -->
+  <circle cx="100" cy="52" r="30" fill="#6ab8d4"/>
+  <!-- Hair tufts -->
+  <path d="M95 24c-1-8 4-12 6-10" stroke="#5aa4be" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M103 23c1-9 6-11 7-8" stroke="#5aa4be" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Cheeks -->
+  <ellipse cx="80" cy="60" rx="8" ry="5.5" fill="#f5c4c0" opacity="0.45"/>
+  <ellipse cx="120" cy="60" rx="8" ry="5.5" fill="#f5c4c0" opacity="0.45"/>
+  <!-- Eyes - focused, looking down at screen -->
+  <g class="step-bird__eyes">
+    <ellipse cx="88" cy="50" rx="6" ry="6.5" fill="white"/>
+    <ellipse cx="112" cy="50" rx="6" ry="6.5" fill="white"/>
+    <circle cx="90" cy="52" r="3.5" fill="#2d4a3e"/>
+    <circle cx="114" cy="52" r="3.5" fill="#2d4a3e"/>
+    <circle cx="91" cy="51" r="1.2" fill="white"/>
+    <circle cx="115" cy="51" r="1.2" fill="white"/>
+  </g>
+  <!-- Beak -->
+  <path d="M95 63l5 7 5-7" fill="#f5a623" stroke="#e8961e" stroke-width="0.8"/>
+  <!-- Slight smile -->
+  <path d="M92 69c4 3.5 12 3.5 16 0" stroke="#3a7a9a" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  <!-- Wings resting on laptop keyboard -->
+  <g class="step-bird__wings">
+    <ellipse cx="62" cy="108" rx="12" ry="16" fill="#58aac6" transform="rotate(25 62 108)"/>
+    <ellipse cx="138" cy="108" rx="12" ry="16" fill="#58aac6" transform="rotate(-25 138 108)"/>
+  </g>
+  <!-- Feet tucked under -->
+  <path d="M84 132l-5 18M84 132l2 19M84 132l8 16" stroke="#e8961e" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M116 132l-8 16M116 132l-2 19M116 132l5 18" stroke="#e8961e" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

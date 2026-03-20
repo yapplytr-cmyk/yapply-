@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#060709" />
+    <title>Yapply | Premium Construction Marketplace in Turkey</title>
+    <meta
+      name="description"
+      content="Yapply connects clients in Turkey with verified architects, developers, and construction companies through a premium digital marketplace."
+    />
+    <meta
+      name="keywords"
+      content="construction marketplace Turkey, architects Turkey, verified builders, home construction platform, Yapply"
+    />
+    <link rel="icon" type="image/png" href="/assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <link rel="stylesheet" href="./styles/base.css" />
+    <link rel="stylesheet" href="./styles/components.css" />
+    <link rel="stylesheet" href="./styles/sections.css" />
+    <link rel="stylesheet" href="./styles/app-shell.css" />
+
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem("yapply-theme") || "dark";
+        document.documentElement.dataset.loadingLocale = localStorage.getItem("yapply-locale") || "tr";
+      } catch (error) {
+        document.documentElement.dataset.theme = "dark";
+        document.documentElement.dataset.loadingLocale = "tr";
+      }
+      // In Capacitor, default to marketplace instead of home
+      (function() {
+        var origin = window.location.origin;
+        var hostname = window.location.hostname;
+        var port = window.location.port;
+        var isNative = origin === "capacitor://localhost" || (hostname === "localhost" && !port);
+        if (isNative) {
+          document.documentElement.classList.add("has-tab-bar");
+          // Prevent pinch-to-zoom
+          document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+          document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+          // Sync bg color with theme
+          var t = localStorage.getItem('yapply-theme') || 'dark';
+          var bgc = t === 'light' ? '#f3efe6' : '#060709';
+          document.documentElement.style.backgroundColor = bgc;
+          var tc = document.querySelector('meta[name="theme-color"]');
+          if (tc) tc.content = bgc;
+        }
+      })();
+    </script>
+  </head>
+  <body data-page="home">
+    
+    <!-- Native app welcome splash (hidden on web) -->
+    <div class="app-splash" id="app-splash">
+      <div class="app-splash__logo">
+        <div class="app-splash__mark" aria-hidden="true">
+          <svg viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ground line -->
+            <line class="splash-mark__ground" x1="20" y1="118" x2="140" y2="118" stroke="var(--line)" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+            <!-- Bird group — animated: idle → stand → fly -->
+            <g class="splash-bird-anim">
+              <!-- Tail -->
+              <path class="splash-mark__tail" d="M48 80 36 74 46 88 55 84Z"/>
+              <!-- Body -->
+              <ellipse class="splash-mark__body" cx="70" cy="78" rx="26" ry="20"/>
+              <!-- Head -->
+              <circle class="splash-mark__head" cx="96" cy="62" r="15"/>
+              <!-- Wing (flaps during flight) -->
+              <ellipse class="splash-mark__wing splash-wing-flap" cx="66" cy="79" rx="13" ry="17" transform="rotate(-24 66 79)"/>
+              <!-- Eye -->
+              <circle class="splash-mark__eye" cx="101" cy="58" r="3"/>
+              <!-- Beak -->
+              <path class="splash-mark__beak" d="M109 62 121 57 113 68Z"/>
+              <!-- Legs (tuck in during flight) -->
+              <line class="splash-mark__leg splash-leg-anim" x1="62" y1="95" x2="58" y2="112" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+              <line class="splash-mark__leg splash-leg-anim" x1="75" y1="95" x2="78" y2="112" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Feet -->
+              <path class="splash-mark__foot splash-foot-anim" d="M54 112L58 112L62 109" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path class="splash-mark__foot splash-foot-anim" d="M82 109L78 112L74 112" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+          </svg>
+        </div>
+        <p class="app-splash__wordmark">Yapply</p>
+      </div>
+    </div>
+
+    <div id="app"></div>
+    <script type="module" src="./scripts/main.js?v=20260319-ios-app-shell"></script>
+  </body>
+</html>

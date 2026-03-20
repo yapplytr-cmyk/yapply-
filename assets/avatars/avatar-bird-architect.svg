@@ -1,0 +1,101 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="aClip"><circle cx="200" cy="200" r="185"/></clipPath>
+  </defs>
+  <!-- Circle bg -->
+  <circle cx="200" cy="200" r="185" fill="#f0e8d8"/>
+  <g clip-path="url(#aClip)">
+    <!-- Warm studio bg -->
+    <rect x="0" y="0" width="400" height="400" fill="#f0e8d8"/>
+
+    <!-- Drafting table -->
+    <g transform="translate(15, 85)">
+      <rect x="0" y="0" width="110" height="200" rx="4" fill="#8b7355" stroke="#5c4a3d" stroke-width="2"/>
+      <rect x="6" y="6" width="98" height="188" rx="2" fill="#d4c5a9" stroke="#999" stroke-width="1"/>
+      <!-- Blueprint paper on table -->
+      <rect x="12" y="20" width="45" height="35" fill="#f5f5f5" stroke="#ccc" stroke-width="1" transform="rotate(-8 35 38)"/>
+      <rect x="18" y="30" width="40" height="30" fill="#fff" stroke="#bbb" stroke-width="1" transform="rotate(5 38 45)"/>
+      <!-- Lines on paper -->
+      <line x1="22" y1="36" x2="52" y2="36" stroke="#ddd" stroke-width="0.8" transform="rotate(5 38 45)"/>
+      <line x1="22" y1="42" x2="48" y2="42" stroke="#ddd" stroke-width="0.8" transform="rotate(5 38 45)"/>
+    </g>
+
+    <!-- Rolled blueprints -->
+    <g transform="translate(280, 90)">
+      <rect x="0" y="0" width="16" height="80" fill="#4a90e2" stroke="#003da5" stroke-width="1.5" rx="8"/>
+      <rect x="14" y="10" width="16" height="70" fill="#3d7bc4" stroke="#003da5" stroke-width="1.5" rx="8"/>
+      <circle cx="8" cy="0" r="8" fill="#6baee6" stroke="#003da5" stroke-width="1"/>
+      <circle cx="22" cy="10" r="7.5" fill="#5a9fd4" stroke="#003da5" stroke-width="1"/>
+    </g>
+
+    <!-- Plant pot -->
+    <g transform="translate(310, 230)">
+      <path d="M-8 20 L-12 0 L12 0 L8 20Z" fill="#a0522d" stroke="#8b4513" stroke-width="1.5"/>
+      <ellipse cx="6" cy="-8" rx="10" ry="18" fill="#228b22" stroke="#1a6b1a" stroke-width="1.5"/>
+      <ellipse cx="-4" cy="-5" rx="8" ry="15" fill="#32cd32" stroke="#2da02d" stroke-width="1"/>
+    </g>
+
+    <!-- Desk surface -->
+    <rect x="0" y="310" width="400" height="100" fill="#c4a878" opacity="0.35"/>
+
+    <!-- Bird body -->
+    <ellipse cx="190" cy="280" rx="80" ry="70" fill="#9acd32" stroke="#5a7a1b" stroke-width="2.5"/>
+    <!-- Belly highlight -->
+    <ellipse cx="190" cy="290" rx="50" ry="45" fill="#b8e050" opacity="0.35"/>
+
+    <!-- Olive/brown scarf -->
+    <path d="M130 232 Q118 240 122 268 Q128 278 148 272 Q165 265 190 268" fill="#8b7355" stroke="#6b5d4f" stroke-width="2.5"/>
+    <path d="M250 232 Q262 240 258 268 Q252 278 232 272 Q215 265 190 268" fill="#9b8365" stroke="#6b5d4f" stroke-width="2.5"/>
+    <!-- Scarf fringe -->
+    <line x1="124" y1="272" x2="122" y2="286" stroke="#6b5d4f" stroke-width="2"/>
+    <line x1="132" y1="274" x2="131" y2="288" stroke="#6b5d4f" stroke-width="2"/>
+    <line x1="140" y1="272" x2="140" y2="286" stroke="#6b5d4f" stroke-width="2"/>
+    <line x1="248" y1="272" x2="250" y2="286" stroke="#6b5d4f" stroke-width="2"/>
+    <line x1="240" y1="274" x2="241" y2="288" stroke="#6b5d4f" stroke-width="2"/>
+
+    <!-- Left wing/arm -->
+    <path d="M110 260 Q75 270 80 300 Q85 315 105 310 Q100 290 110 280" fill="#82b828" stroke="#5a7a1b" stroke-width="2"/>
+    <path d="M90 280 Q85 290 92 300" fill="none" stroke="#6a9818" stroke-width="1.5"/>
+
+    <!-- Right wing -->
+    <ellipse cx="275" cy="280" rx="20" ry="40" fill="#82b828" stroke="#5a7a1b" stroke-width="2"/>
+
+    <!-- Head -->
+    <circle cx="195" cy="160" r="62" fill="#9acd32" stroke="#5a7a1b" stroke-width="2.5"/>
+
+    <!-- Head feather tuft -->
+    <path d="M195 98 Q200 82 210 95" fill="#82b828" stroke="#5a7a1b" stroke-width="2" stroke-linecap="round"/>
+    <path d="M206 93 Q214 78 220 92" fill="#82b828" stroke="#5a7a1b" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Round glasses -->
+    <circle cx="175" cy="155" r="22" fill="none" stroke="#6b5d4f" stroke-width="3.5"/>
+    <circle cx="222" cy="155" r="18" fill="none" stroke="#6b5d4f" stroke-width="3.5"/>
+    <!-- Bridge -->
+    <line x1="197" y1="155" x2="204" y2="155" stroke="#6b5d4f" stroke-width="3"/>
+    <!-- Glasses glare -->
+    <ellipse cx="170" cy="148" rx="8" ry="6" fill="#fff" opacity="0.25"/>
+    <ellipse cx="218" cy="148" rx="6" ry="5" fill="#fff" opacity="0.2"/>
+
+    <!-- Eyes behind glasses - happy squint -->
+    <path d="M170 158 Q175 166 180 160" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M218 158 Q223 164 228 158" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Warm smile -->
+    <path d="M168 180 Q180 192 195 184" fill="none" stroke="#6a9818" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Beak -->
+    <path d="M240 158 L278 152 L264 178Z" fill="#ccaa55" stroke="#998833" stroke-width="2"/>
+    <!-- Beak line -->
+    <path d="M240 165 L270 162" fill="none" stroke="#aa8830" stroke-width="1.5"/>
+
+    <!-- Feet -->
+    <g stroke="#9acd32" stroke-width="5" stroke-linecap="round" fill="none">
+      <path d="M165 340 L160 375"/>
+      <path d="M152 372 L160 375 L168 372"/>
+      <path d="M215 340 L220 375"/>
+      <path d="M212 372 L220 375 L228 372"/>
+    </g>
+  </g>
+  <!-- Circle border -->
+  <circle cx="200" cy="200" r="185" fill="none" stroke="#3a3a3a" stroke-width="4"/>
+</svg>

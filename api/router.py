@@ -1,0 +1,168 @@
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler
+from urllib.parse import parse_qs, urlparse
+
+from api._utils import (
+  handle_marketplace_bid_create,
+  handle_marketplace_listing_create,
+  handle_marketplace_listing_index,
+  handle_marketplace_listing_detail,
+  handle_marketplace_listing_status_update,
+  json_response,
+  run_api_action,
+)
+from api.supabase_utils import (
+  handle_admin_account_delete,
+  handle_admin_login,
+  handle_admin_account_store_status,
+  handle_admin_account_status,
+  handle_admin_accounts,
+  handle_admin_marketplace_listing_delete,
+  handle_client_dashboard,
+  handle_developer_dashboard,
+  handle_resend_signup_otp,
+  handle_supabase_bid_create,
+  handle_account_settings_update,
+  handle_admin_identifier_resolve,
+  handle_public_login,
+  handle_public_auth_config,
+  handle_public_signup,
+  handle_verify_signup,
+  run_supabase_action,
+)
+
+
+def resolve_route(path: str) -> str:
+  parsed = urlparse(path)
+  route = parse_qs(parsed.query).get("route", [""])[0].strip("/")
+
+  if route:
+    return route
+
+  return parsed.path.strip("/")
+
+
+class handler(BaseHTTPRequestHandler):
+  def do_OPTIONS(self):
+    origin = self.headers.get("Origin", "").strip() if self.headers else ""
+    self.send_response(HTTPStatus.NO_CONTENT)
+    if origin:
+      self.send_header("Access-Control-Allow-Origin", origin)
+      self.send_header("Access-Control-Allow-Credentials", "true")
+      self.send_header("Vary", "Origin")
+    self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    self.end_headers()
+
+  def do_GET(self):
+    route = resolve_route(self.path)
+
+    if route == "auth/config":
+      run_supabase_action(self, handle_public_auth_config)
+      return
+
+    if route == "auth/session":
+      run_supabase_action(
+        self,
+        lambda handler: json_response(
+          handler,
+          HTTPStatus.NOT_IMPLEMENTED,
+          {
+            "ok": False,
+            "code": "NOT_IMPLEMENTED",
+            "message": "This route is handled in the browser via the Supabase session client.",
+          },
+        ),
+      )
+      return
+
+    if route == "admin/accounts":
+      run_supabase_action(self, handle_admin_accounts)
+      return
+
+    if route == "admin/account-store-status":
+      run_supabase_action(self, handle_admin_account_store_status)
+      return
+
+    if route == "account/client-dashboard":
+      run_supabase_action(self, handle_client_dashboard)
+      return
+
+    if route == "account/developer-dashboard":
+      run_supabase_action(self, handle_developer_dashboard)
+      return
+
+    if route == "marketplace/listings/detail":
+      run_api_action(self, handle_marketplace_listing_detail)
+      return
+
+    if route == "marketplace/listings":
+      run_api_action(self, handle_marketplace_listing_index)
+      return
+
+    json_response(
+      self,
+      HTTPStatus.NOT_FOUND,
+      {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
+    )
+
+  def do_POST(self):
+    route = resolve_route(self.path)
+
+    if route == "auth/admin/login":
+      run_supabase_action(self, handle_admin_login)
+      return
+
+    if route == "auth/admin/resolve":
+      run_supabase_action(self, handle_admin_identifier_resolve)
+      return
+
+    if route == "auth/signup":
+      run_supabase_action(self, handle_public_signup)
+      return
+
+    if route == "auth/verify":
+      run_supabase_action(self, handle_verify_signup)
+      return
+
+    if route == "auth/resend-otp":
+      run_supabase_action(self, handle_resend_signup_otp)
+      return
+
+    if route == "auth/login":
+      run_supabase_action(self, handle_public_login)
+      return
+
+    if route == "account/settings":
+      run_supabase_action(self, handle_account_settings_update)
+      return
+
+    if route == "admin/accounts/status":
+      run_supabase_action(self, handle_admin_account_status)
+      return
+
+    if route == "admin/accounts/delete":
+      run_supabase_action(self, handle_admin_account_delete)
+      return
+
+    if route == "marketplace/listings/create":
+      run_api_action(self, handle_marketplace_listing_create)
+      return
+
+    if route == "marketplace/listings/update-status":
+      run_api_action(self, handle_marketplace_listing_status_update)
+      return
+
+    if route == "marketplace/listings/delete":
+      run_supabase_action(self, handle_admin_marketplace_listing_delete)
+      return
+
+    if route == "marketplace/bids/create":
+      run_supabase_action(self, handle_supabase_bid_create)
+      return
+
+    json_response(
+      self,
+      HTTPStatus.NOT_FOUND,
+      {"ok": False, "code": "NOT_FOUND", "message": "The requested API route could not be found."},
+    )

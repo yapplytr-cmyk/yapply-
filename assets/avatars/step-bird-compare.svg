@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 200" fill="none">
+  <!-- Step 3: Main bird pointing at a smaller builder bird across the card -->
+  <!-- Shadow -->
+  <ellipse cx="80" cy="178" rx="38" ry="6" fill="#d4c8e0" opacity="0.3"/>
+  <ellipse cx="205" cy="178" rx="28" ry="5" fill="#b8d4e3" opacity="0.3"/>
+
+  <!-- === Main bird (left side) pointing right === -->
+  <!-- Body -->
+  <ellipse cx="80" cy="118" rx="38" ry="36" fill="#b88ed4"/>
+  <!-- Belly -->
+  <ellipse cx="80" cy="127" rx="24" ry="22" fill="#e4d4f0"/>
+  <!-- Head -->
+  <circle cx="80" cy="62" r="30" fill="#b88ed4"/>
+  <!-- Hair tufts -->
+  <path d="M74 34c-1-8 3-13 6-10" stroke="#a47cc4" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M84 33c1-9 5-12 7-8" stroke="#a47cc4" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Cheeks -->
+  <ellipse cx="61" cy="70" rx="8" ry="5.5" fill="#f5c4c0" opacity="0.45"/>
+  <ellipse cx="99" cy="70" rx="8" ry="5.5" fill="#f5c4c0" opacity="0.45"/>
+  <!-- Eyes - looking right at builder bird -->
+  <g class="step-bird__eyes">
+    <ellipse cx="70" cy="58" rx="6" ry="6.5" fill="white"/>
+    <ellipse cx="92" cy="58" rx="6" ry="6.5" fill="white"/>
+    <circle cx="73" cy="59" r="3.5" fill="#2d4a3e"/>
+    <circle cx="95" cy="59" r="3.5" fill="#2d4a3e"/>
+    <circle cx="74" cy="58" r="1.2" fill="white"/>
+    <circle cx="96" cy="58" r="1.2" fill="white"/>
+  </g>
+  <!-- Beak -->
+  <path d="M76 70l5 7 5-7" fill="#f5a623" stroke="#e8961e" stroke-width="0.8"/>
+  <!-- Confident smile -->
+  <path d="M72 76c4 3.5 12 3.5 16 0" stroke="#7a5a9a" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  <!-- Left wing at side -->
+  <ellipse cx="42" cy="112" rx="12" ry="18" fill="#a47cc4" transform="rotate(15 42 112)"/>
+  <!-- Right wing extended pointing -->
+  <g class="step-bird__wings">
+    <ellipse cx="122" cy="98" rx="14" ry="12" fill="#a47cc4" transform="rotate(-20 122 98)"/>
+    <!-- Pointing wing tip / hand -->
+    <circle cx="136" cy="92" r="4" fill="#a47cc4"/>
+    <!-- Little pointing line -->
+    <line x1="139" y1="91" x2="155" y2="88" stroke="#a47cc4" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <!-- Feet -->
+  <path d="M64 152l-5 16M64 152l1 18M64 152l7 14" stroke="#e8961e" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M96 152l-7 14M96 152l-1 18M96 152l5 16" stroke="#e8961e" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- === Small builder bird (right side) === -->
+  <g class="step-bird__builder">
+    <!-- Body -->
+    <ellipse cx="205" cy="132" rx="26" ry="24" fill="#6ab8d4"/>
+    <!-- Belly -->
+    <ellipse cx="205" cy="138" rx="16" ry="15" fill="#d4eef8"/>
+    <!-- Head -->
+    <circle cx="205" cy="90" r="22" fill="#6ab8d4"/>
+    <!-- Hard hat -->
+    <ellipse cx="205" cy="76" rx="22" ry="8" fill="#f5c542"/>
+    <rect x="192" y="70" width="26" height="8" rx="3" fill="#f5c542"/>
+    <rect x="199" y="66" width="12" height="6" rx="2" fill="#e8b830"/>
+    <!-- Eyes -->
+    <ellipse cx="197" cy="88" rx="4.5" ry="5" fill="white"/>
+    <ellipse cx="213" cy="88" rx="4.5" ry="5" fill="white"/>
+    <circle cx="196" cy="89" r="2.8" fill="#2d4a3e"/>
+    <circle cx="212" cy="89" r="2.8" fill="#2d4a3e"/>
+    <circle cx="195.5" cy="88.5" r="1" fill="white"/>
+    <circle cx="211.5" cy="88.5" r="1" fill="white"/>
+    <!-- Beak -->
+    <path d="M201 96l4 5 4-5" fill="#f5a623" stroke="#e8961e" stroke-width="0.6"/>
+    <!-- Smile -->
+    <path d="M199 100c3 2.5 9 2.5 12 0" stroke="#3a7a9a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    <!-- Wings holding tools -->
+    <ellipse cx="180" cy="126" rx="9" ry="13" fill="#58aac6" transform="rotate(20 180 126)"/>
+    <ellipse cx="230" cy="126" rx="9" ry="13" fill="#58aac6" transform="rotate(-20 230 126)"/>
+    <!-- Little wrench in wing -->
+    <g transform="translate(228, 112) rotate(30)">
+      <rect x="0" y="0" width="4" height="16" rx="2" fill="#8a8a8a"/>
+      <circle cx="2" cy="2" r="4" fill="none" stroke="#8a8a8a" stroke-width="2"/>
+    </g>
+    <!-- Feet -->
+    <path d="M194 154l-4 12M194 154l0 14M194 154l5 10" stroke="#e8961e" stroke-width="2" stroke-linecap="round"/>
+    <path d="M216 154l-5 10M216 154l0 14M216 154l4 12" stroke="#e8961e" stroke-width="2" stroke-linecap="round"/>
+    <!-- Thumbs up sparkle -->
+    <path d="M240 108l1.5-4 1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5z" fill="#f5d76e"/>
+  </g>
+
+  <!-- Connection line / arrow between birds -->
+  <g class="step-bird__arrow" opacity="0.4">
+    <line x1="158" y1="92" x2="178" y2="92" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <path d="M176 88l6 4-6 4" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>
