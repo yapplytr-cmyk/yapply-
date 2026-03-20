@@ -2621,8 +2621,20 @@ function setupClientDashboard(content) {
       setButtonLoading(button, true);
 
       try {
-        const updatedListing = await acceptClientDashboardBid(listingId, bidId, session.user.id);
+        const { acceptClientDashboardBidLocal, acceptClientDashboardBidRemote } = await import("./core/marketplaceStore.js");
 
+        // Try local optimistic accept, but don't fail if listing not found locally
+        let updatedListing = null;
+        try {
+          updatedListing = acceptClientDashboardBidLocal(listingId, bidId, session.user.id);
+        } catch (localErr) {
+          console.warn("[yapply] Local accept failed, sending to backend:", localErr?.code || localErr?.message);
+        }
+
+        // ALWAYS send to backend — this is the real accept
+        await acceptClientDashboardBidRemote(listingId, bidId);
+
+        // Notification for developer
         try {
           const acceptedBid = updatedListing?.marketplaceMeta?.acceptedBid;
           const developerId = acceptedBid?.developerProfileReference?.userId || acceptedBid?.bidder?.id || "";
@@ -2749,25 +2761,31 @@ function setupClientBidsPage(content) {
     });
   });
 
-  // Accept bid with loading → checkmark animation (optimistic — no waiting for backend)
+  // Accept bid with loading → checkmark animation
   document.querySelectorAll("[data-client-bids-accept]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const bidId = btn.getAttribute("data-client-bids-accept");
       const listingId = btn.getAttribute("data-client-bids-listing");
       if (!bidId || !listingId) return;
 
-      // Show loading spinner briefly
+      // Show loading spinner
       btn.classList.add("is-loading");
       btn.querySelector(".client-bids-accept-btn__label")?.setAttribute("hidden", "");
       btn.querySelector(".client-bids-accept-btn__loader")?.removeAttribute("hidden");
 
       try {
-        // Optimistic: accept locally (instant), send to backend in background
         const { acceptClientDashboardBidLocal, acceptClientDashboardBidRemote } = await import("./core/marketplaceStore.js");
-        const localResult = acceptClientDashboardBidLocal(listingId, bidId, session.user.id);
 
-        // Short delay so user sees the spinner briefly
-        await new Promise((r) => setTimeout(r, 350));
+        // Try optimistic local accept first, but don't fail if listing not found locally
+        let localResult = null;
+        try {
+          localResult = acceptClientDashboardBidLocal(listingId, bidId, session.user.id);
+        } catch (localErr) {
+          console.warn("[yapply] Local accept failed, will send to backend directly:", localErr?.code || localErr?.message);
+        }
+
+        // ALWAYS send to backend — this is what actually matters
+        await acceptClientDashboardBidRemote(listingId, bidId);
 
         // Show checkmark animation
         btn.classList.remove("is-loading");
@@ -2775,11 +2793,7 @@ function setupClientBidsPage(content) {
         btn.querySelector(".client-bids-accept-btn__loader")?.setAttribute("hidden", "");
         btn.querySelector(".client-bids-accept-btn__done")?.removeAttribute("hidden");
 
-        // Fire-and-forget: sync to backend + send email
-        acceptClientDashboardBidRemote(listingId, bidId).catch(() => {});
-
-        // Write notification for the developer (stored in localStorage for this device,
-        // plus the backend email was already sent in acceptClientDashboardBidRemote)
+        // Write notification for the developer
         try {
           const developerUserId = localResult?.marketplaceMeta?.acceptedBid?.developerProfileReference?.userId || "";
           if (developerUserId) {
@@ -2793,7 +2807,7 @@ function setupClientBidsPage(content) {
           }
         } catch (_) {}
 
-        // Re-render after animation completes to show updated state
+        // Re-render from fresh data after animation
         setTimeout(() => { renderPage(content.meta.locale); }, 800);
       } catch (error) {
         btn.classList.remove("is-loading");
@@ -3461,6 +3475,10 @@ const _swrMemory = new Map(); // In-memory layer — avoids repeated JSON.parse
 if (IS_NATIVE_APP && document.getElementById("app-splash")) {
   try {
     const keysToRemove = [];
+    // Dashboard SWR keys: always clear on cold boot so pages fetch fresh data
+    const dashboardSwrKeys = ["yapply-swr-client-dashboard", "yapply-swr-client-bids", "yapply-swr-dev-dashboard"];
+    dashboardSwrKeys.forEach((k) => keysToRemove.push(k));
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith(SWR_CACHE_KEY + ":")) {
@@ -3630,13 +3648,13 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     if (hasFreshCache) {
       // Fire background revalidation — if data changed, re-render
       fetchPromise.then((freshData) => {
-        const oldClientIds = JSON.stringify(cached.data?.map(l => l.id));
-        const newClientIds = JSON.stringify(freshData.publicClientListings?.map(l => l.id));
-        const oldProIds = JSON.stringify(proCached?.data?.map(l => l.id));
-        const newProIds = JSON.stringify(freshData.publicProfessionalListings?.map(l => l.id));
-        if (oldClientIds !== newClientIds || oldProIds !== newProIds) {
+        const oldFp = (cached.data || []).map(l => `${l?.id}|${l?.marketplaceMeta?.bidCount||0}|${l?.marketplaceMeta?.listingStatus||l?.status||""}`).join(",");
+        const newFp = (freshData.publicClientListings || []).map(l => `${l?.id}|${l?.marketplaceMeta?.bidCount||0}|${l?.marketplaceMeta?.listingStatus||l?.status||""}`).join(",");
+        const oldProFp = (proCached?.data || []).map(l => `${l?.id}|${l?.status||""}`).join(",");
+        const newProFp = (freshData.publicProfessionalListings || []).map(l => `${l?.id}|${l?.status||""}`).join(",");
+        if (oldFp !== newFp || oldProFp !== newProFp) {
           console.log("[swr] Marketplace data changed — re-rendering");
-          renderPage();
+          window.__yapplyRenderPage?.() || renderPage();
         }
       }).catch(() => {});
 

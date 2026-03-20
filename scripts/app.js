@@ -261,25 +261,21 @@ function isClosedClientListing(listing) {
 const DASHBOARD_SWR_KEY = "yapply-swr-client-dashboard";
 const DEV_DASHBOARD_SWR_KEY = "yapply-swr-dev-dashboard";
 const DASHBOARD_SWR_MAX_AGE_MS = 3 * 60 * 1000; // 3 minutes
-const _dashboardSwrMemory = new Map(); // In-memory layer — avoids repeated JSON.parse
 
 function dashboardSwrRead(key) {
+  // Always read from localStorage directly — no in-memory layer.
+  // This avoids stale data bugs when other modules (marketplaceStore) write to localStorage.
   const cacheKey = key || DASHBOARD_SWR_KEY;
-  const mem = _dashboardSwrMemory.get(cacheKey);
-  if (mem) return mem;
   try {
     const raw = localStorage.getItem(cacheKey);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    _dashboardSwrMemory.set(cacheKey, parsed);
-    return parsed;
+    return JSON.parse(raw);
   } catch (_) { return null; }
 }
 
 function dashboardSwrWrite(data, key) {
   const cacheKey = key || DASHBOARD_SWR_KEY;
   const entry = { ts: Date.now(), data };
-  _dashboardSwrMemory.set(cacheKey, entry);
   try {
     localStorage.setItem(cacheKey, JSON.stringify(entry));
   } catch (_) {}
@@ -290,10 +286,13 @@ function dashboardSwrIsStale(cached) {
 }
 
 function _listingsFingerprint(listings) {
-  // Lightweight fingerprint: captures ID + status + bid count + accepted state
+  if (!Array.isArray(listings)) return "";
   return listings.map((l) => {
-    const m = l?.marketplaceMeta || {};
-    return `${l.id}|${m.listingStatus || l.status || ""}|${m.bidCount || 0}|${m.acceptedBidId || ""}`;
+    if (!l) return "";
+    const m = l.marketplaceMeta || {};
+    const bids = Array.isArray(l.bids) ? l.bids : (Array.isArray(m.latestBids) ? m.latestBids : []);
+    const bidStatuses = bids.map((b) => `${b?.id || ""}:${b?.status || ""}`).join("+");
+    return `${l.id}|${m.listingStatus || l.status || ""}|${m.bidCount || 0}|${m.acceptedBidId || ""}|${bidStatuses}`;
   }).join(",");
 }
 
@@ -301,49 +300,47 @@ async function createClientDashboardPageContent(content) {
   const session = getAuthSession();
   const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
 
-  // SWR: return ANY cached data instantly (fresh or stale), revalidate in background
+  // Read cached data from localStorage (always fresh read, no in-memory layer)
   const cached = dashboardSwrRead(DASHBOARD_SWR_KEY);
-  const hasAnyCache = cached && Array.isArray(cached.data) && cached.data.length > 0;
-
-  // Local-only fallback (no network)
+  const hasCachedListings = cached && Array.isArray(cached.data) && cached.data.length > 0;
   const localListings = getOwnedSubmittedListings("client", ownerUserId);
 
-  // Start network fetch (always runs in background)
-  const fetchPromise = (async () => {
+  // Network fetch — always runs
+  const fetchFromNetwork = async () => {
     try {
       const data = await fetchClientDashboardData();
       const listings = data.listings || [];
       dashboardSwrWrite(listings, DASHBOARD_SWR_KEY);
       return listings;
     } catch (_) {
-      return cached?.data || localListings;
+      return null; // signal failure
     }
-  })();
+  };
 
-  // If cache exists: return instantly, revalidate in background
-  // If NO cache (cold start): try local listings first, then await network
   let ownedListings;
-  if (hasAnyCache) {
+
+  if (hasCachedListings) {
+    // Show cached data instantly, refresh in background
     ownedListings = cached.data;
-    // Background revalidate — only re-render if data actually changed
-    fetchPromise.then((freshListings) => {
-      if (_listingsFingerprint(freshListings) !== _listingsFingerprint(ownedListings)) {
+    const fingerprint = _listingsFingerprint(ownedListings);
+    fetchFromNetwork().then((fresh) => {
+      if (fresh && _listingsFingerprint(fresh) !== fingerprint) {
         console.log("[swr] Client dashboard data changed — re-rendering");
         window.__yapplyRenderPage?.();
       }
     }).catch(() => {});
-  } else if (localListings.length > 0) {
-    // Cold start with local data: show local instantly, upgrade from network later
-    ownedListings = localListings;
-    fetchPromise.then((freshListings) => {
-      if (freshListings.length > 0 && _listingsFingerprint(freshListings) !== _listingsFingerprint(localListings)) {
-        dashboardSwrWrite(freshListings, DASHBOARD_SWR_KEY);
-        window.__yapplyRenderPage?.();
-      }
-    }).catch(() => {});
   } else {
-    // True cold start (no cache, no local): await network
-    ownedListings = await fetchPromise;
+    // Cold start — MUST await network. Show local as fallback only if network fails.
+    const fresh = await fetchFromNetwork();
+    if (fresh && fresh.length > 0) {
+      ownedListings = fresh;
+    } else if (localListings.length > 0) {
+      ownedListings = localListings;
+    } else {
+      // Re-read cache in case another module populated it during our await
+      const retryCache = dashboardSwrRead(DASHBOARD_SWR_KEY);
+      ownedListings = (retryCache && Array.isArray(retryCache.data)) ? retryCache.data : [];
+    }
   }
 
   const activeListings = ownedListings.filter((listing) => !isClosedClientListing(listing));
@@ -373,44 +370,45 @@ async function createClientBidsPageContent(content) {
 
   const CLIENT_BIDS_SWR_KEY = "yapply-swr-client-bids";
   const cached = dashboardSwrRead(CLIENT_BIDS_SWR_KEY);
-  const hasAnyCache = cached && Array.isArray(cached.data) && cached.data.length > 0;
-
-  // Local-only fallback
+  const hasCachedListings = cached && Array.isArray(cached.data) && cached.data.length > 0;
   const localListings = getOwnedSubmittedListings("client", ownerUserId);
 
-  const fetchPromise = (async () => {
+  // Network fetch — always runs
+  const fetchFromNetwork = async () => {
     try {
       const data = await fetchClientDashboardData();
       const listings = data.listings || [];
       dashboardSwrWrite(listings, CLIENT_BIDS_SWR_KEY);
       return listings;
     } catch (_) {
-      return cached?.data || localListings;
+      return null; // signal failure
     }
-  })();
+  };
 
   let allListings;
-  if (hasAnyCache) {
+
+  if (hasCachedListings) {
+    // Show cached data instantly, refresh in background
     allListings = cached.data;
-    // Background revalidate — re-render only if bids/statuses actually changed
-    fetchPromise.then((freshListings) => {
-      if (_listingsFingerprint(freshListings) !== _listingsFingerprint(allListings)) {
+    const fingerprint = _listingsFingerprint(allListings);
+    fetchFromNetwork().then((fresh) => {
+      if (fresh && _listingsFingerprint(fresh) !== fingerprint) {
         console.log("[swr] Client bids data changed — re-rendering");
         window.__yapplyRenderPage?.();
       }
     }).catch(() => {});
-  } else if (localListings.length > 0) {
-    // Cold start with local data: show instantly, upgrade from network later
-    allListings = localListings;
-    fetchPromise.then((freshListings) => {
-      if (freshListings.length > 0 && _listingsFingerprint(freshListings) !== _listingsFingerprint(localListings)) {
-        dashboardSwrWrite(freshListings, CLIENT_BIDS_SWR_KEY);
-        window.__yapplyRenderPage?.();
-      }
-    }).catch(() => {});
   } else {
-    // True cold start: await network
-    allListings = await fetchPromise;
+    // Cold start — MUST await network. Show local as fallback only if network fails.
+    const fresh = await fetchFromNetwork();
+    if (fresh && fresh.length > 0) {
+      allListings = fresh;
+    } else if (localListings.length > 0) {
+      allListings = localListings;
+    } else {
+      // Re-read cache in case another module populated it during our await
+      const retryCache = dashboardSwrRead(CLIENT_BIDS_SWR_KEY);
+      allListings = (retryCache && Array.isArray(retryCache.data)) ? retryCache.data : [];
+    }
   }
 
   return {

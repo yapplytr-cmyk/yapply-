@@ -1532,14 +1532,60 @@ export function syncClientDashboardListingBids(listingId, ownerUserId, sourceLis
 export function acceptClientDashboardBidLocal(listingId, bidId, ownerUserId) {
   let currentListing = getSubmittedListing("client", listingId);
 
-  // Also check the SWR dashboard cache in case the listing was fetched from backend
+  // Also check ALL SWR caches in case the listing was fetched from backend
   if (!currentListing) {
-    try {
-      const cacheRaw = localStorage.getItem("yapply-swr-client-bids") || localStorage.getItem("yapply-swr-client-dashboard");
-      if (cacheRaw) {
+    const swrKeys = ["yapply-swr-client-bids", "yapply-swr-client-dashboard"];
+    for (const swrKey of swrKeys) {
+      if (currentListing) break;
+      try {
+        const cacheRaw = localStorage.getItem(swrKey);
+        if (!cacheRaw) continue;
         const cacheData = JSON.parse(cacheRaw);
         const listings = Array.isArray(cacheData?.data) ? cacheData.data : [];
         currentListing = listings.find((l) => l?.id === listingId) || null;
+      } catch (_) {}
+    }
+  }
+
+  // Last resort: check per-listing detail SWR cache
+  if (!currentListing) {
+    try {
+      const detailRaw = localStorage.getItem("yapply-swr-marketplace:detail-" + listingId);
+      if (detailRaw) {
+        const detailData = JSON.parse(detailRaw);
+        if (detailData?.data?.id === listingId) {
+          currentListing = detailData.data;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Nuclear scan: check EVERY localStorage key for any array containing this listing
+  if (!currentListing) {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        if (currentListing) break;
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith("yapply-")) continue;
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw || raw.length < 10) continue;
+          const parsed = JSON.parse(raw);
+          // Check { data: [...listings...] } shape (SWR caches)
+          const arr = Array.isArray(parsed?.data) ? parsed.data : (Array.isArray(parsed) ? parsed : null);
+          if (arr) {
+            const found = arr.find((item) => item && item.id === listingId);
+            if (found) {
+              currentListing = found;
+              console.log("[yapply] Found listing via nuclear scan in key:", key);
+            }
+          }
+          // Check { data: { id: ... } } shape (detail caches)
+          if (!currentListing && parsed?.data?.id === listingId) {
+            currentListing = parsed.data;
+            console.log("[yapply] Found listing via nuclear scan (detail) in key:", key);
+          }
+        } catch (_) {}
       }
     } catch (_) {}
   }
