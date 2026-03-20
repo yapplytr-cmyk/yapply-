@@ -698,7 +698,6 @@ function createProfessionalDetail(content, listing) {
         </article>
       </div>
     </section>
-    ${createMediaSection(detailContent, listing)}
 
     <section class="section-shell" id="listing-services">
       ${createSectionHeading(detailContent.services)}

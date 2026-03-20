@@ -116,7 +116,7 @@ if (IS_NATIVE_APP) {
     if (!anchor) return;
 
     const href = anchor.getAttribute("href");
-    if (!href || href === "#" || href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+    if (!href || href === "#" || href.startsWith("#") || href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
 
     // Try soft navigation — if successful, prevent the default full reload
     if (nativeSoftNavigate(href)) {
@@ -1258,7 +1258,7 @@ function setupAuthEntryForms(content) {
             navigateTo("./admin-dashboard.html");
           }, 180);
         } else if (currentPage === "login") {
-          const redirectTarget = user.role === "client" ? "./client-dashboard.html" : "./index.html";
+          const redirectTarget = user.role === "developer" ? "./open-marketplace.html?tab=developer" : "./open-marketplace.html?tab=client";
           window.setTimeout(() => {
             navigateTo(redirectTarget);
           }, 180);
@@ -2689,7 +2689,6 @@ function setupClientBidsPage(content) {
   if (getCurrentPage() !== "client-bids") return;
 
   const session = getAuthSession();
-  if (!session?.authenticated || session.user?.role !== "client") return;
 
   // Listing group accordions (expand/collapse per listing)
   document.querySelectorAll("[data-client-bids-group-toggle]").forEach((header) => {
@@ -3099,6 +3098,19 @@ function bindInteractions(content) {
     setupMarketplaceListingInquiryForm();
     setupMarketplaceDeleteActions(content.meta.locale);
     setupDeveloperInquiryForm();
+    // Smooth scroll for in-page anchor links (e.g. Teklif İste → #listing-contact)
+    if (IS_NATIVE_APP) {
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", (e) => {
+          const targetId = anchor.getAttribute("href")?.slice(1);
+          const target = targetId ? document.getElementById(targetId) : null;
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        });
+      });
+    }
   } else if (page === "client-dashboard") {
     setupClientDashboard(content);
     setupCardTapAnimations();
@@ -3938,6 +3950,8 @@ async function renderPage(localeOverride) {
   if (!appRoot) {
     return;
   }
+  // Expose for cross-module background re-render (used by app.js SWR)
+  window.__yapplyRenderPage = renderPage;
 
   // Remove splash immediately on web (it's only for native)
   hideSplashIfNotNative();
@@ -4047,8 +4061,8 @@ async function renderPage(localeOverride) {
         ]);
       }
 
-      if (page === "login" && session?.authenticated) {
-        navigateTo("./index.html");
+      if ((page === "login" || page === "create-account") && session?.authenticated) {
+        navigateTo("./open-marketplace.html");
         return;
       }
 

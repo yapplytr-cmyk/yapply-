@@ -293,30 +293,37 @@ async function createClientDashboardPageContent(content) {
   const session = getAuthSession();
   const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
 
-  // SWR: try to use cached dashboard data for instant render
+  // SWR: return ANY cached data instantly (fresh or stale), revalidate in background
   const cached = dashboardSwrRead(DASHBOARD_SWR_KEY);
-  const hasFreshCache = cached && !dashboardSwrIsStale(cached) && Array.isArray(cached.data);
+  const hasAnyCache = cached && Array.isArray(cached.data);
 
-  let ownedListings;
+  // Local-only fallback (no network)
+  const localListings = getOwnedSubmittedListings("client", ownerUserId);
 
-  if (hasFreshCache) {
-    // Use cache immediately, revalidate in background
-    ownedListings = cached.data;
-    fetchClientDashboardData()
-      .then((data) => {
-        dashboardSwrWrite(data.listings || [], DASHBOARD_SWR_KEY);
-      })
-      .catch(() => {});
-  } else {
-    // No cache or stale — fetch fresh
+  // Start network fetch (always runs in background)
+  const fetchPromise = (async () => {
     try {
       const data = await fetchClientDashboardData();
-      ownedListings = data.listings || [];
-      dashboardSwrWrite(ownedListings, DASHBOARD_SWR_KEY);
+      const listings = data.listings || [];
+      dashboardSwrWrite(listings, DASHBOARD_SWR_KEY);
+      return listings;
     } catch (_) {
-      ownedListings = cached?.data || getOwnedSubmittedListings("client", ownerUserId);
+      return cached?.data || localListings;
     }
-  }
+  })();
+
+  // FAST PATH: never block on network
+  const ownedListings = hasAnyCache ? cached.data : localListings;
+
+  // Background re-render when fresh data arrives
+  fetchPromise.then((freshListings) => {
+    const oldIds = JSON.stringify(ownedListings.map(l => l.id));
+    const newIds = JSON.stringify(freshListings.map(l => l.id));
+    if (oldIds !== newIds) {
+      console.log("[swr] Client dashboard data changed — re-rendering");
+      window.__yapplyRenderPage?.();
+    }
+  }).catch(() => {});
 
   const activeListings = ownedListings.filter((listing) => !isClosedClientListing(listing));
   const closedListings = ownedListings.filter((listing) => isClosedClientListing(listing));
