@@ -1035,13 +1035,15 @@ function setupAuthRoleSelection() {
 
     authForm?.querySelector("[data-auth-entry-error]")?.setAttribute("hidden", "");
 
-    // Toggle login bird graphic (native app only)
-    const birdDev = document.querySelector("[data-auth-bird-dev]");
-    const birdClient = document.querySelector("[data-auth-bird-client]");
-    if (birdDev && birdClient) {
-      const isDev = role === "developer";
-      birdDev.hidden = !isDev;
-      birdClient.hidden = isDev;
+    // Toggle login bird mascot mode (native app only)
+    const loginBird = document.querySelector("[data-auth-login-bird]");
+    if (loginBird) {
+      const newMode = role === "developer" ? "developer" : "client";
+      if (loginBird.getAttribute("data-mode") !== newMode) {
+        loginBird.classList.add("is-switching");
+        loginBird.setAttribute("data-mode", newMode);
+        setTimeout(() => loginBird.classList.remove("is-switching"), 400);
+      }
     }
   };
 
