@@ -312,18 +312,23 @@ async function createClientDashboardPageContent(content) {
     }
   })();
 
-  // FAST PATH: never block on network
-  const ownedListings = hasAnyCache ? cached.data : localListings;
-
-  // Background re-render when fresh data arrives
-  fetchPromise.then((freshListings) => {
-    const oldIds = JSON.stringify(ownedListings.map(l => l.id));
-    const newIds = JSON.stringify(freshListings.map(l => l.id));
-    if (oldIds !== newIds) {
-      console.log("[swr] Client dashboard data changed — re-rendering");
-      window.__yapplyRenderPage?.();
-    }
-  }).catch(() => {});
+  // If cache exists: return instantly, revalidate in background
+  // If NO cache (cold start): await the fetch so user sees real data (skeleton is visible)
+  let ownedListings;
+  if (hasAnyCache) {
+    ownedListings = cached.data;
+    fetchPromise.then((freshListings) => {
+      const oldIds = JSON.stringify(ownedListings.map(l => l.id));
+      const newIds = JSON.stringify(freshListings.map(l => l.id));
+      if (oldIds !== newIds) {
+        console.log("[swr] Client dashboard data changed — re-rendering");
+        window.__yapplyRenderPage?.();
+      }
+    }).catch(() => {});
+  } else {
+    // Cold start: wait for network data
+    ownedListings = await fetchPromise;
+  }
 
   const activeListings = ownedListings.filter((listing) => !isClosedClientListing(listing));
   const closedListings = ownedListings.filter((listing) => isClosedClientListing(listing));

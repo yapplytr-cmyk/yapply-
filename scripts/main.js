@@ -3705,26 +3705,24 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
       }
     })();
 
-    // FAST PATH: return cached or local data instantly, revalidate in background
-    const instantData = hasAnyCache ? cached.data : {
-      developerOwnedListings: [],
-      developerBidEntries: [],
-      developerLocalBidEntries: localBidEntries,
-    };
+    // If cache exists: return instantly, revalidate in background
+    // If NO cache (cold start): await the fetch so user sees real data (skeleton is visible)
+    if (hasAnyCache) {
+      fetchPromise.then((freshData) => {
+        const oldIds = JSON.stringify((cached.data.developerOwnedListings || []).map(l => l.id));
+        const newIds = JSON.stringify((freshData.developerOwnedListings || []).map(l => l.id));
+        const oldBidIds = JSON.stringify((cached.data.developerBidEntries || []).map(b => b.id));
+        const newBidIds = JSON.stringify((freshData.developerBidEntries || []).map(b => b.id));
+        if (oldIds !== newIds || oldBidIds !== newBidIds) {
+          console.log("[swr] Developer dashboard data changed — re-rendering");
+          renderPage();
+        }
+      }).catch(() => {});
+      return cached.data;
+    }
 
-    // Always re-render when network data arrives (never block on network)
-    fetchPromise.then((freshData) => {
-      const oldIds = JSON.stringify((instantData.developerOwnedListings || []).map(l => l.id));
-      const newIds = JSON.stringify((freshData.developerOwnedListings || []).map(l => l.id));
-      const oldBidIds = JSON.stringify((instantData.developerBidEntries || []).map(b => b.id));
-      const newBidIds = JSON.stringify((freshData.developerBidEntries || []).map(b => b.id));
-      if (oldIds !== newIds || oldBidIds !== newBidIds) {
-        console.log("[swr] Developer dashboard data changed — re-rendering");
-        renderPage();
-      }
-    }).catch(() => {});
-
-    return instantData;
+    // Cold start: wait for network data
+    return await fetchPromise;
   }
 
   if (page === "admin-dashboard") {
