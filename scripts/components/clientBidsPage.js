@@ -1,5 +1,6 @@
 import { createButton, createSectionHeading } from "./primitives.js";
 import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
+import { createDashboardReloadButton } from "./dashboardReloadButton.js";
 
 function getLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
@@ -161,7 +162,10 @@ export function createClientBidsPage(content) {
 
   return `
     <section class="section-shell client-bids-page" id="client-bids-section">
-      ${createSectionHeading(content.heading)}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1">${createSectionHeading(content.heading)}</div>
+        ${createDashboardReloadButton()}
+      </div>
       ${openGroups || `<div class="marketplace-empty panel"><p>${content.empty}</p></div>`}
 
       ${acceptedListings.length > 0 ? `

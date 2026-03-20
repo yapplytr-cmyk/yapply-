@@ -3189,13 +3189,16 @@ function bindInteractions(content) {
   } else if (page === "client-dashboard") {
     setupClientDashboard(content);
     setupCardTapAnimations();
+    import("./components/dashboardReloadButton.js").then(m => m.bindDashboardReloadButton(renderPage)).catch(() => {});
   } else if (page === "client-bids") {
     setupClientBidsPage(content);
     setupCardTapAnimations();
+    import("./components/dashboardReloadButton.js").then(m => m.bindDashboardReloadButton(renderPage)).catch(() => {});
   } else if (page === "developer-dashboard") {
     setupDeveloperDashboard(content);
     setupBidAccordions();
     setupCardTapAnimations();
+    import("./components/dashboardReloadButton.js").then(m => m.bindDashboardReloadButton(renderPage)).catch(() => {});
   } else if (page === "account-settings") {
     setupAccountSettings(content);
   } else if (page === "admin-dashboard") {
@@ -3826,6 +3829,10 @@ let pullToRefreshCleanup = null;
 function setupPullToRefresh() {
   if (pullToRefreshCleanup) { pullToRefreshCleanup(); pullToRefreshCleanup = null; }
   if (!IS_NATIVE_APP) return;
+
+  // Disable pull-to-refresh on dashboard pages (they have their own reload button)
+  const _ptrPage = getCurrentPage();
+  if (_ptrPage === "client-bids" || _ptrPage === "client-dashboard" || _ptrPage === "developer-dashboard") return;
 
   const PULL_THRESHOLD = 90;
   let startY = 0;

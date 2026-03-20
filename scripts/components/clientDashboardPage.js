@@ -1,6 +1,7 @@
 import { createButton, createSectionHeading } from "./primitives.js";
 import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { getUnreadNotifications, markAllRead } from "../core/notifications.js";
+import { createDashboardReloadButton } from "./dashboardReloadButton.js";
 
 function getClientDashboardLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
@@ -258,6 +259,20 @@ function createListingSection(sectionId, titleContent, listings, content, kind) 
   `;
 }
 
+function createListingSectionWithReload(sectionId, titleContent, listings, content, kind) {
+  const cards = listings.map((listing) => createListingCard(listing, content, kind)).join("");
+
+  return `
+    <section class="section-shell" id="${sectionId}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1">${createSectionHeading(titleContent)}</div>
+        ${createDashboardReloadButton()}
+      </div>
+      ${cards || `<div class="marketplace-empty panel"><p>${titleContent.empty}</p></div>`}
+    </section>
+  `;
+}
+
 function createAccessDenied(content) {
   return `
     <section class="section-shell marketplace-success">
@@ -311,7 +326,7 @@ export function createClientDashboardPage(content) {
 
   return `
     ${notificationBanner}
-    ${createListingSection("client-dashboard-active", content.activeSection, content.activeListings, content, "active")}
+    ${createListingSectionWithReload("client-dashboard-active", content.activeSection, content.activeListings, content, "active")}
     ${createListingSection("client-dashboard-closed", content.closedSection, content.closedListings, content, "closed")}
   `;
 }

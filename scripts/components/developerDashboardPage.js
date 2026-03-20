@@ -1,6 +1,7 @@
 import { createButton, createSectionHeading } from "./primitives.js";
 import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { getUnreadNotifications, markAllRead } from "../core/notifications.js";
+import { createDashboardReloadButton } from "./dashboardReloadButton.js";
 
 function getDeveloperDashboardLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
@@ -102,7 +103,10 @@ function createDeveloperOverviewSection(content, session, listingCount, bidCount
 
   return `
     <section class="section-shell" id="developer-dashboard-overview">
-      ${createSectionHeading(content.profileOverview.heading)}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1">${createSectionHeading(content.profileOverview.heading)}</div>
+        ${createDashboardReloadButton()}
+      </div>
       <div class="developer-dashboard-overview">
         <article class="panel developer-dashboard-profile">
           <div class="developer-dashboard-profile__header">
