@@ -80,6 +80,10 @@ function loadClientDashboardApi() {
   return loadComponentModule("client-dashboard-page", () => import("./components/clientDashboardPage.js"));
 }
 
+function loadClientBidsApi() {
+  return loadComponentModule("client-bids-page", () => import("./components/clientBidsPage.js"));
+}
+
 function loadDeveloperDashboardApi() {
   return loadComponentModule("developer-dashboard-page", () => import("./components/developerDashboardPage.js"));
 }
@@ -332,6 +336,47 @@ async function createClientDashboardPageContent(content) {
     footer: content.openMarketplacePage.footer,
     activeListings,
     closedListings,
+  };
+}
+
+async function createClientBidsPageContent(content) {
+  const session = getAuthSession();
+  const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
+
+  const CLIENT_BIDS_SWR_KEY = "yapply-swr-client-bids";
+  const cached = dashboardSwrRead(CLIENT_BIDS_SWR_KEY);
+  const hasAnyCache = cached && Array.isArray(cached.data);
+
+  const fetchPromise = (async () => {
+    try {
+      const data = await fetchClientDashboardData();
+      const listings = data.listings || [];
+      dashboardSwrWrite(listings, CLIENT_BIDS_SWR_KEY);
+      return listings;
+    } catch (_) {
+      return cached?.data || [];
+    }
+  })();
+
+  let allListings;
+  if (hasAnyCache) {
+    allListings = cached.data;
+    fetchPromise.catch(() => {});
+  } else {
+    allListings = await fetchPromise;
+  }
+
+  return {
+    meta: content.meta,
+    brand: content.brand,
+    controls: content.controls,
+    ...content.clientBidsPage,
+    viewerSession: session,
+    nav: {
+      ...content.clientBidsPage.nav,
+    },
+    footer: content.openMarketplacePage.footer,
+    allListings,
   };
 }
 
@@ -990,6 +1035,25 @@ async function createAccountSettings(content, locale) {
   `;
 }
 
+async function createClientBids(content, locale, runtimeData) {
+  const pageContent = await createClientBidsPageContent(content);
+  const [{ createNavbar }, { createClientBidsPage }, { createFooter }] = await Promise.all([
+    loadNavbarApi(),
+    loadClientBidsApi(),
+    loadFooterApi(),
+  ]);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createClientBidsPage(pageContent)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
 async function createDeveloperDashboard(content, locale, runtimeData) {
   const pageContent = createDeveloperDashboardPageContent(content, runtimeData);
   const [{ createNavbar }, { createDeveloperDashboardPage }, { createFooter }] = await Promise.all([
@@ -1038,6 +1102,10 @@ export async function createApp(
 
   if (page === "client-dashboard") {
     return createClientDashboard(content, locale);
+  }
+
+  if (page === "client-bids") {
+    return createClientBids(content, locale, runtimeData);
   }
 
   if (page === "developer-dashboard") {

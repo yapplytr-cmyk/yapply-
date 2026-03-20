@@ -48,6 +48,7 @@ const _pageRouteMap = {
   "marketplace-professional-listing.html":    { page: "marketplace-listing-detail", listingType: "professional" },
   "developer-dashboard.html":                 { page: "developer-dashboard" },
   "client-dashboard.html":                    { page: "client-dashboard" },
+  "client-bids.html":                          { page: "client-bids" },
   "login.html":                               { page: "login" },
   "create-account.html":                      { page: "create-account" },
   "account-settings.html":                    { page: "account-settings" },
@@ -742,7 +743,7 @@ function setupRevealAnimations() {
 
   // On native app: skip reveal animations for detail + dashboard pages
   // so all content (including below-the-fold sections) is visible immediately
-  const instantRevealPages = new Set(["marketplace-listing-detail", "developer-dashboard", "client-dashboard"]);
+  const instantRevealPages = new Set(["marketplace-listing-detail", "developer-dashboard", "client-dashboard", "client-bids"]);
   if (IS_NATIVE_APP && instantRevealPages.has(document.body.dataset.page)) {
     allTargets.forEach((target) => target.classList.add("is-visible"));
     return () => {};
@@ -2684,6 +2685,94 @@ function setupClientDashboard(content) {
   });
 }
 
+function setupClientBidsPage(content) {
+  if (getCurrentPage() !== "client-bids") return;
+
+  const session = getAuthSession();
+  if (!session?.authenticated || session.user?.role !== "client") return;
+
+  // Listing group accordions (expand/collapse per listing)
+  document.querySelectorAll("[data-client-bids-group-toggle]").forEach((header) => {
+    header.addEventListener("click", () => {
+      const listingId = header.getAttribute("data-client-bids-group-toggle");
+      const body = document.querySelector(`[data-client-bids-group-body="${listingId}"]`);
+      const group = header.closest(".client-bids-group");
+      if (!body || !group) return;
+
+      const isOpen = !body.hidden;
+      body.hidden = isOpen;
+      group.classList.toggle("is-open", !isOpen);
+    });
+  });
+
+  // Individual bid detail toggles
+  document.querySelectorAll("[data-client-bids-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const bidId = btn.getAttribute("data-client-bids-toggle");
+      const details = document.querySelector(`[data-client-bids-details="${bidId}"]`);
+      const label = document.querySelector(`[data-client-bids-toggle-label="${bidId}"]`);
+      if (!details) return;
+
+      const isOpen = !details.hidden;
+      details.hidden = isOpen;
+      btn.classList.toggle("is-open", !isOpen);
+      if (label) {
+        const isTr = document.documentElement.lang === "tr";
+        label.textContent = isOpen ? (isTr ? "Detaylar" : "Details") : (isTr ? "Gizle" : "Hide");
+      }
+    });
+  });
+
+  // Accept bid with loading → checkmark animation
+  document.querySelectorAll("[data-client-bids-accept]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const bidId = btn.getAttribute("data-client-bids-accept");
+      const listingId = btn.getAttribute("data-client-bids-listing");
+      if (!bidId || !listingId) return;
+
+      // Show loading spinner
+      btn.classList.add("is-loading");
+      btn.querySelector(".client-bids-accept-btn__loader")?.removeAttribute("hidden");
+
+      try {
+        await acceptClientDashboardBid(listingId, bidId, session.user.id);
+
+        // Show checkmark animation
+        btn.classList.remove("is-loading");
+        btn.classList.add("is-done");
+        btn.querySelector(".client-bids-accept-btn__loader")?.setAttribute("hidden", "");
+        btn.querySelector(".client-bids-accept-btn__done")?.removeAttribute("hidden");
+
+        // Send notification
+        try {
+          const { addNotification } = await import("./core/notifications.js");
+          addNotification(bidId, {
+            type: "bid-accepted",
+            message: "Your bid was accepted!",
+            href: "./developer-dashboard.html#developer-dashboard-bids",
+            listingId,
+          });
+        } catch (_) {}
+
+        // Re-render after a beat to let the user enjoy the animation
+        setTimeout(() => { renderPage(content.meta.locale); }, 900);
+      } catch (error) {
+        btn.classList.remove("is-loading");
+        btn.querySelector(".client-bids-accept-btn__loader")?.setAttribute("hidden", "");
+        window.alert(error?.message || (document.documentElement.lang === "tr"
+          ? "Teklif kabul edilemedi."
+          : "The bid could not be accepted."));
+      }
+    });
+  });
+
+  // Auto-open the first listing group if there's only one
+  const groups = document.querySelectorAll("[data-client-bids-group-toggle]");
+  if (groups.length === 1) {
+    groups[0].click();
+  }
+}
+
 function setupDeveloperDashboard(content) {
   if (getCurrentPage() !== "developer-dashboard") {
     return;
@@ -3012,6 +3101,9 @@ function bindInteractions(content) {
     setupDeveloperInquiryForm();
   } else if (page === "client-dashboard") {
     setupClientDashboard(content);
+    setupCardTapAnimations();
+  } else if (page === "client-bids") {
+    setupClientBidsPage(content);
     setupCardTapAnimations();
   } else if (page === "developer-dashboard") {
     setupDeveloperDashboard(content);
@@ -3882,18 +3974,22 @@ async function renderPage(localeOverride) {
     applyTheme(getTheme());
 
     // Fast-path pages: auth runs in background, render from cache instantly
-    const fastPathPages = new Set(["open-marketplace", "developer-dashboard", "client-dashboard", "marketplace-listing-detail"]);
+    const fastPathPages = new Set(["open-marketplace", "developer-dashboard", "client-dashboard", "client-bids", "marketplace-listing-detail"]);
 
     if (fastPathPages.has(page)) {
       // Show skeleton placeholders immediately while loading (native app only)
-      if (IS_NATIVE_APP && (page === "developer-dashboard" || page === "client-dashboard")) {
+      if (IS_NATIVE_APP && (page === "developer-dashboard" || page === "client-dashboard" || page === "client-bids")) {
         try {
           const skeletonMod = page === "developer-dashboard"
             ? await import("./components/developerDashboardPage.js")
-            : await import("./components/clientDashboardPage.js");
+            : page === "client-bids"
+              ? await import("./components/clientBidsPage.js")
+              : await import("./components/clientDashboardPage.js");
           const skeletonFn = page === "developer-dashboard"
             ? skeletonMod.createDeveloperDashboardSkeleton
-            : skeletonMod.createClientDashboardSkeleton;
+            : page === "client-bids"
+              ? skeletonMod.createClientBidsSkeleton
+              : skeletonMod.createClientDashboardSkeleton;
           if (skeletonFn && appRoot) {
             appRoot.innerHTML = skeletonFn();
           }

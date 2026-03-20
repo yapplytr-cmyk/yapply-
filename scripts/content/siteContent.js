@@ -799,6 +799,43 @@ export const translations = {
       fallback: "Not provided",
       mediaFallback: "Project Visual",
     },
+    clientBidsPage: {
+      nav: {
+        ariaLabel: "Client bids navigation",
+        brandHref: "./index.html",
+        links: [
+          { label: "Back to Marketplace", href: "./open-marketplace.html" },
+          { label: "My Listings", href: "./client-dashboard.html" },
+          { label: "Account Settings", href: "./account-settings.html" },
+        ],
+      },
+      accessDenied: {
+        eyebrow: "My Bids",
+        title: "This page is available for client accounts only.",
+        description: "Sign in with a client account to review bids on your listings.",
+        backLabel: "Back to Marketplace",
+      },
+      heading: {
+        eyebrow: "My Bids",
+        title: "Review all bids on your listings",
+        description: "See every developer bid across your projects. Expand for details and accept the best offer.",
+      },
+      empty: "No bids have been submitted on any of your listings yet.",
+      listingLabel: "Listing",
+      bidCountLabel: "bids",
+      columns: {
+        developer: "Developer",
+        amount: "Bid Amount",
+        timeline: "Timeline",
+        proposal: "Proposal",
+        date: "Submitted",
+      },
+      acceptLabel: "Accept Bid",
+      acceptingLabel: "Accepting...",
+      acceptedLabel: "Accepted",
+      closedLabel: "Closed",
+      fallback: "Not provided",
+    },
     developerDashboardPage: {
       nav: {
         ariaLabel: "Developer dashboard navigation",
@@ -3522,6 +3559,43 @@ export const translations = {
       },
       fallback: "Belirtilmedi",
       mediaFallback: "Proje Görseli",
+    },
+    clientBidsPage: {
+      nav: {
+        ariaLabel: "Müşteri teklifleri gezinmesi",
+        brandHref: "./index.html",
+        links: [
+          { label: "Pazaryerine Dön", href: "./open-marketplace.html" },
+          { label: "İlanlarım", href: "./client-dashboard.html" },
+          { label: "Hesap Ayarları", href: "./account-settings.html" },
+        ],
+      },
+      accessDenied: {
+        eyebrow: "Tekliflerim",
+        title: "Bu sayfa yalnızca müşteri hesapları için kullanılabilir.",
+        description: "İlanlarınıza gelen teklifleri incelemek için bir müşteri hesabıyla giriş yapın.",
+        backLabel: "Pazaryerine Dön",
+      },
+      heading: {
+        eyebrow: "Tekliflerim",
+        title: "İlanlarınıza gelen tüm teklifleri inceleyin",
+        description: "Projelerinize yapılan tüm geliştirici tekliflerini görün. Detaylar için genişletin ve en iyi teklifi kabul edin.",
+      },
+      empty: "Henüz hiçbir ilanınıza teklif gönderilmedi.",
+      listingLabel: "İlan",
+      bidCountLabel: "teklif",
+      columns: {
+        developer: "Geliştirici",
+        amount: "Teklif Tutarı",
+        timeline: "Takvim",
+        proposal: "Teklif Notu",
+        date: "Gönderim",
+      },
+      acceptLabel: "Teklifi Kabul Et",
+      acceptingLabel: "Kabul ediliyor...",
+      acceptedLabel: "Kabul Edildi",
+      closedLabel: "Kapalı",
+      fallback: "Belirtilmedi",
     },
     developerDashboardPage: {
       nav: {

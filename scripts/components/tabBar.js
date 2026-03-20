@@ -124,7 +124,7 @@ export function createTabBar(locale) {
   const settingsHref = "./account-settings.html";
 
   const tabItems = tabs.map((tab) => {
-    const isActive = tab.page === currentPage || (tab.isDashboard && currentPage === "account-settings");
+    const isActive = tab.page === currentPage || (tab.isDashboard && (currentPage === "account-settings" || currentPage === "client-bids"));
     const activeClass = isActive ? " tab-bar__item--active" : "";
     const centerClass = tab.isCenter ? " tab-bar__item--center" : "";
 
@@ -150,13 +150,28 @@ export function createTabBar(locale) {
         `;
       }
       const href = tab.href;
+      const clientBidsHref = "./client-bids.html";
+      const popupOptions = role === "developer"
+        ? `
+            <a class="tab-popup__option" href="${dashboardHref}" data-tab-popup-option>
+              ${moneyIconSVG()}
+              <span>${isTr ? "Tekliflerim" : "My Bids"}</span>
+            </a>
+          `
+        : `
+            <a class="tab-popup__option" href="${dashboardHref}" data-tab-popup-option>
+              ${mailboxIconSVG()}
+              <span>${isTr ? "İlanlarım" : "My Listings"}</span>
+            </a>
+            <a class="tab-popup__option" href="${clientBidsHref}" data-tab-popup-option>
+              ${moneyIconSVG()}
+              <span>${isTr ? "Tekliflerim" : "My Bids"}</span>
+            </a>
+          `;
       return `
         <div class="tab-bar__item-wrapper">
           <div class="tab-popup" data-tab-popup hidden>
-            <a class="tab-popup__option" href="${dashboardHref}" data-tab-popup-option>
-              ${role === "developer" ? moneyIconSVG() : mailboxIconSVG()}
-              <span>${role === "developer" ? (isTr ? "Tekliflerim" : "My Bids") : (isTr ? "İlanlarım" : "My Listings")}</span>
-            </a>
+            ${popupOptions}
             <a class="tab-popup__option" href="${settingsHref}" data-tab-popup-option>
               ${settingsGearIconSVG()}
               <span>${isTr ? "Hesap Ayarları" : "Account Settings"}</span>
