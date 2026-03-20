@@ -252,13 +252,8 @@ export function createOnboardingWizard(content, locale) {
             <p data-onboarding-otp-error-text></p>
           </div>
 
-          <div class="onboarding-otp-inputs" data-onboarding-otp-container style="display:flex;justify-content:center;gap:8px;margin-bottom:20px">
-            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="0" autocomplete="one-time-code" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
-            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="1" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
-            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="2" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
-            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="3" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
-            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="4" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
-            <input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="5" style="width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:var(--surface-100,#f3f4f6);color:var(--text,#fff);outline:none;transition:border-color 200ms" />
+          <div class="onboarding-otp-inputs" data-onboarding-otp-container style="display:flex;justify-content:center;gap:6px;margin-bottom:20px;flex-wrap:wrap">
+            ${Array.from({length:8}, (_,i) => `<input type="text" inputmode="numeric" maxlength="1" class="onboarding-otp-digit" data-otp-digit="${i}"${i===0?' autocomplete="one-time-code"':''} style="width:38px;height:48px;text-align:center;font-size:1.3rem;font-weight:700;border-radius:10px;border:2px solid var(--surface-300,#d1d5db);background:#fff;color:#111;outline:none;transition:border-color 200ms;-webkit-text-fill-color:#111" />`).join('\n            ')}
           </div>
 
           <button class="button button--primary onboarding-verify-btn" type="button" data-onboarding-verify-btn disabled style="width:100%;margin-bottom:12px">
@@ -539,7 +534,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
 
   function updateVerifyBtnState() {
     const code = getOtpValue();
-    if (verifyBtn) verifyBtn.disabled = code.length < 6;
+    if (verifyBtn) verifyBtn.disabled = code.length < 8;
   }
 
   // Wire up OTP digit auto-advance, backspace, and paste
@@ -566,14 +561,14 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       // Allow Enter to submit when all 6 digits filled
       if (e.key === "Enter") {
         const code = getOtpValue();
-        if (code.length === 6 && verifyBtn) verifyBtn.click();
+        if (code.length === 8 && verifyBtn) verifyBtn.click();
       }
     });
 
     // Handle paste: fill all 6 digits from clipboard
     digit.addEventListener("paste", (e) => {
       e.preventDefault();
-      const pasted = (e.clipboardData.getData("text") || "").replace(/[^0-9]/g, "").slice(0, 6);
+      const pasted = (e.clipboardData.getData("text") || "").replace(/[^0-9]/g, "").slice(0, 8);
       pasted.split("").forEach((ch, i) => {
         if (otpDigits[i]) {
           otpDigits[i].value = ch;
@@ -591,7 +586,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   if (verifyBtn) {
     verifyBtn.addEventListener("click", async () => {
       const code = getOtpValue();
-      if (code.length < 6) return;
+      if (code.length < 8) return;
 
       const otpError = wizard.querySelector("[data-onboarding-otp-error]");
       const otpErrorText = wizard.querySelector("[data-onboarding-otp-error-text]");
