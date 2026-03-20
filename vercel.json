@@ -29,6 +29,7 @@
     { "source": "/api/marketplace/listings/create", "destination": "/api/router?route=marketplace/listings/create" },
     { "source": "/api/marketplace/listings/detail", "destination": "/api/router?route=marketplace/listings/detail" },
     { "source": "/api/marketplace/listings/update-status", "destination": "/api/router?route=marketplace/listings/update-status" },
-    { "source": "/api/marketplace/listings/delete", "destination": "/api/router?route=marketplace/listings/delete" }
+    { "source": "/api/marketplace/listings/delete", "destination": "/api/router?route=marketplace/listings/delete" },
+    { "source": "/api/notify", "destination": "/api/notify" }
   ]
 }

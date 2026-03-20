@@ -607,6 +607,14 @@ function setupAuthNavigation() {
       button.disabled = true;
 
       try {
+        // Clean up push notifications before logout
+        const session = getAuthSession();
+        if (session?.user?.id && IS_NATIVE_APP) {
+          import("./core/pushNotifications.js")
+            .then(({ cleanupPushNotifications }) => cleanupPushNotifications(session.user.id))
+            .catch(() => {});
+        }
+
         const authApi = await loadAuthApi();
         await authApi?.logoutAccount?.();
       } catch (error) {
@@ -3228,6 +3236,21 @@ async function syncAuthState() {
     const session = await authApi.fetchAuthSession();
     setAuthSession(session);
     setDocumentAuthState(session);
+
+    // Initialize push notifications for authenticated users on native app
+    if (session?.authenticated && session?.user?.id && IS_NATIVE_APP) {
+      import("./core/pushNotifications.js")
+        .then(({ initPushNotifications }) => {
+          initPushNotifications(session.user.id, (data) => {
+            // Deep-link from notification tap
+            if (data.type === "bid_accepted" && data.listingId) {
+              navigateTo("developer-dashboard");
+            }
+          });
+        })
+        .catch((err) => console.warn("[yapply] Push init error:", err?.message));
+    }
+
     return session;
   } catch (error) {
     const fallbackSession = { authenticated: false, user: null };

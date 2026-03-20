@@ -987,6 +987,13 @@ async function createBackendMarketplaceListing(listing) {
       payload: listing,
     });
     console.log("[Yapply] Listing created via Supabase PG:", result.id);
+
+    // Fire-and-forget email notification
+    try {
+      const { notifyListingCreated } = await import("./emailNotifier.js");
+      notifyListingCreated({ ...result, ownerName: owner?.fullName || "", contact: { fullName: owner?.fullName, email: owner?.email } }, listing?.type || "client");
+    } catch (_) {}
+
     return result;
   } catch (supaErr) {
     console.warn("[Yapply] Supabase PG listing create failed, falling back to API:", supaErr?.message);
@@ -1126,6 +1133,12 @@ export async function submitMarketplaceBid(formData) {
       data = { bid: pgBid, listing: pgListing };
       usedSupabasePG = true;
       console.log("[yapply] Bid submitted via Supabase PG:", pgBid.id);
+
+      // Fire-and-forget email notification — notify listing owner of new bid
+      try {
+        const { notifyBidReceived } = await import("./emailNotifier.js");
+        notifyBidReceived(pgListing, { ...pgBid, developerProfileReference: bid.developerProfileReference });
+      } catch (_) {}
     } catch (supaErr) {
       console.warn("[yapply] Bid submit via Supabase PG failed, falling back to API:", supaErr?.message);
       // Fall through to Vercel API
@@ -1766,10 +1779,38 @@ export function acceptClientDashboardBidLocal(listingId, bidId, ownerUserId) {
 
 /**
  * Accept a bid — REMOTE (fire-and-forget, runs in background).
- * Syncs the acceptance to the backend API + triggers email.
+ * Syncs the acceptance to Supabase PG + triggers email + push notification.
  */
 export async function acceptClientDashboardBidRemote(listingId, bidId) {
-  await updateBackendListingStatus(listingId, "bid-accepted", { bidId, bidStatus: "accepted" });
+  const session = getAuthSession();
+  const ownerUserId = session?.user?.id || "";
+
+  // Try Supabase PG accept first
+  let updatedListing = null;
+  try {
+    const { acceptBid: pgAcceptBid } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+    updatedListing = await pgAcceptBid(listingId, bidId, ownerUserId);
+    console.log("[yapply] Bid accepted via Supabase PG:", bidId);
+  } catch (supaErr) {
+    console.warn("[yapply] Supabase PG accept failed, falling back to API:", supaErr?.message);
+  }
+
+  // Also sync to Vercel API (for backward compat / old storage)
+  try {
+    await updateBackendListingStatus(listingId, "bid-accepted", { bidId, bidStatus: "accepted" });
+  } catch (_) {}
+
+  // Fire-and-forget email + push notification for bid acceptance
+  try {
+    const acceptedBid = updatedListing?.bids?.find(b => b.id === bidId || b.status === "accepted") || null;
+    if (updatedListing && acceptedBid) {
+      const { notifyBidAccepted } = await import("./emailNotifier.js");
+      notifyBidAccepted(
+        { ...updatedListing, ownerName: session?.user?.fullName || "", contact: { fullName: session?.user?.fullName, email: session?.user?.email } },
+        acceptedBid
+      );
+    }
+  } catch (_) {}
 }
 
 /** @deprecated Use acceptClientDashboardBidLocal + acceptClientDashboardBidRemote instead */
