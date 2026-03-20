@@ -1535,7 +1535,7 @@ export function acceptClientDashboardBidLocal(listingId, bidId, ownerUserId) {
   // Also check the SWR dashboard cache in case the listing was fetched from backend
   if (!currentListing) {
     try {
-      const cacheRaw = localStorage.getItem("yapply-swr-client-bids") || localStorage.getItem(DASHBOARD_SWR_KEY);
+      const cacheRaw = localStorage.getItem("yapply-swr-client-bids") || localStorage.getItem("yapply-swr-client-dashboard");
       if (cacheRaw) {
         const cacheData = JSON.parse(cacheRaw);
         const listings = Array.isArray(cacheData?.data) ? cacheData.data : [];
@@ -1615,7 +1615,7 @@ export function acceptClientDashboardBidLocal(listingId, bidId, ownerUserId) {
       if (!key) continue;
 
       // Dashboard SWR caches — update the listing status
-      if (key === "yapply-swr-client-bids" || key === DASHBOARD_SWR_KEY) {
+      if (key === "yapply-swr-client-bids" || key === "yapply-swr-client-dashboard") {
         try {
           const parsed = JSON.parse(localStorage.getItem(key));
           if (Array.isArray(parsed?.data)) {

@@ -4227,4 +4227,5 @@ window.addEventListener("unhandledrejection", (event) => {
   renderBootFallback(appRoot, event.reason || new Error("Unhandled promise rejection"));
 });
 
+console.log("[yapply] v20260320-fixes loaded");
 void renderPage();
