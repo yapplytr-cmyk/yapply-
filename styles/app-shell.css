@@ -243,7 +243,7 @@ html:not(.has-tab-bar) .app-splash {
 
 .tab-bar__item--center .tab-bar__label {
   color: var(--accent);
-  margin-top: 1px;
+  margin-top: 4px;
 }
 
 /* ── Tab bar root container ───────────────────── */

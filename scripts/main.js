@@ -3572,8 +3572,17 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     })();
 
     if (hasFreshCache) {
-      // Return cached data instantly, revalidate in background
-      fetchPromise.catch(() => {});
+      // Return cached data instantly, revalidate in background & re-render if changed
+      fetchPromise.then((freshData) => {
+        const oldIds = JSON.stringify((cached.data.developerOwnedListings || []).map(l => l.id));
+        const newIds = JSON.stringify((freshData.developerOwnedListings || []).map(l => l.id));
+        const oldBidIds = JSON.stringify((cached.data.developerBidEntries || []).map(b => b.id));
+        const newBidIds = JSON.stringify((freshData.developerBidEntries || []).map(b => b.id));
+        if (oldIds !== newIds || oldBidIds !== newBidIds) {
+          console.log("[swr] Developer dashboard data changed — re-rendering");
+          renderPage();
+        }
+      }).catch(() => {});
       return cached.data;
     }
 
