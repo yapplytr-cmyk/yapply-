@@ -968,3 +968,159 @@ def handle_marketplace_listing_delete(handler) -> None:
     return
 
   json_response(handler, HTTPStatus.OK, {"ok": True, "deletedListingId": listing_id})
+
+
+# ── Notification dispatch (emails + push) ────────────────────────
+
+def handle_notification_send(handler) -> None:
+  """Fire-and-forget email / push notification dispatch.
+
+  Called from the frontend after a successful Supabase PG write so that
+  transactional emails still get sent via Resend (server-side).
+  """
+  try:
+    payload = parse_json_body(handler)
+  except ValueError:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {
+      "ok": False, "code": "INVALID_JSON", "message": "Request body must be valid JSON."
+    })
+    return
+
+  notify_type = normalize_text(payload.get("type", ""))
+  notify_payload = payload.get("payload") or {}
+
+  if not notify_type:
+    json_response(handler, HTTPStatus.BAD_REQUEST, {
+      "ok": False, "code": "MISSING_TYPE", "message": "Notification type is required."
+    })
+    return
+
+  try:
+    result = _dispatch_notification(notify_type, notify_payload)
+    json_response(handler, HTTPStatus.OK, {"ok": True, **result})
+  except Exception as exc:
+    json_response(handler, HTTPStatus.INTERNAL_SERVER_ERROR, {
+      "ok": False, "code": "NOTIFY_FAILED", "message": str(exc)
+    })
+
+
+def _dispatch_notification(notify_type: str, payload: dict) -> dict:
+  """Dispatch to the appropriate email function based on type."""
+  import logging
+  log = logging.getLogger("yapply.notify")
+
+  if notify_type == "listing_created":
+    from backend.email import send_client_listing_created, send_developer_listing_created
+    listing_type = payload.get("listingType") or payload.get("type") or "client"
+    if listing_type == "developer":
+      send_developer_listing_created(payload)
+    else:
+      send_client_listing_created(payload)
+    return {"sent": True, "type": notify_type}
+
+  if notify_type == "bid_received":
+    from backend.email import send_bid_received
+    listing = payload.get("listing") or {}
+    bid = payload.get("bid") or {}
+    send_bid_received(listing, bid)
+    return {"sent": True, "type": notify_type}
+
+  if notify_type == "bid_accepted":
+    from backend.email import send_bid_accepted
+    listing = payload.get("listing") or {}
+    bid = payload.get("bid") or {}
+    send_bid_accepted(listing, bid)
+    # Push notification for bid acceptance (if device tokens exist)
+    try:
+      _send_push_for_bid_accepted(listing, bid)
+    except Exception as exc:
+      log.warning("Push notification failed: %s", exc)
+    return {"sent": True, "type": notify_type}
+
+  if notify_type == "inquiry_received":
+    from backend.email import send_inquiry_received
+    listing = payload.get("listing") or {}
+    inquiry = payload.get("inquiry") or {}
+    send_inquiry_received(listing, inquiry)
+    return {"sent": True, "type": notify_type}
+
+  return {"sent": False, "type": notify_type, "reason": "unknown_type"}
+
+
+def _send_push_for_bid_accepted(listing: dict, bid: dict) -> None:
+  """Send APNs push via Supabase Edge Function to developer whose bid was accepted."""
+  import os
+  import logging
+  from urllib.request import Request, urlopen
+  from urllib.error import HTTPError, URLError
+
+  log = logging.getLogger("yapply.notify")
+
+  dev_user_id = (
+    bid.get("developerUserId")
+    or bid.get("developerId")
+    or (bid.get("developerProfileReference") or {}).get("userId")
+    or ""
+  )
+  if not dev_user_id:
+    return
+
+  supabase_url = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
+  service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+
+  if not supabase_url or not service_key:
+    log.info("Push: no Supabase config for device token lookup")
+    return
+
+  # Query device_tokens table
+  url = f"{supabase_url}/rest/v1/device_tokens?user_id=eq.{dev_user_id}&platform=eq.ios&select=token"
+  req = Request(url, headers={
+    "apikey": service_key,
+    "Authorization": f"Bearer {service_key}",
+    "Content-Type": "application/json",
+  })
+
+  try:
+    with urlopen(req, timeout=5) as resp:
+      tokens_data = json.loads(resp.read())
+  except (HTTPError, URLError, OSError) as exc:
+    log.warning("Push: device token lookup failed: %s", exc)
+    return
+
+  if not tokens_data:
+    log.info("Push: no device tokens for user %s", dev_user_id)
+    return
+
+  listing_title = listing.get("title") or "a project"
+  push_fn_url = f"{supabase_url}/functions/v1/send-push"
+
+  for token_row in tokens_data:
+    device_token = token_row.get("token")
+    if not device_token:
+      continue
+
+    push_payload = json.dumps({
+      "token": device_token,
+      "title": "Teklifiniz Kabul Edildi!",
+      "body": f'"{listing_title}" projesindeki teklifiniz kabul edildi.',
+      "data": {
+        "type": "bid_accepted",
+        "listingId": listing.get("id") or "",
+      },
+    }).encode("utf-8")
+
+    push_req = Request(
+      push_fn_url,
+      method="POST",
+      data=push_payload,
+      headers={
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": "application/json",
+      },
+    )
+    try:
+      with urlopen(push_req, timeout=10) as push_resp:
+        push_resp.read()
+      log.info("Push sent to device %s...", device_token[:12])
+    except (HTTPError, URLError, OSError) as exc:
+      log.warning("Push send failed for token %s: %s", device_token[:12], exc)
