@@ -3548,7 +3548,10 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     const cached = swrRead(devCacheId);
     const hasAnyCache = cached && cached.data;
 
-    // Start network fetch for revalidation regardless
+    // Local-only data we can read instantly (no network)
+    const localBidEntries = getDeveloperDashboardLocalBidEntries(ownerUserId);
+
+    // Start network fetch for revalidation (runs in background)
     const fetchPromise = (async () => {
       try {
         const dashboardData = await fetchDeveloperDashboardData();
@@ -3557,7 +3560,7 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
           developerBidEntries: dashboardData.bids || [],
           developerLocalBidEntries: mergeLocalDeveloperBidEntries(
             dashboardData.localBids || [],
-            getDeveloperDashboardLocalBidEntries(ownerUserId)
+            localBidEntries
           ),
         };
         swrWrite(devCacheId, result);
@@ -3566,28 +3569,31 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
         return {
           developerOwnedListings: [],
           developerBidEntries: [],
-          developerLocalBidEntries: getDeveloperDashboardLocalBidEntries(ownerUserId),
+          developerLocalBidEntries: localBidEntries,
         };
       }
     })();
 
-    // Return ANY cached data instantly (fresh or stale) — revalidate in background
-    if (hasAnyCache) {
-      fetchPromise.then((freshData) => {
-        const oldIds = JSON.stringify((cached.data.developerOwnedListings || []).map(l => l.id));
-        const newIds = JSON.stringify((freshData.developerOwnedListings || []).map(l => l.id));
-        const oldBidIds = JSON.stringify((cached.data.developerBidEntries || []).map(b => b.id));
-        const newBidIds = JSON.stringify((freshData.developerBidEntries || []).map(b => b.id));
-        if (oldIds !== newIds || oldBidIds !== newBidIds) {
-          console.log("[swr] Developer dashboard data changed — re-rendering");
-          renderPage();
-        }
-      }).catch(() => {});
-      return cached.data;
-    }
+    // FAST PATH: return cached or local data instantly, revalidate in background
+    const instantData = hasAnyCache ? cached.data : {
+      developerOwnedListings: [],
+      developerBidEntries: [],
+      developerLocalBidEntries: localBidEntries,
+    };
 
-    // No cache at all — wait for network (first ever load only)
-    return await fetchPromise;
+    // Always re-render when network data arrives (never block on network)
+    fetchPromise.then((freshData) => {
+      const oldIds = JSON.stringify((instantData.developerOwnedListings || []).map(l => l.id));
+      const newIds = JSON.stringify((freshData.developerOwnedListings || []).map(l => l.id));
+      const oldBidIds = JSON.stringify((instantData.developerBidEntries || []).map(b => b.id));
+      const newBidIds = JSON.stringify((freshData.developerBidEntries || []).map(b => b.id));
+      if (oldIds !== newIds || oldBidIds !== newBidIds) {
+        console.log("[swr] Developer dashboard data changed — re-rendering");
+        renderPage();
+      }
+    }).catch(() => {});
+
+    return instantData;
   }
 
   if (page === "admin-dashboard") {
