@@ -66,11 +66,7 @@ CREATE POLICY "Owners can update their own listings"
   ON marketplace_listings FOR UPDATE
   USING (auth.uid() = owner_user_id);
 
--- Bids: anyone can read, bidders can insert their own
-CREATE POLICY "Bids are viewable by everyone"
-  ON marketplace_listings FOR SELECT
-  USING (true);
-
+-- Bids: anyone can read, bidders can insert their own, listing owners can update
 CREATE POLICY "Developers can insert their own bids"
   ON listing_bids FOR INSERT
   WITH CHECK (auth.uid() = bidder_user_id);

@@ -952,9 +952,6 @@ async function createProfessionalListing(formData) {
 
 async function createBackendMarketplaceListing(listing) {
   const session = getAuthSession();
-  const accessToken = await getCurrentAccessToken().catch(() => null);
-  const headers = { "Content-Type": "application/json" };
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
   const owner = session?.user
     ? {
@@ -968,11 +965,37 @@ async function createBackendMarketplaceListing(listing) {
   console.log("[Yapply] createBackendMarketplaceListing:", {
     listingType: listing?.type,
     listingName: listing?.name || listing?.title,
-    hasAccessToken: !!accessToken,
     hasOwner: !!owner,
     ownerRole: owner?.role || "none",
-    apiUrl: createApiUrl("/api/marketplace/listings/create"),
   });
+
+  // ─── Try Supabase PostgreSQL first ───
+  try {
+    const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+    const result = await pgCreateListing({
+      ownerUserId: owner?.id || null,
+      ownerEmail: owner?.email || "",
+      ownerRole: owner?.role || "client",
+      listingType: listing?.type || "client",
+      title: listing?.title || listing?.name || "",
+      description: listing?.brief || listing?.description || "",
+      location: listing?.location || "",
+      budget: listing?.budget || "",
+      timeframe: listing?.timeline || listing?.timeframe || "",
+      projectType: listing?.projectType || "",
+      category: listing?.marketplaceCategory || listing?.category || "",
+      payload: listing,
+    });
+    console.log("[Yapply] Listing created via Supabase PG:", result.id);
+    return result;
+  } catch (supaErr) {
+    console.warn("[Yapply] Supabase PG listing create failed, falling back to API:", supaErr?.message);
+  }
+
+  // ─── Fallback: Vercel API ───
+  const accessToken = await getCurrentAccessToken().catch(() => null);
+  const headers = { "Content-Type": "application/json" };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
   const response = await fetch(createApiUrl("/api/marketplace/listings/create"), {
     method: "POST",
@@ -1085,25 +1108,46 @@ export async function submitMarketplaceBid(formData) {
   saveDeveloperBidEntry(earlyBidEntry, session.user.id);
 
   let data = {};
+  let usedSupabasePG = false;
   try {
-    const accessToken = await getCurrentAccessToken().catch(() => null);
-    const headers = { "Content-Type": "application/json" };
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-    const response = await fetch(createApiUrl("/api/marketplace/bids/create"), {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: JSON.stringify({
-        bid,
-        bidder,
-      }),
-    });
-    data = await readJsonResponse(response);
-
-    if (!response.ok) {
-      throw Object.assign(new Error(data.message || "The bid could not be submitted."), {
-        code: data.code || "BID_CREATE_FAILED",
+    // ─── Try Supabase PostgreSQL first ───
+    try {
+      const { createBid: pgCreateBid, fetchListing: pgFetchListing } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+      const pgBid = await pgCreateBid({
+        listingId: bid.listingId,
+        bidderUserId: session.user.id,
+        companyName: bidder?.companyName || "",
+        bidAmount: bid.bidAmount?.label || "",
+        estimatedTimeframe: bid.estimatedCompletionTimeframe?.label || "",
+        proposalMessage: bid.proposalMessage || "",
+        payload: bid,
       });
+      const pgListing = await pgFetchListing(bid.listingId);
+      data = { bid: pgBid, listing: pgListing };
+      usedSupabasePG = true;
+      console.log("[yapply] Bid submitted via Supabase PG:", pgBid.id);
+    } catch (supaErr) {
+      console.warn("[yapply] Bid submit via Supabase PG failed, falling back to API:", supaErr?.message);
+      // Fall through to Vercel API
+      const accessToken = await getCurrentAccessToken().catch(() => null);
+      const headers = { "Content-Type": "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const response = await fetch(createApiUrl("/api/marketplace/bids/create"), {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify({
+          bid,
+          bidder,
+        }),
+      });
+      data = await readJsonResponse(response);
+
+      if (!response.ok) {
+        throw Object.assign(new Error(data.message || "The bid could not be submitted."), {
+          code: data.code || "BID_CREATE_FAILED",
+        });
+      }
     }
   } catch (error) {
     // Only fall back to local storage if the listing wasn't found on the backend
@@ -1185,24 +1229,25 @@ export async function fetchPublicMarketplaceListings({
     publicListingsRequestCache.delete(cacheKey);
   }
 
-  const params = new URLSearchParams();
-
-  if (type) {
-    params.set("type", type);
-  }
-
-  if (status) {
-    params.set("status", status);
-  }
-
-  if (category) {
-    params.set("category", category);
-  }
-
-  params.set("limit", String(limit));
-  params.set("fields", "card"); // Request only card-level fields to reduce payload
-
   const request = (async () => {
+    // ─── Try Supabase PostgreSQL first (fast, direct) ───
+    try {
+      const { fetchListings } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+      const results = await fetchListings({ type, status, category, limit });
+      console.log("[yapply] Kesfet: loaded", results.length, "listings from Supabase PG");
+      return results;
+    } catch (supaErr) {
+      console.warn("[yapply] Kesfet: Supabase PG query failed, falling back to API:", supaErr?.message);
+    }
+
+    // ─── Fallback: Vercel API ───
+    const params = new URLSearchParams();
+    if (type) params.set("type", type);
+    if (status) params.set("status", status);
+    if (category) params.set("category", category);
+    params.set("limit", String(limit));
+    params.set("fields", "card");
+
     const response = await fetch(createApiUrl(`/api/marketplace/listings?${params.toString()}`), {
       method: "GET",
       credentials: "include",
@@ -1251,8 +1296,19 @@ export async function fetchPublicMarketplaceListing(listingId) {
     publicListingDetailCache.delete(cacheKey);
   }
 
-  const params = new URLSearchParams({ id: listingId });
   const request = (async () => {
+    // ─── Try Supabase PostgreSQL first ───
+    try {
+      const { fetchListing } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+      const result = await fetchListing(listingId);
+      console.log("[yapply] Detail: loaded listing", listingId, "from Supabase PG");
+      return result;
+    } catch (supaErr) {
+      console.warn("[yapply] Detail: Supabase PG query failed, falling back to API:", supaErr?.message);
+    }
+
+    // ─── Fallback: Vercel API ───
+    const params = new URLSearchParams({ id: listingId });
     const response = await fetch(createApiUrl(`/api/marketplace/listings/detail?${params.toString()}`), {
       method: "GET",
       credentials: "include",
@@ -1333,7 +1389,25 @@ async function _fetchDeveloperDashboardDataImpl() {
     };
   }
 
-  // If we can't get an access token, still return local data
+  // ─── Try Supabase PostgreSQL first ───
+  try {
+    const { fetchBidsForDeveloper, fetchMyListings } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+    const [pgListings, pgBidEntries] = await Promise.all([
+      fetchMyListings(ownerUserId),
+      fetchBidsForDeveloper(ownerUserId),
+    ]);
+    console.log("[yapply] DevDashboard: loaded", pgListings.length, "listings,", pgBidEntries.length, "bids from Supabase PG");
+    return {
+      listings: pgListings,
+      bids: pgBidEntries,
+      localListings,
+      localBids,
+    };
+  } catch (supaErr) {
+    console.warn("[yapply] DevDashboard: Supabase PG query failed, falling back to API:", supaErr?.message);
+  }
+
+  // ─── Fallback: Vercel API ───
   let accessToken = "";
   try {
     accessToken = await getCurrentAccessToken();
@@ -1919,6 +1993,17 @@ async function _fetchClientDashboardDataImpl() {
     return { listings: localListings };
   }
 
+  // ─── Try Supabase PostgreSQL first ───
+  try {
+    const { fetchMyListings } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+    const pgListings = await fetchMyListings(ownerUserId);
+    console.log("[yapply] ClientDashboard: loaded", pgListings.length, "listings from Supabase PG");
+    return { listings: pgListings };
+  } catch (supaErr) {
+    console.warn("[yapply] ClientDashboard: Supabase PG query failed, falling back to API:", supaErr?.message);
+  }
+
+  // ─── Fallback: Vercel API ───
   try {
     const accessToken = await getCurrentAccessToken();
     const response = await fetch(createApiUrl("/api/account/client-dashboard"), {
