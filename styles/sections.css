@@ -4220,6 +4220,51 @@ html[data-theme="light"] .auth-role-card.is-active {
   box-shadow: 0 14px 28px rgba(9, 12, 18, 0.18);
 }
 
+/* ── Theme Toggle in Account Settings ─────────── */
+.account-settings-theme-section {
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--line);
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.account-settings-theme-label {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.account-settings-theme-switch {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.account-settings-theme-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.2rem;
+  border-radius: var(--radius-sm, 0.75rem);
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 200ms, background 200ms;
+}
+
+.account-settings-theme-option.is-active {
+  border-color: var(--accent);
+  background: var(--gold-soft);
+}
+
 /* ── Logout Button ────────────────────────────── */
 .account-settings-logout {
   padding: 2rem 0 1rem;

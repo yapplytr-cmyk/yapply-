@@ -2949,7 +2949,10 @@ function bindInteractions(content) {
     });
   });
 
-  mountThemeFab(content);
+  // Only show theme FAB on website, not native app (theme toggle moved to account settings)
+  if (!IS_NATIVE_APP) {
+    mountThemeFab(content);
+  }
 
   const localeButtons = document.querySelectorAll("[data-locale-switch]");
   localeButtons.forEach((button) => {
@@ -3260,6 +3263,28 @@ function setupAccountSettings(content) {
       setButtonLoading(submitButton, false);
     }
   });
+
+  // Theme toggle in account settings
+  const themeBtns = document.querySelectorAll("[data-account-theme]");
+  if (themeBtns.length > 0) {
+    const markActive = () => {
+      const current = getTheme();
+      themeBtns.forEach((b) => {
+        b.classList.toggle("is-active", b.getAttribute("data-account-theme") === current);
+      });
+    };
+    markActive();
+    themeBtns.forEach((b) => {
+      b.addEventListener("click", () => {
+        const chosen = b.getAttribute("data-account-theme");
+        if (chosen !== getTheme()) {
+          toggleTheme();
+          updateThemeToggleLabel(content);
+          markActive();
+        }
+      });
+    });
+  }
 
   // Logout button handler
   const logoutBtn = document.querySelector("[data-account-settings-logout]");
