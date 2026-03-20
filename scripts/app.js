@@ -289,13 +289,21 @@ function dashboardSwrIsStale(cached) {
   return !cached || (Date.now() - (cached.ts || 0)) > DASHBOARD_SWR_MAX_AGE_MS;
 }
 
+function _listingsFingerprint(listings) {
+  // Lightweight fingerprint: captures ID + status + bid count + accepted state
+  return listings.map((l) => {
+    const m = l?.marketplaceMeta || {};
+    return `${l.id}|${m.listingStatus || l.status || ""}|${m.bidCount || 0}|${m.acceptedBidId || ""}`;
+  }).join(",");
+}
+
 async function createClientDashboardPageContent(content) {
   const session = getAuthSession();
   const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
 
   // SWR: return ANY cached data instantly (fresh or stale), revalidate in background
   const cached = dashboardSwrRead(DASHBOARD_SWR_KEY);
-  const hasAnyCache = cached && Array.isArray(cached.data);
+  const hasAnyCache = cached && Array.isArray(cached.data) && cached.data.length > 0;
 
   // Local-only fallback (no network)
   const localListings = getOwnedSubmittedListings("client", ownerUserId);
@@ -313,20 +321,28 @@ async function createClientDashboardPageContent(content) {
   })();
 
   // If cache exists: return instantly, revalidate in background
-  // If NO cache (cold start): await the fetch so user sees real data (skeleton is visible)
+  // If NO cache (cold start): try local listings first, then await network
   let ownedListings;
   if (hasAnyCache) {
     ownedListings = cached.data;
+    // Background revalidate — only re-render if data actually changed
     fetchPromise.then((freshListings) => {
-      const oldIds = JSON.stringify(ownedListings.map(l => l.id));
-      const newIds = JSON.stringify(freshListings.map(l => l.id));
-      if (oldIds !== newIds) {
+      if (_listingsFingerprint(freshListings) !== _listingsFingerprint(ownedListings)) {
         console.log("[swr] Client dashboard data changed — re-rendering");
         window.__yapplyRenderPage?.();
       }
     }).catch(() => {});
+  } else if (localListings.length > 0) {
+    // Cold start with local data: show local instantly, upgrade from network later
+    ownedListings = localListings;
+    fetchPromise.then((freshListings) => {
+      if (freshListings.length > 0 && _listingsFingerprint(freshListings) !== _listingsFingerprint(localListings)) {
+        dashboardSwrWrite(freshListings, DASHBOARD_SWR_KEY);
+        window.__yapplyRenderPage?.();
+      }
+    }).catch(() => {});
   } else {
-    // Cold start: wait for network data
+    // True cold start (no cache, no local): await network
     ownedListings = await fetchPromise;
   }
 
@@ -357,7 +373,10 @@ async function createClientBidsPageContent(content) {
 
   const CLIENT_BIDS_SWR_KEY = "yapply-swr-client-bids";
   const cached = dashboardSwrRead(CLIENT_BIDS_SWR_KEY);
-  const hasAnyCache = cached && Array.isArray(cached.data);
+  const hasAnyCache = cached && Array.isArray(cached.data) && cached.data.length > 0;
+
+  // Local-only fallback
+  const localListings = getOwnedSubmittedListings("client", ownerUserId);
 
   const fetchPromise = (async () => {
     try {
@@ -366,15 +385,31 @@ async function createClientBidsPageContent(content) {
       dashboardSwrWrite(listings, CLIENT_BIDS_SWR_KEY);
       return listings;
     } catch (_) {
-      return cached?.data || [];
+      return cached?.data || localListings;
     }
   })();
 
   let allListings;
   if (hasAnyCache) {
     allListings = cached.data;
-    fetchPromise.catch(() => {});
+    // Background revalidate — re-render only if bids/statuses actually changed
+    fetchPromise.then((freshListings) => {
+      if (_listingsFingerprint(freshListings) !== _listingsFingerprint(allListings)) {
+        console.log("[swr] Client bids data changed — re-rendering");
+        window.__yapplyRenderPage?.();
+      }
+    }).catch(() => {});
+  } else if (localListings.length > 0) {
+    // Cold start with local data: show instantly, upgrade from network later
+    allListings = localListings;
+    fetchPromise.then((freshListings) => {
+      if (freshListings.length > 0 && _listingsFingerprint(freshListings) !== _listingsFingerprint(localListings)) {
+        dashboardSwrWrite(freshListings, CLIENT_BIDS_SWR_KEY);
+        window.__yapplyRenderPage?.();
+      }
+    }).catch(() => {});
   } else {
+    // True cold start: await network
     allListings = await fetchPromise;
   }
 

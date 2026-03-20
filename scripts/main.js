@@ -3510,6 +3510,14 @@ function seedDetailSwrCache(listings) {
   if (!Array.isArray(listings)) return;
   listings.forEach((l) => {
     if (!l?.id) return;
+    // Only seed detail cache if the listing has bid data (non-card responses).
+    // Card-level responses have empty latestBids and bidCount=0, which would
+    // cause the detail page to show "no bids" even when bids exist.
+    const meta = l.marketplaceMeta || {};
+    const hasBidData = (Array.isArray(meta.latestBids) && meta.latestBids.length > 0) || (Array.isArray(l.bids) && l.bids.length > 0);
+    const existingDetail = swrRead(`detail-${l.id}`);
+    // Don't overwrite a detail cache that already has bid data with card data that doesn't
+    if (!hasBidData && existingDetail?.data) return;
     seedListingDetailCache(l); // In-memory cache (same session)
     swrWrite(`detail-${l.id}`, l); // localStorage cache (survives page navigation)
   });
@@ -3676,8 +3684,20 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     if (hasFreshCache) {
       // Return cached detail instantly, revalidate in background
       fetchPromise.then((fresh) => {
-        if (fresh.publicListing && JSON.stringify(fresh.publicListing?.id) !== JSON.stringify(cached.data?.id)) {
-          renderPage();
+        if (!fresh.publicListing) return;
+        // Re-render if bids changed (card cache may have empty bids), status changed, or listing differs
+        const oldMeta = cached.data?.marketplaceMeta || {};
+        const newMeta = fresh.publicListing?.marketplaceMeta || {};
+        const oldBids = Array.isArray(oldMeta.latestBids) ? oldMeta.latestBids.length : 0;
+        const newBids = Array.isArray(newMeta.latestBids) ? newMeta.latestBids.length : 0;
+        const changed = fresh.publicListing.id !== cached.data?.id
+          || oldBids !== newBids
+          || (oldMeta.bidCount || 0) !== (newMeta.bidCount || 0)
+          || oldMeta.listingStatus !== newMeta.listingStatus
+          || oldMeta.acceptedBidId !== newMeta.acceptedBidId;
+        if (changed) {
+          console.log("[swr] Detail listing data changed — re-rendering");
+          window.__yapplyRenderPage?.();
         }
       }).catch(() => {});
       return { publicListing: cached.data };
@@ -3927,6 +3947,11 @@ function setupPullToRefresh() {
     // Only activate pull-to-refresh when scrolled ALL the way to the top (position 0)
     const scrollTop = Math.round(document.scrollingElement?.scrollTop || document.documentElement.scrollTop || 0);
     if (scrollTop > 0) return;
+    // Skip pull-to-refresh when touching interactive elements (buttons, links, form inputs, expandable panels)
+    const target = e.target;
+    if (target && target.closest && target.closest("button, a, input, select, textarea, [data-client-bids-toggle], [data-client-bids-group-toggle], [data-client-dashboard-toggle], [data-client-bids-accept], [data-client-dashboard-accept-bid], .client-bids-card, .client-dashboard-card__panel")) {
+      return;
+    }
     startY = e.touches[0].clientY;
     pulling = true;
   }
@@ -3985,13 +4010,24 @@ function setupPullToRefresh() {
   };
 }
 
+let _renderPageIsBackgroundRefresh = false;
+
 async function renderPage(localeOverride) {
   const appRoot = document.querySelector("#app");
   if (!appRoot) {
     return;
   }
   // Expose for cross-module background re-render (used by app.js SWR)
-  window.__yapplyRenderPage = renderPage;
+  // The wrapper preserves scroll position and skips the bird loader on background re-renders
+  window.__yapplyRenderPage = (lo) => {
+    const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    _renderPageIsBackgroundRefresh = true;
+    return renderPage(lo).then(() => {
+      window.scrollTo(0, scrollY);
+    }).finally(() => { _renderPageIsBackgroundRefresh = false; });
+  };
+
+  const isBackgroundRefresh = _renderPageIsBackgroundRefresh;
 
   // Remove splash immediately on web (it's only for native)
   hideSplashIfNotNative();
@@ -4006,9 +4042,9 @@ async function renderPage(localeOverride) {
   cleanupBirdScroll();
   cleanupHeroScene();
 
-  // Show bird loader only if the page takes >300ms to load (skip on fast transitions)
+  // Show bird loader only if the page takes >300ms to load (skip on background re-renders)
   let _birdLoaderTimeout = null;
-  if (IS_NATIVE_APP) {
+  if (IS_NATIVE_APP && !isBackgroundRefresh) {
     _birdLoaderTimeout = setTimeout(() => { showBirdLoader(); }, 300);
   }
 
@@ -4033,23 +4069,14 @@ async function renderPage(localeOverride) {
     const authFastPathPages = new Set(["developer-dashboard", "client-dashboard", "client-bids"]);
 
     if (fastPathPages.has(page)) {
-      // Show skeleton placeholders immediately while loading (native app only)
-      if (IS_NATIVE_APP && authFastPathPages.has(page)) {
-        try {
-          const skeletonMod = page === "developer-dashboard"
-            ? await import("./components/developerDashboardPage.js")
-            : page === "client-bids"
-              ? await import("./components/clientBidsPage.js")
-              : await import("./components/clientDashboardPage.js");
-          const skeletonFn = page === "developer-dashboard"
-            ? skeletonMod.createDeveloperDashboardSkeleton
-            : page === "client-bids"
-              ? skeletonMod.createClientBidsSkeleton
-              : skeletonMod.createClientDashboardSkeleton;
-          if (skeletonFn && appRoot) {
-            appRoot.innerHTML = skeletonFn();
-          }
-        } catch (_) {}
+      // Show inline skeleton placeholders immediately (no module import needed)
+      if (IS_NATIVE_APP && authFastPathPages.has(page) && appRoot) {
+        const skItem = `<div class="panel" style="opacity:0.45;pointer-events:none;padding:16px;margin:10px 16px;border-radius:12px">
+          <div style="background:var(--surface-200,#e5e7eb);height:16px;border-radius:4px;width:55%;margin-bottom:10px"></div>
+          <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:80%;margin-bottom:8px"></div>
+          <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:35%"></div>
+        </div>`;
+        appRoot.innerHTML = `<section class="section-shell" style="padding-top:24px">${skItem}${skItem}${skItem}</section>`;
       }
 
       // Auth-dependent pages: await auth so getAuthSession() is valid during render
