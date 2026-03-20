@@ -473,6 +473,15 @@ function createClientListingCard(listing, labels, locale) {
       <div class="marketplace-card__bid-deadline">
         <span class="marketplace-card__published">${bidDeadlineInfo.publishedLabel}</span>
         <span class="marketplace-card__days-left">${bidDeadlineInfo.daysLeftLabel}</span>
+        ${(() => {
+          const bids = Array.isArray(listing.bids) ? listing.bids : (Array.isArray(marketplaceMeta.latestBids) ? marketplaceMeta.latestBids : []);
+          const bidCount = Number(marketplaceMeta.bidCount || 0) || bids.length;
+          if (bidCount > 0) {
+            const bidLabel = locale === "tr" ? `${bidCount} teklif` : `${bidCount} bid${bidCount > 1 ? "s" : ""}`;
+            return `<span class="marketplace-card__bid-count">${bidLabel}</span>`;
+          }
+          return "";
+        })()}
       </div>
       <div class="marketplace-card__footer">
         <div class="marketplace-card__timeline">

@@ -1083,6 +1083,16 @@ html.has-tab-bar .marketplace-card__days-left::before {
   opacity: 0.5;
 }
 
+html.has-tab-bar .marketplace-card__bid-count {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(201, 168, 76, 0.12);
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+  margin-left: auto;
+}
+
 /* Non-native: hide bid deadline (full layout has all info already) */
 html:not(.has-tab-bar) .marketplace-card__bid-deadline {
   display: none;

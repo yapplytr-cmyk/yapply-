@@ -835,6 +835,12 @@ export const translations = {
       acceptedLabel: "Accepted",
       closedLabel: "Closed",
       fallback: "Not provided",
+      acceptedHeading: {
+        eyebrow: "Accepted Bids",
+        title: "Bids you have accepted",
+        description: "",
+      },
+      acceptedEmpty: "No bids have been accepted yet.",
     },
     developerDashboardPage: {
       nav: {
@@ -3596,6 +3602,12 @@ export const translations = {
       acceptedLabel: "Kabul Edildi",
       closedLabel: "Kapalı",
       fallback: "Belirtilmedi",
+      acceptedHeading: {
+        eyebrow: "Kabul Edilen Teklifler",
+        title: "Kabul ettiğiniz teklifler",
+        description: "",
+      },
+      acceptedEmpty: "Henüz kabul edilen teklif bulunmuyor.",
     },
     developerDashboardPage: {
       nav: {

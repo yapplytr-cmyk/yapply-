@@ -1525,16 +1525,23 @@ export function syncClientDashboardListingBids(listingId, ownerUserId, sourceLis
   return normalizeMarketplaceListing(storedListing || currentListing);
 }
 
-export async function acceptClientDashboardBid(listingId, bidId, ownerUserId) {
-  // Try localStorage first; if not found, fetch from backend API.
+/**
+ * Accept a bid — LOCAL only (instant, no network).
+ * Updates localStorage so the UI can re-render immediately.
+ */
+export function acceptClientDashboardBidLocal(listingId, bidId, ownerUserId) {
   let currentListing = getSubmittedListing("client", listingId);
 
+  // Also check the SWR dashboard cache in case the listing was fetched from backend
   if (!currentListing) {
     try {
-      currentListing = await fetchPublicMarketplaceListing(listingId);
-    } catch (_) {
-      currentListing = null;
-    }
+      const cacheRaw = localStorage.getItem("yapply-swr-client-bids") || localStorage.getItem(DASHBOARD_SWR_KEY);
+      if (cacheRaw) {
+        const cacheData = JSON.parse(cacheRaw);
+        const listings = Array.isArray(cacheData?.data) ? cacheData.data : [];
+        currentListing = listings.find((l) => l?.id === listingId) || null;
+      }
+    } catch (_) {}
   }
 
   if (!currentListing) {
@@ -1586,8 +1593,7 @@ export async function acceptClientDashboardBid(listingId, bidId, ownerUserId) {
     marketplaceMeta: acceptedMeta,
   }));
 
-  // If not in localStorage yet (listing created via backend only), add it now
-  // so the dashboard re-render picks up the accepted state immediately.
+  // If not in localStorage yet, add it so the dashboard re-render picks up the accepted state.
   if (!storedListing) {
     const updatedListing = {
       ...currentListing,
@@ -1602,11 +1608,55 @@ export async function acceptClientDashboardBid(listingId, bidId, ownerUserId) {
     storedListing = updatedListing;
   }
 
-  // Always update the backend — this is the real persistence.
-  await updateBackendListingStatus(listingId, "bid-accepted", { bidId, bidStatus: "accepted" });
-  invalidateMarketplaceRequestCache(listingId);
+  // Update ALL SWR caches: dashboard caches (update listing) + kesfet caches (remove listing)
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
 
+      // Dashboard SWR caches — update the listing status
+      if (key === "yapply-swr-client-bids" || key === DASHBOARD_SWR_KEY) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key));
+          if (Array.isArray(parsed?.data)) {
+            parsed.data = parsed.data.map((l) =>
+              l?.id === listingId ? { ...l, status: "bid-accepted", bids: nextBids, marketplaceMeta: acceptedMeta } : l
+            );
+            localStorage.setItem(key, JSON.stringify(parsed));
+          }
+        } catch (_) {}
+      }
+
+      // Kesfet SWR caches — remove the accepted listing so it disappears from marketplace
+      if (key.startsWith("yapply-swr-marketplace:client-")) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key));
+          if (Array.isArray(parsed?.data)) {
+            parsed.data = parsed.data.filter((l) => l?.id !== listingId);
+            localStorage.setItem(key, JSON.stringify(parsed));
+          }
+        } catch (_) {}
+      }
+    }
+  } catch (_) {}
+
+  invalidateMarketplaceRequestCache(listingId);
   return normalizeMarketplaceListing(storedListing);
+}
+
+/**
+ * Accept a bid — REMOTE (fire-and-forget, runs in background).
+ * Syncs the acceptance to the backend API + triggers email.
+ */
+export async function acceptClientDashboardBidRemote(listingId, bidId) {
+  await updateBackendListingStatus(listingId, "bid-accepted", { bidId, bidStatus: "accepted" });
+}
+
+/** @deprecated Use acceptClientDashboardBidLocal + acceptClientDashboardBidRemote instead */
+export async function acceptClientDashboardBid(listingId, bidId, ownerUserId) {
+  const result = acceptClientDashboardBidLocal(listingId, bidId, ownerUserId);
+  await acceptClientDashboardBidRemote(listingId, bidId);
+  return result;
 }
 
 export async function closeClientDashboardListing(listingId, ownerUserId) {

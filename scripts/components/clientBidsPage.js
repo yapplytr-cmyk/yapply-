@@ -151,14 +151,25 @@ export function createClientBidsPage(content) {
 
   const locale = getLocale(content);
   const listings = content.allListings || [];
-  const listingsWithBids = listings.filter((l) => getListingBids(l).length > 0);
 
-  const groups = listingsWithBids.map((listing) => createListingGroup(listing, content, locale)).join("");
+  // Split into open (has bids, not accepted) and accepted (has acceptedBidId)
+  const openListings = listings.filter((l) => getListingBids(l).length > 0 && !isListingClosed(l));
+  const acceptedListings = listings.filter((l) => isListingClosed(l) && getListingBids(l).length > 0);
+
+  const openGroups = openListings.map((listing) => createListingGroup(listing, content, locale)).join("");
+  const acceptedGroups = acceptedListings.map((listing) => createListingGroup(listing, content, locale)).join("");
 
   return `
     <section class="section-shell client-bids-page" id="client-bids-section">
       ${createSectionHeading(content.heading)}
-      ${groups || `<div class="marketplace-empty panel"><p>${content.empty}</p></div>`}
+      ${openGroups || `<div class="marketplace-empty panel"><p>${content.empty}</p></div>`}
+
+      ${acceptedListings.length > 0 ? `
+        <div class="client-bids-accepted-section" style="margin-top: 2.5rem;">
+          ${createSectionHeading(content.acceptedHeading || { eyebrow: "Accepted", title: "Accepted Bids", description: "" })}
+          ${acceptedGroups}
+        </div>
+      ` : ""}
     </section>
   `;
 }

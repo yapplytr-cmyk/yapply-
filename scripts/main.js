@@ -2749,19 +2749,25 @@ function setupClientBidsPage(content) {
     });
   });
 
-  // Accept bid with loading → checkmark animation
+  // Accept bid with loading → checkmark animation (optimistic — no waiting for backend)
   document.querySelectorAll("[data-client-bids-accept]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const bidId = btn.getAttribute("data-client-bids-accept");
       const listingId = btn.getAttribute("data-client-bids-listing");
       if (!bidId || !listingId) return;
 
-      // Show loading spinner
+      // Show loading spinner briefly
       btn.classList.add("is-loading");
+      btn.querySelector(".client-bids-accept-btn__label")?.setAttribute("hidden", "");
       btn.querySelector(".client-bids-accept-btn__loader")?.removeAttribute("hidden");
 
       try {
-        await acceptClientDashboardBid(listingId, bidId, session.user.id);
+        // Optimistic: accept locally (instant), send to backend in background
+        const { acceptClientDashboardBidLocal, acceptClientDashboardBidRemote } = await import("./core/marketplaceStore.js");
+        const localResult = acceptClientDashboardBidLocal(listingId, bidId, session.user.id);
+
+        // Short delay so user sees the spinner briefly
+        await new Promise((r) => setTimeout(r, 350));
 
         // Show checkmark animation
         btn.classList.remove("is-loading");
@@ -2769,22 +2775,30 @@ function setupClientBidsPage(content) {
         btn.querySelector(".client-bids-accept-btn__loader")?.setAttribute("hidden", "");
         btn.querySelector(".client-bids-accept-btn__done")?.removeAttribute("hidden");
 
-        // Send notification
+        // Fire-and-forget: sync to backend + send email
+        acceptClientDashboardBidRemote(listingId, bidId).catch(() => {});
+
+        // Write notification for the developer (stored in localStorage for this device,
+        // plus the backend email was already sent in acceptClientDashboardBidRemote)
         try {
-          const { addNotification } = await import("./core/notifications.js");
-          addNotification(bidId, {
-            type: "bid-accepted",
-            message: "Your bid was accepted!",
-            href: "./developer-dashboard.html#developer-dashboard-bids",
-            listingId,
-          });
+          const developerUserId = localResult?.marketplaceMeta?.acceptedBid?.developerProfileReference?.userId || "";
+          if (developerUserId) {
+            const { addNotification } = await import("./core/notifications.js");
+            addNotification(developerUserId, {
+              type: "bid-accepted",
+              message: document.documentElement.lang === "tr" ? "Teklifiniz kabul edildi!" : "Your bid was accepted!",
+              href: "./developer-dashboard.html",
+              listingId,
+            });
+          }
         } catch (_) {}
 
-        // Re-render after a beat to let the user enjoy the animation
-        setTimeout(() => { renderPage(content.meta.locale); }, 900);
+        // Re-render after animation completes to show updated state
+        setTimeout(() => { renderPage(content.meta.locale); }, 800);
       } catch (error) {
         btn.classList.remove("is-loading");
         btn.querySelector(".client-bids-accept-btn__loader")?.setAttribute("hidden", "");
+        btn.querySelector(".client-bids-accept-btn__label")?.removeAttribute("hidden");
         window.alert(error?.message || (document.documentElement.lang === "tr"
           ? "Teklif kabul edilemedi."
           : "The bid could not be accepted."));
@@ -3910,8 +3924,9 @@ function setupPullToRefresh() {
   }
 
   function onTouchStart(e) {
-    const scrollTop = document.scrollingElement?.scrollTop || document.documentElement.scrollTop || 0;
-    if (scrollTop > 5) return;
+    // Only activate pull-to-refresh when scrolled ALL the way to the top (position 0)
+    const scrollTop = Math.round(document.scrollingElement?.scrollTop || document.documentElement.scrollTop || 0);
+    if (scrollTop > 0) return;
     startY = e.touches[0].clientY;
     pulling = true;
   }

@@ -911,14 +911,12 @@ def handle_marketplace_listing_index(handler) -> None:
   except ValueError:
     limit = 24
 
-  skip_bids = fields == "card"
-
   listings = list_marketplace_listings(
     listing_type=listing_type,
     status=status,
     category=category,
     limit=min(max(limit, 1), 60),
-    skip_bids=skip_bids,
+    skip_bids=False,
   )
 
   if fields == "card":
