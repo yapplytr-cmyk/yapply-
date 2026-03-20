@@ -175,14 +175,14 @@ export function createOnboardingWizard(content, locale) {
             </label>
             <label class="onboarding-field">
               <span>${isTr ? "Telefon" : "Phone"}</span>
-              <input type="tel" name="phone" placeholder="${isTr ? "+90 5XX XXX XX XX" : "+1 (555) 000-0000"}" autocomplete="tel" />
+              <input type="tel" name="phoneNumber" placeholder="${isTr ? "+90 5XX XXX XX XX" : "+1 (555) 000-0000"}" autocomplete="tel" />
             </label>
 
             <!-- Client-specific fields -->
             <div class="onboarding-role-fields" data-onboarding-role-fields="client">
               <label class="onboarding-field">
                 <span>${isTr ? "Şehir" : "City"}</span>
-                <input type="text" name="city" placeholder="${isTr ? "İstanbul, Bodrum..." : "Istanbul, Bodrum..."}" />
+                <input type="text" name="preferredRegion" placeholder="${isTr ? "İstanbul, Bodrum..." : "Istanbul, Bodrum..."}" />
               </label>
             </div>
 
@@ -193,12 +193,16 @@ export function createOnboardingWizard(content, locale) {
                 <input type="text" name="companyName" placeholder="${isTr ? "Firma adınız" : "Your company"}" />
               </label>
               <label class="onboarding-field">
+                <span>${isTr ? "Hizmet Bölgesi" : "Service Area"}</span>
+                <input type="text" name="serviceArea" placeholder="${isTr ? "İstanbul, Bodrum..." : "Istanbul, Bodrum..."}" />
+              </label>
+              <label class="onboarding-field">
                 <span>${isTr ? "Deneyim (Yıl)" : "Years of Experience"}</span>
                 <input type="number" name="yearsExperience" min="0" step="1" placeholder="5" />
               </label>
               <label class="onboarding-field">
                 <span>${isTr ? "Uzmanlık Alanı" : "Specialty"}</span>
-                <input type="text" name="specialty" placeholder="${isTr ? "Villa yapımı, renovasyon..." : "Villa construction, renovation..."}" />
+                <input type="text" name="specialties" placeholder="${isTr ? "Villa yapımı, renovasyon..." : "Villa construction, renovation..."}" />
               </label>
             </div>
 

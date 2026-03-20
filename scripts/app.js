@@ -343,24 +343,26 @@ async function createClientDashboardPageContent(content) {
   };
 }
 
-async function createClientBidsPageContent(content) {
+async function createClientBidsPageContent(content, runtimeData) {
   const session = getAuthSession();
   const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
 
-  let allListings = [];
+  // Use pre-fetched data from loadMarketplaceRuntimeData SWR cache if available
+  let allListings = runtimeData?.clientBidsListings || [];
 
-  // Try direct Supabase first (no Vercel API roundtrip)
-  try {
-    allListings = await supabaseFetchMyListings(ownerUserId);
-    console.log("[yapply] Tekliflerim: loaded", allListings.length, "listings from Supabase");
-  } catch (supaErr) {
-    console.warn("[yapply] Tekliflerim: Supabase query failed, falling back to API:", supaErr?.message);
-    // Fallback to old Vercel API if Supabase tables don't exist yet
+  if (allListings.length === 0 && !runtimeData?._clientBidsCacheHit) {
+    // No cached data — fetch now
     try {
-      const data = await fetchClientDashboardData();
-      allListings = data.listings || [];
-    } catch (_) {
-      allListings = getOwnedSubmittedListings("client", ownerUserId);
+      allListings = await supabaseFetchMyListings(ownerUserId);
+      console.log("[yapply] Tekliflerim: loaded", allListings.length, "listings from Supabase");
+    } catch (supaErr) {
+      console.warn("[yapply] Tekliflerim: Supabase query failed, falling back to API:", supaErr?.message);
+      try {
+        const data = await fetchClientDashboardData();
+        allListings = data.listings || [];
+      } catch (_) {
+        allListings = getOwnedSubmittedListings("client", ownerUserId);
+      }
     }
   }
 
@@ -1034,8 +1036,9 @@ async function createAccountSettings(content, locale) {
 }
 
 async function createClientBids(content, locale, runtimeData) {
-  const pageContent = await createClientBidsPageContent(content);
-  const [{ createNavbar }, { createClientBidsPage }, { createFooter }] = await Promise.all([
+  // Parallelize data fetch and component module loading for speed
+  const [pageContent, { createNavbar }, { createClientBidsPage }, { createFooter }] = await Promise.all([
+    createClientBidsPageContent(content, runtimeData),
     loadNavbarApi(),
     loadClientBidsApi(),
     loadFooterApi(),

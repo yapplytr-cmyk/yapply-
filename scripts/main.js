@@ -3770,6 +3770,42 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     return await fetchPromise;
   }
 
+  if (page === "client-bids") {
+    const session = getAuthSession();
+    const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
+    const bidsCacheId = "client-bids";
+    const cached = swrRead(bidsCacheId);
+    const hasAnyCache = cached && Array.isArray(cached.data) && cached.data.length > 0;
+
+    // Start network fetch (runs in background if cache available)
+    const fetchPromise = (async () => {
+      try {
+        const { fetchMyListings } = await import("./core/supabaseMarketplace.js");
+        const listings = await fetchMyListings(ownerUserId);
+        swrWrite(bidsCacheId, listings);
+        return { clientBidsListings: listings, _clientBidsCacheHit: true };
+      } catch (err) {
+        console.warn("[swr] client-bids fetch failed:", err?.message);
+        return { clientBidsListings: cached?.data || [], _clientBidsCacheHit: !!cached };
+      }
+    })();
+
+    if (hasAnyCache) {
+      // Return cached data instantly, revalidate in background
+      fetchPromise.then((freshData) => {
+        const fp = (items) => (items || []).map(l => `${l?.id}|${l?.status||""}|${(l?.bids||l?.listing_bids||[]).length}|${(l?.bids||l?.listing_bids||[]).map(b=>b?.status||"").join(":")}`).join(",");
+        if (fp(cached.data) !== fp(freshData.clientBidsListings)) {
+          console.log("[swr] Client bids data changed — re-rendering");
+          window.__yapplyRenderPage?.() || renderPage();
+        }
+      }).catch(() => {});
+      return { clientBidsListings: cached.data, _clientBidsCacheHit: true };
+    }
+
+    // Cold start: wait for network
+    return await fetchPromise;
+  }
+
   if (page === "developer-dashboard") {
     const session = getAuthSession();
     const ownerUserId = session?.authenticated ? session.user?.id || "" : "";

@@ -433,12 +433,12 @@ function ensurePublicSignupPayload(payload) {
   const email = normalizeEmail(payload.email);
   const password = String(payload.password || "");
   const confirmPassword = String(payload.confirmPassword || "");
-  const phoneNumber = normalizeText(payload.phoneNumber);
+  const phoneNumber = normalizeText(payload.phoneNumber || payload.phone);
   const companyName = normalizeText(payload.companyName);
-  const professionType = normalizeText(payload.professionType);
-  const serviceArea = normalizeText(payload.serviceArea);
-  const specialties = normalizeText(payload.specialties);
-  const preferredRegion = normalizeText(payload.preferredRegion);
+  const professionType = normalizeText(payload.professionType || payload.specialty || payload.specialties);
+  const serviceArea = normalizeText(payload.serviceArea || payload.city || payload.preferredRegion);
+  const specialties = normalizeText(payload.specialties || payload.specialty);
+  const preferredRegion = normalizeText(payload.preferredRegion || payload.city);
   const website = normalizeText(payload.website);
   const yearsExperienceRaw = normalizeText(payload.yearsExperience || payload.experience);
   const yearsExperience = yearsExperienceRaw === "" ? null : Number(yearsExperienceRaw);
