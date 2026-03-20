@@ -12,6 +12,11 @@ import {
   getSubmittedListing,
   getSubmittedListings,
 } from "./core/marketplaceStore.js";
+import {
+  fetchMyListings as supabaseFetchMyListings,
+  fetchListings as supabaseFetchListings,
+  fetchListing as supabaseFetchListing,
+} from "./core/supabaseMarketplace.js";
 import { getAuthSession } from "./core/state.js";
 
 const componentModuleCache = new Map();
@@ -300,46 +305,20 @@ async function createClientDashboardPageContent(content) {
   const session = getAuthSession();
   const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
 
-  // Read cached data from localStorage (always fresh read, no in-memory layer)
-  const cached = dashboardSwrRead(DASHBOARD_SWR_KEY);
-  const hasCachedListings = cached && Array.isArray(cached.data) && cached.data.length > 0;
-  const localListings = getOwnedSubmittedListings("client", ownerUserId);
+  let ownedListings = [];
 
-  // Network fetch — always runs
-  const fetchFromNetwork = async () => {
+  // Try direct Supabase first (no Vercel API roundtrip)
+  try {
+    ownedListings = await supabaseFetchMyListings(ownerUserId);
+    console.log("[yapply] İlanlarım: loaded", ownedListings.length, "listings from Supabase");
+  } catch (supaErr) {
+    console.warn("[yapply] İlanlarım: Supabase query failed, falling back to API:", supaErr?.message);
+    // Fallback to old Vercel API if Supabase tables don't exist yet
     try {
       const data = await fetchClientDashboardData();
-      const listings = data.listings || [];
-      dashboardSwrWrite(listings, DASHBOARD_SWR_KEY);
-      return listings;
+      ownedListings = data.listings || [];
     } catch (_) {
-      return null; // signal failure
-    }
-  };
-
-  let ownedListings;
-
-  if (hasCachedListings) {
-    // Show cached data instantly, refresh in background
-    ownedListings = cached.data;
-    const fingerprint = _listingsFingerprint(ownedListings);
-    fetchFromNetwork().then((fresh) => {
-      if (fresh && _listingsFingerprint(fresh) !== fingerprint) {
-        console.log("[swr] Client dashboard data changed — re-rendering");
-        window.__yapplyRenderPage?.();
-      }
-    }).catch(() => {});
-  } else {
-    // Cold start — MUST await network. Show local as fallback only if network fails.
-    const fresh = await fetchFromNetwork();
-    if (fresh && fresh.length > 0) {
-      ownedListings = fresh;
-    } else if (localListings.length > 0) {
-      ownedListings = localListings;
-    } else {
-      // Re-read cache in case another module populated it during our await
-      const retryCache = dashboardSwrRead(DASHBOARD_SWR_KEY);
-      ownedListings = (retryCache && Array.isArray(retryCache.data)) ? retryCache.data : [];
+      ownedListings = getOwnedSubmittedListings("client", ownerUserId);
     }
   }
 
@@ -368,46 +347,20 @@ async function createClientBidsPageContent(content) {
   const session = getAuthSession();
   const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
 
-  const CLIENT_BIDS_SWR_KEY = "yapply-swr-client-bids";
-  const cached = dashboardSwrRead(CLIENT_BIDS_SWR_KEY);
-  const hasCachedListings = cached && Array.isArray(cached.data) && cached.data.length > 0;
-  const localListings = getOwnedSubmittedListings("client", ownerUserId);
+  let allListings = [];
 
-  // Network fetch — always runs
-  const fetchFromNetwork = async () => {
+  // Try direct Supabase first (no Vercel API roundtrip)
+  try {
+    allListings = await supabaseFetchMyListings(ownerUserId);
+    console.log("[yapply] Tekliflerim: loaded", allListings.length, "listings from Supabase");
+  } catch (supaErr) {
+    console.warn("[yapply] Tekliflerim: Supabase query failed, falling back to API:", supaErr?.message);
+    // Fallback to old Vercel API if Supabase tables don't exist yet
     try {
       const data = await fetchClientDashboardData();
-      const listings = data.listings || [];
-      dashboardSwrWrite(listings, CLIENT_BIDS_SWR_KEY);
-      return listings;
+      allListings = data.listings || [];
     } catch (_) {
-      return null; // signal failure
-    }
-  };
-
-  let allListings;
-
-  if (hasCachedListings) {
-    // Show cached data instantly, refresh in background
-    allListings = cached.data;
-    const fingerprint = _listingsFingerprint(allListings);
-    fetchFromNetwork().then((fresh) => {
-      if (fresh && _listingsFingerprint(fresh) !== fingerprint) {
-        console.log("[swr] Client bids data changed — re-rendering");
-        window.__yapplyRenderPage?.();
-      }
-    }).catch(() => {});
-  } else {
-    // Cold start — MUST await network. Show local as fallback only if network fails.
-    const fresh = await fetchFromNetwork();
-    if (fresh && fresh.length > 0) {
-      allListings = fresh;
-    } else if (localListings.length > 0) {
-      allListings = localListings;
-    } else {
-      // Re-read cache in case another module populated it during our await
-      const retryCache = dashboardSwrRead(CLIENT_BIDS_SWR_KEY);
-      allListings = (retryCache && Array.isArray(retryCache.data)) ? retryCache.data : [];
+      allListings = getOwnedSubmittedListings("client", ownerUserId);
     }
   }
 

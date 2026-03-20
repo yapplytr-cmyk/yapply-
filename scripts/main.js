@@ -2621,23 +2621,15 @@ function setupClientDashboard(content) {
       setButtonLoading(button, true);
 
       try {
-        const { acceptClientDashboardBidLocal, acceptClientDashboardBidRemote } = await import("./core/marketplaceStore.js");
-
-        // Try local optimistic accept, but don't fail if listing not found locally
-        let updatedListing = null;
-        try {
-          updatedListing = acceptClientDashboardBidLocal(listingId, bidId, session.user.id);
-        } catch (localErr) {
-          console.warn("[yapply] Local accept failed, sending to backend:", localErr?.code || localErr?.message);
-        }
-
-        // ALWAYS send to backend — this is the real accept
-        await acceptClientDashboardBidRemote(listingId, bidId);
+        // Accept directly in Supabase PostgreSQL
+        const { acceptBid } = await import("./core/supabaseMarketplace.js");
+        const updatedListing = await acceptBid(listingId, bidId, session.user.id);
+        console.log("[yapply] Bid accepted via Supabase (dashboard):", { listingId, bidId });
 
         // Notification for developer
         try {
           const acceptedBid = updatedListing?.marketplaceMeta?.acceptedBid;
-          const developerId = acceptedBid?.developerProfileReference?.userId || acceptedBid?.bidder?.id || "";
+          const developerId = acceptedBid?.developerProfileReference?.userId || acceptedBid?.developerId || "";
           const listingTitle = updatedListing?.title || updatedListing?.name || "";
           if (developerId) {
             const { addNotification } = await import("./core/notifications.js");
@@ -2654,6 +2646,7 @@ function setupClientDashboard(content) {
         document.querySelector("#client-dashboard-closed")?.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (error) {
         setButtonLoading(button, false);
+        console.error("[yapply] Bid accept failed (dashboard):", error);
         window.alert(error?.message || "The bid could not be accepted.");
       }
     });
@@ -2761,7 +2754,7 @@ function setupClientBidsPage(content) {
     });
   });
 
-  // Accept bid with loading → checkmark animation
+  // Accept bid — talks directly to Supabase, no Vercel roundtrip
   document.querySelectorAll("[data-client-bids-accept]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const bidId = btn.getAttribute("data-client-bids-accept");
@@ -2774,18 +2767,10 @@ function setupClientBidsPage(content) {
       btn.querySelector(".client-bids-accept-btn__loader")?.removeAttribute("hidden");
 
       try {
-        const { acceptClientDashboardBidLocal, acceptClientDashboardBidRemote } = await import("./core/marketplaceStore.js");
-
-        // Try optimistic local accept first, but don't fail if listing not found locally
-        let localResult = null;
-        try {
-          localResult = acceptClientDashboardBidLocal(listingId, bidId, session.user.id);
-        } catch (localErr) {
-          console.warn("[yapply] Local accept failed, will send to backend directly:", localErr?.code || localErr?.message);
-        }
-
-        // ALWAYS send to backend — this is what actually matters
-        await acceptClientDashboardBidRemote(listingId, bidId);
+        // Accept directly in Supabase PostgreSQL — one function, no cache gymnastics
+        const { acceptBid } = await import("./core/supabaseMarketplace.js");
+        const updatedListing = await acceptBid(listingId, bidId, session.user.id);
+        console.log("[yapply] Bid accepted via Supabase:", { listingId, bidId });
 
         // Show checkmark animation
         btn.classList.remove("is-loading");
@@ -2795,7 +2780,8 @@ function setupClientBidsPage(content) {
 
         // Write notification for the developer
         try {
-          const developerUserId = localResult?.marketplaceMeta?.acceptedBid?.developerProfileReference?.userId || "";
+          const acceptedBid = updatedListing?.marketplaceMeta?.acceptedBid;
+          const developerUserId = acceptedBid?.developerProfileReference?.userId || acceptedBid?.developerId || "";
           if (developerUserId) {
             const { addNotification } = await import("./core/notifications.js");
             addNotification(developerUserId, {
@@ -2807,12 +2793,13 @@ function setupClientBidsPage(content) {
           }
         } catch (_) {}
 
-        // Re-render from fresh data after animation
+        // Re-render from fresh Supabase data
         setTimeout(() => { renderPage(content.meta.locale); }, 800);
       } catch (error) {
         btn.classList.remove("is-loading");
         btn.querySelector(".client-bids-accept-btn__loader")?.setAttribute("hidden", "");
         btn.querySelector(".client-bids-accept-btn__label")?.removeAttribute("hidden");
+        console.error("[yapply] Bid accept failed:", error);
         window.alert(error?.message || (document.documentElement.lang === "tr"
           ? "Teklif kabul edilemedi."
           : "The bid could not be accepted."));
