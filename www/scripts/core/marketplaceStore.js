@@ -637,6 +637,16 @@ async function uploadImagesToStorage(obj, listingId) {
       clone.imageSrc = await uploadDataUrl(clone.imageSrc, uploadIndex++);
     }
 
+    // If imageSrc is empty/missing, set it from the first valid uploaded attachment
+    if (!clone.imageSrc || clone.imageSrc === "[base64-stripped]") {
+      const firstValidUrl = Array.isArray(clone.attachments)
+        && clone.attachments.find((a) => a?.dataUrl && typeof a.dataUrl === "string" && a.dataUrl.startsWith("http"));
+      if (firstValidUrl) {
+        clone.imageSrc = firstValidUrl.dataUrl;
+        console.log("[yapply] Set imageSrc from first uploaded attachment:", clone.imageSrc);
+      }
+    }
+
     // Strip any OTHER remaining base64 strings in nested fields (safety net)
     const safeJson = JSON.stringify(clone, (key, value) => {
       if (typeof value === "string" && value.startsWith("data:") && value.length > 200) {
