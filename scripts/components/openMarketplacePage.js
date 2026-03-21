@@ -654,6 +654,16 @@ function createMarketplaceListings(content) {
   // Skeleton placeholders for developer tab (shown while content loads)
   const developerSkeletonCards = createSkeletonCards(4);
 
+  const developerPanelBody = content.publicListingError
+    ? createClientEmptyState(content, "error")
+    : developerItems.length > 0
+      ? `
+        <div class="marketplace-grid" data-marketplace-developer-grid>${initialDeveloperCards}</div>
+        ${createDeferredCardsTemplate(deferredDeveloperCards, "developer")}
+        <div data-marketplace-developer-empty hidden>${createClientEmptyState(content)}</div>
+      `
+      : createClientEmptyState(content);
+
   return `
     <section class="section-shell" id="marketplace-listings">
       <div class="marketplace-toggle-row">
@@ -686,8 +696,7 @@ function createMarketplaceListings(content) {
       </div>
 
       <div class="marketplace-panel" data-marketplace-panel="developer" hidden>
-        ${initialDeveloperCards ? `<div class="marketplace-grid" data-marketplace-developer-grid>${initialDeveloperCards}</div>` : `<div class="marketplace-grid" data-marketplace-developer-grid>${developerSkeletonCards}</div>`}
-        ${createDeferredCardsTemplate(deferredDeveloperCards, "developer")}
+        ${developerPanelBody}
       </div>
     </section>
     <script>
