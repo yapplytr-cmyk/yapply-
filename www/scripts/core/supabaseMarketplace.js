@@ -667,7 +667,14 @@ function normalizeListing(row) {
   const bids = Array.isArray(row.listing_bids) ? row.listing_bids.map(normalizeBid) : [];
   const acceptedBid = bids.find((b) => b.status === "accepted") || null;
 
+  // Spread payload FIRST so explicit PG column values below take precedence.
+  // This prevents payload.id / payload.type / payload.status from overwriting
+  // the authoritative PG row values.
+  const payloadFields = typeof row.payload === "object" && row.payload !== null ? row.payload : {};
+
   return {
+    ...payloadFields,
+    // ── Authoritative PG columns — MUST come after spread ──
     id: row.id,
     type: row.listing_type,
     status: row.status,
@@ -685,8 +692,6 @@ function normalizeListing(row) {
     updatedAt: row.updated_at,
     acceptedBidId: row.accepted_bid_id || "",
     bids,
-    // Preserve the payload for any extra fields the frontend uses
-    ...(typeof row.payload === "object" && row.payload !== null ? row.payload : {}),
     // Build marketplaceMeta for backward compatibility with existing UI components
     marketplaceMeta: {
       listingStatus: row.status,

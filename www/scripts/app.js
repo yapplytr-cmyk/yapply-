@@ -459,7 +459,9 @@ function createDeveloperDashboardPageContent(content, runtimeData = {}) {
   }
 
   const ownedListings = mergeDashboardItems(localListings, remoteListings);
-  const bidEntries = mergeDashboardItems(localBids, remoteBids);
+  // 100% Supabase: PG is the source of truth for bids.
+  // Only fall back to local if PG returned nothing (offline).
+  const bidEntries = remoteBids.length > 0 ? remoteBids : localBids;
 
   return {
     meta: content.meta,
