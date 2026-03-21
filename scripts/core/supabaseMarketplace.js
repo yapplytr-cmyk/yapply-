@@ -2,9 +2,85 @@
  * supabaseMarketplace.js
  * Direct Supabase PostgreSQL queries for marketplace data.
  * Replaces all Vercel API roundtrips — app talks to Supabase directly.
+ *
+ * IMPORTANT: On Capacitor iOS, CapacitorHttp intercepts ALL fetch() and XHR.
+ * This can corrupt Supabase JS client internals. To work around this:
+ *   1. We read the JWT access token directly from localStorage (no HTTP involved)
+ *   2. We always send the JWT in raw REST calls
+ *   3. Supabase JS client is tried first but we don't rely on it
  */
 
 import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+
+// ─── Constants ────────────────────────────────────────────────
+const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+const AUTH_STORAGE_KEY = "sb-sgoicvqgfydwfpttzgqu-auth-token";
+
+/**
+ * Read the Supabase JWT access token directly from localStorage.
+ * This BYPASSES CapacitorHttp entirely — localStorage is a sync browser API.
+ * The Supabase JS client stores the session here automatically.
+ */
+function getStoredAccessToken() {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Supabase stores: { access_token, refresh_token, expires_at, ... }
+    if (parsed?.access_token) {
+      // Check if token is expired (with 60s buffer)
+      if (parsed.expires_at && Date.now() / 1000 > parsed.expires_at - 60) {
+        console.warn("[yapply] Stored JWT expired, will try refresh");
+        return null;
+      }
+      return parsed.access_token;
+    }
+  } catch (_) {}
+  return null;
+}
+
+/**
+ * Get the best available JWT access token, trying multiple sources:
+ * 1. Direct localStorage read (most reliable on Capacitor)
+ * 2. Supabase JS client getSession()
+ * 3. Supabase JS client refreshSession()
+ */
+async function getBestAccessToken(supabase) {
+  // Source 1: localStorage direct read (bypasses CapacitorHttp)
+  let token = getStoredAccessToken();
+  if (token) {
+    console.log("[yapply] JWT from localStorage: OK");
+    return token;
+  }
+
+  // Source 2: Supabase JS client getSession
+  try {
+    const { data } = await supabase.auth.getSession();
+    token = data?.session?.access_token || null;
+    if (token) {
+      console.log("[yapply] JWT from getSession: OK");
+      return token;
+    }
+  } catch (e) {
+    console.warn("[yapply] getSession failed:", e?.message);
+  }
+
+  // Source 3: Supabase JS client refreshSession
+  try {
+    const { data } = await supabase.auth.refreshSession();
+    token = data?.session?.access_token || null;
+    if (token) {
+      console.log("[yapply] JWT from refreshSession: OK");
+      return token;
+    }
+  } catch (e) {
+    console.warn("[yapply] refreshSession failed:", e?.message);
+  }
+
+  console.warn("[yapply] No JWT available from any source");
+  return null;
+}
 
 // ─── Listings ────────────────────────────────────────────────
 
@@ -37,8 +113,6 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
   }
 
   // ── Attempt 2: Raw REST API ──
-  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
   const params = new URLSearchParams({
     select: "*,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
     order: "created_at.desc",
@@ -83,8 +157,6 @@ export async function fetchListing(listingId) {
   }
 
   // ── Attempt 2: Raw REST API ──
-  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&limit=1`, {
     headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
   });
@@ -120,14 +192,7 @@ export async function fetchMyListings(ownerUserId) {
   }
 
   // ── Attempt 2: Raw REST API ──
-  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
-  let accessToken = null;
-  try {
-    const { data: sd } = await supabase.auth.getSession();
-    accessToken = sd?.session?.access_token || null;
-  } catch (_) {}
-  const authHeader = accessToken || SUPABASE_ANON_KEY;
+  const authHeader = (await getBestAccessToken(supabase)) || SUPABASE_ANON_KEY;
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?owner_user_id=eq.${encodeURIComponent(ownerUserId)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&order=created_at.desc`, {
     headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${authHeader}` },
@@ -163,14 +228,7 @@ export async function fetchBidsForDeveloper(bidderUserId) {
   }
 
   // ── Attempt 2: Raw REST API ──
-  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
-  let accessToken = null;
-  try {
-    const { data: sd } = await supabase.auth.getSession();
-    accessToken = sd?.session?.access_token || null;
-  } catch (_) {}
-  const authHeader = accessToken || SUPABASE_ANON_KEY;
+  const authHeader = (await getBestAccessToken(supabase)) || SUPABASE_ANON_KEY;
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/listing_bids?bidder_user_id=eq.${encodeURIComponent(bidderUserId)}&select=*,marketplace_listings(id,title,status,owner_user_id,listing_type,payload,created_at,updated_at)&order=created_at.desc`, {
     headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${authHeader}` },
@@ -245,18 +303,20 @@ export async function acceptBid(listingId, bidId, ownerUserId) {
  *   2. If that fails, try raw REST API fetch with JWT token (bypasses any CapacitorHttp issues)
  */
 export async function createBid({ listingId, bidderUserId, companyName, bidAmount, estimatedTimeframe, proposalMessage, payload = {} }) {
+  // ── Validate listing ID is a proper UUID before even trying ──
+  if (!isValidUUID(listingId)) {
+    console.error("[yapply] createBid: listingId is NOT a valid UUID:", listingId);
+    throw Object.assign(
+      new Error("Bu ilan henüz sunucuya kaydedilmemiş. Lütfen yeni bir ilan oluşturun. / This listing was not saved to the server. Please create a new listing."),
+      { code: "LISTING_NOT_IN_PG", details: `listingId "${listingId}" is not a UUID — listing only exists locally` }
+    );
+  }
+
   const supabase = await getSupabaseClient();
 
-  // Get the current JWT access token for raw REST fallback
-  let accessToken = null;
-  try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    accessToken = sessionData?.session?.access_token || null;
-    const authUid = sessionData?.session?.user?.id || "NO_SESSION";
-    console.log("[yapply] createBid: auth.uid =", authUid, "| bidder =", bidderUserId, "| match =", authUid === bidderUserId, "| hasToken =", !!accessToken);
-  } catch (e) {
-    console.warn("[yapply] createBid: getSession failed:", e?.message);
-  }
+  // Get JWT from localStorage first (bypasses CapacitorHttp)
+  const accessToken = await getBestAccessToken(supabase);
+  console.log("[yapply] createBid: hasToken =", !!accessToken, "| bidder =", bidderUserId, "| listing =", listingId);
 
   const bidRow = {
     listing_id: listingId,
@@ -287,27 +347,22 @@ export async function createBid({ listingId, bidderUserId, companyName, bidAmoun
     console.warn("[yapply] createBid Supabase JS threw:", jsClientErr?.message);
   }
 
-  // ── Attempt 2: Raw REST API fetch (bypasses Supabase JS client HTTP layer) ──
-  console.log("[yapply] createBid: trying raw REST API fallback...");
-  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+  // ── Attempt 2: Raw REST API with JWT from localStorage ──
+  console.log("[yapply] createBid: trying raw REST API...");
 
-  // If we don't have a JWT, try refreshing
   if (!accessToken) {
-    try {
-      const { data: refreshData } = await supabase.auth.refreshSession();
-      accessToken = refreshData?.session?.access_token || null;
-    } catch (_) {}
+    throw Object.assign(
+      new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın. / Session not found. Please log in again."),
+      { code: "NO_AUTH_TOKEN" }
+    );
   }
-
-  const authHeader = accessToken || SUPABASE_ANON_KEY;
 
   const rawResponse = await fetch(`${SUPABASE_URL}/rest/v1/listing_bids`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "apikey": SUPABASE_ANON_KEY,
-      "Authorization": `Bearer ${authHeader}`,
+      "Authorization": `Bearer ${accessToken}`,
       "Prefer": "return=representation",
     },
     body: JSON.stringify(bidRow),
@@ -340,15 +395,9 @@ export async function createBid({ listingId, bidderUserId, companyName, bidAmoun
 export async function createListing({ ownerUserId, ownerEmail, ownerRole = "client", listingType = "client", title, description, location, budget, timeframe, projectType, category, payload = {} }) {
   const supabase = await getSupabaseClient();
 
-  // Get JWT for raw REST fallback
-  let accessToken = null;
-  try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    accessToken = sessionData?.session?.access_token || null;
-    console.log("[yapply] createListing: hasToken =", !!accessToken, "| owner =", ownerUserId);
-  } catch (e) {
-    console.warn("[yapply] createListing: getSession failed:", e?.message);
-  }
+  // Get JWT from localStorage first (bypasses CapacitorHttp)
+  const accessToken = await getBestAccessToken(supabase);
+  console.log("[yapply] createListing: hasToken =", !!accessToken, "| owner =", ownerUserId);
 
   const listingRow = {
     owner_user_id: ownerUserId,
@@ -387,26 +436,22 @@ export async function createListing({ ownerUserId, ownerEmail, ownerRole = "clie
     console.warn("[yapply] createListing Supabase JS threw:", jsClientErr?.message);
   }
 
-  // ── Attempt 2: Raw REST API fetch ──
-  console.log("[yapply] createListing: trying raw REST API fallback...");
-  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+  // ── Attempt 2: Raw REST API with JWT from localStorage ──
+  console.log("[yapply] createListing: trying raw REST API...");
 
   if (!accessToken) {
-    try {
-      const { data: refreshData } = await supabase.auth.refreshSession();
-      accessToken = refreshData?.session?.access_token || null;
-    } catch (_) {}
+    throw Object.assign(
+      new Error("Oturum bulunamadı. İlan oluşturmak için lütfen tekrar giriş yapın. / Session not found. Please log in again to create a listing."),
+      { code: "NO_AUTH_TOKEN" }
+    );
   }
-
-  const authHeader = accessToken || SUPABASE_ANON_KEY;
 
   const rawResponse = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "apikey": SUPABASE_ANON_KEY,
-      "Authorization": `Bearer ${authHeader}`,
+      "Authorization": `Bearer ${accessToken}`,
       "Prefer": "return=representation",
     },
     body: JSON.stringify(listingRow),
@@ -444,6 +489,13 @@ export async function updateListingStatus(listingId, newStatus) {
 
   if (error) throw error;
   return normalizeListing(data);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isValidUUID(id) {
+  return typeof id === "string" && UUID_RE.test(id);
 }
 
 // ─── Normalization (DB rows → frontend format) ───────────────

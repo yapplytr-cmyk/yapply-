@@ -135,8 +135,19 @@ function splitList(value) {
 }
 
 function createId(prefix, seed) {
-  const slug = slugify(seed) || prefix;
-  return `${prefix}-${Date.now()}-${slug}`.slice(0, 96);
+  // Generate a proper UUID so PG never rejects the ID format.
+  // PG will generate its own UUID on INSERT, but if the listing
+  // is only saved locally (PG creation fails), at least the ID
+  // won't cause "invalid uuid syntax" errors on bid attempts.
+  try {
+    return crypto.randomUUID();
+  } catch (_) {
+    // Fallback UUID v4 for older WebViews
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
 }
 
 function createApiUrl(path) {
@@ -551,6 +562,33 @@ function getStore() {
     client: Array.isArray(stored.client) ? stored.client : [],
     professional: Array.isArray(stored.professional) ? stored.professional : [],
   };
+}
+
+/**
+ * One-time cleanup: remove any listings with non-UUID IDs from localStorage.
+ * These are stale drafts that never made it to Supabase PG and can't be bid on.
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+let _storeCleanedUp = false;
+function cleanupStaleLocalListings() {
+  if (_storeCleanedUp) return;
+  _storeCleanedUp = true;
+  try {
+    const store = getStore();
+    let changed = false;
+    for (const section of ["client", "professional"]) {
+      if (!Array.isArray(store[section])) continue;
+      const before = store[section].length;
+      store[section] = store[section].filter((item) => {
+        if (!item?.id) return false;
+        if (UUID_RE.test(item.id)) return true;
+        console.warn("[yapply] Removing stale non-UUID listing from localStorage:", item.id);
+        return false;
+      });
+      if (store[section].length !== before) changed = true;
+    }
+    if (changed) setStore(store);
+  } catch (_) {}
 }
 
 function setStore(store) {
@@ -1876,6 +1914,7 @@ export function getSubmissionSuccessHref(type, id) {
 }
 
 export function getSubmittedListings(type) {
+  cleanupStaleLocalListings();
   const store = getStore();
   const items = store[type] || [];
   return [...items]
@@ -1894,6 +1933,7 @@ export function getSubmittedListing(type, id) {
 export async function saveMarketplaceSubmission(type, formData) {
   requireListingOwner(type);
   const draftListing = type === "professional" ? await createProfessionalListing(formData) : await createClientListing(formData);
+  const draftId = draftListing?.id;
 
   // Always persist the draft locally first so the listing is never lost,
   // even if the backend call fails (network error, auth issue, etc).
@@ -1902,23 +1942,41 @@ export async function saveMarketplaceSubmission(type, formData) {
   let listing;
   try {
     listing = await createBackendMarketplaceListing(draftListing);
-    // Backend succeeded — update local store with the canonical backend version
-    // (it has the real UUID and server timestamps).
+    // Backend succeeded — the PG listing has a different UUID than the draft.
+    // Remove the old draft entry and save the canonical PG version.
+    if (listing.id !== draftId) {
+      removeDraftFromStore(type, draftId);
+    }
     persistSubmissionArtifacts(type, listing);
+    console.log("[Yapply] Listing saved to PG:", listing.id, "(draft was:", draftId, ")");
   } catch (error) {
     // Backend failed — the draft is already persisted locally above,
-    // so the user can still see it. On browser-managed environments
-    // this is expected; on production, log the error but don't crash.
-    console.error("[Yapply] Backend listing create failed — using local draft", {
+    // so the user can still see it. Log the error for debugging.
+    console.error("[Yapply] Backend listing create FAILED — local-only draft", {
       code: error?.code || "",
       message: error?.message || "",
       type,
-      draftId: draftListing?.id,
+      draftId,
     });
     listing = draftListing;
   }
 
   return listing;
+}
+
+/**
+ * Remove a specific listing from the local store by ID.
+ * Used when PG returns a different UUID than the draft.
+ */
+function removeDraftFromStore(type, draftId) {
+  if (!draftId) return;
+  try {
+    const store = getStore();
+    if (Array.isArray(store[type])) {
+      store[type] = store[type].filter((item) => item.id !== draftId);
+      setStore(store);
+    }
+  } catch (_) {}
 }
 
 export function getLastSubmission() {
