@@ -1,24 +1,34 @@
 -- ============================================================
 -- YAPPLY MARKETPLACE FIX — Run this in Supabase SQL Editor
 -- ============================================================
--- This script fixes the bid submission error:
---   "violates foreign key constraint listing_bids_listing_id_fkey"
--- It also creates a helper function to sync listings into PG.
+-- This script creates a helper function to sync listings into PG
+-- and relaxes the INSERT policy so any authenticated user can
+-- create listings (needed for the ensureListingInPg flow).
+--
+-- IMPORTANT: Do NOT drop the FK constraint on listing_bids.
+-- PostgREST needs the FK to resolve embedded joins like:
+--   SELECT *, listing_bids(...) FROM marketplace_listings
+-- Dropping it breaks ALL listing queries across the app.
+-- The ensure_listing_in_pg function prevents FK violations
+-- by syncing the listing to PG before inserting a bid.
 -- ============================================================
 
--- 1. Drop the foreign key constraint on listing_bids.listing_id
---    This allows bids to be stored even if the listing hasn't been
---    migrated to PG yet (it might still be in Cloud Storage).
-ALTER TABLE listing_bids
-  DROP CONSTRAINT IF EXISTS listing_bids_listing_id_fkey;
+-- 1. Ensure the FK constraint exists (re-add if previously dropped)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'listing_bids_listing_id_fkey'
+      AND table_name = 'listing_bids'
+  ) THEN
+    ALTER TABLE listing_bids
+      ADD CONSTRAINT listing_bids_listing_id_fkey
+      FOREIGN KEY (listing_id) REFERENCES marketplace_listings(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
--- 2. Also change listing_id to NOT require a reference
---    (make it just a plain UUID column)
-ALTER TABLE listing_bids
-  ALTER COLUMN listing_id SET NOT NULL;
-
--- 3. Create a SECURITY DEFINER function that any authenticated user
---    can call to ensure a listing exists in PG.
+-- 2. Create a SECURITY DEFINER function that any authenticated user
+--    can call to ensure a listing exists in PG before placing a bid.
 --    This runs with service-role privileges, bypassing RLS.
 CREATE OR REPLACE FUNCTION public.ensure_listing_in_pg(
   p_id UUID,
@@ -59,20 +69,17 @@ $$;
 GRANT EXECUTE ON FUNCTION public.ensure_listing_in_pg TO authenticated;
 GRANT EXECUTE ON FUNCTION public.ensure_listing_in_pg TO anon;
 
--- 4. Relax the INSERT policy on marketplace_listings
+-- 3. Relax the INSERT policy on marketplace_listings
 --    Any authenticated user should be able to create listings.
 DROP POLICY IF EXISTS "Owners can insert their own listings" ON marketplace_listings;
+DROP POLICY IF EXISTS "Authenticated users can insert listings" ON marketplace_listings;
 CREATE POLICY "Authenticated users can insert listings"
   ON marketplace_listings
   FOR INSERT
   TO authenticated
   WITH CHECK (true);
 
--- 5. Clean up any test/demo listings that shouldn't be there
--- (Uncomment and modify if you want to delete specific test listings)
--- DELETE FROM marketplace_listings WHERE title LIKE '%test%';
-
 -- Done! The app can now:
--- a) Insert bids without FK constraint errors
--- b) Sync listings to PG via the ensure_listing_in_pg function
+-- a) Sync listings to PG via the ensure_listing_in_pg function
+-- b) Insert bids (FK is preserved, ensureListingInPg prevents violations)
 -- c) Any authenticated user can create listings
