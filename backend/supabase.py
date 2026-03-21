@@ -19,6 +19,11 @@ from .config import (
   SUPABASE_SERVICE_KEY_SOURCE,
   SUPABASE_URL,
   SUPABASE_URL_SOURCE,
+  SEEDED_ADMIN_USERNAME,
+  SEEDED_ADMIN_EMAIL,
+  SEEDED_ADMIN_PASSWORD,
+  SEEDED_ADMIN_FULL_NAME,
+  SEEDED_ADMIN_ROLE,
 )
 
 
@@ -972,8 +977,67 @@ def require_public_access(access_token: str, expected_role: str = "") -> tuple[d
   return auth_user, profile
 
 
+def _bootstrap_seeded_admin() -> dict[str, Any] | None:
+  """Auto-create the seeded admin user + profile if it doesn't exist in Supabase yet."""
+  import traceback
+
+  print(f"[yapply] Bootstrapping seeded admin: {SEEDED_ADMIN_USERNAME} / {SEEDED_ADMIN_EMAIL}")
+  user_id = ""
+
+  # Step 1: Try to sign in (auth user might already exist, just profile missing)
+  try:
+    session = sign_in_with_password(SEEDED_ADMIN_EMAIL, SEEDED_ADMIN_PASSWORD)
+    user_obj = session.get("user") if isinstance(session, dict) else None
+    user_id = str(user_obj.get("id") or "").strip() if isinstance(user_obj, dict) else ""
+    print(f"[yapply] Seeded admin sign-in OK, user_id={user_id}")
+  except Exception as e:
+    print(f"[yapply] Seeded admin sign-in failed ({e}), will try creating auth user")
+
+  # Step 2: If sign-in failed, create the auth user
+  if not user_id:
+    try:
+      result = create_user_with_service_role(
+        SEEDED_ADMIN_EMAIL,
+        SEEDED_ADMIN_PASSWORD,
+        {"full_name": SEEDED_ADMIN_FULL_NAME, "role": SEEDED_ADMIN_ROLE},
+      )
+      user_obj = result.get("user") if isinstance(result.get("user"), dict) else result
+      user_id = str(user_obj.get("id") or "").strip() if isinstance(user_obj, dict) else ""
+      print(f"[yapply] Seeded admin auth user created, user_id={user_id}")
+    except Exception as e:
+      print(f"[yapply] Failed to create seeded admin auth user: {e}")
+      traceback.print_exc()
+      return None
+
+  if not user_id:
+    print("[yapply] No user_id for seeded admin — giving up")
+    return None
+
+  # Step 3: Upsert the profile row
+  try:
+    profile = upsert_profile(
+      user_id=user_id,
+      email=SEEDED_ADMIN_EMAIL,
+      role=SEEDED_ADMIN_ROLE,
+      full_name=SEEDED_ADMIN_FULL_NAME,
+      username=SEEDED_ADMIN_USERNAME,
+      status="active",
+    )
+    print(f"[yapply] Seeded admin profile created/updated: {profile.get('id')}")
+    return profile
+  except Exception as e:
+    print(f"[yapply] Failed to upsert seeded admin profile: {e}")
+    traceback.print_exc()
+    return None
+
+
 def resolve_admin_email(identifier: str) -> dict[str, Any]:
   profile = get_profile_by_identifier(identifier)
+
+  # Auto-bootstrap the seeded admin if not found
+  if not profile and identifier.strip().lower() == SEEDED_ADMIN_USERNAME.lower():
+    profile = _bootstrap_seeded_admin()
+
   if not profile:
     raise SupabaseError("LOGIN_ACCOUNT_NOT_FOUND", "The admin account could not be found.", 404)
   if profile.get("role") not in ADMIN_ROLES:

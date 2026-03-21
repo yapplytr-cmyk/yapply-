@@ -555,6 +555,32 @@ async function createAttachments(fileValue) {
   return attachments;
 }
 
+/**
+ * Strip base64 data URLs from a listing before sending to PG.
+ * Attachments with embedded images can be megabytes — far too large for JSONB.
+ */
+function stripBase64FromPayload(obj) {
+  if (!obj || typeof obj !== "object") return obj;
+  try {
+    const json = JSON.stringify(obj, (key, value) => {
+      // Strip any string that looks like a data URL (base64-encoded file)
+      if (typeof value === "string" && value.startsWith("data:") && value.length > 200) {
+        return "[base64-stripped]";
+      }
+      return value;
+    });
+    return JSON.parse(json);
+  } catch (_) {
+    // If serialization fails, return a minimal safe object
+    return {
+      type: obj.type || "",
+      title: obj.title || obj.name || "",
+      status: obj.status || "",
+      createdAt: obj.createdAt || "",
+    };
+  }
+}
+
 function getStore() {
   const stored = readJson(STORAGE_KEY, { client: [], professional: [] });
 
@@ -565,30 +591,54 @@ function getStore() {
 }
 
 /**
- * One-time cleanup: remove any listings with non-UUID IDs from localStorage.
- * These are stale drafts that never made it to Supabase PG and can't be bid on.
+ * One-time cleanup: remove stale local marketplace data on app load.
+ * v20260321v2: Aggressive cleanup — wipe ALL local listings and SWR caches
+ * so the app only shows data from Supabase PG.
  */
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const CLEANUP_VERSION_KEY = "yapply-local-cleanup-v";
+const CURRENT_CLEANUP_VERSION = "20260321v2";
 let _storeCleanedUp = false;
 function cleanupStaleLocalListings() {
   if (_storeCleanedUp) return;
   _storeCleanedUp = true;
   try {
+    const lastVersion = localStorage.getItem(CLEANUP_VERSION_KEY) || "";
+    if (lastVersion === CURRENT_CLEANUP_VERSION) return;
+
+    console.log("[yapply] Running marketplace cleanup v" + CURRENT_CLEANUP_VERSION);
+
+    // 1. Clear ALL local listings (they should come from PG now)
     const store = getStore();
-    let changed = false;
+    let removedCount = 0;
     for (const section of ["client", "professional"]) {
-      if (!Array.isArray(store[section])) continue;
-      const before = store[section].length;
-      store[section] = store[section].filter((item) => {
-        if (!item?.id) return false;
-        if (UUID_RE.test(item.id)) return true;
-        console.warn("[yapply] Removing stale non-UUID listing from localStorage:", item.id);
-        return false;
-      });
-      if (store[section].length !== before) changed = true;
+      if (Array.isArray(store[section])) {
+        removedCount += store[section].length;
+        store[section] = [];
+      }
     }
-    if (changed) setStore(store);
-  } catch (_) {}
+    if (removedCount > 0) {
+      setStore(store);
+      console.log("[yapply] Removed", removedCount, "stale local listings");
+    }
+
+    // 2. Clear SWR caches so pages fetch fresh from PG
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("yapply-swr-") || key === "yapply-last-submission" || key === "yapply-last-submission-detail")) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+      console.log("[yapply] Cleared cache:", key);
+    });
+
+    localStorage.setItem(CLEANUP_VERSION_KEY, CURRENT_CLEANUP_VERSION);
+  } catch (e) {
+    console.warn("[yapply] Cleanup failed:", e?.message);
+  }
 }
 
 function setStore(store) {
@@ -1008,7 +1058,11 @@ async function createBackendMarketplaceListing(listing) {
   });
 
   // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
-  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321-pg-only");
+  // Strip base64 image data from the payload to keep the PG row small.
+  // Attachments with data URLs can be megabytes — PG JSONB chokes on them.
+  const pgPayload = stripBase64FromPayload(listing);
+
+  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v2");
   const result = await pgCreateListing({
     ownerUserId: owner?.id || null,
     ownerEmail: owner?.email || "",
@@ -1021,7 +1075,7 @@ async function createBackendMarketplaceListing(listing) {
     timeframe: listing?.timeline || listing?.timeframe || "",
     projectType: listing?.projectType || "",
     category: listing?.marketplaceCategory || listing?.category || "",
-    payload: listing,
+    payload: pgPayload,
   });
   console.log("[Yapply] Listing created via Supabase PG:", result.id);
 
@@ -1116,7 +1170,7 @@ export async function submitMarketplaceBid(formData) {
 
   // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
   let data = {};
-  const { createBid: pgCreateBid, fetchListing: pgFetchListing } = await import("./supabaseMarketplace.js?v=20260321-pg-only");
+  const { createBid: pgCreateBid, fetchListing: pgFetchListing } = await import("./supabaseMarketplace.js?v=20260321v2");
   const pgBid = await pgCreateBid({
     listingId: bid.listingId,
     bidderUserId: session.user.id,
@@ -1205,7 +1259,7 @@ export async function fetchPublicMarketplaceListings({
   const request = (async () => {
     // ─── Try Supabase PostgreSQL first (fast, direct) ───
     try {
-      const { fetchListings } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+      const { fetchListings } = await import("./supabaseMarketplace.js?v=20260321v2");
       const results = await fetchListings({ type, status, category, limit });
       console.log("[yapply] Kesfet: loaded", results.length, "listings from Supabase PG");
       return results;
@@ -1272,7 +1326,7 @@ export async function fetchPublicMarketplaceListing(listingId) {
   const request = (async () => {
     // ─── Try Supabase PostgreSQL first ───
     try {
-      const { fetchListing } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+      const { fetchListing } = await import("./supabaseMarketplace.js?v=20260321v2");
       const result = await fetchListing(listingId);
       console.log("[yapply] Detail: loaded listing", listingId, "from Supabase PG");
       return result;
@@ -1364,7 +1418,7 @@ async function _fetchDeveloperDashboardDataImpl() {
 
   // ─── Try Supabase PostgreSQL first ───
   try {
-    const { fetchBidsForDeveloper, fetchMyListings } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+    const { fetchBidsForDeveloper, fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v2");
     const [pgListings, pgBidEntries] = await Promise.all([
       fetchMyListings(ownerUserId),
       fetchBidsForDeveloper(ownerUserId),
@@ -1748,7 +1802,7 @@ export async function acceptClientDashboardBidRemote(listingId, bidId) {
   // Try Supabase PG accept first
   let updatedListing = null;
   try {
-    const { acceptBid: pgAcceptBid } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+    const { acceptBid: pgAcceptBid } = await import("./supabaseMarketplace.js?v=20260321v2");
     updatedListing = await pgAcceptBid(listingId, bidId, ownerUserId);
     console.log("[yapply] Bid accepted via Supabase PG:", bidId);
   } catch (supaErr) {
@@ -1950,15 +2004,21 @@ export async function saveMarketplaceSubmission(type, formData) {
     persistSubmissionArtifacts(type, listing);
     console.log("[Yapply] Listing saved to PG:", listing.id, "(draft was:", draftId, ")");
   } catch (error) {
-    // Backend failed — the draft is already persisted locally above,
-    // so the user can still see it. Log the error for debugging.
-    console.error("[Yapply] Backend listing create FAILED — local-only draft", {
-      code: error?.code || "",
-      message: error?.message || "",
+    // Backend failed — show the error to the user so they know what happened.
+    const errMsg = error?.message || "Unknown error";
+    const errCode = error?.code || "";
+    console.error("[Yapply] Backend listing create FAILED:", errCode, errMsg, {
       type,
       draftId,
+      details: error?.details || "",
     });
-    listing = draftListing;
+
+    // CRITICAL: Remove the local-only draft — it can never be bid on
+    // because it doesn't exist in PG. Keeping it misleads the user.
+    removeDraftFromStore(type, draftId);
+
+    // Re-throw so the UI shows the error instead of a fake "success"
+    throw error;
   }
 
   return listing;
@@ -2016,7 +2076,7 @@ async function _fetchClientDashboardDataImpl() {
 
   // ─── Try Supabase PostgreSQL first ───
   try {
-    const { fetchMyListings } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
+    const { fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v2");
     const pgListings = await fetchMyListings(ownerUserId);
     console.log("[yapply] ClientDashboard: loaded", pgListings.length, "listings from Supabase PG");
     return { listings: pgListings };
