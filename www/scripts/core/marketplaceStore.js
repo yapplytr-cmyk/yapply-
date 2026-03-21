@@ -1137,12 +1137,11 @@ async function createBackendMarketplaceListing(listing) {
   });
 
   // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
-  // Upload base64 images to Supabase Storage, then store public URLs in PG payload.
-  // This keeps PG rows small while preserving actual image access.
-  const listingId = listing?.id || `listing-${Date.now()}`;
-  const pgPayload = await uploadImagesToStorage(listing, listingId);
+  // Pass listing payload as-is — PG JSONB handles base64 images fine.
+  // Do NOT strip or re-upload images; inline data URLs render correctly.
+  const pgPayload = listing;
 
-  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v3");
+  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v4");
   const result = await pgCreateListing({
     ownerUserId: owner?.id || null,
     ownerEmail: owner?.email || "",
