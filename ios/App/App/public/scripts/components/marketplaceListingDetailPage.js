@@ -387,8 +387,22 @@ function getListingImageItems(listing) {
     }
   }
 
+  const combined = [...photoImages, ...fallbackImages];
+
+  // Last-resort fallback: grab first attachment with any valid dataUrl
+  // (mirrors the simple logic used by listing cards on kesfet page)
+  if (combined.length === 0 && attachments.length > 0) {
+    for (const att of attachments) {
+      const src = att?.dataUrl || att?.url || att?.src;
+      if (isValidImageUrl(src)) {
+        combined.push({ id: "listing-image-1", name: "Project image", src });
+        break;
+      }
+    }
+  }
+
   const seenSources = new Set();
-  return [...photoImages, ...fallbackImages].filter((item) => {
+  return combined.filter((item) => {
     if (seenSources.has(item.src)) {
       return false;
     }
