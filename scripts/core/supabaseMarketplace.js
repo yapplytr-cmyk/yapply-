@@ -392,7 +392,7 @@ export async function createBid({ listingId, bidderUserId, companyName, bidAmoun
  *   1. Try Supabase JS client
  *   2. If that fails, raw REST API fetch (bypasses CapacitorHttp issues)
  */
-export async function createListing({ ownerUserId, ownerEmail, ownerRole = "client", listingType = "client", title, description, location, budget, timeframe, projectType, category, payload = {} }) {
+export async function createListing({ id, ownerUserId, ownerEmail, ownerRole = "client", listingType = "client", title, description, location, budget, timeframe, projectType, category, payload = {} }) {
   const supabase = await getSupabaseClient();
 
   // Get JWT from localStorage first (bypasses CapacitorHttp)
@@ -400,6 +400,8 @@ export async function createListing({ ownerUserId, ownerEmail, ownerRole = "clie
   console.log("[yapply] createListing: hasToken =", !!accessToken, "| owner =", ownerUserId);
 
   const listingRow = {
+    // Use client-side UUID if provided — makes insert idempotent across retries
+    ...(id ? { id } : {}),
     owner_user_id: ownerUserId,
     owner_email: ownerEmail || "",
     owner_role: ownerRole,
@@ -418,7 +420,7 @@ export async function createListing({ ownerUserId, ownerEmail, ownerRole = "clie
   try {
     const { data, error } = await supabase
       .from("marketplace_listings")
-      .insert(listingRow)
+      .upsert(listingRow, { onConflict: "id", ignoreDuplicates: false })
       .select(`
         *,
         listing_bids (id, bidder_user_id, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
@@ -452,7 +454,7 @@ export async function createListing({ ownerUserId, ownerEmail, ownerRole = "clie
       "Content-Type": "application/json",
       "apikey": SUPABASE_ANON_KEY,
       "Authorization": `Bearer ${accessToken}`,
-      "Prefer": "return=representation",
+      "Prefer": "return=representation,resolution=merge-duplicates",
     },
     body: JSON.stringify(listingRow),
   });

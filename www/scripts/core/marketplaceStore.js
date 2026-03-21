@@ -1136,8 +1136,9 @@ async function createBackendMarketplaceListing(listing) {
   // Do NOT strip or re-upload images; inline data URLs render correctly.
   const pgPayload = listing;
 
-  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v4");
+  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v5");
   const result = await pgCreateListing({
+    id: listing?.id || undefined,
     ownerUserId: owner?.id || null,
     ownerEmail: owner?.email || "",
     ownerRole: owner?.role || "client",
@@ -1213,18 +1214,13 @@ export async function submitMarketplaceBid(formData) {
       }
     : null;
 
-  // ── ALWAYS save bid to standalone developer store immediately ──
-  // This ensures the bid appears in Tekliflerim regardless of what the backend does.
-  const earlyBidEntry = createDeveloperDashboardBidEntry(bid, { id: bid.listingId, type: "client" });
-  saveDeveloperBidEntry(earlyBidEntry, session.user.id);
-
   // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
   let data = {};
   const {
     createBid: pgCreateBid,
     fetchListing: pgFetchListing,
     ensureListingInPg,
-  } = await import("./supabaseMarketplace.js?v=20260321v3");
+  } = await import("./supabaseMarketplace.js?v=20260321v5");
 
   // ── Step 1: Ensure the listing exists in PG before bidding ──
   // The listing might only exist in Cloud Storage or localStorage.
@@ -1345,7 +1341,7 @@ export async function fetchPublicMarketplaceListings({
   const request = (async () => {
     // ─── Try Supabase PostgreSQL first (fast, direct) ───
     try {
-      const { fetchListings } = await import("./supabaseMarketplace.js?v=20260321v2");
+      const { fetchListings } = await import("./supabaseMarketplace.js?v=20260321v5");
       const results = await fetchListings({ type, status, category, limit });
       console.log("[yapply] Kesfet: loaded", results.length, "listings from Supabase PG");
       return results;
@@ -1391,7 +1387,7 @@ export async function fetchPublicMarketplaceListing(listingId) {
   const request = (async () => {
     // ─── Try Supabase PostgreSQL first ───
     try {
-      const { fetchListing } = await import("./supabaseMarketplace.js?v=20260321v2");
+      const { fetchListing } = await import("./supabaseMarketplace.js?v=20260321v5");
       const result = await fetchListing(listingId);
       console.log("[yapply] Detail: loaded listing", listingId, "from Supabase PG");
       return result;
@@ -1464,7 +1460,7 @@ async function _fetchDeveloperDashboardDataImpl() {
 
   // ─── Try Supabase PostgreSQL first ───
   try {
-    const { fetchBidsForDeveloper, fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v2");
+    const { fetchBidsForDeveloper, fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v5");
     const [pgListings, pgBidEntries] = await Promise.all([
       fetchMyListings(ownerUserId),
       fetchBidsForDeveloper(ownerUserId),
@@ -1811,7 +1807,7 @@ export async function acceptClientDashboardBidRemote(listingId, bidId) {
   // Try Supabase PG accept first
   let updatedListing = null;
   try {
-    const { acceptBid: pgAcceptBid } = await import("./supabaseMarketplace.js?v=20260321v2");
+    const { acceptBid: pgAcceptBid } = await import("./supabaseMarketplace.js?v=20260321v5");
     updatedListing = await pgAcceptBid(listingId, bidId, ownerUserId);
     console.log("[yapply] Bid accepted via Supabase PG:", bidId);
   } catch (supaErr) {
@@ -2000,11 +1996,7 @@ export async function saveMarketplaceSubmission(type, formData) {
   let listing;
   try {
     listing = await createBackendMarketplaceListing(draftListing);
-    // Backend succeeded — the PG listing has a different UUID than the draft.
-    // Remove the old draft entry and save the canonical PG version.
-    if (listing.id !== draftId) {
-      removeDraftFromStore(type, draftId);
-    }
+    // Backend succeeded — update the local store with the canonical PG version.
     persistSubmissionArtifacts(type, listing);
     console.log("[Yapply] Listing saved to PG:", listing.id, "(draft was:", draftId, ")");
   } catch (error) {
@@ -2080,7 +2072,7 @@ async function _fetchClientDashboardDataImpl() {
 
   // ─── Try Supabase PostgreSQL first ───
   try {
-    const { fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v2");
+    const { fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v5");
     const pgListings = await fetchMyListings(ownerUserId);
     console.log("[yapply] ClientDashboard: loaded", pgListings.length, "listings from Supabase PG");
     return { listings: pgListings };
@@ -2122,7 +2114,7 @@ export async function deleteBackendMarketplaceListing(listingId) {
 
   // Delete from Supabase PG (the source of truth for the app)
   try {
-    const { deleteListingFromPg } = await import("./supabaseMarketplace.js?v=20260321v3");
+    const { deleteListingFromPg } = await import("./supabaseMarketplace.js?v=20260321v5");
     await deleteListingFromPg(listingId);
     console.log("[Yapply] Listing deleted from PG:", listingId);
   } catch (pgError) {
