@@ -1170,7 +1170,43 @@ export async function submitMarketplaceBid(formData) {
 
   // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
   let data = {};
-  const { createBid: pgCreateBid, fetchListing: pgFetchListing } = await import("./supabaseMarketplace.js?v=20260321v2");
+  const {
+    createBid: pgCreateBid,
+    fetchListing: pgFetchListing,
+    ensureListingInPg,
+  } = await import("./supabaseMarketplace.js?v=20260321v3");
+
+  // ── Step 1: Ensure the listing exists in PG before bidding ──
+  // The listing might only exist in Cloud Storage or localStorage.
+  // We need it in PG so the bid's listing_id reference is valid.
+  try {
+    // Try to get listing data from any available source
+    let listingData = null;
+
+    // Source 1: PG
+    try { listingData = await pgFetchListing(bid.listingId); } catch (_) {}
+
+    // Source 2: localStorage (same-device listings)
+    if (!listingData) {
+      listingData = getSubmittedListing("client", bid.listingId)
+                 || getSubmittedListing("professional", bid.listingId);
+    }
+
+    // Source 3: Vercel API / Cloud Storage fallback
+    if (!listingData) {
+      try { listingData = await fetchPublicMarketplaceListing(bid.listingId); } catch (_) {}
+    }
+
+    if (listingData) {
+      await ensureListingInPg(listingData);
+    } else {
+      console.warn("[yapply] Could not find listing data to sync:", bid.listingId);
+    }
+  } catch (syncErr) {
+    console.warn("[yapply] ensureListingInPg failed (will try bid anyway):", syncErr?.message);
+  }
+
+  // ── Step 2: Create the bid ──
   const pgBid = await pgCreateBid({
     listingId: bid.listingId,
     bidderUserId: session.user.id,

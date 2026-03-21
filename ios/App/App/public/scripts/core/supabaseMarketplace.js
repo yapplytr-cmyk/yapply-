@@ -102,7 +102,7 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
       .limit(limit);
 
     if (type) query = query.eq("listing_type", type);
-    if (status) query = query.eq("status", status);
+    if (status && status !== "all") query = query.eq("status", status);
     if (category) query = query.eq("category", category);
 
     const { data, error } = await query;
@@ -119,7 +119,7 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
     limit: String(limit),
   });
   if (type) params.append("listing_type", `eq.${type}`);
-  if (status) params.append("status", `eq.${status}`);
+  if (status && status !== "all") params.append("status", `eq.${status}`);
   if (category) params.append("category", `eq.${category}`);
 
   const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?${params}`, {
@@ -489,6 +489,99 @@ export async function updateListingStatus(listingId, newStatus) {
 
   if (error) throw error;
   return normalizeListing(data);
+}
+
+// ─── Ensure Listing Exists in PG ─────────────────────────────
+
+/**
+ * Ensure a listing exists in the PG `marketplace_listings` table.
+ * Uses the `ensure_listing_in_pg` RPC function (SECURITY DEFINER)
+ * which bypasses RLS. Falls back to direct INSERT if RPC unavailable.
+ *
+ * Call this BEFORE creating a bid so the FK constraint is satisfied.
+ */
+export async function ensureListingInPg(listingData) {
+  if (!listingData?.id) return;
+  const supabase = await getSupabaseClient();
+
+  // First check if listing already exists in PG
+  try {
+    const { data: existing } = await supabase
+      .from("marketplace_listings")
+      .select("id")
+      .eq("id", listingData.id)
+      .maybeSingle();
+    if (existing) {
+      console.log("[yapply] ensureListingInPg: listing already in PG:", listingData.id);
+      return;
+    }
+  } catch (_) {}
+
+  console.log("[yapply] ensureListingInPg: listing NOT in PG, syncing:", listingData.id);
+
+  // Try RPC function first (SECURITY DEFINER — bypasses RLS)
+  try {
+    const { error: rpcErr } = await supabase.rpc("ensure_listing_in_pg", {
+      p_id: listingData.id,
+      p_owner_user_id: listingData.ownerUserId || null,
+      p_title: listingData.title || listingData.name || "",
+      p_listing_type: listingData.type || "client",
+      p_status: listingData.status || "open-for-bids",
+      p_description: listingData.brief || listingData.description || "",
+      p_location: listingData.location || "",
+      p_budget: listingData.budget || "",
+      p_timeframe: listingData.timeline || listingData.timeframe || "",
+      p_project_type: listingData.projectType || "",
+      p_category: listingData.marketplaceCategory || listingData.category || "",
+      p_owner_email: listingData.contact?.email || listingData.ownerEmail || "",
+      p_owner_role: listingData.ownerRole || "client",
+      p_payload: {},
+    });
+    if (!rpcErr) {
+      console.log("[yapply] ensureListingInPg: synced via RPC");
+      return;
+    }
+    console.warn("[yapply] ensureListingInPg RPC error:", rpcErr.message);
+  } catch (e) {
+    console.warn("[yapply] ensureListingInPg RPC threw:", e?.message);
+  }
+
+  // Fallback: direct INSERT (works if RLS is relaxed or user is owner)
+  try {
+    const accessToken = await getBestAccessToken(supabase);
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${accessToken || SUPABASE_ANON_KEY}`,
+        "Prefer": "resolution=ignore-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        id: listingData.id,
+        owner_user_id: listingData.ownerUserId || null,
+        title: listingData.title || listingData.name || "",
+        listing_type: listingData.type || "client",
+        status: listingData.status || "open-for-bids",
+        description: listingData.brief || listingData.description || "",
+        location: listingData.location || "",
+        budget: listingData.budget || "",
+        timeframe: listingData.timeline || listingData.timeframe || "",
+        project_type: listingData.projectType || "",
+        category: listingData.marketplaceCategory || listingData.category || "",
+        owner_email: listingData.contact?.email || listingData.ownerEmail || "",
+        owner_role: listingData.ownerRole || "client",
+        payload: {},
+      }),
+    });
+    if (resp.ok || resp.status === 409) {
+      console.log("[yapply] ensureListingInPg: synced via direct INSERT");
+      return;
+    }
+    console.warn("[yapply] ensureListingInPg direct INSERT failed:", resp.status);
+  } catch (e) {
+    console.warn("[yapply] ensureListingInPg direct INSERT threw:", e?.message);
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────
