@@ -556,28 +556,97 @@ async function createAttachments(fileValue) {
 }
 
 /**
- * Strip base64 data URLs from a listing before sending to PG.
- * Attachments with embedded images can be megabytes — far too large for JSONB.
+ * Upload base64 data URL images to Supabase Storage and replace with public URLs.
+ * Falls back to stripping if upload fails.
  */
-function stripBase64FromPayload(obj) {
+async function uploadImagesToStorage(obj, listingId) {
   if (!obj || typeof obj !== "object") return obj;
+
+  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+  const AUTH_STORAGE_KEY = "sb-sgoicvqgfydwfpttzgqu-auth-token";
+
+  // Get JWT for authenticated upload
+  let accessToken = null;
   try {
-    const json = JSON.stringify(obj, (key, value) => {
-      // Strip any string that looks like a data URL (base64-encoded file)
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.access_token) accessToken = parsed.access_token;
+    }
+  } catch (_) {}
+
+  /**
+   * Upload a single base64 data URL to Supabase Storage.
+   * Returns the public URL on success, or "[base64-stripped]" on failure.
+   */
+  async function uploadDataUrl(dataUrl, index) {
+    try {
+      // Parse data URL: data:image/jpeg;base64,/9j/4AAQ...
+      const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (!match) return "[base64-stripped]";
+
+      const mimeType = match[1];
+      const ext = mimeType.split("/")[1] || "jpg";
+      const base64Data = match[2];
+      const binaryStr = atob(base64Data);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+      const fileName = `${listingId || "unknown"}/${Date.now()}-${index}.${ext}`;
+      const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/listing-images/${fileName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": mimeType,
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${accessToken || SUPABASE_ANON_KEY}`,
+          "x-upsert": "true",
+        },
+        body: bytes,
+      });
+
+      if (resp.ok) {
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/listing-images/${fileName}`;
+        console.log("[yapply] Image uploaded:", publicUrl);
+        return publicUrl;
+      }
+      console.warn("[yapply] Image upload failed:", resp.status);
+      return "[base64-stripped]";
+    } catch (e) {
+      console.warn("[yapply] Image upload error:", e?.message);
+      return "[base64-stripped]";
+    }
+  }
+
+  // Deep clone and replace base64 data URLs with Storage URLs
+  try {
+    const clone = JSON.parse(JSON.stringify(obj));
+    let uploadIndex = 0;
+
+    // Process attachments array
+    if (Array.isArray(clone.attachments)) {
+      for (const att of clone.attachments) {
+        if (att?.dataUrl && typeof att.dataUrl === "string" && att.dataUrl.startsWith("data:") && att.dataUrl.length > 200) {
+          att.dataUrl = await uploadDataUrl(att.dataUrl, uploadIndex++);
+        }
+      }
+    }
+
+    // Process imageSrc
+    if (typeof clone.imageSrc === "string" && clone.imageSrc.startsWith("data:") && clone.imageSrc.length > 200) {
+      clone.imageSrc = await uploadDataUrl(clone.imageSrc, uploadIndex++);
+    }
+
+    // Strip any OTHER remaining base64 strings in nested fields (safety net)
+    const safeJson = JSON.stringify(clone, (key, value) => {
       if (typeof value === "string" && value.startsWith("data:") && value.length > 200) {
         return "[base64-stripped]";
       }
       return value;
     });
-    return JSON.parse(json);
+    return JSON.parse(safeJson);
   } catch (_) {
-    // If serialization fails, return a minimal safe object
-    return {
-      type: obj.type || "",
-      title: obj.title || obj.name || "",
-      status: obj.status || "",
-      createdAt: obj.createdAt || "",
-    };
+    return { type: obj.type || "", title: obj.title || obj.name || "", status: obj.status || "", createdAt: obj.createdAt || "" };
   }
 }
 
@@ -1058,11 +1127,12 @@ async function createBackendMarketplaceListing(listing) {
   });
 
   // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
-  // Strip base64 image data from the payload to keep the PG row small.
-  // Attachments with data URLs can be megabytes — PG JSONB chokes on them.
-  const pgPayload = stripBase64FromPayload(listing);
+  // Upload base64 images to Supabase Storage, then store public URLs in PG payload.
+  // This keeps PG rows small while preserving actual image access.
+  const listingId = listing?.id || `listing-${Date.now()}`;
+  const pgPayload = await uploadImagesToStorage(listing, listingId);
 
-  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v2");
+  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v3");
   const result = await pgCreateListing({
     ownerUserId: owner?.id || null,
     ownerEmail: owner?.email || "",
