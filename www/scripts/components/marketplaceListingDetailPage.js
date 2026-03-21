@@ -363,7 +363,7 @@ function normalizeListingImageItem(item, index) {
 function getListingImageItems(listing) {
   const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
   const attachmentImages = attachments
-    .filter((item) => item?.kind === "image" && item?.dataUrl)
+    .filter((item) => item?.dataUrl && (item.kind === "image" || isValidImageUrl(item.dataUrl)))
     .map((item, index) => normalizeListingImageItem(item, index))
     .filter(Boolean);
 
