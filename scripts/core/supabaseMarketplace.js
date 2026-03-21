@@ -159,49 +159,93 @@ export async function acceptBid(listingId, bidId, ownerUserId) {
 
 /**
  * Developer submits a new bid on a listing.
+ * Two-layer approach:
+ *   1. Try Supabase JS client (uses auth.uid() for RLS)
+ *   2. If that fails, try raw REST API fetch with JWT token (bypasses any CapacitorHttp issues)
  */
 export async function createBid({ listingId, bidderUserId, companyName, bidAmount, estimatedTimeframe, proposalMessage, payload = {} }) {
   const supabase = await getSupabaseClient();
 
-  // Force-refresh the auth session before insert to avoid expired JWT / RLS failures
+  // Get the current JWT access token for raw REST fallback
+  let accessToken = null;
   try {
-    const { data: refreshData } = await supabase.auth.refreshSession();
-    if (refreshData?.session) {
-      console.log("[yapply] createBid: session refreshed, uid =", refreshData.session.user?.id);
+    const { data: sessionData } = await supabase.auth.getSession();
+    accessToken = sessionData?.session?.access_token || null;
+    const authUid = sessionData?.session?.user?.id || "NO_SESSION";
+    console.log("[yapply] createBid: auth.uid =", authUid, "| bidder =", bidderUserId, "| match =", authUid === bidderUserId, "| hasToken =", !!accessToken);
+  } catch (e) {
+    console.warn("[yapply] createBid: getSession failed:", e?.message);
+  }
+
+  const bidRow = {
+    listing_id: listingId,
+    bidder_user_id: bidderUserId,
+    company_name: companyName || "",
+    bid_amount: bidAmount || "",
+    estimated_timeframe: estimatedTimeframe || "",
+    proposal_message: proposalMessage || "",
+    payload: typeof payload === "string" ? JSON.parse(payload) : (payload || {}),
+  };
+
+  // ── Attempt 1: Supabase JS client ──
+  try {
+    const { data, error } = await supabase
+      .from("listing_bids")
+      .insert(bidRow)
+      .select()
+      .single();
+
+    if (!error && data) {
+      console.log("[yapply] createBid OK via Supabase JS client, id =", data.id);
+      return normalizeBid(data);
     }
-  } catch (_refreshErr) {
-    console.warn("[yapply] createBid: session refresh failed, proceeding with current session");
+    if (error) {
+      console.warn("[yapply] createBid Supabase JS error:", error.code, error.message, error.details, error.hint);
+    }
+  } catch (jsClientErr) {
+    console.warn("[yapply] createBid Supabase JS threw:", jsClientErr?.message);
   }
 
-  // Debug: log Supabase auth state before bid insert
-  const { data: sessionData } = await supabase.auth.getSession();
-  const authUid = sessionData?.session?.user?.id || "NO_SESSION";
-  console.log("[yapply] createBid: auth.uid =", authUid, "| bidder_user_id =", bidderUserId, "| match =", authUid === bidderUserId);
+  // ── Attempt 2: Raw REST API fetch (bypasses Supabase JS client HTTP layer) ──
+  console.log("[yapply] createBid: trying raw REST API fallback...");
+  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
 
-  if (authUid === "NO_SESSION") {
-    throw new Error("No active Supabase auth session. Please log in again.");
+  // If we don't have a JWT, try refreshing
+  if (!accessToken) {
+    try {
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      accessToken = refreshData?.session?.access_token || null;
+    } catch (_) {}
   }
 
-  const { data, error } = await supabase
-    .from("listing_bids")
-    .insert({
-      listing_id: listingId,
-      bidder_user_id: bidderUserId,
-      company_name: companyName || "",
-      bid_amount: bidAmount || "",
-      estimated_timeframe: estimatedTimeframe || "",
-      proposal_message: proposalMessage || "",
-      payload,
-    })
-    .select()
-    .single();
+  const authHeader = accessToken || SUPABASE_ANON_KEY;
 
-  if (error) {
-    console.error("[yapply] createBid PG error:", error.code, error.message, error.details, error.hint);
-    throw error;
+  const rawResponse = await fetch(`${SUPABASE_URL}/rest/v1/listing_bids`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${authHeader}`,
+      "Prefer": "return=representation",
+    },
+    body: JSON.stringify(bidRow),
+  });
+
+  if (!rawResponse.ok) {
+    const errBody = await rawResponse.text().catch(() => "");
+    console.error("[yapply] createBid raw REST failed:", rawResponse.status, errBody);
+    const parsed = (() => { try { return JSON.parse(errBody); } catch { return {}; } })();
+    throw Object.assign(
+      new Error(parsed.message || parsed.msg || `Bid insert failed (HTTP ${rawResponse.status})`),
+      { code: parsed.code || "PG_INSERT_FAILED", status: rawResponse.status, details: errBody }
+    );
   }
 
-  return normalizeBid(data);
+  const rows = await rawResponse.json();
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  console.log("[yapply] createBid OK via raw REST, id =", row?.id);
+  return normalizeBid(row);
 }
 
 // ─── Create Listing ──────────────────────────────────────────
