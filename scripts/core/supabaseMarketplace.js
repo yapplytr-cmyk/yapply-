@@ -163,10 +163,24 @@ export async function acceptBid(listingId, bidId, ownerUserId) {
 export async function createBid({ listingId, bidderUserId, companyName, bidAmount, estimatedTimeframe, proposalMessage, payload = {} }) {
   const supabase = await getSupabaseClient();
 
+  // Force-refresh the auth session before insert to avoid expired JWT / RLS failures
+  try {
+    const { data: refreshData } = await supabase.auth.refreshSession();
+    if (refreshData?.session) {
+      console.log("[yapply] createBid: session refreshed, uid =", refreshData.session.user?.id);
+    }
+  } catch (_refreshErr) {
+    console.warn("[yapply] createBid: session refresh failed, proceeding with current session");
+  }
+
   // Debug: log Supabase auth state before bid insert
   const { data: sessionData } = await supabase.auth.getSession();
   const authUid = sessionData?.session?.user?.id || "NO_SESSION";
   console.log("[yapply] createBid: auth.uid =", authUid, "| bidder_user_id =", bidderUserId, "| match =", authUid === bidderUserId);
+
+  if (authUid === "NO_SESSION") {
+    throw new Error("No active Supabase auth session. Please log in again.");
+  }
 
   const { data, error } = await supabase
     .from("listing_bids")
@@ -183,7 +197,7 @@ export async function createBid({ listingId, bidderUserId, companyName, bidAmoun
     .single();
 
   if (error) {
-    console.error("[yapply] createBid PG error:", error.code, error.message, error.details);
+    console.error("[yapply] createBid PG error:", error.code, error.message, error.details, error.hint);
     throw error;
   }
 
