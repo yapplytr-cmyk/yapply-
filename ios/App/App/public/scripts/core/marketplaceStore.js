@@ -2263,14 +2263,24 @@ export async function deleteBackendMarketplaceListing(listingId) {
     return false;
   }
 
+  // 1. Delete from Supabase PG (the source of truth for the app)
+  try {
+    const { deleteListingFromPg } = await import("./supabaseMarketplace.js?v=20260321v3");
+    await deleteListingFromPg(listingId);
+    console.log("[Yapply] Listing deleted from PG:", listingId);
+  } catch (pgError) {
+    console.warn("[Yapply] PG delete failed (will try Vercel):", pgError?.message || pgError);
+  }
+
+  // 2. Also delete from Vercel backend (legacy — keeps both in sync)
   try {
     await deleteAdminMarketplaceListing(listingId);
-    invalidateMarketplaceRequestCache(listingId);
-    return true;
   } catch (error) {
-    console.error("[Yapply] Backend listing delete failed:", error?.code || "", error?.message || error);
-    return false;
+    console.warn("[Yapply] Vercel backend delete failed:", error?.code || "", error?.message || error);
   }
+
+  invalidateMarketplaceRequestCache(listingId);
+  return true;
 }
 
 export function deleteOwnedMarketplaceListings(ownerUserId) {

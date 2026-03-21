@@ -491,6 +491,72 @@ export async function updateListingStatus(listingId, newStatus) {
   return normalizeListing(data);
 }
 
+// ─── Delete Listing from PG ─────────────────────────────────
+
+/**
+ * Delete a listing from the PG `marketplace_listings` table.
+ * Also deletes associated bids via ON DELETE CASCADE on the FK.
+ * Uses raw REST call with the user's JWT so RLS owner check passes.
+ */
+export async function deleteListingFromPg(listingId) {
+  if (!listingId) return false;
+
+  const supabase = await getSupabaseClient();
+
+  // Try RPC function first (SECURITY DEFINER — bypasses RLS)
+  try {
+    const { data, error: rpcErr } = await supabase.rpc("delete_listing_from_pg", { p_id: listingId });
+    if (!rpcErr) {
+      console.log("[yapply] deleteListingFromPg: deleted via RPC:", listingId);
+      return true;
+    }
+    console.warn("[yapply] deleteListingFromPg RPC error:", rpcErr.message);
+  } catch (e) {
+    console.warn("[yapply] deleteListingFromPg RPC threw:", e?.message);
+  }
+
+  // Fallback: Supabase JS client direct delete
+  try {
+    const { error } = await supabase
+      .from("marketplace_listings")
+      .delete()
+      .eq("id", listingId);
+
+    if (!error) {
+      console.log("[yapply] deleteListingFromPg: deleted via JS client:", listingId);
+      return true;
+    }
+    console.warn("[yapply] deleteListingFromPg JS client error:", error.message);
+  } catch (e) {
+    console.warn("[yapply] deleteListingFromPg JS client threw:", e?.message);
+  }
+
+  // Fallback: raw REST DELETE
+  try {
+    const accessToken = await getBestAccessToken(supabase);
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}`,
+      {
+        method: "DELETE",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${accessToken || SUPABASE_ANON_KEY}`,
+          "Prefer": "return=minimal",
+        },
+      }
+    );
+    if (resp.ok) {
+      console.log("[yapply] deleteListingFromPg: deleted via REST:", listingId);
+      return true;
+    }
+    console.warn("[yapply] deleteListingFromPg REST error:", resp.status, await resp.text());
+  } catch (e) {
+    console.warn("[yapply] deleteListingFromPg REST threw:", e?.message);
+  }
+
+  return false;
+}
+
 // ─── Ensure Listing Exists in PG ─────────────────────────────
 
 /**
