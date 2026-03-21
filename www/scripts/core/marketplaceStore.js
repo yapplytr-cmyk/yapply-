@@ -1,5 +1,4 @@
 import { getAuthSession } from "./state.js";
-import { deleteAdminMarketplaceListing, getAuthOrigin } from "./auth.js";
 import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
 import {
   createDeveloperProfileReference,
@@ -148,10 +147,6 @@ function createId(prefix, seed) {
       return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
     });
   }
-}
-
-function createApiUrl(path) {
-  return `${getAuthOrigin()}${path}`;
 }
 
 async function readJsonResponse(response) {
@@ -1168,32 +1163,8 @@ async function createBackendMarketplaceListing(listing) {
 }
 
 async function updateBackendListingStatus(listingId, status, { bidId, bidStatus } = {}) {
-  const session = getAuthSession();
-  try {
-    const body = {
-      listingId,
-      status,
-      owner: session?.user
-        ? { id: session.user.id, role: session.user.role, fullName: session.user.fullName, email: session.user.email }
-        : null,
-    };
-    if (bidId) body.bidId = bidId;
-    if (bidStatus) body.bidStatus = bidStatus;
-    const accessToken = await getCurrentAccessToken().catch(() => null);
-    const headers = { "Content-Type": "application/json" };
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-    const response = await fetch(createApiUrl("/api/marketplace/listings/update-status"), {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      console.error("[Yapply] Backend listing status update failed:", response.status);
-    }
-  } catch (error) {
-    console.error("[Yapply] Backend listing status update error:", error);
-  }
+  // Legacy function — Vercel API fallback removed. Status is managed purely via Supabase PG.
+  console.log("[Yapply] updateBackendListingStatus called (no-op):", { listingId, status });
 }
 
 export async function submitMarketplaceBid(formData) {
@@ -1379,30 +1350,9 @@ export async function fetchPublicMarketplaceListings({
       console.log("[yapply] Kesfet: loaded", results.length, "listings from Supabase PG");
       return results;
     } catch (supaErr) {
-      console.warn("[yapply] Kesfet: Supabase PG query failed, falling back to API:", supaErr?.message);
+      console.warn("[yapply] Kesfet: Supabase PG query failed:", supaErr?.message);
+      throw supaErr;
     }
-
-    // ─── Fallback: Vercel API ───
-    const params = new URLSearchParams();
-    if (type) params.set("type", type);
-    if (status) params.set("status", status);
-    if (category) params.set("category", category);
-    params.set("limit", String(limit));
-    params.set("fields", "card");
-
-    const response = await fetch(createApiUrl(`/api/marketplace/listings?${params.toString()}`), {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await readJsonResponse(response);
-
-    if (!response.ok) {
-      throw Object.assign(new Error(data.message || "Marketplace listings could not be loaded."), {
-        code: data.code || "LISTINGS_LOAD_FAILED",
-      });
-    }
-
-    return Array.isArray(data.listings) ? data.listings.map((listing) => normalizeMarketplaceListing(listing)) : [];
   })();
 
   // Store promise in cache for in-flight deduplication
@@ -1446,28 +1396,9 @@ export async function fetchPublicMarketplaceListing(listingId) {
       console.log("[yapply] Detail: loaded listing", listingId, "from Supabase PG");
       return result;
     } catch (supaErr) {
-      console.warn("[yapply] Detail: Supabase PG query failed, falling back to API:", supaErr?.message);
+      console.warn("[yapply] Detail: Supabase PG query failed:", supaErr?.message);
+      throw supaErr;
     }
-
-    // ─── Fallback: Vercel API ───
-    const params = new URLSearchParams({ id: listingId });
-    const response = await fetch(createApiUrl(`/api/marketplace/listings/detail?${params.toString()}`), {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await readJsonResponse(response);
-
-    if (response.status === 404) {
-      return null;
-    }
-
-    if (!response.ok) {
-      throw Object.assign(new Error(data.message || "Marketplace listing could not be loaded."), {
-        code: data.code || "LISTING_LOAD_FAILED",
-      });
-    }
-
-    return data.listing ? normalizeMarketplaceListing(data.listing) : null;
   })();
 
   publicListingDetailCache.set(cacheKey, { promise: request, timestamp: Date.now() });
@@ -1546,46 +1477,9 @@ async function _fetchDeveloperDashboardDataImpl() {
       localBids,
     };
   } catch (supaErr) {
-    console.warn("[yapply] DevDashboard: Supabase PG query failed, falling back to API:", supaErr?.message);
+    console.warn("[yapply] DevDashboard: Supabase PG query failed:", supaErr?.message);
+    throw supaErr;
   }
-
-  // ─── Fallback: Vercel API ───
-  let accessToken = "";
-  try {
-    accessToken = await getCurrentAccessToken();
-  } catch (_) {
-    return {
-      listings: localListings,
-      bids: localBids,
-      localListings,
-      localBids,
-    };
-  }
-  const response = await fetch(createApiUrl("/api/account/developer-dashboard"), {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  const data = await readJsonResponse(response);
-
-  if (!response.ok) {
-    throw Object.assign(new Error(data.message || "Developer dashboard data could not be loaded."), {
-      code: data.code || "DEVELOPER_DASHBOARD_LOAD_FAILED",
-    });
-  }
-
-  const remoteListings = Array.isArray(data.listings) ? data.listings.map((listing) => normalizeMarketplaceListing(listing)) : [];
-  const remoteBids = Array.isArray(data.bids) ? data.bids : [];
-
-  return {
-    listings: remoteListings,
-    bids: remoteBids,
-    localListings,
-    localBids,
-  };
 }
 
 export async function updateClientDashboardListing(listingId, ownerUserId, formData) {
@@ -1921,13 +1815,8 @@ export async function acceptClientDashboardBidRemote(listingId, bidId) {
     updatedListing = await pgAcceptBid(listingId, bidId, ownerUserId);
     console.log("[yapply] Bid accepted via Supabase PG:", bidId);
   } catch (supaErr) {
-    console.warn("[yapply] Supabase PG accept failed, falling back to API:", supaErr?.message);
+    console.warn("[yapply] Supabase PG accept failed:", supaErr?.message);
   }
-
-  // Also sync to Vercel API (for backward compat / old storage)
-  try {
-    await updateBackendListingStatus(listingId, "bid-accepted", { bidId, bidStatus: "accepted" });
-  } catch (_) {}
 
   // Fire-and-forget email + push notification for bid acceptance
   try {
@@ -2196,49 +2085,8 @@ async function _fetchClientDashboardDataImpl() {
     console.log("[yapply] ClientDashboard: loaded", pgListings.length, "listings from Supabase PG");
     return { listings: pgListings };
   } catch (supaErr) {
-    console.warn("[yapply] ClientDashboard: Supabase PG query failed, falling back to API:", supaErr?.message);
-  }
-
-  // ─── Fallback: Vercel API ───
-  try {
-    const accessToken = await getCurrentAccessToken();
-    const response = await fetch(createApiUrl("/api/account/client-dashboard"), {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    const data = await readJsonResponse(response);
-
-    if (!response.ok) {
-      return { listings: localListings };
-    }
-
-    const remoteListings = Array.isArray(data.listings)
-      ? data.listings.map((listing) => normalizeMarketplaceListing(listing))
-      : [];
-
-    // Merge: remote listings take priority, but local accepted/closed state
-    // wins over stale remote data (eventual consistency workaround).
-    const localById = new Map(localListings.map((l) => [l.id, l]));
-    const mergedRemote = remoteListings.map((remote) => {
-      const local = localById.get(remote.id);
-      if (local && local.marketplaceMeta?.acceptedBidId && !remote.marketplaceMeta?.acceptedBidId) {
-        return local;
-      }
-      return remote;
-    });
-    const remoteIds = new Set(remoteListings.map((l) => l.id));
-    const localOnly = localListings.filter((l) => !remoteIds.has(l.id));
-    const merged = [...mergedRemote, ...localOnly].sort(
-      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
-
-    return { listings: merged };
-  } catch (_) {
-    return { listings: localListings };
+    console.warn("[yapply] ClientDashboard: Supabase PG query failed:", supaErr?.message);
+    throw supaErr;
   }
 }
 
@@ -2272,20 +2120,14 @@ export async function deleteBackendMarketplaceListing(listingId) {
     return false;
   }
 
-  // 1. Delete from Supabase PG (the source of truth for the app)
+  // Delete from Supabase PG (the source of truth for the app)
   try {
     const { deleteListingFromPg } = await import("./supabaseMarketplace.js?v=20260321v3");
     await deleteListingFromPg(listingId);
     console.log("[Yapply] Listing deleted from PG:", listingId);
   } catch (pgError) {
-    console.warn("[Yapply] PG delete failed (will try Vercel):", pgError?.message || pgError);
-  }
-
-  // 2. Also delete from Vercel backend (legacy — keeps both in sync)
-  try {
-    await deleteAdminMarketplaceListing(listingId);
-  } catch (error) {
-    console.warn("[Yapply] Vercel backend delete failed:", error?.code || "", error?.message || error);
+    console.warn("[Yapply] PG delete failed:", pgError?.message || pgError);
+    throw pgError;
   }
 
   invalidateMarketplaceRequestCache(listingId);
