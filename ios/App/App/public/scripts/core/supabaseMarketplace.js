@@ -14,23 +14,46 @@ import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runti
 export async function fetchListings({ type = "client", status = "open-for-bids", category = "", limit = 24 } = {}) {
   const supabase = await getSupabaseClient();
 
-  let query = supabase
-    .from("marketplace_listings")
-    .select(`
-      *,
-      listing_bids (id, bidder_user_id, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
-    `)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  // ── Attempt 1: Supabase JS client ──
+  try {
+    let query = supabase
+      .from("marketplace_listings")
+      .select(`
+        *,
+        listing_bids (id, bidder_user_id, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
+      `)
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
-  if (type) query = query.eq("listing_type", type);
-  if (status) query = query.eq("status", status);
-  if (category) query = query.eq("category", category);
+    if (type) query = query.eq("listing_type", type);
+    if (status) query = query.eq("status", status);
+    if (category) query = query.eq("category", category);
 
-  const { data, error } = await query;
-  if (error) throw error;
+    const { data, error } = await query;
+    if (!error && data) return (data || []).map(normalizeListing);
+    if (error) console.warn("[yapply] fetchListings JS error:", error.message);
+  } catch (e) {
+    console.warn("[yapply] fetchListings JS threw:", e?.message);
+  }
 
-  return (data || []).map(normalizeListing);
+  // ── Attempt 2: Raw REST API ──
+  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+  const params = new URLSearchParams({
+    select: "*,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
+    order: "created_at.desc",
+    limit: String(limit),
+  });
+  if (type) params.append("listing_type", `eq.${type}`);
+  if (status) params.append("status", `eq.${status}`);
+  if (category) params.append("category", `eq.${category}`);
+
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?${params}`, {
+    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (!resp.ok) throw new Error(`fetchListings failed (HTTP ${resp.status})`);
+  const rows = await resp.json();
+  return (rows || []).map(normalizeListing);
 }
 
 /**
@@ -40,21 +63,35 @@ export async function fetchListing(listingId) {
   if (!listingId) return null;
 
   const supabase = await getSupabaseClient();
-  const { data, error } = await supabase
-    .from("marketplace_listings")
-    .select(`
-      *,
-      listing_bids (id, bidder_user_id, bidder_role, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
-    `)
-    .eq("id", listingId)
-    .single();
 
-  if (error) {
-    if (error.code === "PGRST116") return null; // not found
-    throw error;
+  // ── Attempt 1: Supabase JS client ──
+  try {
+    const { data, error } = await supabase
+      .from("marketplace_listings")
+      .select(`
+        *,
+        listing_bids (id, bidder_user_id, bidder_role, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
+      `)
+      .eq("id", listingId)
+      .single();
+
+    if (!error && data) return normalizeListing(data);
+    if (error && error.code === "PGRST116") return null;
+    if (error) console.warn("[yapply] fetchListing JS error:", error.message);
+  } catch (e) {
+    console.warn("[yapply] fetchListing JS threw:", e?.message);
   }
 
-  return normalizeListing(data);
+  // ── Attempt 2: Raw REST API ──
+  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&limit=1`, {
+    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (!resp.ok) throw new Error(`fetchListing failed (HTTP ${resp.status})`);
+  const rows = await resp.json();
+  if (!rows || rows.length === 0) return null;
+  return normalizeListing(rows[0]);
 }
 
 /**
@@ -64,18 +101,40 @@ export async function fetchMyListings(ownerUserId) {
   if (!ownerUserId) return [];
 
   const supabase = await getSupabaseClient();
-  const { data, error } = await supabase
-    .from("marketplace_listings")
-    .select(`
-      *,
-      listing_bids (id, bidder_user_id, bidder_role, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
-    `)
-    .eq("owner_user_id", ownerUserId)
-    .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  // ── Attempt 1: Supabase JS client ──
+  try {
+    const { data, error } = await supabase
+      .from("marketplace_listings")
+      .select(`
+        *,
+        listing_bids (id, bidder_user_id, bidder_role, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
+      `)
+      .eq("owner_user_id", ownerUserId)
+      .order("created_at", { ascending: false });
 
-  return (data || []).map(normalizeListing);
+    if (!error && data) return (data || []).map(normalizeListing);
+    if (error) console.warn("[yapply] fetchMyListings JS error:", error.message);
+  } catch (e) {
+    console.warn("[yapply] fetchMyListings JS threw:", e?.message);
+  }
+
+  // ── Attempt 2: Raw REST API ──
+  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+  let accessToken = null;
+  try {
+    const { data: sd } = await supabase.auth.getSession();
+    accessToken = sd?.session?.access_token || null;
+  } catch (_) {}
+  const authHeader = accessToken || SUPABASE_ANON_KEY;
+
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?owner_user_id=eq.${encodeURIComponent(ownerUserId)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&order=created_at.desc`, {
+    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${authHeader}` },
+  });
+  if (!resp.ok) throw new Error(`fetchMyListings failed (HTTP ${resp.status})`);
+  const rows = await resp.json();
+  return (rows || []).map(normalizeListing);
 }
 
 /**
@@ -85,18 +144,40 @@ export async function fetchBidsForDeveloper(bidderUserId) {
   if (!bidderUserId) return [];
 
   const supabase = await getSupabaseClient();
-  const { data, error } = await supabase
-    .from("listing_bids")
-    .select(`
-      *,
-      marketplace_listings (id, title, status, owner_user_id, listing_type, payload, created_at, updated_at)
-    `)
-    .eq("bidder_user_id", bidderUserId)
-    .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  // ── Attempt 1: Supabase JS client ──
+  try {
+    const { data, error } = await supabase
+      .from("listing_bids")
+      .select(`
+        *,
+        marketplace_listings (id, title, status, owner_user_id, listing_type, payload, created_at, updated_at)
+      `)
+      .eq("bidder_user_id", bidderUserId)
+      .order("created_at", { ascending: false });
 
-  return (data || []).map(normalizeBidWithListing);
+    if (!error && data) return (data || []).map(normalizeBidWithListing);
+    if (error) console.warn("[yapply] fetchBidsForDeveloper JS error:", error.message);
+  } catch (e) {
+    console.warn("[yapply] fetchBidsForDeveloper JS threw:", e?.message);
+  }
+
+  // ── Attempt 2: Raw REST API ──
+  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+  let accessToken = null;
+  try {
+    const { data: sd } = await supabase.auth.getSession();
+    accessToken = sd?.session?.access_token || null;
+  } catch (_) {}
+  const authHeader = accessToken || SUPABASE_ANON_KEY;
+
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/listing_bids?bidder_user_id=eq.${encodeURIComponent(bidderUserId)}&select=*,marketplace_listings(id,title,status,owner_user_id,listing_type,payload,created_at,updated_at)&order=created_at.desc`, {
+    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${authHeader}` },
+  });
+  if (!resp.ok) throw new Error(`fetchBidsForDeveloper failed (HTTP ${resp.status})`);
+  const rows = await resp.json();
+  return (rows || []).map(normalizeBidWithListing);
 }
 
 // ─── Accept Bid ──────────────────────────────────────────────
@@ -252,35 +333,101 @@ export async function createBid({ listingId, bidderUserId, companyName, bidAmoun
 
 /**
  * Client creates a new marketplace listing.
+ * Two-layer approach (same as createBid):
+ *   1. Try Supabase JS client
+ *   2. If that fails, raw REST API fetch (bypasses CapacitorHttp issues)
  */
 export async function createListing({ ownerUserId, ownerEmail, ownerRole = "client", listingType = "client", title, description, location, budget, timeframe, projectType, category, payload = {} }) {
   const supabase = await getSupabaseClient();
 
-  const { data, error } = await supabase
-    .from("marketplace_listings")
-    .insert({
-      owner_user_id: ownerUserId,
-      owner_email: ownerEmail || "",
-      owner_role: ownerRole,
-      listing_type: listingType,
-      title: title || "",
-      description: description || "",
-      location: location || "",
-      budget: budget || "",
-      timeframe: timeframe || "",
-      project_type: projectType || "",
-      category: category || "",
-      payload,
-    })
-    .select(`
-      *,
-      listing_bids (id, bidder_user_id, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
-    `)
-    .single();
+  // Get JWT for raw REST fallback
+  let accessToken = null;
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    accessToken = sessionData?.session?.access_token || null;
+    console.log("[yapply] createListing: hasToken =", !!accessToken, "| owner =", ownerUserId);
+  } catch (e) {
+    console.warn("[yapply] createListing: getSession failed:", e?.message);
+  }
 
-  if (error) throw error;
+  const listingRow = {
+    owner_user_id: ownerUserId,
+    owner_email: ownerEmail || "",
+    owner_role: ownerRole,
+    listing_type: listingType,
+    title: title || "",
+    description: description || "",
+    location: location || "",
+    budget: budget || "",
+    timeframe: timeframe || "",
+    project_type: projectType || "",
+    category: category || "",
+    payload: typeof payload === "string" ? JSON.parse(payload) : (payload || {}),
+  };
 
-  return normalizeListing(data);
+  // ── Attempt 1: Supabase JS client ──
+  try {
+    const { data, error } = await supabase
+      .from("marketplace_listings")
+      .insert(listingRow)
+      .select(`
+        *,
+        listing_bids (id, bidder_user_id, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
+      `)
+      .single();
+
+    if (!error && data) {
+      console.log("[yapply] createListing OK via Supabase JS client, id =", data.id);
+      return normalizeListing(data);
+    }
+    if (error) {
+      console.warn("[yapply] createListing Supabase JS error:", error.code, error.message, error.details, error.hint);
+    }
+  } catch (jsClientErr) {
+    console.warn("[yapply] createListing Supabase JS threw:", jsClientErr?.message);
+  }
+
+  // ── Attempt 2: Raw REST API fetch ──
+  console.log("[yapply] createListing: trying raw REST API fallback...");
+  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+
+  if (!accessToken) {
+    try {
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      accessToken = refreshData?.session?.access_token || null;
+    } catch (_) {}
+  }
+
+  const authHeader = accessToken || SUPABASE_ANON_KEY;
+
+  const rawResponse = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${authHeader}`,
+      "Prefer": "return=representation",
+    },
+    body: JSON.stringify(listingRow),
+  });
+
+  if (!rawResponse.ok) {
+    const errBody = await rawResponse.text().catch(() => "");
+    console.error("[yapply] createListing raw REST failed:", rawResponse.status, errBody);
+    const parsed = (() => { try { return JSON.parse(errBody); } catch { return {}; } })();
+    throw Object.assign(
+      new Error(parsed.message || parsed.msg || `Listing insert failed (HTTP ${rawResponse.status})`),
+      { code: parsed.code || "PG_INSERT_FAILED", status: rawResponse.status, details: errBody }
+    );
+  }
+
+  const rows = await rawResponse.json();
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  console.log("[yapply] createListing OK via raw REST, id =", row?.id);
+  // Add empty bids array since raw REST doesn't join
+  row.listing_bids = [];
+  return normalizeListing(row);
 }
 
 // ─── Update Listing Status ───────────────────────────────────

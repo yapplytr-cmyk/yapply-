@@ -969,69 +969,31 @@ async function createBackendMarketplaceListing(listing) {
     ownerRole: owner?.role || "none",
   });
 
-  // ─── Try Supabase PostgreSQL first ───
-  try {
-    const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260320-pg-direct");
-    const result = await pgCreateListing({
-      ownerUserId: owner?.id || null,
-      ownerEmail: owner?.email || "",
-      ownerRole: owner?.role || "client",
-      listingType: listing?.type || "client",
-      title: listing?.title || listing?.name || "",
-      description: listing?.brief || listing?.description || "",
-      location: listing?.location || "",
-      budget: listing?.budget || "",
-      timeframe: listing?.timeline || listing?.timeframe || "",
-      projectType: listing?.projectType || "",
-      category: listing?.marketplaceCategory || listing?.category || "",
-      payload: listing,
-    });
-    console.log("[Yapply] Listing created via Supabase PG:", result.id);
-
-    // Fire-and-forget email notification
-    try {
-      const { notifyListingCreated } = await import("./emailNotifier.js");
-      notifyListingCreated({ ...result, ownerName: owner?.fullName || "", contact: { fullName: owner?.fullName, email: owner?.email } }, listing?.type || "client");
-    } catch (_) {}
-
-    return result;
-  } catch (supaErr) {
-    console.warn("[Yapply] Supabase PG listing create failed, falling back to API:", supaErr?.message);
-  }
-
-  // ─── Fallback: Vercel API ───
-  const accessToken = await getCurrentAccessToken().catch(() => null);
-  const headers = { "Content-Type": "application/json" };
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-
-  const response = await fetch(createApiUrl("/api/marketplace/listings/create"), {
-    method: "POST",
-    credentials: "include",
-    headers,
-    body: JSON.stringify({ listing, owner }),
+  // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
+  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321-pg-only");
+  const result = await pgCreateListing({
+    ownerUserId: owner?.id || null,
+    ownerEmail: owner?.email || "",
+    ownerRole: owner?.role || "client",
+    listingType: listing?.type || "client",
+    title: listing?.title || listing?.name || "",
+    description: listing?.brief || listing?.description || "",
+    location: listing?.location || "",
+    budget: listing?.budget || "",
+    timeframe: listing?.timeline || listing?.timeframe || "",
+    projectType: listing?.projectType || "",
+    category: listing?.marketplaceCategory || listing?.category || "",
+    payload: listing,
   });
+  console.log("[Yapply] Listing created via Supabase PG:", result.id);
 
-  let data = {};
-
+  // Fire-and-forget email notification
   try {
-    data = await response.json();
-  } catch (error) {
-    data = {};
-  }
+    const { notifyListingCreated } = await import("./emailNotifier.js");
+    notifyListingCreated({ ...result, ownerName: owner?.fullName || "", contact: { fullName: owner?.fullName, email: owner?.email } }, listing?.type || "client");
+  } catch (_) {}
 
-  if (!response.ok) {
-    console.error("[Yapply] Backend listing create REJECTED:", {
-      status: response.status,
-      code: data.code,
-      message: data.message,
-    });
-    throw Object.assign(new Error(data.message || "The listing could not be created."), {
-      code: data.code || "LISTING_CREATE_FAILED",
-    });
-  }
-
-  console.log("[Yapply] Backend listing create SUCCESS:", { id: data.listing?.id, type: data.listing?.type });
-  return data.listing;
+  return result;
 }
 
 async function updateBackendListingStatus(listingId, status, { bidId, bidStatus } = {}) {
