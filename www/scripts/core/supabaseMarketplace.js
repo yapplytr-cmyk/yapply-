@@ -493,6 +493,29 @@ export async function updateListingStatus(listingId, newStatus) {
   return normalizeListing(data);
 }
 
+// ─── Bulk-update bid statuses for a listing ─────────────────
+/**
+ * Set the status of ALL non-accepted bids on a listing.
+ * When a listing is deactivated  → close all open bids  ("closed")
+ * When a listing is reactivated  → reopen all closed bids ("pending")
+ * Accepted bids are never touched.
+ */
+export async function updateBidStatusesForListing(listingId, fromStatus, toStatus) {
+  if (!listingId) return;
+  const supabase = await getSupabaseClient();
+
+  const { error } = await supabase
+    .from("listing_bids")
+    .update({ status: toStatus })
+    .eq("listing_id", listingId)
+    .eq("status", fromStatus);
+
+  if (error) {
+    console.error("[yapply] updateBidStatusesForListing failed:", error);
+    throw error;
+  }
+}
+
 // ─── Delete Listing from PG ─────────────────────────────────
 
 /**
@@ -840,6 +863,24 @@ export async function fetchDeveloperPublicProfile(developerUserId) {
       profile = Array.isArray(rows) ? rows[0] : rows;
     }
   } catch (_) {}
+
+  // Resolve avatar — profile_picture_src for the template
+  if (profile) {
+    try {
+      const { getDefaultAvatarOptions } = await import("./accountSettingsStore.js");
+      const role = profile.role || "developer";
+      const avatarUrl = profile.avatar_url || "";
+      if (avatarUrl) {
+        profile.profile_picture_src = avatarUrl;
+      } else {
+        // Fall back to default avatar for role
+        const options = getDefaultAvatarOptions(role);
+        profile.profile_picture_src = options[0]?.src || "";
+      }
+    } catch (_) {
+      profile.profile_picture_src = profile.avatar_url || "";
+    }
+  }
 
   // Fetch bid stats
   let totalBids = 0;

@@ -614,6 +614,44 @@ function createClientDetail(content, listing) {
     </section>
   ` : "";
 
+  // ── Inline review form on detail page when bid accepted & owner viewing ──
+  const detailAcceptedBidId = marketplaceMeta.acceptedBidId || "";
+  const allBids = Array.isArray(listing.bids) ? listing.bids : latestBids;
+  const detailAcceptedBid = allBids.find((b) => b.id === detailAcceptedBidId) || null;
+  const detailAcceptedDevId = detailAcceptedBid?.bidderUserId || detailAcceptedBid?.bidder_user_id || detailAcceptedBid?.developerProfileReference?.userId || "";
+  const isTR = locale === "tr";
+  const reviewLabels = {
+    title: isTR ? "Geliştiriciyi Değerlendir" : "Rate this Developer",
+    ratingLabel: isTR ? "Puanınız" : "Your Rating",
+    commentLabel: isTR ? "Yorum (isteğe bağlı)" : "Comment (optional)",
+    commentPlaceholder: isTR ? "Bu geliştirici ile çalışma deneyiminizi paylaşın..." : "Share your experience working with this developer...",
+    submitLabel: isTR ? "Değerlendirmeyi Gönder" : "Submit Review",
+  };
+  const detailReviewMarkup = isOwner && detailAcceptedBidId && detailAcceptedDevId ? `
+    <section class="section-shell" style="padding-top:0">
+      <div class="panel" style="padding:1.25rem">
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">${reviewLabels.title}</h3>
+        <form data-inline-review-form data-review-dev="${detailAcceptedDevId}" data-review-listing="${listing.id}" data-review-bid="${detailAcceptedBidId}">
+          <div data-star-input-group>
+            <label style="display:block;margin-bottom:0.35rem;font-size:0.85rem;color:var(--text-muted)">${reviewLabels.ratingLabel}</label>
+            <div style="display:flex;gap:4px;align-items:center">
+              ${[1,2,3,4,5].map((n) => `<button type="button" data-star-value="${n}" aria-label="${n} star${n>1?"s":""}" style="background:none;border:none;padding:2px;cursor:pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>`).join("")}
+              <input type="hidden" name="rating" value="0" data-star-rating-value />
+            </div>
+          </div>
+          <label style="display:block;margin-top:0.75rem">
+            <span style="font-size:0.85rem;color:var(--text-muted)">${reviewLabels.commentLabel}</span>
+            <textarea name="comment" rows="3" placeholder="${reviewLabels.commentPlaceholder}" style="width:100%;resize:vertical;margin-top:0.25rem;padding:0.5rem;border-radius:8px;border:1px solid var(--border-200, #333);background:var(--surface-100, #1a1a1a);color:var(--text-100, #fff);font-size:0.9rem"></textarea>
+          </label>
+          <div data-inline-review-feedback hidden style="padding:0.4rem 0;font-size:0.85rem"></div>
+          <div style="margin-top:0.75rem">
+            <button class="button button--primary" type="submit" style="font-size:0.9rem">${reviewLabels.submitLabel}</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  ` : "";
+
   return `
     <section class="marketplace-detail-hero marketplace-detail-hero--client section-shell">
       <div class="marketplace-detail-hero__layout">
@@ -632,6 +670,7 @@ function createClientDetail(content, listing) {
     </section>
 
     ${ownerActionsMarkup}
+    ${detailReviewMarkup}
 
     <section class="section-shell marketplace-client-detail-layout">
       <div class="marketplace-client-detail-layout__left">

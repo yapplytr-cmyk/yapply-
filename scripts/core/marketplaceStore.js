@@ -1853,8 +1853,11 @@ export async function closeClientDashboardListing(listingId, ownerUserId) {
   }
 
   try {
-    const { updateListingStatus } = await import("./supabaseMarketplace.js");
+    const { updateListingStatus, updateBidStatusesForListing } = await import("./supabaseMarketplace.js");
     await updateListingStatus(listingId, "closed");
+    // Close all open/pending bids when listing is deactivated
+    await updateBidStatusesForListing(listingId, "pending", "closed").catch((e) =>
+      console.warn("[Yapply] Bid status close failed:", e));
   } catch (err) {
     console.error("[Yapply] Supabase close failed, local store updated:", err);
   }
@@ -1882,8 +1885,11 @@ export async function reactivateClientDashboardListing(listingId, ownerUserId) {
   }
 
   try {
-    const { updateListingStatus } = await import("./supabaseMarketplace.js");
+    const { updateListingStatus, updateBidStatusesForListing } = await import("./supabaseMarketplace.js");
     await updateListingStatus(listingId, "open-for-bids");
+    // Re-open all closed bids when listing is reactivated
+    await updateBidStatusesForListing(listingId, "closed", "pending").catch((e) =>
+      console.warn("[Yapply] Bid status reopen failed:", e));
   } catch (err) {
     console.error("[Yapply] Supabase reactivate failed, local store updated:", err);
   }

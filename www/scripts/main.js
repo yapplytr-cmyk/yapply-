@@ -2317,81 +2317,8 @@ function setupClientDashboard(content) {
     });
   });
 
-  // ─── Inline review: star rating clicks ───
-  document.querySelectorAll("[data-inline-review-form] [data-star-input-group]").forEach((group) => {
-    const stars = group.querySelectorAll("[data-star-value]");
-    const hiddenInput = group.querySelector("[data-star-rating-value]");
-    stars.forEach((star) => {
-      star.addEventListener("click", () => {
-        const val = parseInt(star.getAttribute("data-star-value"), 10);
-        if (hiddenInput) hiddenInput.value = val;
-        stars.forEach((s) => {
-          const sVal = parseInt(s.getAttribute("data-star-value"), 10);
-          const svg = s.querySelector("svg");
-          if (svg) svg.setAttribute("fill", sVal <= val ? "var(--accent-500, #f59e0b)" : "none");
-        });
-      });
-    });
-  });
-
-  // ─── Inline review: form submission ───
-  document.querySelectorAll("[data-inline-review-form]").forEach((form) => {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const feedback = form.querySelector("[data-inline-review-feedback]");
-      const isTR = document.documentElement.lang === "tr";
-      const labels = content.reviewForm || {};
-
-      const rating = parseInt(form.querySelector('[name="rating"]')?.value || "0", 10);
-      if (rating < 1 || rating > 5) {
-        if (feedback) {
-          feedback.textContent = labels.ratingLabel || (isTR ? "Lütfen bir puan seçin." : "Please select a rating.");
-          feedback.removeAttribute("hidden");
-          feedback.style.color = "var(--error-500, #ef4444)";
-        }
-        return;
-      }
-
-      const submitBtn = form.querySelector('button[type="submit"]');
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "..."; }
-
-      try {
-        const { submitDeveloperReview } = await import("./core/supabaseMarketplace.js");
-        await submitDeveloperReview({
-          developerUserId: form.getAttribute("data-review-dev") || "",
-          reviewerUserId: session?.user?.id || "",
-          listingId: form.getAttribute("data-review-listing") || "",
-          bidId: form.getAttribute("data-review-bid") || "",
-          rating,
-          comment: form.querySelector('[name="comment"]')?.value || "",
-        });
-
-        // Show success state — replace form with read-only stars + message
-        const wrapper = form.closest("[data-client-dashboard-panel]");
-        if (wrapper) {
-          const filledStars = Array.from({ length: 5 }, (_, i) =>
-            `<svg width="24" height="24" viewBox="0 0 24 24" fill="${i < rating ? "var(--accent-500, #f59e0b)" : "none"}" stroke="var(--accent-500, #f59e0b)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`
-          ).join("");
-          wrapper.innerHTML = `
-            <div style="padding:1rem;text-align:center">
-              <div style="display:flex;justify-content:center;gap:2px;margin-bottom:0.5rem">${filledStars}</div>
-              <p style="color:var(--success-500, #22c55e);font-weight:600;margin:0">${labels.successMessage || (isTR ? "Değerlendirmeniz gönderildi!" : "Your review has been submitted!")}</p>
-            </div>
-          `;
-        }
-      } catch (err) {
-        const msg = err?.message?.includes("unique") || err?.message?.includes("duplicate")
-          ? (labels.alreadyReviewed || (isTR ? "Bu proje için zaten değerlendirme yaptınız." : "You have already reviewed this developer for this project."))
-          : (err?.message || labels.errorMessage || (isTR ? "Değerlendirme gönderilemedi." : "Could not submit review."));
-        if (feedback) {
-          feedback.textContent = msg;
-          feedback.removeAttribute("hidden");
-          feedback.style.color = "var(--error-500, #ef4444)";
-        }
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = labels.submitLabel || (isTR ? "Değerlendirmeyi Gönder" : "Submit Review"); }
-      }
-    });
-  });
+  // ─── Inline review forms (shared handler) ───
+  setupInlineReviewForms(session, content);
 }
 
 function setupClientBidsPage(content) {
@@ -2532,6 +2459,88 @@ function setupDetailListingStatusButtons(content) {
         setButtonLoading(button, false);
         console.error("[yapply] Detail page reactivate failed:", error);
         window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan yeniden aktif edilemedi." : "Listing could not be reactivated."));
+      }
+    });
+  });
+
+  // ─── Detail page inline review: star rating clicks ───
+  setupInlineReviewForms(session, content);
+}
+
+/**
+ * Shared setup for inline review star inputs + form submit.
+ * Called from both setupClientDashboard and setupDetailListingStatusButtons.
+ */
+function setupInlineReviewForms(session, content) {
+  document.querySelectorAll("[data-inline-review-form] [data-star-input-group]").forEach((group) => {
+    const stars = group.querySelectorAll("[data-star-value]");
+    const hiddenInput = group.querySelector("[data-star-rating-value]");
+    stars.forEach((star) => {
+      star.addEventListener("click", () => {
+        const val = parseInt(star.getAttribute("data-star-value"), 10);
+        if (hiddenInput) hiddenInput.value = val;
+        stars.forEach((s) => {
+          const sVal = parseInt(s.getAttribute("data-star-value"), 10);
+          const svg = s.querySelector("svg");
+          if (svg) svg.setAttribute("fill", sVal <= val ? "var(--accent-500, #f59e0b)" : "none");
+        });
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-inline-review-form]").forEach((form) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const feedback = form.querySelector("[data-inline-review-feedback]");
+      const isTR = document.documentElement.lang === "tr";
+      const labels = content.reviewForm || {};
+
+      const rating = parseInt(form.querySelector('[name="rating"]')?.value || "0", 10);
+      if (rating < 1 || rating > 5) {
+        if (feedback) {
+          feedback.textContent = isTR ? "Lütfen bir puan seçin." : "Please select a rating.";
+          feedback.removeAttribute("hidden");
+          feedback.style.color = "var(--error-500, #ef4444)";
+        }
+        return;
+      }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "..."; }
+
+      try {
+        const { submitDeveloperReview } = await import("./core/supabaseMarketplace.js");
+        await submitDeveloperReview({
+          developerUserId: form.getAttribute("data-review-dev") || "",
+          reviewerUserId: session?.user?.id || "",
+          listingId: form.getAttribute("data-review-listing") || "",
+          bidId: form.getAttribute("data-review-bid") || "",
+          rating,
+          comment: form.querySelector('[name="comment"]')?.value || "",
+        });
+
+        const wrapper = form.closest(".panel") || form.parentElement;
+        if (wrapper) {
+          const filledStars = Array.from({ length: 5 }, (_, i) =>
+            `<svg width="24" height="24" viewBox="0 0 24 24" fill="${i < rating ? "var(--accent-500, #f59e0b)" : "none"}" stroke="var(--accent-500, #f59e0b)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`
+          ).join("");
+          wrapper.innerHTML = `
+            <div style="padding:1rem;text-align:center">
+              <div style="display:flex;justify-content:center;gap:2px;margin-bottom:0.5rem">${filledStars}</div>
+              <p style="color:var(--success-500, #22c55e);font-weight:600;margin:0">${labels.successMessage || (isTR ? "Değerlendirmeniz gönderildi!" : "Your review has been submitted!")}</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        const msg = err?.message?.includes("unique") || err?.message?.includes("duplicate")
+          ? (labels.alreadyReviewed || (isTR ? "Bu proje için zaten değerlendirme yaptınız." : "You already reviewed this developer for this project."))
+          : (err?.message || labels.errorMessage || (isTR ? "Değerlendirme gönderilemedi." : "Could not submit review."));
+        if (feedback) {
+          feedback.textContent = msg;
+          feedback.removeAttribute("hidden");
+          feedback.style.color = "var(--error-500, #ef4444)";
+        }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = labels.submitLabel || (isTR ? "Değerlendirmeyi Gönder" : "Submit Review"); }
       }
     });
   });
@@ -2770,6 +2779,7 @@ function setupDeveloperDashboard(content) {
       }
     });
   });
+
 }
 
 function setupHeroVideo() {
