@@ -748,6 +748,8 @@ export const translations = {
         viewListing: "View Listing",
         editListing: "Edit Listing",
         viewBids: "View Bids",
+        closeListing: "Close Listing",
+        reactivateListing: "Reactivate",
       },
       editPanel: {
         heading: {
@@ -3515,6 +3517,8 @@ export const translations = {
         viewListing: "İlanı Gör",
         editListing: "İlanı Düzenle",
         viewBids: "Teklifleri Gör",
+        closeListing: "İlanı Kapat",
+        reactivateListing: "Yeniden Aktif Et",
       },
       editPanel: {
         heading: {

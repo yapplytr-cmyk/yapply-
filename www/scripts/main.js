@@ -3,6 +3,7 @@ import { getDefaultAvatarOptions } from "./core/accountSettingsStore.js";
 import {
   acceptClientDashboardBid,
   closeClientDashboardListing,
+  reactivateClientDashboardListing,
   deleteMarketplaceListing,
   enrichMarketplaceListingWithCreatorAvatar,
   enrichMarketplaceListingsWithCreatorAvatars,
@@ -2245,6 +2246,44 @@ function setupClientDashboard(content) {
         setStatus("error", error?.message || (document.documentElement.lang === "tr"
           ? "Panel şu anda ilan değişikliklerini kaydedemedi. Lütfen tekrar deneyin."
           : "The dashboard could not save your listing changes right now. Please try again."));
+      }
+    });
+  });
+
+  // Close listing buttons (active cards)
+  document.querySelectorAll("[data-client-dashboard-close]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const listingId = button.getAttribute("data-client-dashboard-close") || "";
+      if (!listingId) return;
+
+      setButtonLoading(button, true);
+      try {
+        await closeClientDashboardListing(listingId, session.user.id);
+        await renderPage(content.meta.locale);
+        document.querySelector("#client-dashboard-closed")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (error) {
+        setButtonLoading(button, false);
+        console.error("[yapply] Listing close failed:", error);
+        window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan kapatılamadı." : "The listing could not be closed."));
+      }
+    });
+  });
+
+  // Reactivate listing buttons (closed cards)
+  document.querySelectorAll("[data-client-dashboard-reactivate]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const listingId = button.getAttribute("data-client-dashboard-reactivate") || "";
+      if (!listingId) return;
+
+      setButtonLoading(button, true);
+      try {
+        await reactivateClientDashboardListing(listingId, session.user.id);
+        await renderPage(content.meta.locale);
+        document.querySelector("#client-dashboard-active")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (error) {
+        setButtonLoading(button, false);
+        console.error("[yapply] Listing reactivate failed:", error);
+        window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan yeniden aktif edilemedi." : "The listing could not be reactivated."));
       }
     });
   });

@@ -211,6 +211,9 @@ function createListingCard(listing, content, kind = "active") {
       ? `<button class="button button--secondary" type="button" data-client-dashboard-toggle="edit" data-listing-id="${listing.id}">${content.actions.editListing}</button>`
       : "",
     `<button class="button button--primary" type="button" data-client-dashboard-toggle="bids" data-listing-id="${listing.id}">${content.actions.viewBids}</button>`,
+    kind === "active"
+      ? `<button class="button button--danger" type="button" data-client-dashboard-close="${listing.id}">${content.actions.closeListing}</button>`
+      : `<button class="button button--secondary" type="button" data-client-dashboard-reactivate="${listing.id}">${content.actions.reactivateListing}</button>`,
   ]
     .filter(Boolean)
     .join("");
