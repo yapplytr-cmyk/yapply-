@@ -729,7 +729,7 @@ function setupRevealAnimations() {
 
   // On native app: skip reveal animations for detail + dashboard pages
   // so all content (including below-the-fold sections) is visible immediately
-  const instantRevealPages = new Set(["marketplace-listing-detail", "developer-dashboard", "client-dashboard", "client-bids"]);
+  const instantRevealPages = new Set(["marketplace-listing-detail", "developer-dashboard", "client-dashboard", "client-bids", "account-settings"]);
   if (IS_NATIVE_APP && instantRevealPages.has(document.body.dataset.page)) {
     allTargets.forEach((target) => target.classList.add("is-visible"));
     return () => {};

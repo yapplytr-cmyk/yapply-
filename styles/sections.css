@@ -5739,6 +5739,9 @@ html[data-theme="light"] .auth-role-card.is-active {
   gap: 0.6rem;
   animation: clientBidsSlideDown 280ms var(--ease-premium, ease) both;
 }
+.client-bids-group__body[hidden] {
+  display: none;
+}
 
 .client-bids-group__listing-link {
   display: inline-block;
@@ -5802,6 +5805,9 @@ html[data-theme="light"] .auth-role-card.is-active {
   flex-direction: column;
   gap: 0.45rem;
   animation: clientBidsSlideDown 220ms var(--ease-premium, ease) both;
+}
+.client-bids-card__details[hidden] {
+  display: none;
 }
 
 .client-bids-card__detail-row {

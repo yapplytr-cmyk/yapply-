@@ -173,10 +173,11 @@ html:not(.has-tab-bar) .app-splash {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 1px;
   flex: 1;
   height: 52px;
+  padding-bottom: 4px;
   color: var(--text-dim);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
@@ -196,7 +197,6 @@ html:not(.has-tab-bar) .app-splash {
 .tab-bar__icon--bird {
   width: 30px;
   height: 30px;
-  margin-top: -1px;
 }
 
 .tab-bar__label {
