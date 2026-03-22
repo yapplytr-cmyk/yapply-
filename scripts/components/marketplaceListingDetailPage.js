@@ -598,7 +598,8 @@ function createClientDetail(content, listing) {
   const isOwner = viewerSession.authenticated && viewerSession.user?.id && (viewerSession.user.id === listing.ownerUserId || viewerSession.user.id === listing.owner_user_id);
   const rawListingStatus = (marketplaceMeta.listingStatus || listing.status || "").toLowerCase();
   const isListingOpen = rawListingStatus === "open-for-bids" || rawListingStatus === "active" || rawListingStatus === "live";
-  const isListingClosed = rawListingStatus === "closed" || rawListingStatus === "completed" || rawListingStatus === "awarded" || rawListingStatus === "bid-accepted" || !!marketplaceMeta.acceptedBidId;
+  // If listing is open, it's NOT closed — status is the single source of truth
+  const isListingClosed = !isListingOpen && (rawListingStatus === "closed" || rawListingStatus === "completed" || rawListingStatus === "awarded" || rawListingStatus === "bid-accepted" || !!marketplaceMeta.acceptedBidId);
 
   const ownerActionsMarkup = isOwner ? `
     <section class="section-shell" style="padding-top:0;padding-bottom:0">

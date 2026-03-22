@@ -259,6 +259,8 @@ function createModeratorLoginPageContent(content) {
 
 function isClosedClientListing(listing) {
   const listingStatus = listing?.marketplaceMeta?.listingStatus || listing?.status || "";
+  // Status is the single source of truth — if explicitly active, never treat as closed
+  if (["open-for-bids", "active", "live"].includes(listingStatus)) return false;
   return Boolean(
     listing?.marketplaceMeta?.acceptedBidId
       || listing?.marketplaceMeta?.acceptedBid
