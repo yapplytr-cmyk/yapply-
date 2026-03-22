@@ -161,7 +161,7 @@ html:not(.has-tab-bar) .app-splash {
   right: 0;
   z-index: 1000;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: space-around;
   height: calc(52px + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
@@ -174,10 +174,9 @@ html:not(.has-tab-bar) .app-splash {
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 1px;
+  gap: 2px;
   flex: 1;
-  height: 52px;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
   color: var(--text-dim);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
@@ -195,8 +194,8 @@ html:not(.has-tab-bar) .app-splash {
 }
 
 .tab-bar__icon--bird {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
 }
 
 .tab-bar__label {
@@ -243,7 +242,7 @@ html:not(.has-tab-bar) .app-splash {
 
 .tab-bar__item--center .tab-bar__label {
   color: var(--accent);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* ── Tab bar root container ───────────────────── */
@@ -1327,6 +1326,7 @@ html.has-tab-bar .client-dashboard-card__panel {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   flex: 1;
 }
 

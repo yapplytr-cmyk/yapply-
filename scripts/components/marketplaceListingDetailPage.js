@@ -524,6 +524,8 @@ function createClientDetail(content, listing) {
   const detailContent = content.marketplaceFlow.detail.client;
   const locale = getDetailLocale(content);
   const copy = getDetailCopy(locale);
+  const viewerSession = content.viewerSession || { authenticated: false, user: null };
+  const viewerRole = viewerSession.user?.role || "";
   const marketplaceMeta = listing.marketplaceMeta || {};
   const categoryLabel = listing.projectType || copy.fallback;
   const locationLabel = listing.location || marketplaceMeta.location || copy.fallback;
@@ -612,7 +614,7 @@ function createClientDetail(content, listing) {
 
     <section class="section-shell marketplace-client-detail-layout">
       <div class="marketplace-client-detail-layout__left">
-        ${createBidSubmissionSection(content, listing)}
+        ${viewerRole !== "client" ? createBidSubmissionSection(content, listing) : ""}
         <div class="marketplace-detail-stack" id="listing-bids">
           ${createSectionHeading(copy.latestBids)}
           ${latestBidsMarkup}
