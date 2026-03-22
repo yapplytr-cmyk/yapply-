@@ -2397,6 +2397,46 @@ function setupClientBidsPage(content) {
   }
 }
 
+function setupDetailListingStatusButtons(content) {
+  if (getCurrentPage() !== "marketplace-listing-detail") return;
+  const session = getAuthSession();
+  if (!session?.authenticated) return;
+
+  // Close / Deactivate button on detail page
+  document.querySelectorAll("[data-detail-close-listing]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const listingId = button.getAttribute("data-detail-close-listing") || "";
+      if (!listingId) return;
+      setButtonLoading(button, true);
+      try {
+        await closeClientDashboardListing(listingId, session.user.id);
+        await renderPage(content.meta.locale);
+      } catch (error) {
+        setButtonLoading(button, false);
+        console.error("[yapply] Detail page close failed:", error);
+        window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan kapatılamadı." : "Listing could not be deactivated."));
+      }
+    });
+  });
+
+  // Reactivate button on detail page
+  document.querySelectorAll("[data-detail-reactivate-listing]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const listingId = button.getAttribute("data-detail-reactivate-listing") || "";
+      if (!listingId) return;
+      setButtonLoading(button, true);
+      try {
+        await reactivateClientDashboardListing(listingId, session.user.id);
+        await renderPage(content.meta.locale);
+      } catch (error) {
+        setButtonLoading(button, false);
+        console.error("[yapply] Detail page reactivate failed:", error);
+        window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan yeniden aktif edilemedi." : "Listing could not be reactivated."));
+      }
+    });
+  });
+}
+
 function setupDeveloperPublicProfile(content) {
   if (getCurrentPage() !== "developer-public-profile") return;
 
@@ -2856,6 +2896,7 @@ function bindInteractions(content) {
     setupMarketplaceListingInquiryForm();
     setupMarketplaceDeleteActions(content.meta.locale);
     setupDeveloperInquiryForm();
+    setupDetailListingStatusButtons(content);
     // Smooth scroll for in-page anchor links (e.g. Teklif İste → #listing-contact)
     if (IS_NATIVE_APP) {
       document.querySelectorAll('a[href^="#"]').forEach((anchor) => {

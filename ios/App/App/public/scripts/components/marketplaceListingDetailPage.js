@@ -595,6 +595,25 @@ function createClientDetail(content, listing) {
       `
       : `<div class="marketplace-empty panel"><p>${copy.latestBids.empty}</p></div>`;
 
+  const isOwner = viewerSession.authenticated && viewerSession.user?.id && (viewerSession.user.id === listing.ownerUserId || viewerSession.user.id === listing.owner_user_id);
+  const rawListingStatus = (marketplaceMeta.listingStatus || listing.status || "").toLowerCase();
+  const isListingOpen = rawListingStatus === "open-for-bids" || rawListingStatus === "active" || rawListingStatus === "live";
+  const isListingClosed = rawListingStatus === "closed" || rawListingStatus === "completed" || rawListingStatus === "awarded" || rawListingStatus === "bid-accepted" || !!marketplaceMeta.acceptedBidId;
+
+  const ownerActionsMarkup = isOwner ? `
+    <section class="section-shell" style="padding-top:0;padding-bottom:0">
+      <div class="hero-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;padding:0.75rem 0">
+        ${isListingOpen
+          ? `<button class="button button--danger" type="button" data-detail-close-listing="${listing.id}">${locale === "tr" ? "İlanı Kapat" : "Deactivate Listing"}</button>`
+          : ""}
+        ${isListingClosed
+          ? `<button class="button button--primary" type="button" data-detail-reactivate-listing="${listing.id}">${locale === "tr" ? "Yeniden Aktif Et" : "Re-Activate Listing"}</button>`
+          : ""}
+        <a class="button button--secondary" href="./client-dashboard.html#client-dashboard-active">${locale === "tr" ? "Panele Dön" : "Back to Dashboard"}</a>
+      </div>
+    </section>
+  ` : "";
+
   return `
     <section class="marketplace-detail-hero marketplace-detail-hero--client section-shell">
       <div class="marketplace-detail-hero__layout">
@@ -611,6 +630,8 @@ function createClientDetail(content, listing) {
         ${createClientVisual(detailContent, listing)}
       </div>
     </section>
+
+    ${ownerActionsMarkup}
 
     <section class="section-shell marketplace-client-detail-layout">
       <div class="marketplace-client-detail-layout__left">
