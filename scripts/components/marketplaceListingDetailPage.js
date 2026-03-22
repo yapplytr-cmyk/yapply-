@@ -607,9 +607,6 @@ function createClientDetail(content, listing) {
         ${isListingOpen
           ? `<button class="button button--danger" type="button" data-detail-close-listing="${listing.id}">${locale === "tr" ? "İlanı Kapat" : "Deactivate Listing"}</button>`
           : ""}
-        ${isListingClosed
-          ? `<button class="button button--primary" type="button" data-detail-reactivate-listing="${listing.id}">${locale === "tr" ? "Yeniden Aktif Et" : "Re-Activate Listing"}</button>`
-          : ""}
       </div>
     </section>
   ` : "";

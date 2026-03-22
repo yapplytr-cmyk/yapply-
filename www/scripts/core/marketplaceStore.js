@@ -1866,39 +1866,6 @@ export async function closeClientDashboardListing(listingId, ownerUserId) {
   return normalizeMarketplaceListing(storedListing);
 }
 
-export async function reactivateClientDashboardListing(listingId, ownerUserId) {
-  assertOwnedClientListing(listingId, ownerUserId);
-  const reactivatedAt = new Date().toISOString();
-  const storedListing = updateStoredListing("client", listingId, (listing) => ({
-    ...listing,
-    status: "open-for-bids",
-    updatedAt: reactivatedAt,
-    marketplaceMeta: {
-      ...(listing.marketplaceMeta || {}),
-      listingStatus: "open-for-bids",
-      closedAt: null,
-    },
-  }));
-
-  if (!storedListing) {
-    throw createSubmissionError("LISTING_REACTIVATE_FAILED", "The listing could not be reactivated.");
-  }
-
-  try {
-    const { updateListingStatus, updateBidStatusesForListing } = await import("./supabaseMarketplace.js");
-    await updateListingStatus(listingId, "open-for-bids");
-    // Re-open all closed bids when listing is reactivated
-    await updateBidStatusesForListing(listingId, "closed", "pending").catch((e) =>
-      console.warn("[Yapply] Bid status reopen failed:", e));
-  } catch (err) {
-    console.error("[Yapply] Supabase reactivate failed, local store updated:", err);
-  }
-
-  invalidateMarketplaceRequestCache(listingId);
-  _invalidateDashboardSwrCache();
-  return normalizeMarketplaceListing(storedListing);
-}
-
 /**
  * Purge the localStorage SWR caches for client dashboard & bids pages
  * so that the next renderPage() fetch hits Supabase for fresh data.

@@ -3,7 +3,6 @@ import { getDefaultAvatarOptions } from "./core/accountSettingsStore.js";
 import {
   acceptClientDashboardBid,
   closeClientDashboardListing,
-  reactivateClientDashboardListing,
   deleteMarketplaceListing,
   enrichMarketplaceListingWithCreatorAvatar,
   enrichMarketplaceListingsWithCreatorAvatars,
@@ -2295,28 +2294,6 @@ function setupClientDashboard(content) {
     });
   });
 
-  // Reactivate listing buttons (closed cards)
-  document.querySelectorAll("[data-client-dashboard-reactivate]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const listingId = button.getAttribute("data-client-dashboard-reactivate") || "";
-      if (!listingId) return;
-
-      setButtonLoading(button, true);
-      try {
-        await reactivateClientDashboardListing(listingId, session.user.id);
-        invalidateAllMarketplaceSwrCaches();
-        const isTR = document.documentElement.lang === "tr";
-        showStatusToast("success", isTR ? "İlan yeniden aktif edildi!" : "Listing reactivated!");
-        await renderPage(content.meta.locale);
-        document.querySelector("#client-dashboard-active")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      } catch (error) {
-        setButtonLoading(button, false);
-        console.error("[yapply] Listing reactivate failed:", error);
-        window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan yeniden aktif edilemedi." : "The listing could not be reactivated."));
-      }
-    });
-  });
-
   // ─── Inline review forms (shared handler) ───
   setupInlineReviewForms(session, content);
 }
@@ -2439,26 +2416,6 @@ function setupDetailListingStatusButtons(content) {
         setButtonLoading(button, false);
         console.error("[yapply] Detail page close failed:", error);
         window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan kapatılamadı." : "Listing could not be deactivated."));
-      }
-    });
-  });
-
-  // Reactivate button on detail page
-  document.querySelectorAll("[data-detail-reactivate-listing]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const listingId = button.getAttribute("data-detail-reactivate-listing") || "";
-      if (!listingId) return;
-      setButtonLoading(button, true);
-      try {
-        await reactivateClientDashboardListing(listingId, session.user.id);
-        invalidateAllMarketplaceSwrCaches();
-        const isTR = document.documentElement.lang === "tr";
-        showStatusToast("success", isTR ? "İlan yeniden aktif edildi!" : "Listing reactivated!");
-        await renderPage(content.meta.locale);
-      } catch (error) {
-        setButtonLoading(button, false);
-        console.error("[yapply] Detail page reactivate failed:", error);
-        window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan yeniden aktif edilemedi." : "Listing could not be reactivated."));
       }
     });
   });

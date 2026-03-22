@@ -253,7 +253,7 @@ function createListingCard(listing, content, kind = "active") {
     `<button class="button button--primary" type="button" data-client-dashboard-toggle="bids" data-listing-id="${listing.id}">${content.actions.viewBids}</button>`,
     kind === "active"
       ? `<button class="button button--danger" type="button" data-client-dashboard-close="${listing.id}">${content.actions.closeListing}</button>`
-      : `<button class="button button--secondary" type="button" data-client-dashboard-reactivate="${listing.id}">${content.actions.reactivateListing}</button>`,
+      : "",
     kind === "closed" && acceptedDevUserId
       ? `<a class="button button--secondary" href="./developer-public-profile.html?dev=${encodeURIComponent(acceptedDevUserId)}">${content.actions.viewProfile}</a>`
       : "",
