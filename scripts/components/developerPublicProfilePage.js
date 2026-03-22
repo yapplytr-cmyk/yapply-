@@ -152,7 +152,16 @@ export function createDeveloperPublicProfilePage(content) {
 
   return `
     <section class="section-shell" id="developer-public-profile">
-      ${createSectionHeading(content.heading)}
+      <div class="dev-profile-heading" style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        ${avatar ? `
+          <img class="dev-profile-heading__avatar" src="${avatar}" alt="${profileName}" loading="lazy" decoding="async" fetchpriority="low" style="width:3.5rem;height:3.5rem;border-radius:50%;object-fit:cover;border:2px solid var(--surface-300, #333);flex-shrink:0" />
+        ` : ""}
+        <div>
+          <p class="eyebrow" style="margin:0">${content.heading.eyebrow}</p>
+          <h2 class="section-title" style="margin:0.15rem 0 0">${content.heading.title}</h2>
+          <p class="section-description" style="margin:0.25rem 0 0">${content.heading.description}</p>
+        </div>
+      </div>
 
       <div class="developer-dashboard-overview" style="margin-bottom:2rem">
         <article class="panel developer-dashboard-profile">

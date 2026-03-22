@@ -244,6 +244,7 @@ function createListingCard(listing, content, kind = "active") {
   const acceptedBid = bids.find((b) => b.id === acceptedBidId);
   const acceptedDevUserId = acceptedBid?.bidderUserId || acceptedBid?.bidder_user_id || acceptedBid?.developerProfileReference?.userId || "";
   const acceptedDevName = acceptedBid?.companyName || acceptedBid?.developerProfileReference?.companyName || acceptedBid?.developerName || "";
+  const alreadyReviewed = Boolean(listing._hasReview);
 
   const actionButtons = [
     createButton({ href: detailHref, label: content.actions.viewListing, variant: "secondary" }),
@@ -257,7 +258,7 @@ function createListingCard(listing, content, kind = "active") {
     kind === "closed" && acceptedDevUserId
       ? `<a class="button button--secondary" href="./developer-public-profile.html?dev=${encodeURIComponent(acceptedDevUserId)}">${content.actions.viewProfile}</a>`
       : "",
-    kind === "closed" && acceptedDevUserId
+    kind === "closed" && acceptedDevUserId && !alreadyReviewed
       ? `<button class="button button--primary" type="button" data-client-dashboard-toggle="review" data-listing-id="${listing.id}">${content.actions.leaveReview}</button>`
       : "",
   ]
@@ -307,7 +308,7 @@ function createListingCard(listing, content, kind = "active") {
       </div>
       ${kind === "active" ? createEditPanel(listing, content) : ""}
       ${createBidsPanel(listing, content)}
-      ${kind === "closed" && acceptedDevUserId ? createInlineReviewPanel(listing, content, acceptedDevUserId, acceptedBidId) : ""}
+      ${kind === "closed" && acceptedDevUserId && !alreadyReviewed ? createInlineReviewPanel(listing, content, acceptedDevUserId, acceptedBidId) : ""}
     </article>
   `;
 }

@@ -624,7 +624,8 @@ function createClientDetail(content, listing) {
     commentPlaceholder: isTR ? "Bu geliştirici ile çalışma deneyiminizi paylaşın..." : "Share your experience working with this developer...",
     submitLabel: isTR ? "Değerlendirmeyi Gönder" : "Submit Review",
   };
-  const detailReviewMarkup = isOwner && detailAcceptedBidId && detailAcceptedDevId ? `
+  const detailAlreadyReviewed = Boolean(listing._hasReview);
+  const detailReviewMarkup = isOwner && detailAcceptedBidId && detailAcceptedDevId && !detailAlreadyReviewed ? `
     <section class="section-shell" style="padding-top:0">
       <div class="panel" style="padding:1.25rem">
         <h3 style="margin:0 0 0.75rem;font-size:1rem">${reviewLabels.title}</h3>

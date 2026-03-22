@@ -331,6 +331,18 @@ async function createClientDashboardPageContent(content) {
   const activeListings = ownedListings.filter((listing) => !isClosedClientListing(listing));
   const closedListings = ownedListings.filter((listing) => isClosedClientListing(listing));
 
+  // Tag closed listings that already have a review so the UI can hide the form
+  if (ownerUserId && closedListings.length > 0) {
+    try {
+      const { hasExistingReview } = await import("./core/supabaseMarketplace.js");
+      await Promise.all(closedListings.map(async (listing) => {
+        try {
+          listing._hasReview = await hasExistingReview(ownerUserId, listing.id);
+        } catch (_) { listing._hasReview = false; }
+      }));
+    } catch (_) {}
+  }
+
   return {
     meta: content.meta,
     brand: content.brand,
@@ -915,6 +927,21 @@ async function createMarketplaceSubmissionSuccess(content, locale, submissionTyp
 
 async function createMarketplaceListingDetail(content, locale, listingType, listingId, runtimeData) {
   const pageContent = createMarketplaceListingDetailContent(content, listingType, listingId, runtimeData);
+
+  // Check if the owner already reviewed the accepted developer for this listing
+  const session = getAuthSession();
+  const listing = pageContent.listing;
+  if (session?.authenticated && session.user?.role === "client" && listing?.id) {
+    const ownerId = session.user.id;
+    const listingOwnerId = listing.ownerUserId || listing.owner_user_id || listing.marketplaceMeta?.ownerUserId || "";
+    if (ownerId && ownerId === listingOwnerId) {
+      try {
+        const { hasExistingReview } = await import("./core/supabaseMarketplace.js");
+        listing._hasReview = await hasExistingReview(ownerId, listing.id);
+      } catch (_) { listing._hasReview = false; }
+    }
+  }
+
   const [{ createNavbar }, { createMarketplaceListingDetailPage }, { createFooter }] = await Promise.all([
     loadNavbarApi(),
     loadMarketplaceListingDetailApi(),
