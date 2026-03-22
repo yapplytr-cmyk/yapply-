@@ -694,13 +694,14 @@ function normalizeListing(row) {
     bids,
     // Build marketplaceMeta for backward compatibility with existing UI components
     marketplaceMeta: {
+      ...(typeof row.payload?.marketplaceMeta === "object" ? row.payload.marketplaceMeta : {}),
+      // ── Authoritative PG values — MUST come after payload spread ──
       listingStatus: row.status,
       bidCount: bids.length,
       latestBids: bids.slice(0, 4),
       acceptedBidId: row.accepted_bid_id || "",
       acceptedBid,
       category: row.category || "",
-      ...(typeof row.payload?.marketplaceMeta === "object" ? row.payload.marketplaceMeta : {}),
     },
     // Preserve attachments from payload
     attachments: Array.isArray(row.payload?.attachments) ? row.payload.attachments : [],

@@ -2220,7 +2220,8 @@ html[data-theme="light"] .nav-mobile-links a.nav-link--marketplace:focus-visible
 /* ─── Status-change toast ─── */
 .yapply-status-toast {
   position: fixed;
-  top: 1.25rem;
+  /* Sit below the iPhone notch / Dynamic Island via safe-area + extra offset */
+  top: calc(env(safe-area-inset-top, 0px) + 1rem);
   left: 50%;
   transform: translateX(-50%) translateY(-20px);
   opacity: 0;
@@ -2236,6 +2237,7 @@ html[data-theme="light"] .nav-mobile-links a.nav-link--marketplace:focus-visible
   pointer-events: none;
   animation: yapplyToastIn 0.35s ease forwards, yapplyToastOut 0.35s ease 2.4s forwards;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  max-width: calc(100vw - 2rem);
 }
 
 .yapply-status-toast--success {
