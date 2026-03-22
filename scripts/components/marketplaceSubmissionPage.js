@@ -740,7 +740,7 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
       /* ── Client steps ── */
       case "projectTitle": {
         const input = bodyEl.querySelector('input[name="projectTitle"]');
-        if (input) data.projectTitle = input.value.trim();
+        if (input) data.projectTitle = input.value.replace(/[0-9]/g, "").trim();
         break;
       }
       case "projectType": {
@@ -941,6 +941,27 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
     if (step.id === "photos" || step.id === "professionalUploads") {
       setupPhotoUploadHandlers();
       renderUploadPreviews();
+    }
+
+    // Block numeric input in project title field
+    if (step.id === "projectTitle") {
+      const titleInput = bodyEl.querySelector('input[name="projectTitle"]');
+      if (titleInput) {
+        titleInput.addEventListener("input", () => {
+          const cleaned = titleInput.value.replace(/[0-9]/g, "");
+          if (cleaned !== titleInput.value) {
+            const pos = titleInput.selectionStart - (titleInput.value.length - cleaned.length);
+            titleInput.value = cleaned;
+            titleInput.setSelectionRange(pos, pos);
+          }
+        });
+        titleInput.addEventListener("paste", (e) => {
+          e.preventDefault();
+          const text = (e.clipboardData || window.clipboardData).getData("text") || "";
+          const cleaned = text.replace(/[0-9]/g, "");
+          document.execCommand("insertText", false, cleaned);
+        });
+      }
     }
 
     // Block numeric input in project description field

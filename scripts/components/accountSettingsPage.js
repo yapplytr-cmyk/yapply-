@@ -177,6 +177,17 @@ export function createAccountSettingsPage(content) {
             </div>
           </form>
           <div class="account-settings-theme-section">
+            <span class="account-settings-theme-label">${locale === "tr" ? "Dil" : "Language"}</span>
+            <div class="account-settings-theme-switch" data-account-lang-switch>
+              <button class="account-settings-theme-option" type="button" data-account-lang="tr">
+                <span>&#127481;&#127479;</span> Türkçe
+              </button>
+              <button class="account-settings-theme-option" type="button" data-account-lang="en">
+                <span>&#127468;&#127463;</span> English
+              </button>
+            </div>
+          </div>
+          <div class="account-settings-theme-section">
             <span class="account-settings-theme-label">${locale === "tr" ? "Tema" : "Theme"}</span>
             <div class="account-settings-theme-switch" data-account-theme-switch>
               <button class="account-settings-theme-option" type="button" data-account-theme="light">

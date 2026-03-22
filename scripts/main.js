@@ -2960,6 +2960,27 @@ function setupAccountSettings(content) {
     }
   });
 
+  // Language toggle in account settings
+  const langBtns = document.querySelectorAll("[data-account-lang]");
+  if (langBtns.length > 0) {
+    const markLangActive = () => {
+      const currentLocale = getLocale("tr");
+      langBtns.forEach((b) => {
+        b.classList.toggle("is-active", b.getAttribute("data-account-lang") === currentLocale);
+      });
+    };
+    markLangActive();
+    langBtns.forEach((b) => {
+      b.addEventListener("click", () => {
+        const chosenLang = b.getAttribute("data-account-lang");
+        if (chosenLang !== getLocale("tr")) {
+          setLocale(chosenLang);
+          renderPage(chosenLang);
+        }
+      });
+    });
+  }
+
   // Theme toggle in account settings
   const themeBtns = document.querySelectorAll("[data-account-theme]");
   if (themeBtns.length > 0) {

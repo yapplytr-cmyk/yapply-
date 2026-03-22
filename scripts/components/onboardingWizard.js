@@ -109,8 +109,30 @@ export function createOnboardingWizard(content, locale) {
 
   return `
     <div class="onboarding-wizard" data-onboarding-wizard>
-      <!-- Step 1: Theme Selection -->
+      <!-- Step 1: Language Selection -->
       <div class="onboarding-step onboarding-step--active" data-onboarding-step="1">
+        <div class="onboarding-step__content">
+          <div style="font-size:3rem;margin-bottom:0.5rem;text-align:center">&#127760;</div>
+          <h2 class="onboarding-step__title">Dil Seçin / Choose Language</h2>
+          <p class="onboarding-step__desc">Uygulamayı hangi dilde kullanmak istersiniz?</p>
+          <div class="onboarding-theme-buttons">
+            <button class="onboarding-theme-btn onboarding-theme-btn--active" type="button" data-onboarding-lang="tr">
+              <span style="font-size:1.3rem;line-height:1">&#127481;&#127479;</span>
+              <span>Türkçe</span>
+            </button>
+            <button class="onboarding-theme-btn" type="button" data-onboarding-lang="en">
+              <span style="font-size:1.3rem;line-height:1">&#127468;&#127463;</span>
+              <span>English</span>
+            </button>
+          </div>
+          <button class="button button--primary onboarding-next-btn" type="button" data-onboarding-next="2">
+            Devam Et / Continue
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Theme Selection -->
+      <div class="onboarding-step" data-onboarding-step="2" hidden>
         <div class="onboarding-step__content">
           <div class="onboarding-theme-preview" data-onboarding-theme-preview>
             <svg viewBox="0 0 80 80" class="onboarding-theme-icon">
@@ -119,27 +141,27 @@ export function createOnboardingWizard(content, locale) {
               <circle cx="40" cy="40" r="14" fill="var(--accent)"/>
             </svg>
           </div>
-          <h2 class="onboarding-step__title">${isTr ? "Temayı Seçin" : "Choose Your Theme"}</h2>
-          <p class="onboarding-step__desc">${isTr ? "Uygulamayı açık veya koyu modda kullanmak ister misiniz?" : "Would you like to use the app in Light or Dark mode?"}</p>
+          <h2 class="onboarding-step__title" data-onboarding-theme-title>${isTr ? "Temayı Seçin" : "Choose Your Theme"}</h2>
+          <p class="onboarding-step__desc" data-onboarding-theme-desc>${isTr ? "Uygulamayı açık veya koyu modda kullanmak ister misiniz?" : "Would you like to use the app in Light or Dark mode?"}</p>
           <div class="onboarding-theme-buttons">
             <button class="onboarding-theme-btn" type="button" data-onboarding-theme="light">
               <span style="font-size:1.3rem;line-height:1">&#9728;&#65039;</span>
-              <span>${isTr ? "Açık Mod" : "Light Mode"}</span>
+              <span data-onboarding-theme-light-label>${isTr ? "Açık Mod" : "Light Mode"}</span>
             </button>
             <button class="onboarding-theme-btn onboarding-theme-btn--active" type="button" data-onboarding-theme="dark">
               <span style="font-size:1.3rem;line-height:1">&#127769;</span>
-              <span>${isTr ? "Koyu Mod" : "Dark Mode"}</span>
+              <span data-onboarding-theme-dark-label>${isTr ? "Koyu Mod" : "Dark Mode"}</span>
             </button>
           </div>
           <p class="onboarding-feedback" data-onboarding-feedback hidden></p>
-          <button class="button button--primary onboarding-next-btn" type="button" data-onboarding-next="2">
+          <button class="button button--primary onboarding-next-btn" type="button" data-onboarding-next="3" data-onboarding-theme-continue>
             ${isTr ? "Devam Et" : "Continue"}
           </button>
         </div>
       </div>
 
-      <!-- Step 2: Role Selection -->
-      <div class="onboarding-step" data-onboarding-step="2" hidden>
+      <!-- Step 3: Role Selection -->
+      <div class="onboarding-step" data-onboarding-step="3" hidden>
         <div class="onboarding-step__content">
           <h2 class="onboarding-step__title">${isTr ? "Siz Kimsiniz?" : "Who Are You?"}</h2>
           <p class="onboarding-step__desc">${isTr ? "Müşteri misiniz yoksa Profesyonel mi?" : "Are you a Client or a Builder?"}</p>
@@ -162,8 +184,8 @@ export function createOnboardingWizard(content, locale) {
         </div>
       </div>
 
-      <!-- Step 3: Account Form -->
-      <div class="onboarding-step" data-onboarding-step="3" hidden>
+      <!-- Step 4: Account Form -->
+      <div class="onboarding-step" data-onboarding-step="4" hidden>
         <div class="onboarding-step__content">
           <h2 class="onboarding-step__title">${isTr ? "Hesap Bilgileri" : "Account Details"}</h2>
           <p class="onboarding-step__desc" data-onboarding-form-desc></p>
@@ -236,8 +258,8 @@ export function createOnboardingWizard(content, locale) {
         </div>
       </div>
 
-      <!-- Step 4: Email Verification -->
-      <div class="onboarding-step" data-onboarding-step="4" hidden>
+      <!-- Step 5: Email Verification -->
+      <div class="onboarding-step" data-onboarding-step="5" hidden>
         <div class="onboarding-step__content" style="text-align:center">
           <div class="onboarding-email-bird" style="width:140px;height:140px;margin:0 auto 16px">
             ${BIRD_EMAIL_SVG}
@@ -269,8 +291,8 @@ export function createOnboardingWizard(content, locale) {
         </div>
       </div>
 
-      <!-- Step 5: Success -->
-      <div class="onboarding-step" data-onboarding-step="5" hidden>
+      <!-- Step 6: Success -->
+      <div class="onboarding-step" data-onboarding-step="6" hidden>
         <div class="onboarding-step__content onboarding-success">
           <div class="onboarding-success__bird" data-onboarding-success-bird></div>
           <h2 class="onboarding-step__title" data-onboarding-success-title></h2>
@@ -288,6 +310,7 @@ export function createOnboardingWizard(content, locale) {
         <span class="onboarding-dot" data-onboarding-dot="3"></span>
         <span class="onboarding-dot" data-onboarding-dot="4"></span>
         <span class="onboarding-dot" data-onboarding-dot="5"></span>
+        <span class="onboarding-dot" data-onboarding-dot="6"></span>
       </div>
     </div>
   `;
@@ -297,7 +320,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   const wizard = document.querySelector("[data-onboarding-wizard]");
   if (!wizard) return;
 
-  const isTr = document.documentElement.lang === "tr" || localStorage.getItem("yapply-locale") === "tr";
+  let isTr = document.documentElement.lang === "tr" || localStorage.getItem("yapply-locale") !== "en";
   let currentStep = 1;
   let selectedRole = "client";
 
@@ -329,7 +352,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
     currentStep = step;
   }
 
-  // ─── Shared: show success step (step 5) ───
+  // ─── Shared: show success step (step 6) ───
   function showSuccessStep() {
     const successBird = wizard.querySelector("[data-onboarding-success-bird]");
     const successTitle = wizard.querySelector("[data-onboarding-success-title]");
@@ -365,10 +388,42 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       });
     }
 
-    goToStep(5);
+    goToStep(6);
   }
 
-  // Step 1: Theme selection
+  // Step 1: Language selection
+  wizard.querySelectorAll("[data-onboarding-lang]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const lang = btn.dataset.onboardingLang;
+      isTr = lang === "tr";
+      try { localStorage.setItem("yapply-locale", lang); } catch (_) {}
+      document.documentElement.lang = lang;
+      wizard.querySelectorAll("[data-onboarding-lang]").forEach((b) => {
+        b.classList.toggle("onboarding-theme-btn--active", b === btn);
+      });
+      // Update theme step labels to match chosen language
+      const themeTitle = wizard.querySelector("[data-onboarding-theme-title]");
+      const themeDesc = wizard.querySelector("[data-onboarding-theme-desc]");
+      const themeLightLabel = wizard.querySelector("[data-onboarding-theme-light-label]");
+      const themeDarkLabel = wizard.querySelector("[data-onboarding-theme-dark-label]");
+      const themeContinue = wizard.querySelector("[data-onboarding-theme-continue]");
+      if (themeTitle) themeTitle.textContent = isTr ? "Temayı Seçin" : "Choose Your Theme";
+      if (themeDesc) themeDesc.textContent = isTr ? "Uygulamayı açık veya koyu modda kullanmak ister misiniz?" : "Would you like to use the app in Light or Dark mode?";
+      if (themeLightLabel) themeLightLabel.textContent = isTr ? "Açık Mod" : "Light Mode";
+      if (themeDarkLabel) themeDarkLabel.textContent = isTr ? "Koyu Mod" : "Dark Mode";
+      if (themeContinue) themeContinue.textContent = isTr ? "Devam Et" : "Continue";
+    });
+  });
+
+  // Step 1 → 2 continue button (language → theme)
+  const nextToTheme = wizard.querySelector('[data-onboarding-next="2"]');
+  if (nextToTheme) {
+    nextToTheme.addEventListener("click", () => {
+      goToStep(2);
+    });
+  }
+
+  // Step 2: Theme selection
   wizard.querySelectorAll("[data-onboarding-theme]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const theme = btn.dataset.onboardingTheme;
@@ -387,10 +442,10 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
     });
   });
 
-  // Step 1 → 2 continue button
-  const nextTo2 = wizard.querySelector('[data-onboarding-next="2"]');
-  if (nextTo2) {
-    nextTo2.addEventListener("click", () => {
+  // Step 2 → 3 continue button (theme → role)
+  const nextTo3 = wizard.querySelector('[data-onboarding-next="3"]');
+  if (nextTo3) {
+    nextTo3.addEventListener("click", () => {
       // Show feedback
       const feedback = wizard.querySelector("[data-onboarding-feedback]");
       if (feedback) {
@@ -398,11 +453,11 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         feedback.hidden = false;
         feedback.classList.add("onboarding-feedback--show");
       }
-      setTimeout(() => goToStep(2), 800);
+      setTimeout(() => goToStep(3), 800);
     });
   }
 
-  // Step 2: Role selection
+  // Step 3: Role selection
   wizard.querySelectorAll("[data-onboarding-role]").forEach((card) => {
     card.addEventListener("click", () => {
       selectedRole = card.dataset.onboardingRole;
@@ -442,12 +497,12 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
           : (isTr ? "Kişisel bilgilerinizi girin" : "Enter your personal details");
       }
 
-      // Go to step 3 after brief delay
-      setTimeout(() => goToStep(3), 500);
+      // Go to step 4 after brief delay
+      setTimeout(() => goToStep(4), 500);
     });
   });
 
-  // Step 3: Form submission
+  // Step 4: Form submission
   const form = wizard.querySelector("[data-onboarding-form]");
   if (form) {
     form.addEventListener("submit", async (e) => {
@@ -503,7 +558,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
           if (emailDisplay) emailDisplay.textContent = pendingEmail;
 
           // Focus first OTP input when transitioning
-          goToStep(4);
+          goToStep(5);
           setTimeout(() => {
             const firstOtp = wizard.querySelector('[data-otp-digit="0"]');
             if (firstOtp) firstOtp.focus();
@@ -523,7 +578,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
     });
   }
 
-  // ─── Step 4: OTP digit inputs ───
+  // ─── Step 5: OTP digit inputs ───
   const otpContainer = wizard.querySelector("[data-onboarding-otp-container]");
   const verifyBtn = wizard.querySelector("[data-onboarding-verify-btn]");
   const otpDigits = wizard.querySelectorAll(".onboarding-otp-digit");
