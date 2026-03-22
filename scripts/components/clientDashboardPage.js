@@ -198,6 +198,38 @@ function createBidsPanel(listing, content) {
   `;
 }
 
+function createInlineReviewPanel(listing, content, acceptedDevUserId, acceptedBidId) {
+  const labels = content.reviewForm || {};
+  return `
+    <section class="client-dashboard-card__panel panel" data-client-dashboard-panel="review" data-listing-id="${listing.id}" hidden style="padding:1rem">
+      <h4 style="margin:0 0 0.75rem;font-size:1rem">${labels.title || "Rate this Developer"}</h4>
+      <form data-inline-review-form data-review-dev="${acceptedDevUserId}" data-review-listing="${listing.id}" data-review-bid="${acceptedBidId}">
+        <div class="inline-star-input-group" data-star-input-group>
+          <label class="form-field__label" style="display:block;margin-bottom:0.35rem;font-size:0.85rem;color:var(--text-muted)">${labels.ratingLabel || "Your Rating"}</label>
+          <div style="display:flex;gap:4px;align-items:center">
+            ${[1, 2, 3, 4, 5]
+              .map(
+                (n) => `<button type="button" class="dev-profile-star-input" data-star-value="${n}" aria-label="${n} star${n > 1 ? "s" : ""}" style="background:none;border:none;padding:2px;cursor:pointer">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+                </button>`
+              )
+              .join("")}
+            <input type="hidden" name="rating" value="0" data-star-rating-value />
+          </div>
+        </div>
+        <label class="form-field" style="display:block;margin-top:0.75rem">
+          <span style="font-size:0.85rem;color:var(--text-muted)">${labels.commentLabel || "Comment (optional)"}</span>
+          <textarea name="comment" rows="3" placeholder="${labels.commentPlaceholder || ""}" style="width:100%;resize:vertical;margin-top:0.25rem;padding:0.5rem;border-radius:8px;border:1px solid var(--border-200, #333);background:var(--surface-100, #1a1a1a);color:var(--text-100, #fff);font-size:0.9rem"></textarea>
+        </label>
+        <div data-inline-review-feedback hidden style="padding:0.4rem 0;font-size:0.85rem"></div>
+        <div style="margin-top:0.75rem">
+          <button class="button button--primary" type="submit" style="font-size:0.9rem">${labels.submitLabel || "Submit Review"}</button>
+        </div>
+      </form>
+    </section>
+  `;
+}
+
 function createListingCard(listing, content, kind = "active") {
   const previewImage = getListingPreviewImage(listing);
   const bids = getListingBids(listing);
@@ -226,7 +258,7 @@ function createListingCard(listing, content, kind = "active") {
       ? `<a class="button button--secondary" href="./developer-public-profile.html?dev=${encodeURIComponent(acceptedDevUserId)}">${content.actions.viewProfile}</a>`
       : "",
     kind === "closed" && acceptedDevUserId
-      ? `<button class="button button--primary" type="button" data-client-dashboard-review-dev="${acceptedDevUserId}" data-review-listing-id="${listing.id}" data-review-bid-id="${acceptedBidId}">${content.actions.leaveReview}</button>`
+      ? `<button class="button button--primary" type="button" data-client-dashboard-toggle="review" data-listing-id="${listing.id}">${content.actions.leaveReview}</button>`
       : "",
   ]
     .filter(Boolean)
@@ -275,6 +307,7 @@ function createListingCard(listing, content, kind = "active") {
       </div>
       ${kind === "active" ? createEditPanel(listing, content) : ""}
       ${createBidsPanel(listing, content)}
+      ${kind === "closed" && acceptedDevUserId ? createInlineReviewPanel(listing, content, acceptedDevUserId, acceptedBidId) : ""}
     </article>
   `;
 }

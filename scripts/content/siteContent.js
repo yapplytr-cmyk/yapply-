@@ -753,6 +753,16 @@ export const translations = {
         leaveReview: "Leave Review",
         viewProfile: "View Profile",
       },
+      reviewForm: {
+        title: "Rate this Developer",
+        ratingLabel: "Your Rating",
+        commentLabel: "Comment (optional)",
+        commentPlaceholder: "Share your experience working with this developer...",
+        submitLabel: "Submit Review",
+        successMessage: "Your review has been submitted!",
+        errorMessage: "Could not submit review. Please try again.",
+        alreadyReviewed: "You have already reviewed this developer for this project.",
+      },
       editPanel: {
         heading: {
           eyebrow: "Edit listing",
@@ -3572,6 +3582,16 @@ export const translations = {
         reactivateListing: "Yeniden Aktif Et",
         leaveReview: "Değerlendirme Yap",
         viewProfile: "Profili Gör",
+      },
+      reviewForm: {
+        title: "Geliştiriciyi Değerlendir",
+        ratingLabel: "Puanınız",
+        commentLabel: "Yorum (isteğe bağlı)",
+        commentPlaceholder: "Bu geliştirici ile çalışma deneyiminizi paylaşın...",
+        submitLabel: "Değerlendirmeyi Gönder",
+        successMessage: "Değerlendirmeniz gönderildi!",
+        errorMessage: "Değerlendirme gönderilemedi. Lütfen tekrar deneyin.",
+        alreadyReviewed: "Bu proje için bu geliştiriciyi zaten değerlendirdiniz.",
       },
       editPanel: {
         heading: {
