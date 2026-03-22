@@ -105,24 +105,42 @@ const PROFESSION_TYPE_OPTIONS_TR = [
 ];
 
 const CATEGORY_OPTIONS_TR = [
-  "Havuz Renovasyonu",
   "Havuz Yapımı",
-  "Duvar Yapımı",
+  "Havuz Renovasyonu",
+  "Sauna Yapımı",
+  "Jakuzi Kurulumu",
+  "Komple Villa Yapımı",
   "İç Mekan Renovasyonu",
   "Mutfak Renovasyonu",
   "Banyo Renovasyonu",
-  "Komple Villa Yapımı",
-  "Peyzaj",
   "Dış Cephe Renovasyonu",
   "Çatı",
   "Zemin Kaplama",
   "Boya",
   "Seramik / Fayans",
+  "Duvar Yapımı",
   "Sıhhi Tesisat",
   "Elektrik",
+  "Aydınlatma Tasarımı",
   "Cephe Uygulaması",
+  "Peyzaj",
   "Bahçe Tasarımı",
   "Pergola / Dış Mekan Yapıları",
+  "Teras Düzenlemesi",
+  "Çit / Korkuluk Yapımı",
+  "Garaj Yapımı / Renovasyonu",
+  "Ev Ofis Yapımı",
+  "Spor Salonu / Fitness Alanı",
+  "Akıllı Ev Sistemleri",
+  "Güvenlik Sistemleri",
+  "Güneş Paneli Kurulumu",
+  "Şarap Mahzeni",
+  "Isıtma / Soğutma Sistemleri",
+  "Yalıtım",
+  "Kapı / Pencere Montajı",
+  "Merdiven / Korkuluk",
+  "Asansör Kurulumu",
+  "Depolama / Dolap Sistemleri",
   "Yıkım / Saha Hazırlığı",
   "Genel İnşaat",
   "Mimarlık / Tasarım",
@@ -732,7 +750,7 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
       }
       case "projectBrief": {
         const ta = bodyEl.querySelector('textarea[name="projectBrief"]');
-        if (ta) data.projectBrief = ta.value.trim();
+        if (ta) data.projectBrief = ta.value.replace(/[0-9]/g, "").trim();
         break;
       }
       case "contact": {
@@ -923,6 +941,27 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
     if (step.id === "photos" || step.id === "professionalUploads") {
       setupPhotoUploadHandlers();
       renderUploadPreviews();
+    }
+
+    // Block numeric input in project description field
+    if (step.id === "projectBrief") {
+      const briefTa = bodyEl.querySelector('textarea[name="projectBrief"]');
+      if (briefTa) {
+        briefTa.addEventListener("input", () => {
+          const cleaned = briefTa.value.replace(/[0-9]/g, "");
+          if (cleaned !== briefTa.value) {
+            const pos = briefTa.selectionStart - (briefTa.value.length - cleaned.length);
+            briefTa.value = cleaned;
+            briefTa.setSelectionRange(pos, pos);
+          }
+        });
+        briefTa.addEventListener("paste", (e) => {
+          e.preventDefault();
+          const text = (e.clipboardData || window.clipboardData).getData("text") || "";
+          const cleaned = text.replace(/[0-9]/g, "");
+          document.execCommand("insertText", false, cleaned);
+        });
+      }
     }
 
     // Scroll to top of wizard
