@@ -2243,6 +2243,7 @@ function setupClientDashboard(content) {
       try {
         if (action === "close") {
           await closeClientDashboardListing(listingId, session.user.id);
+          invalidateAllMarketplaceSwrCaches();
           const isTR = document.documentElement.lang === "tr";
           showStatusToast("closed", isTR ? "İlan kapatıldı" : "Listing deactivated");
           await renderPage(content.meta.locale);
@@ -2281,6 +2282,7 @@ function setupClientDashboard(content) {
       setButtonLoading(button, true);
       try {
         await closeClientDashboardListing(listingId, session.user.id);
+        invalidateAllMarketplaceSwrCaches();
         const isTR = document.documentElement.lang === "tr";
         showStatusToast("closed", isTR ? "İlan kapatıldı" : "Listing deactivated");
         await renderPage(content.meta.locale);
@@ -2302,6 +2304,7 @@ function setupClientDashboard(content) {
       setButtonLoading(button, true);
       try {
         await reactivateClientDashboardListing(listingId, session.user.id);
+        invalidateAllMarketplaceSwrCaches();
         const isTR = document.documentElement.lang === "tr";
         showStatusToast("success", isTR ? "İlan yeniden aktif edildi!" : "Listing reactivated!");
         await renderPage(content.meta.locale);
@@ -2435,6 +2438,7 @@ function setupDetailListingStatusButtons(content) {
       setButtonLoading(button, true);
       try {
         await closeClientDashboardListing(listingId, session.user.id);
+        invalidateAllMarketplaceSwrCaches();
         const isTR = document.documentElement.lang === "tr";
         showStatusToast("closed", isTR ? "İlan kapatıldı" : "Listing deactivated");
         await renderPage(content.meta.locale);
@@ -2454,6 +2458,7 @@ function setupDetailListingStatusButtons(content) {
       setButtonLoading(button, true);
       try {
         await reactivateClientDashboardListing(listingId, session.user.id);
+        invalidateAllMarketplaceSwrCaches();
         const isTR = document.documentElement.lang === "tr";
         showStatusToast("success", isTR ? "İlan yeniden aktif edildi!" : "Listing reactivated!");
         await renderPage(content.meta.locale);
@@ -3332,6 +3337,22 @@ function swrWrite(cacheId, data) {
 
 function swrIsStale(cached) {
   return !cached || (Date.now() - (cached.ts || 0)) > SWR_MAX_AGE_MS;
+}
+
+/**
+ * Purge ALL marketplace SWR entries (in-memory + localStorage) so the next
+ * marketplace page load fetches fresh data from Supabase instead of stale cache.
+ */
+function invalidateAllMarketplaceSwrCaches() {
+  _swrMemory.clear();
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(SWR_CACHE_KEY + ":")) keysToRemove.push(key);
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch (_) {}
 }
 
 /* ─── Persist listing feed data into detail SWR cache ─── */
