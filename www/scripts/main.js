@@ -3700,11 +3700,13 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
       const { fetchDeveloperPublicProfile, hasExistingReview } = await import("./core/supabaseMarketplace.js");
       const profileData = await fetchDeveloperPublicProfile(developerUserId);
 
-      // Enrich profile with session avatar if viewing own profile and DB profile is empty
+      // Enrich profile with session data when viewing own profile
+      // Session is the authoritative source (matches account settings)
       const session = getAuthSession();
       if (profileData && session?.authenticated && session.user?.id === developerUserId) {
         const prof = profileData.profile || {};
-        if (!prof.profile_picture_src && session.user?.profilePictureSrc) {
+        // Always prefer session avatar — it's the source of truth from account settings
+        if (session.user?.profilePictureSrc) {
           prof.profile_picture_src = session.user.profilePictureSrc;
         }
         if (!prof.full_name && session.user?.fullName) prof.full_name = session.user.fullName;
@@ -3713,6 +3715,7 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
         if (!prof.service_area && session.user?.serviceArea) prof.service_area = session.user.serviceArea;
         if (!prof.profession_type && session.user?.professionType) prof.profession_type = session.user.professionType;
         if (!prof.specialties && session.user?.specialties) prof.specialties = session.user.specialties;
+        if (!prof.work_description && session.user?.workDescription) prof.work_description = session.user.workDescription;
         if (!prof.id) prof.id = session.user.id;
         if (!prof.role) prof.role = session.user.role;
         profileData.profile = prof;
