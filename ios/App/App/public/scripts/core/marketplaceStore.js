@@ -1852,7 +1852,12 @@ export async function closeClientDashboardListing(listingId, ownerUserId) {
     throw createSubmissionError("LISTING_CLOSE_FAILED", "The listing could not be closed.");
   }
 
-  await updateBackendListingStatus(listingId, "closed");
+  try {
+    const { updateListingStatus } = await import("./supabaseMarketplace.js");
+    await updateListingStatus(listingId, "closed");
+  } catch (err) {
+    console.error("[Yapply] Supabase close failed, local store updated:", err);
+  }
   invalidateMarketplaceRequestCache(listingId);
   return normalizeMarketplaceListing(storedListing);
 }
