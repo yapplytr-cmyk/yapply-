@@ -1859,6 +1859,7 @@ export async function closeClientDashboardListing(listingId, ownerUserId) {
     console.error("[Yapply] Supabase close failed, local store updated:", err);
   }
   invalidateMarketplaceRequestCache(listingId);
+  _invalidateDashboardSwrCache();
   return normalizeMarketplaceListing(storedListing);
 }
 
@@ -1888,7 +1889,19 @@ export async function reactivateClientDashboardListing(listingId, ownerUserId) {
   }
 
   invalidateMarketplaceRequestCache(listingId);
+  _invalidateDashboardSwrCache();
   return normalizeMarketplaceListing(storedListing);
+}
+
+/**
+ * Purge the localStorage SWR caches for client dashboard & bids pages
+ * so that the next renderPage() fetch hits Supabase for fresh data.
+ */
+function _invalidateDashboardSwrCache() {
+  const keys = ["yapply-swr-client-dashboard", "yapply-swr-client-bids"];
+  for (const key of keys) {
+    try { localStorage.removeItem(key); } catch (_) {}
+  }
 }
 
 function requireListingOwner(type) {

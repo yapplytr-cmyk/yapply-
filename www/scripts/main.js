@@ -635,6 +635,25 @@ function setButtonLoading(button, isLoading) {
   button.disabled = false;
 }
 
+/**
+ * Show a brief status-change toast at the top of the viewport.
+ * @param {"success"|"closed"} variant
+ * @param {string} message
+ */
+function showStatusToast(variant, message) {
+  const existing = document.querySelector(".yapply-status-toast");
+  if (existing) existing.remove();
+  const el = document.createElement("div");
+  el.className = `yapply-status-toast yapply-status-toast--${variant}`;
+  el.innerHTML = `<span class="yapply-status-toast__icon">${variant === "success" ? "✓" : "⏸"}</span><span>${message}</span>`;
+  document.body.appendChild(el);
+  el.addEventListener("animationend", (e) => {
+    if (e.animationName === "yapplyToastOut") el.remove();
+  });
+  // Safety cleanup
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 3200);
+}
+
 function areSessionsEquivalent(left, right) {
   return Boolean(left?.authenticated) === Boolean(right?.authenticated)
     && String(left?.user?.id || "") === String(right?.user?.id || "")
@@ -2224,6 +2243,8 @@ function setupClientDashboard(content) {
       try {
         if (action === "close") {
           await closeClientDashboardListing(listingId, session.user.id);
+          const isTR = document.documentElement.lang === "tr";
+          showStatusToast("closed", isTR ? "İlan kapatıldı" : "Listing deactivated");
           await renderPage(content.meta.locale);
           document.querySelector("#client-dashboard-closed")?.scrollIntoView({ behavior: "smooth", block: "start" });
           return;
@@ -2260,6 +2281,8 @@ function setupClientDashboard(content) {
       setButtonLoading(button, true);
       try {
         await closeClientDashboardListing(listingId, session.user.id);
+        const isTR = document.documentElement.lang === "tr";
+        showStatusToast("closed", isTR ? "İlan kapatıldı" : "Listing deactivated");
         await renderPage(content.meta.locale);
         document.querySelector("#client-dashboard-closed")?.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (error) {
@@ -2279,6 +2302,8 @@ function setupClientDashboard(content) {
       setButtonLoading(button, true);
       try {
         await reactivateClientDashboardListing(listingId, session.user.id);
+        const isTR = document.documentElement.lang === "tr";
+        showStatusToast("success", isTR ? "İlan yeniden aktif edildi!" : "Listing reactivated!");
         await renderPage(content.meta.locale);
         document.querySelector("#client-dashboard-active")?.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (error) {
@@ -2410,6 +2435,8 @@ function setupDetailListingStatusButtons(content) {
       setButtonLoading(button, true);
       try {
         await closeClientDashboardListing(listingId, session.user.id);
+        const isTR = document.documentElement.lang === "tr";
+        showStatusToast("closed", isTR ? "İlan kapatıldı" : "Listing deactivated");
         await renderPage(content.meta.locale);
       } catch (error) {
         setButtonLoading(button, false);
@@ -2427,6 +2454,8 @@ function setupDetailListingStatusButtons(content) {
       setButtonLoading(button, true);
       try {
         await reactivateClientDashboardListing(listingId, session.user.id);
+        const isTR = document.documentElement.lang === "tr";
+        showStatusToast("success", isTR ? "İlan yeniden aktif edildi!" : "Listing reactivated!");
         await renderPage(content.meta.locale);
       } catch (error) {
         setButtonLoading(button, false);

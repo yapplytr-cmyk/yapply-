@@ -2216,3 +2216,51 @@ html[data-theme="light"] .nav-mobile-links a.nav-link--marketplace:focus-visible
   line-height: 1.7;
   margin: 0;
 }
+
+/* ─── Status-change toast ─── */
+.yapply-status-toast {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  opacity: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #fff;
+  pointer-events: none;
+  animation: yapplyToastIn 0.35s ease forwards, yapplyToastOut 0.35s ease 2.4s forwards;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+}
+
+.yapply-status-toast--success {
+  background: var(--accent-green, #16a34a);
+}
+
+.yapply-status-toast--closed {
+  background: var(--accent-amber, #d97706);
+}
+
+.yapply-status-toast__icon {
+  font-size: 1.15em;
+  line-height: 1;
+}
+
+@keyframes yapplyToastIn {
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes yapplyToastOut {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
