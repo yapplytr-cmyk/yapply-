@@ -248,6 +248,11 @@ function mapProfileToUpsert(authUser, metadata, fallbackRole = "", existingProfi
     specialties: normalizeText(metadata.specialties || profile.specialties) || null,
     preferred_region: normalizeText(metadata.preferred_region || metadata.preferredRegion || profile.preferredRegion) || null,
     website: normalizeText(metadata.website || profile.website) || null,
+    avatar_url: normalizeText(
+      metadata.profile_picture_url || metadata.profilePictureUrl ||
+      metadata.avatar_url || metadata.avatarUrl ||
+      profile.avatarUrl
+    ) || null,
   };
 }
 
@@ -274,12 +279,6 @@ async function ensureOwnProfile(supabase, authUser, expectedRole = "") {
   let profile = await fetchOwnProfile(supabase, authUser.id);
 
   const fallbackRole = resolveProfileRole(profile, metadata, expectedRole);
-
-  const currentRole = normalizeText(profile?.role);
-
-  if (profile && (isPublicRole(currentRole) || isPrivilegedRole(currentRole))) {
-    return profile;
-  }
 
   if (!isPublicRole(fallbackRole) && !isPrivilegedRole(fallbackRole)) {
     return profile || null;

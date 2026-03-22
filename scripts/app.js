@@ -459,20 +459,22 @@ function createDeveloperDashboardPageContent(content, runtimeData = {}) {
   const cached = dashboardSwrRead(DEV_DASHBOARD_SWR_KEY);
   const hasFreshCache = cached && !dashboardSwrIsStale(cached) && cached.data;
 
-  let remoteListings, remoteBids, localBids;
+  let remoteListings, remoteBids, remoteReviews, localBids;
 
   if (hasFreshCache && !runtimeData.developerOwnedListings) {
     // Use cache — runtimeData was empty (came from SWR path in loadMarketplaceRuntimeData)
     remoteListings = cached.data.listings || [];
     remoteBids = cached.data.bids || [];
+    remoteReviews = cached.data.reviews || [];
     localBids = Array.isArray(runtimeData.developerLocalBidEntries) ? runtimeData.developerLocalBidEntries : [];
   } else {
     remoteListings = Array.isArray(runtimeData.developerOwnedListings) ? runtimeData.developerOwnedListings : [];
     remoteBids = Array.isArray(runtimeData.developerBidEntries) ? runtimeData.developerBidEntries : [];
+    remoteReviews = Array.isArray(runtimeData.developerReviews) ? runtimeData.developerReviews : [];
     localBids = Array.isArray(runtimeData.developerLocalBidEntries) ? runtimeData.developerLocalBidEntries : [];
     // Write fresh data to cache
     if (remoteListings.length > 0 || remoteBids.length > 0) {
-      dashboardSwrWrite({ listings: remoteListings, bids: remoteBids }, DEV_DASHBOARD_SWR_KEY);
+      dashboardSwrWrite({ listings: remoteListings, bids: remoteBids, reviews: remoteReviews }, DEV_DASHBOARD_SWR_KEY);
     }
   }
 
@@ -480,6 +482,9 @@ function createDeveloperDashboardPageContent(content, runtimeData = {}) {
   // 100% Supabase: PG is the source of truth for bids.
   // Only fall back to local if PG returned nothing (offline).
   const bidEntries = remoteBids.length > 0 ? remoteBids : localBids;
+  const reviews = remoteReviews;
+  const ratingSum = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+  const ratingAverage = reviews.length > 0 ? ratingSum / reviews.length : 0;
 
   return {
     meta: content.meta,
@@ -496,6 +501,9 @@ function createDeveloperDashboardPageContent(content, runtimeData = {}) {
     footer: content.openMarketplacePage.footer,
     ownedListings,
     bidEntries,
+    reviews,
+    ratingAverage,
+    ratingCount: reviews.length,
   };
 }
 

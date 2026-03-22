@@ -2957,6 +2957,8 @@ function bindInteractions(content) {
     setupMarketplacePublicFilters(content.meta.locale);
     setupCardTapAnimations();
   } else if (page === "marketplace-listing-detail") {
+    // Always start at top when opening a listing detail page
+    window.scrollTo(0, 0);
     setupBidAccordions();
     setupMarketplaceBidForm(content);
     setupListingImageGallery();
@@ -3642,6 +3644,7 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
         const result = {
           developerOwnedListings: dashboardData.listings || [],
           developerBidEntries: dashboardData.bids || [],
+          developerReviews: dashboardData.reviews || [],
           developerLocalBidEntries: mergeLocalDeveloperBidEntries(
             dashboardData.localBids || [],
             localBidEntries
@@ -3653,6 +3656,7 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
         return {
           developerOwnedListings: [],
           developerBidEntries: [],
+          developerReviews: [],
           developerLocalBidEntries: localBidEntries,
         };
       }
@@ -3695,8 +3699,25 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
       const { fetchDeveloperPublicProfile, hasExistingReview } = await import("./core/supabaseMarketplace.js");
       const profileData = await fetchDeveloperPublicProfile(developerUserId);
 
-      // Check which listings the current client can review (accepted bids with this developer)
+      // Enrich profile with session avatar if viewing own profile and DB profile is empty
       const session = getAuthSession();
+      if (profileData && session?.authenticated && session.user?.id === developerUserId) {
+        const prof = profileData.profile || {};
+        if (!prof.profile_picture_src && session.user?.profilePictureSrc) {
+          prof.profile_picture_src = session.user.profilePictureSrc;
+        }
+        if (!prof.full_name && session.user?.fullName) prof.full_name = session.user.fullName;
+        if (!prof.company_name && session.user?.companyName) prof.company_name = session.user.companyName;
+        if (!prof.email && session.user?.email) prof.email = session.user.email;
+        if (!prof.service_area && session.user?.serviceArea) prof.service_area = session.user.serviceArea;
+        if (!prof.profession_type && session.user?.professionType) prof.profession_type = session.user.professionType;
+        if (!prof.specialties && session.user?.specialties) prof.specialties = session.user.specialties;
+        if (!prof.id) prof.id = session.user.id;
+        if (!prof.role) prof.role = session.user.role;
+        profileData.profile = prof;
+      }
+
+      // Check which listings the current client can review (accepted bids with this developer)
       let completedListings = [];
       if (session?.authenticated && session.user?.role === "client") {
         const { fetchMyListings } = await import("./core/supabaseMarketplace.js");

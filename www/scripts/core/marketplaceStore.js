@@ -1453,6 +1453,7 @@ async function _fetchDeveloperDashboardDataImpl() {
     return {
       listings: localListings,
       bids: localBids,
+      reviews: [],
       localListings,
       localBids,
     };
@@ -1460,15 +1461,17 @@ async function _fetchDeveloperDashboardDataImpl() {
 
   // ─── Try Supabase PostgreSQL first ───
   try {
-    const { fetchBidsForDeveloper, fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v6");
-    const [pgListings, pgBidEntries] = await Promise.all([
+    const { fetchBidsForDeveloper, fetchMyListings, fetchReviewsForDeveloper } = await import("./supabaseMarketplace.js?v=20260321v6");
+    const [pgListings, pgBidEntries, pgReviews] = await Promise.all([
       fetchMyListings(ownerUserId),
       fetchBidsForDeveloper(ownerUserId),
+      fetchReviewsForDeveloper(ownerUserId).catch(() => []),
     ]);
-    console.log("[yapply] DevDashboard: loaded", pgListings.length, "listings,", pgBidEntries.length, "bids from Supabase PG");
+    console.log("[yapply] DevDashboard: loaded", pgListings.length, "listings,", pgBidEntries.length, "bids,", pgReviews.length, "reviews from Supabase PG");
     return {
       listings: pgListings,
       bids: pgBidEntries,
+      reviews: pgReviews,
       localListings,
       localBids,
     };

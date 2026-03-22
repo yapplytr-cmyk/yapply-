@@ -101,7 +101,18 @@ function createImageManager(listing, copy) {
   `;
 }
 
-function createDeveloperOverviewSection(content, session, listingCount, bidCount) {
+function createStarDisplay(rating, size = 18) {
+  const full = Math.floor(rating);
+  const hasHalf = rating - full >= 0.25 && rating - full < 0.75;
+  const empty = 5 - full - (hasHalf ? 1 : 0);
+  const starFull = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="var(--accent-500, #f59e0b)" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+  const starHalf = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="var(--accent-500, #f59e0b)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/><clipPath id="half"><rect x="0" y="0" width="12" height="24"/></clipPath><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" fill="var(--accent-500, #f59e0b)" clip-path="url(#half)"/></svg>`;
+  const starEmpty = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`;
+  return `<span style="display:inline-flex;align-items:center;gap:1px">${starFull.repeat(full)}${hasHalf ? starHalf : ""}${starEmpty.repeat(empty)}</span>`;
+}
+
+function createDeveloperOverviewSection(content, session, listingCount, bidCount, wonBidCount, ratingAverage, ratingCount) {
+  const locale = getDeveloperDashboardLocale(content);
   const user = session.user || {};
   const profileName = user.companyName || user.username || user.fullName || user.email || content.fallback;
   const workDescription = user.workDescription || content.profileOverview.emptyDescription;
@@ -109,6 +120,11 @@ function createDeveloperOverviewSection(content, session, listingCount, bidCount
   const serviceArea = user.serviceArea || content.fallback;
   const professionType = user.professionType || content.fallback;
   const avatar = user.profilePictureSrc || "";
+
+  const wonBidsLabel = locale === "tr" ? "Kazanilan" : "Won Bids";
+  const avgRatingLabel = locale === "tr" ? "Puan" : "Rating";
+  const reviewCountLabel = locale === "tr" ? "Degerlendirme" : "Reviews";
+  const noReviewsLabel = locale === "tr" ? "Henuz yok" : "None yet";
 
   return `
     <section class="section-shell" id="developer-dashboard-overview">
@@ -127,7 +143,7 @@ function createDeveloperOverviewSection(content, session, listingCount, bidCount
               <h3>${profileName}</h3>
               <p>${workDescription}</p>
               <div style="margin-top:0.5rem">
-                ${createButton({ href: "./developer-public-profile.html", label: getDeveloperDashboardLocale(content) === "tr" ? "Profilim" : "My Profile", variant: "primary" })}
+                ${createButton({ href: "./developer-public-profile.html", label: locale === "tr" ? "Profilim" : "My Profile", variant: "primary" })}
               </div>
             </div>
           </div>
@@ -155,6 +171,20 @@ function createDeveloperOverviewSection(content, session, listingCount, bidCount
             <div>
               <span>${content.profileOverview.labels.bidCount}</span>
               <strong>${bidCount}</strong>
+            </div>
+            <div>
+              <span>${wonBidsLabel}</span>
+              <strong>${wonBidCount}</strong>
+            </div>
+            <div>
+              <span>${avgRatingLabel}</span>
+              <strong style="display:flex;align-items:center;gap:6px">
+                ${ratingCount > 0 ? `${createStarDisplay(ratingAverage)} ${ratingAverage.toFixed(1)}` : noReviewsLabel}
+              </strong>
+            </div>
+            <div>
+              <span>${reviewCountLabel}</span>
+              <strong>${ratingCount}</strong>
             </div>
           </div>
         </article>
@@ -473,10 +503,12 @@ export function createDeveloperDashboardPage(content) {
   const allBids = content.bidEntries || [];
   const wonBids = allBids.filter((bid) => String(bid.status || "").toLowerCase() === "accepted");
   const otherBids = allBids.filter((bid) => String(bid.status || "").toLowerCase() !== "accepted");
+  const ratingAverage = content.ratingAverage || 0;
+  const ratingCount = content.ratingCount || 0;
 
   return `
     ${notificationBanner}
-    ${createDeveloperOverviewSection(content, session, content.ownedListings.length, allBids.length)}
+    ${createDeveloperOverviewSection(content, session, content.ownedListings.length, allBids.length, wonBids.length, ratingAverage, ratingCount)}
     ${createWonBidsSection(content, wonBids)}
     ${createBidsSection(content, otherBids)}
     ${createListingsSection(content, content.ownedListings)}
