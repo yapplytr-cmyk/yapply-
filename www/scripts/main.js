@@ -3684,15 +3684,16 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
 
   if (page === "developer-public-profile") {
     const params = new URLSearchParams(window.location.search);
-    const developerUserId = params.get("dev") || "";
+    let developerUserId = params.get("dev") || "";
 
     if (!developerUserId) {
       // If no dev param, check if viewer is a developer viewing their own profile
       const session = getAuthSession();
       if (session?.authenticated && session.user?.role === "developer") {
-        return { developerUserId: session.user.id };
+        developerUserId = session.user.id;
+      } else {
+        return {};
       }
-      return {};
     }
 
     try {
