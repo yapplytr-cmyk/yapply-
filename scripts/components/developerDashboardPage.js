@@ -126,6 +126,9 @@ function createDeveloperOverviewSection(content, session, listingCount, bidCount
               <p class="eyebrow">${content.profileOverview.eyebrow}</p>
               <h3>${profileName}</h3>
               <p>${workDescription}</p>
+              <div style="margin-top:0.5rem">
+                ${createButton({ href: "./developer-public-profile.html", label: getDeveloperDashboardLocale(content) === "tr" ? "Profilim" : "My Profile", variant: "primary" })}
+              </div>
             </div>
           </div>
           <div class="project-detail-card__facts developer-dashboard-profile__facts">

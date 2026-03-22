@@ -46,6 +46,7 @@ const _pageRouteMap = {
   "professional-listing-submission.html":     { page: "marketplace-submission", submissionType: "professional" },
   "client-project-submission-success.html":   { page: "marketplace-submission-success", submissionType: "client" },
   "professional-listing-submission-success.html": { page: "marketplace-submission-success", submissionType: "professional" },
+  "developer-public-profile.html":            { page: "developer-public-profile" },
   "index.html":                               { page: "home" },
   "cart.html":                                { page: "watchlist" },
 };
@@ -730,7 +731,7 @@ function setupRevealAnimations() {
 
   // On native app: skip reveal animations for detail + dashboard pages
   // so all content (including below-the-fold sections) is visible immediately
-  const instantRevealPages = new Set(["marketplace-listing-detail", "developer-dashboard", "client-dashboard", "client-bids", "account-settings"]);
+  const instantRevealPages = new Set(["marketplace-listing-detail", "developer-dashboard", "client-dashboard", "client-bids", "account-settings", "developer-public-profile"]);
   if (IS_NATIVE_APP && instantRevealPages.has(document.body.dataset.page)) {
     allTargets.forEach((target) => target.classList.add("is-visible"));
     return () => {};
@@ -2287,6 +2288,16 @@ function setupClientDashboard(content) {
       }
     });
   });
+
+  // Leave Review buttons on closed listings — redirect to developer profile
+  document.querySelectorAll("[data-client-dashboard-review-dev]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const devId = button.getAttribute("data-client-dashboard-review-dev") || "";
+      if (devId) {
+        window.location.href = `./developer-public-profile.html?dev=${encodeURIComponent(devId)}`;
+      }
+    });
+  });
 }
 
 function setupClientBidsPage(content) {
@@ -2383,6 +2394,139 @@ function setupClientBidsPage(content) {
   const groups = document.querySelectorAll("[data-client-bids-group-toggle]");
   if (groups.length === 1) {
     groups[0].click();
+  }
+}
+
+function setupDeveloperPublicProfile(content) {
+  if (getCurrentPage() !== "developer-public-profile") return;
+
+  const session = getAuthSession();
+
+  // Toggle reviews list
+  document.querySelectorAll("[data-dev-profile-toggle-reviews]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const list = document.querySelector("[data-dev-profile-reviews-list]");
+      if (!list) return;
+      const isHidden = list.hasAttribute("hidden");
+      if (isHidden) {
+        list.removeAttribute("hidden");
+        btn.textContent = content.developerPublicProfilePage?.reviewsSection?.hideAll || "Hide Reviews";
+      } else {
+        list.setAttribute("hidden", "");
+        btn.textContent = content.developerPublicProfilePage?.reviewsSection?.viewAll || "View All Reviews";
+      }
+    });
+  });
+
+  // Star rating input interaction
+  document.querySelectorAll("[data-star-input-group]").forEach((group) => {
+    const stars = group.querySelectorAll("[data-star-value]");
+    const hiddenInput = group.querySelector("[data-star-rating-value]");
+
+    stars.forEach((star) => {
+      star.addEventListener("click", () => {
+        const val = parseInt(star.getAttribute("data-star-value"), 10);
+        if (hiddenInput) hiddenInput.value = val;
+
+        stars.forEach((s) => {
+          const sVal = parseInt(s.getAttribute("data-star-value"), 10);
+          const svg = s.querySelector("svg");
+          if (svg) {
+            svg.setAttribute("fill", sVal <= val ? "var(--accent-500, #f59e0b)" : "none");
+          }
+        });
+      });
+    });
+  });
+
+  // Review form submission
+  document.querySelectorAll("[data-dev-profile-review-form]").forEach((form) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const feedback = form.querySelector("[data-review-feedback]");
+      const formLabels = content.developerPublicProfilePage?.reviewForm || {};
+
+      const rating = parseInt(form.querySelector('[name="rating"]')?.value || "0", 10);
+      if (rating < 1 || rating > 5) {
+        if (feedback) {
+          feedback.textContent = formLabels.ratingLabel || "Please select a rating.";
+          feedback.removeAttribute("hidden");
+          feedback.style.color = "var(--error-500, #ef4444)";
+        }
+        return;
+      }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "...";
+      }
+
+      try {
+        const { submitDeveloperReview } = await import("./core/supabaseMarketplace.js");
+        await submitDeveloperReview({
+          developerUserId: form.querySelector('[name="developerUserId"]')?.value || "",
+          reviewerUserId: session?.user?.id || "",
+          listingId: form.querySelector('[name="listingId"]')?.value || "",
+          bidId: form.querySelector('[name="bidId"]')?.value || "",
+          rating,
+          comment: form.querySelector('[name="comment"]')?.value || "",
+        });
+
+        if (feedback) {
+          feedback.textContent = formLabels.successMessage || "Review submitted!";
+          feedback.removeAttribute("hidden");
+          feedback.style.color = "var(--success-500, #22c55e)";
+        }
+        form.querySelectorAll("input, textarea, button").forEach((el) => { el.disabled = true; });
+      } catch (err) {
+        if (feedback) {
+          feedback.textContent = err?.message || formLabels.errorMessage || "Could not submit review.";
+          feedback.removeAttribute("hidden");
+          feedback.style.color = "var(--error-500, #ef4444)";
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = formLabels.submitLabel || "Submit Review";
+        }
+      }
+    });
+  });
+
+  // Description edit (developer viewing own profile)
+  const editBtn = document.querySelector("[data-dev-profile-edit-desc]");
+  const descDisplay = document.querySelector("[data-dev-profile-description-display]");
+  const descForm = document.querySelector("[data-dev-profile-description-form]");
+  const cancelBtn = document.querySelector("[data-dev-profile-cancel-desc]");
+
+  if (editBtn && descDisplay && descForm) {
+    editBtn.addEventListener("click", () => {
+      descDisplay.setAttribute("hidden", "");
+      descForm.removeAttribute("hidden");
+    });
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => {
+        descForm.setAttribute("hidden", "");
+        descDisplay.removeAttribute("hidden");
+      });
+    }
+
+    descForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const newDesc = descForm.querySelector('[name="workDescription"]')?.value || "";
+      try {
+        const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+        const supabase = await getSupabaseClient();
+        await supabase.from("profiles").update({ specialties: newDesc }).eq("id", session.user.id);
+        descForm.setAttribute("hidden", "");
+        descDisplay.removeAttribute("hidden");
+        const descP = descDisplay.querySelector("p");
+        if (descP) descP.textContent = newDesc;
+      } catch (err) {
+        console.error("[yapply] Description update failed:", err);
+      }
+    });
   }
 }
 
@@ -2738,6 +2882,8 @@ function bindInteractions(content) {
     setupBidAccordions();
     setupCardTapAnimations();
     import("./components/dashboardReloadButton.js").then(m => m.bindDashboardReloadButton(renderPage)).catch(() => {});
+  } else if (page === "developer-public-profile") {
+    setupDeveloperPublicProfile(content);
   } else if (page === "account-settings") {
     setupAccountSettings(content);
   } else if (page === "marketplace-submission") {
@@ -3408,6 +3554,54 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     return await fetchPromise;
   }
 
+  if (page === "developer-public-profile") {
+    const params = new URLSearchParams(window.location.search);
+    const developerUserId = params.get("dev") || "";
+
+    if (!developerUserId) {
+      // If no dev param, check if viewer is a developer viewing their own profile
+      const session = getAuthSession();
+      if (session?.authenticated && session.user?.role === "developer") {
+        return { developerUserId: session.user.id };
+      }
+      return {};
+    }
+
+    try {
+      const { fetchDeveloperPublicProfile, hasExistingReview } = await import("./core/supabaseMarketplace.js");
+      const profileData = await fetchDeveloperPublicProfile(developerUserId);
+
+      // Check which listings the current client can review (accepted bids with this developer)
+      const session = getAuthSession();
+      let completedListings = [];
+      if (session?.authenticated && session.user?.role === "client") {
+        const { fetchMyListings } = await import("./core/supabaseMarketplace.js");
+        try {
+          const myListings = await fetchMyListings(session.user.id);
+          for (const listing of myListings) {
+            const acceptedBidId = listing.accepted_bid_id || listing.marketplaceMeta?.acceptedBidId || "";
+            const bids = listing.listing_bids || listing.bids || [];
+            const acceptedBid = bids.find((b) => b.id === acceptedBidId);
+            const devId = acceptedBid?.bidder_user_id || acceptedBid?.bidderUserId || "";
+            if (devId === developerUserId && acceptedBid) {
+              const reviewed = await hasExistingReview(session.user.id, listing.id);
+              completedListings.push({
+                listing: { id: listing.id, title: listing.title || listing.payload?.title || "" },
+                bid: { id: acceptedBid.id, bidderUserId: devId, bidder_user_id: devId },
+                hasReview: reviewed,
+              });
+            }
+          }
+        } catch (_) {}
+      }
+
+      return { developerUserId, developerProfileData: profileData, completedListings };
+    } catch (err) {
+      console.error("[yapply] Developer profile fetch failed:", err);
+      return { developerUserId };
+    }
+  }
+
   return {};
 }
 
@@ -3758,7 +3952,7 @@ async function renderPage(localeOverride) {
       }
     } else {
       // Other pages that depend on auth state for data loading must await auth first
-      const authDependentPages = new Set(["hesabim"]);
+      const authDependentPages = new Set(["hesabim", "developer-public-profile"]);
       let session, runtimeData;
       if (authDependentPages.has(page)) {
         session = await syncAuthState();

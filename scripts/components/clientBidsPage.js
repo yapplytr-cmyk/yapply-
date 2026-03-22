@@ -63,7 +63,7 @@ function createBidCard(bid, listing, content, locale) {
     <div class="client-bids-card panel${isAccepted ? " client-bids-card--accepted" : ""}">
       <div class="client-bids-card__header">
         <div class="client-bids-card__dev">
-          <strong>${bid.companyName || bid.developerProfileReference?.companyName || bid.developerName || content.fallback}</strong>
+          <a href="./developer-public-profile.html?dev=${encodeURIComponent(bid.bidderUserId || bid.bidder_user_id || bid.developerProfileReference?.userId || "")}" style="color:inherit;text-decoration:underline;text-underline-offset:2px"><strong>${bid.companyName || bid.developerProfileReference?.companyName || bid.developerName || content.fallback}</strong></a>
         </div>
         <div class="client-bids-card__amount">
           ${bid.bidAmount?.label || content.fallback}

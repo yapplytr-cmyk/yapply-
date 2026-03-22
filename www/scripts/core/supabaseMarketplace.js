@@ -739,3 +739,136 @@ function normalizeBidWithListing(row) {
   }
   return bid;
 }
+
+// ─── Developer Reviews ──────────────────────────────────────
+
+/**
+ * Fetch all reviews for a developer by their user ID.
+ */
+export async function fetchReviewsForDeveloper(developerUserId) {
+  if (!developerUserId) return [];
+  const supabase = await getSupabaseClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("developer_reviews")
+      .select("*")
+      .eq("developer_user_id", developerUserId)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) return data;
+    if (error) console.warn("[yapply] fetchReviewsForDeveloper JS error:", error.message);
+  } catch (e) {
+    console.warn("[yapply] fetchReviewsForDeveloper JS threw:", e?.message);
+  }
+
+  // Fallback: raw REST
+  const authHeader = (await getBestAccessToken(supabase)) || SUPABASE_ANON_KEY;
+  const resp = await fetch(
+    `${SUPABASE_URL}/rest/v1/developer_reviews?developer_user_id=eq.${encodeURIComponent(developerUserId)}&order=created_at.desc`,
+    { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${authHeader}` } }
+  );
+  if (!resp.ok) return [];
+  return (await resp.json()) || [];
+}
+
+/**
+ * Submit a review for a developer. Only allowed if:
+ * - The reviewer is the listing owner (client)
+ * - The listing has an accepted bid from the developer
+ */
+export async function submitDeveloperReview({ developerUserId, reviewerUserId, listingId, bidId, rating, comment }) {
+  const supabase = await getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("developer_reviews")
+    .insert({
+      developer_user_id: developerUserId,
+      reviewer_user_id: reviewerUserId,
+      listing_id: listingId,
+      bid_id: bidId,
+      rating: Math.min(5, Math.max(1, Math.round(rating))),
+      comment: (comment || "").trim(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Check if a review already exists for a given client + listing combo.
+ */
+export async function hasExistingReview(reviewerUserId, listingId) {
+  if (!reviewerUserId || !listingId) return false;
+  const supabase = await getSupabaseClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("developer_reviews")
+      .select("id")
+      .eq("reviewer_user_id", reviewerUserId)
+      .eq("listing_id", listingId)
+      .maybeSingle();
+
+    if (!error && data) return true;
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Fetch developer's public profile data: profile info + bid stats + reviews.
+ */
+export async function fetchDeveloperPublicProfile(developerUserId) {
+  if (!developerUserId) return null;
+  const supabase = await getSupabaseClient();
+
+  // Fetch profile
+  let profile = null;
+  try {
+    const authHeader = (await getBestAccessToken(supabase)) || SUPABASE_ANON_KEY;
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(developerUserId)}&select=*`,
+      { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${authHeader}` } }
+    );
+    if (resp.ok) {
+      const rows = await resp.json();
+      profile = Array.isArray(rows) ? rows[0] : rows;
+    }
+  } catch (_) {}
+
+  // Fetch bid stats
+  let totalBids = 0;
+  let wonBids = 0;
+  try {
+    const authHeader = (await getBestAccessToken(supabase)) || SUPABASE_ANON_KEY;
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/listing_bids?bidder_user_id=eq.${encodeURIComponent(developerUserId)}&select=id,status`,
+      { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${authHeader}` } }
+    );
+    if (resp.ok) {
+      const bids = await resp.json();
+      totalBids = bids.length;
+      wonBids = bids.filter((b) => b.status === "accepted").length;
+    }
+  } catch (_) {}
+
+  // Fetch reviews
+  const reviews = await fetchReviewsForDeveloper(developerUserId);
+
+  // Compute average rating
+  const ratingSum = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+  const ratingAverage = reviews.length > 0 ? ratingSum / reviews.length : 0;
+
+  return {
+    profile,
+    totalBids,
+    wonBids,
+    reviews,
+    ratingAverage,
+    ratingCount: reviews.length,
+  };
+}

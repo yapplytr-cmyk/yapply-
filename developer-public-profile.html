@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#060709" />
+    <title>Yapply | Developer Profile</title>
+    <meta
+      name="description"
+      content="View a developer's public profile, ratings, and reviews on Yapply."
+    />
+    <link rel="icon" type="image/png" href="/assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <link rel="stylesheet" href="./styles/base.css" />
+    <link rel="stylesheet" href="./styles/components.css" />
+    <link rel="stylesheet" href="./styles/sections.css" />
+    <link rel="stylesheet" href="./styles/app-shell.css" />
+
+    <script>
+      document.documentElement.dataset.theme = localStorage.getItem("yapply-theme") || "dark";
+      // Detect Capacitor native app
+      (function() {
+        var origin = window.location.origin;
+        var hostname = window.location.hostname;
+        var port = window.location.port;
+        var isNative = origin === "capacitor://localhost" || (hostname === "localhost" && !port);
+        if (isNative) {
+          document.documentElement.classList.add("has-tab-bar");
+          // Prevent pinch-to-zoom
+          document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+          document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+          // Sync bg color with theme
+          var t = localStorage.getItem('yapply-theme') || 'dark';
+          var bgc = t === 'light' ? '#f3efe6' : '#060709';
+          document.documentElement.style.backgroundColor = bgc;
+          var tc = document.querySelector('meta[name="theme-color"]');
+          if (tc) tc.content = bgc;
+        }
+      })();
+
+    </script>
+  </head>
+  <body data-page="developer-public-profile">
+
+    <div id="app"></div>
+    <script type="module" src="./scripts/main.js"></script>
+  </body>
+</html>

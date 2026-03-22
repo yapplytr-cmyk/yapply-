@@ -170,9 +170,10 @@ function createBidRows(listing, content, locale) {
             : acceptedBidId || (listing.marketplaceMeta?.listingStatus || listing.status) === "closed"
               ? `<span class="client-dashboard-bids-table__muted">${content.bidsPanel.closedLabel}</span>`
               : `<button class="button button--secondary client-dashboard-bids-table__accept" type="button" data-client-dashboard-accept-bid="${bid.id}" data-listing-id="${listing.id}">${content.bidsPanel.acceptLabel}</button>`;
+          const bidDevUserId = bid.bidderUserId || bid.bidder_user_id || bid.developerProfileReference?.userId || "";
           return `
             <div class="client-dashboard-bids-table__row">
-              <strong>${bid.companyName || bid.developerProfileReference?.companyName || bid.developerName || content.fallback}</strong>
+              <a href="./developer-public-profile.html?dev=${encodeURIComponent(bidDevUserId)}" style="color:inherit;text-decoration:underline;text-underline-offset:2px"><strong>${bid.companyName || bid.developerProfileReference?.companyName || bid.developerName || content.fallback}</strong></a>
               <span>${bid.bidAmount?.label || content.fallback}</span>
               <span>${bid.estimatedCompletionTimeframe?.label || bid.timeframe || content.fallback}</span>
               <span>${bid.proposalMessage || bid.proposal || content.fallback}</span>
@@ -205,6 +206,13 @@ function createListingCard(listing, content, kind = "active") {
   const detailHref = getMarketplaceListingHref("client", listing.id);
   const locale = getClientDashboardLocale(content);
   const bidLabel = locale === "tr" ? `${bidCount} teklif` : `${bidCount} bid${bidCount !== 1 ? "s" : ""}`;
+
+  // For closed listings with accepted bid — show developer profile link & review button
+  const acceptedBidId = listing?.marketplaceMeta?.acceptedBidId || listing?.marketplaceMeta?.acceptedBid?.id || "";
+  const acceptedBid = bids.find((b) => b.id === acceptedBidId);
+  const acceptedDevUserId = acceptedBid?.bidderUserId || acceptedBid?.bidder_user_id || acceptedBid?.developerProfileReference?.userId || "";
+  const acceptedDevName = acceptedBid?.companyName || acceptedBid?.developerProfileReference?.companyName || acceptedBid?.developerName || "";
+
   const actionButtons = [
     createButton({ href: detailHref, label: content.actions.viewListing, variant: "secondary" }),
     kind === "active"
@@ -214,6 +222,12 @@ function createListingCard(listing, content, kind = "active") {
     kind === "active"
       ? `<button class="button button--danger" type="button" data-client-dashboard-close="${listing.id}">${content.actions.closeListing}</button>`
       : `<button class="button button--secondary" type="button" data-client-dashboard-reactivate="${listing.id}">${content.actions.reactivateListing}</button>`,
+    kind === "closed" && acceptedDevUserId
+      ? `<a class="button button--secondary" href="./developer-public-profile.html?dev=${encodeURIComponent(acceptedDevUserId)}">${content.actions.viewProfile}</a>`
+      : "",
+    kind === "closed" && acceptedDevUserId
+      ? `<button class="button button--primary" type="button" data-client-dashboard-review-dev="${acceptedDevUserId}" data-review-listing-id="${listing.id}" data-review-bid-id="${acceptedBidId}">${content.actions.leaveReview}</button>`
+      : "",
   ]
     .filter(Boolean)
     .join("");

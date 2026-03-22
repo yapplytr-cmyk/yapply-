@@ -750,6 +750,8 @@ export const translations = {
         viewBids: "View Bids",
         closeListing: "Close Listing",
         reactivateListing: "Reactivate",
+        leaveReview: "Leave Review",
+        viewProfile: "View Profile",
       },
       editPanel: {
         heading: {
@@ -849,6 +851,7 @@ export const translations = {
         ariaLabel: "Professional dashboard navigation",
         brandHref: "./index.html",
         links: [
+          { label: "My Profile", href: "./developer-public-profile.html" },
           { label: "My Listings", href: "./developer-dashboard.html#developer-dashboard-listings" },
           { label: "My Bids", href: "./developer-dashboard.html#developer-dashboard-bids" },
           { label: "Account Settings", href: "./account-settings.html" },
@@ -948,6 +951,54 @@ export const translations = {
       },
       fallback: "Not provided",
       mediaFallback: "Listing Visual",
+    },
+    developerPublicProfilePage: {
+      nav: {
+        ariaLabel: "Developer profile navigation",
+        brandHref: "./index.html",
+        links: [
+          { label: "Back to Marketplace", href: "./open-marketplace.html" },
+        ],
+      },
+      heading: {
+        eyebrow: "Professional Profile",
+        title: "Developer Profile",
+        description: "View the developer's profile, ratings, and reviews from past projects.",
+      },
+      labels: {
+        description: "About",
+        specialties: "Specialties",
+        serviceArea: "Service Area",
+        professionType: "Profession",
+        totalBids: "Total Bids Placed",
+        wonBids: "Bids Won",
+        avgRating: "Average Rating",
+        reviewCount: "Reviews",
+        noReviews: "No reviews yet.",
+        noDescription: "This developer has not added a description yet.",
+      },
+      reviewsSection: {
+        title: "All Reviews",
+        empty: "This developer has no reviews yet.",
+        viewAll: "View All Reviews",
+        hideAll: "Hide Reviews",
+      },
+      reviewForm: {
+        title: "Leave a Review",
+        ratingLabel: "Your Rating",
+        commentLabel: "Comment (optional)",
+        commentPlaceholder: "Share your experience working with this developer...",
+        submitLabel: "Submit Review",
+        successMessage: "Your review has been submitted successfully.",
+        errorMessage: "Could not submit your review. Please try again.",
+        alreadyReviewed: "You have already reviewed this developer for this project.",
+      },
+      profileButton: "My Profile",
+      editDescription: "Edit Description",
+      saveDescription: "Save",
+      cancelEdit: "Cancel",
+      descriptionSaved: "Description updated.",
+      descriptionError: "Could not update description.",
     },
     accountSettingsPage: {
       nav: {
@@ -3519,6 +3570,8 @@ export const translations = {
         viewBids: "Teklifleri Gör",
         closeListing: "İlanı Kapat",
         reactivateListing: "Yeniden Aktif Et",
+        leaveReview: "Değerlendirme Yap",
+        viewProfile: "Profili Gör",
       },
       editPanel: {
         heading: {
@@ -3618,6 +3671,7 @@ export const translations = {
         ariaLabel: "Profesyonel paneli gezinmesi",
         brandHref: "./index.html",
         links: [
+          { label: "Profilim", href: "./developer-public-profile.html" },
           { label: "İlanlarım", href: "./developer-dashboard.html#developer-dashboard-listings" },
           { label: "Tekliflerim", href: "./developer-dashboard.html#developer-dashboard-bids" },
           { label: "Hesap Ayarları", href: "./account-settings.html" },
@@ -3717,6 +3771,54 @@ export const translations = {
       },
       fallback: "Belirtilmedi",
       mediaFallback: "İlan Görseli",
+    },
+    developerPublicProfilePage: {
+      nav: {
+        ariaLabel: "Geliştirici profil gezinmesi",
+        brandHref: "./index.html",
+        links: [
+          { label: "Pazaryerine Dön", href: "./open-marketplace.html" },
+        ],
+      },
+      heading: {
+        eyebrow: "Profesyonel Profili",
+        title: "Geliştirici Profili",
+        description: "Geliştiricinin profilini, puanlarını ve geçmiş projelerden gelen yorumlarını görüntüleyin.",
+      },
+      labels: {
+        description: "Hakkında",
+        specialties: "Uzmanlıklar",
+        serviceArea: "Hizmet Bölgesi",
+        professionType: "Meslek",
+        totalBids: "Toplam Verilen Teklif",
+        wonBids: "Kazanılan Teklif",
+        avgRating: "Ortalama Puan",
+        reviewCount: "Değerlendirme",
+        noReviews: "Henüz değerlendirme yok.",
+        noDescription: "Bu geliştirici henüz bir açıklama eklememiş.",
+      },
+      reviewsSection: {
+        title: "Tüm Değerlendirmeler",
+        empty: "Bu geliştiricinin henüz değerlendirmesi yok.",
+        viewAll: "Tüm Değerlendirmeleri Gör",
+        hideAll: "Değerlendirmeleri Gizle",
+      },
+      reviewForm: {
+        title: "Değerlendirme Yap",
+        ratingLabel: "Puanınız",
+        commentLabel: "Yorum (isteğe bağlı)",
+        commentPlaceholder: "Bu geliştirici ile çalışma deneyiminizi paylaşın...",
+        submitLabel: "Değerlendirmeyi Gönder",
+        successMessage: "Değerlendirmeniz başarıyla gönderildi.",
+        errorMessage: "Değerlendirmeniz gönderilemedi. Lütfen tekrar deneyin.",
+        alreadyReviewed: "Bu proje için bu geliştiriciyi zaten değerlendirdiniz.",
+      },
+      profileButton: "Profilim",
+      editDescription: "Açıklamayı Düzenle",
+      saveDescription: "Kaydet",
+      cancelEdit: "İptal",
+      descriptionSaved: "Açıklama güncellendi.",
+      descriptionError: "Açıklama güncellenemedi.",
     },
     accountSettingsPage: {
       nav: {

@@ -97,6 +97,10 @@ function loadDeveloperProfileApi() {
   return loadComponentModule("developer-profile-page", () => import("./components/developerProfilePage.js"));
 }
 
+function loadDeveloperPublicProfileApi() {
+  return loadComponentModule("developer-public-profile-page", () => import("./components/developerPublicProfilePage.js"));
+}
+
 function loadProjectDetailApi() {
   return loadComponentModule("project-detail-page", () => import("./components/projectDetailPage.js"));
 }
@@ -478,6 +482,24 @@ function createDeveloperDashboardPageContent(content, runtimeData = {}) {
     footer: content.openMarketplacePage.footer,
     ownedListings,
     bidEntries,
+  };
+}
+
+function createDeveloperPublicProfilePageContent(content, developerUserId, profileData, completedListings) {
+  const session = getAuthSession();
+  return {
+    meta: content.meta,
+    brand: content.brand,
+    controls: content.controls,
+    ...content.developerPublicProfilePage,
+    viewerSession: session,
+    nav: withAdminNav(
+      content.developerPublicProfilePage.nav,
+      content.adminDashboardPage.navLabel
+    ),
+    footer: content.openMarketplacePage.footer,
+    developerProfileData: profileData || {},
+    completedListings: completedListings || [],
   };
 }
 
@@ -1081,6 +1103,28 @@ async function createDeveloperDashboard(content, locale, runtimeData) {
   `;
 }
 
+async function createDeveloperPublicProfile(content, locale, runtimeData) {
+  const developerUserId = runtimeData.developerUserId || "";
+  const profileData = runtimeData.developerProfileData || {};
+  const completedListings = runtimeData.completedListings || [];
+  const pageContent = createDeveloperPublicProfilePageContent(content, developerUserId, profileData, completedListings);
+  const [{ createNavbar }, { createDeveloperPublicProfilePage }, { createFooter }] = await Promise.all([
+    loadNavbarApi(),
+    loadDeveloperPublicProfileApi(),
+    loadFooterApi(),
+  ]);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createDeveloperPublicProfilePage(pageContent)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
 export async function createApp(
   content,
   locale,
@@ -1118,6 +1162,10 @@ export async function createApp(
 
   if (page === "developer-dashboard") {
     return createDeveloperDashboard(content, locale, runtimeData);
+  }
+
+  if (page === "developer-public-profile") {
+    return createDeveloperPublicProfile(content, locale, runtimeData);
   }
 
   if (page === "account-settings") {
