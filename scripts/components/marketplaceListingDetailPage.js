@@ -609,7 +609,6 @@ function createClientDetail(content, listing) {
         ${isListingClosed
           ? `<button class="button button--primary" type="button" data-detail-reactivate-listing="${listing.id}">${locale === "tr" ? "Yeniden Aktif Et" : "Re-Activate Listing"}</button>`
           : ""}
-        <a class="button button--secondary" href="./client-dashboard.html#client-dashboard-active">${locale === "tr" ? "Panele Dön" : "Back to Dashboard"}</a>
       </div>
     </section>
   ` : "";
