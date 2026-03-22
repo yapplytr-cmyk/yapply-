@@ -203,6 +203,8 @@ function createListingCard(listing, content, kind = "active") {
   const bidCount = Number(listing?.marketplaceMeta?.bidCount || bids.length || 0);
   const statusLabel = getListingStatusLabel(listing, content);
   const detailHref = getMarketplaceListingHref("client", listing.id);
+  const locale = getClientDashboardLocale(content);
+  const bidLabel = locale === "tr" ? `${bidCount} teklif` : `${bidCount} bid${bidCount !== 1 ? "s" : ""}`;
   const actionButtons = [
     createButton({ href: detailHref, label: content.actions.viewListing, variant: "secondary" }),
     kind === "active"
@@ -214,43 +216,45 @@ function createListingCard(listing, content, kind = "active") {
     .join("");
 
   return `
-    <article class="client-dashboard-card panel">
-      <div class="client-dashboard-card__summary">
-        <a class="client-dashboard-card__media" href="${detailHref}" aria-label="${listing.title}">
-          ${
-            previewImage
-              ? `<img src="${previewImage}" alt="${listing.title}" loading="lazy" decoding="async" fetchpriority="low" />`
-              : `<span class="marketplace-card__media-placeholder">${content.mediaFallback}</span>`
-          }
-        </a>
-        <div class="client-dashboard-card__content">
-          <div class="client-dashboard-card__top">
-            <span class="project-badge">${listing.projectType || content.fallback}</span>
-            <span class="marketplace-card__status">${statusLabel}</span>
-          </div>
-          <h3>${listing.title}</h3>
-          <div class="project-detail-card__facts client-dashboard-card__facts">
-            <div>
-              <span>${content.labels.location}</span>
-              <strong>${listing.location || content.fallback}</strong>
-            </div>
-            <div>
-              <span>${content.labels.budget}</span>
-              <strong>${listing.budget || content.fallback}</strong>
-            </div>
-            <div>
-              <span>${content.labels.bidCount}</span>
-              <strong>${bidCount}</strong>
-            </div>
-            <div>
-              <span>${content.labels.status}</span>
-              <strong>${statusLabel}</strong>
-            </div>
-          </div>
-          <div class="hero-actions client-dashboard-card__actions">
-            ${actionButtons}
-          </div>
+    <article class="marketplace-card panel" data-listing-id="${listing.id}">
+      <a class="marketplace-card__media marketplace-card__media--client" href="${detailHref}" aria-label="${listing.title}">
+        ${
+          previewImage
+            ? `<img src="${previewImage}" alt="${listing.title}" loading="lazy" decoding="async" fetchpriority="low" />`
+            : `<span class="marketplace-card__media-placeholder">${content.mediaFallback}</span>`
+        }
+      </a>
+      <div class="marketplace-card__top">
+        <span class="project-badge">${listing.projectType || content.fallback}</span>
+        <span class="marketplace-card__status">${statusLabel}</span>
+        <span class="marketplace-card__location">${listing.location || content.fallback}</span>
+      </div>
+      <div class="marketplace-card__title-row">
+        <h3>${listing.title}</h3>
+      </div>
+      <div class="marketplace-card__facts">
+        <div>
+          <span>${content.labels.location}</span>
+          <strong>${listing.location || content.fallback}</strong>
         </div>
+        <div>
+          <span>${content.labels.budget}</span>
+          <strong>${listing.budget || content.fallback}</strong>
+        </div>
+        <div>
+          <span>${content.labels.status}</span>
+          <strong>${statusLabel}</strong>
+        </div>
+      </div>
+      ${bidCount > 0 ? `<div class="marketplace-card__bid-deadline"><span class="marketplace-card__bid-count">${bidLabel}</span></div>` : ""}
+      <div class="marketplace-card__footer">
+        <div class="marketplace-card__timeline">
+          <span>${content.labels.bidCount}</span>
+          <strong>${bidCount}</strong>
+        </div>
+      </div>
+      <div class="hero-actions client-dashboard-card__actions" style="padding:0 0 0.4rem;gap:0.5rem;display:flex;flex-wrap:wrap">
+        ${actionButtons}
       </div>
       ${kind === "active" ? createEditPanel(listing, content) : ""}
       ${createBidsPanel(listing, content)}
@@ -264,7 +268,7 @@ function createListingSection(sectionId, titleContent, listings, content, kind) 
   return `
     <section class="section-shell" id="${sectionId}">
       ${createSectionHeading(titleContent)}
-      ${cards || `<div class="marketplace-empty panel"><p>${titleContent.empty}</p></div>`}
+      ${cards ? `<div class="marketplace-grid">${cards}</div>` : `<div class="marketplace-empty panel"><p>${titleContent.empty}</p></div>`}
     </section>
   `;
 }
@@ -278,7 +282,7 @@ function createListingSectionWithReload(sectionId, titleContent, listings, conte
         <div style="flex:1">${createSectionHeading(titleContent)}</div>
         ${createDashboardReloadButton()}
       </div>
-      ${cards || `<div class="marketplace-empty panel"><p>${titleContent.empty}</p></div>`}
+      ${cards ? `<div class="marketplace-grid">${cards}</div>` : `<div class="marketplace-empty panel"><p>${titleContent.empty}</p></div>`}
     </section>
   `;
 }
@@ -301,18 +305,16 @@ function createAccessDenied(content) {
 }
 
 export function createClientDashboardSkeleton() {
-  const skeletonCard = `<div class="client-dashboard-card panel" style="opacity:0.5;pointer-events:none">
-    <div class="client-dashboard-card__summary">
-      <div style="background:var(--surface-200,#e5e7eb);height:140px;border-radius:8px;flex-shrink:0;width:120px"></div>
-      <div class="client-dashboard-card__content" style="flex:1;padding:12px">
-        <div style="background:var(--surface-200,#e5e7eb);height:16px;border-radius:4px;width:60%;margin-bottom:10px"></div>
-        <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:80%;margin-bottom:8px"></div>
-        <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:40%"></div>
-      </div>
+  const skeletonCard = `<div class="marketplace-card panel" style="opacity:0.5;pointer-events:none">
+    <div style="background:var(--surface-200,#e5e7eb);aspect-ratio:16/10;border-radius:12px;width:100%"></div>
+    <div style="padding:0.6rem 0">
+      <div style="background:var(--surface-200,#e5e7eb);height:16px;border-radius:4px;width:60%;margin-bottom:10px"></div>
+      <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:80%;margin-bottom:8px"></div>
+      <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:40%"></div>
     </div>
   </div>`;
   return `
-    <section class="section-shell">${Array(3).fill(skeletonCard).join("")}</section>
+    <section class="section-shell"><div class="marketplace-grid">${Array(3).fill(skeletonCard).join("")}</div></section>
   `;
 }
 

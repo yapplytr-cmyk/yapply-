@@ -265,7 +265,7 @@ function createWonBidsSection(content, wonBids) {
 
   return `
     <section class="section-shell" id="developer-dashboard-won-bids">
-      ${createSectionHeading({ eyebrow: locale === "tr" ? "Geliştirici Paneli" : "Developer Panel", title: heading, description: locale === "tr" ? "Kabul edilen teklifleriniz" : "Your accepted bids" })}
+      ${createSectionHeading({ eyebrow: locale === "tr" ? "Profesyonel Paneli" : "Professional Panel", title: heading, description: locale === "tr" ? "Kabul edilen teklifleriniz" : "Your accepted bids" })}
       ${
         wonBids.length
           ? `<div class="developer-dashboard-bids-list">${wonBids.map((bid) => createWonBidCard(bid, content)).join("")}</div>`
@@ -349,46 +349,49 @@ function createEditPanel(listing, content) {
 function createListingCard(listing, content) {
   const previewImage = getListingPreviewImage(listing);
   const detailHref = getMarketplaceListingHref("professional", listing.id);
+  const statusLabel = getDeveloperListingStatusLabel(listing, content);
+  const listingTitle = listing.name || listing.title || content.fallback;
 
   return `
-    <article class="client-dashboard-card panel">
-      <div class="client-dashboard-card__summary">
-        <a class="client-dashboard-card__media" href="${detailHref}" aria-label="${listing.name || listing.title || content.fallback}">
-          ${
-            previewImage
-              ? `<img src="${previewImage}" alt="${listing.name || listing.title || content.fallback}" loading="lazy" decoding="async" fetchpriority="low" />`
-              : `<span class="marketplace-card__media-placeholder">${content.mediaFallback}</span>`
-          }
-        </a>
-        <div class="client-dashboard-card__content">
-          <div class="client-dashboard-card__top">
-            <span class="project-badge">${listing.specialty || content.fallback}</span>
-            <span class="marketplace-card__status">${getDeveloperListingStatusLabel(listing, content)}</span>
-          </div>
-          <h3>${listing.name || listing.title || content.fallback}</h3>
-          <div class="project-detail-card__facts client-dashboard-card__facts">
-            <div>
-              <span>${content.labels.location}</span>
-              <strong>${listing.location || content.fallback}</strong>
-            </div>
-            <div>
-              <span>${content.labels.status}</span>
-              <strong>${getDeveloperListingStatusLabel(listing, content)}</strong>
-            </div>
-            <div>
-              <span>${content.labels.category}</span>
-              <strong>${listing.specialty || content.fallback}</strong>
-            </div>
-            <div>
-              <span>${content.labels.pricing}</span>
-              <strong>${listing.startingPrice || content.fallback}</strong>
-            </div>
-          </div>
-          <div class="hero-actions client-dashboard-card__actions">
-            ${createButton({ href: detailHref, label: content.actions.viewListing, variant: "secondary" })}
-            <button class="button button--secondary" type="button" data-developer-dashboard-toggle="edit" data-listing-id="${listing.id}">${content.actions.editListing}</button>
-          </div>
+    <article class="marketplace-card panel" data-listing-id="${listing.id}">
+      <a class="marketplace-card__media marketplace-card__media--client" href="${detailHref}" aria-label="${listingTitle}">
+        ${
+          previewImage
+            ? `<img src="${previewImage}" alt="${listingTitle}" loading="lazy" decoding="async" fetchpriority="low" />`
+            : `<span class="marketplace-card__media-placeholder">${content.mediaFallback}</span>`
+        }
+      </a>
+      <div class="marketplace-card__top">
+        <span class="project-badge">${listing.specialty || content.fallback}</span>
+        <span class="marketplace-card__status">${statusLabel}</span>
+        <span class="marketplace-card__location">${listing.location || content.fallback}</span>
+      </div>
+      <div class="marketplace-card__title-row">
+        <h3>${listingTitle}</h3>
+      </div>
+      <div class="marketplace-card__facts">
+        <div>
+          <span>${content.labels.location}</span>
+          <strong>${listing.location || content.fallback}</strong>
         </div>
+        <div>
+          <span>${content.labels.category}</span>
+          <strong>${listing.specialty || content.fallback}</strong>
+        </div>
+        <div>
+          <span>${content.labels.pricing}</span>
+          <strong>${listing.startingPrice || content.fallback}</strong>
+        </div>
+      </div>
+      <div class="marketplace-card__footer">
+        <div class="marketplace-card__timeline">
+          <span>${content.labels.status}</span>
+          <strong>${statusLabel}</strong>
+        </div>
+      </div>
+      <div class="hero-actions client-dashboard-card__actions" style="padding:0 0 0.4rem;gap:0.5rem;display:flex;flex-wrap:wrap">
+        ${createButton({ href: detailHref, label: content.actions.viewListing, variant: "secondary" })}
+        <button class="button button--secondary" type="button" data-developer-dashboard-toggle="edit" data-listing-id="${listing.id}">${content.actions.editListing}</button>
       </div>
       ${createEditPanel(listing, content)}
     </article>
@@ -396,12 +399,13 @@ function createListingCard(listing, content) {
 }
 
 function createListingsSection(content, listings) {
+  const cards = listings.map((listing) => createListingCard(listing, content)).join("");
   return `
     <section class="section-shell" id="developer-dashboard-listings">
       ${createSectionHeading(content.listingsSection)}
       ${
         listings.length
-          ? listings.map((listing) => createListingCard(listing, content)).join("")
+          ? `<div class="marketplace-grid">${cards}</div>`
           : `<div class="marketplace-empty panel"><p>${content.listingsSection.empty}</p></div>`
       }
     </section>
@@ -426,14 +430,12 @@ function createAccessDenied(content) {
 }
 
 export function createDeveloperDashboardSkeleton() {
-  const skeletonCard = `<div class="client-dashboard-card panel" style="opacity:0.5;pointer-events:none">
-    <div class="client-dashboard-card__summary">
-      <div style="background:var(--surface-200,#e5e7eb);height:140px;border-radius:8px;flex-shrink:0;width:120px"></div>
-      <div class="client-dashboard-card__content" style="flex:1;padding:12px">
-        <div style="background:var(--surface-200,#e5e7eb);height:16px;border-radius:4px;width:60%;margin-bottom:10px"></div>
-        <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:80%;margin-bottom:8px"></div>
-        <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:40%"></div>
-      </div>
+  const skeletonCard = `<div class="marketplace-card panel" style="opacity:0.5;pointer-events:none">
+    <div style="background:var(--surface-200,#e5e7eb);aspect-ratio:16/10;border-radius:12px;width:100%"></div>
+    <div style="padding:0.6rem 0">
+      <div style="background:var(--surface-200,#e5e7eb);height:16px;border-radius:4px;width:60%;margin-bottom:10px"></div>
+      <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:80%;margin-bottom:8px"></div>
+      <div style="background:var(--surface-200,#e5e7eb);height:12px;border-radius:4px;width:40%"></div>
     </div>
   </div>`;
   const skeletonBid = `<div class="detail-list-card panel" style="opacity:0.5;pointer-events:none;padding:16px">

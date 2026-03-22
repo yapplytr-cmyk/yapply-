@@ -142,7 +142,7 @@ export function createOnboardingWizard(content, locale) {
       <div class="onboarding-step" data-onboarding-step="2" hidden>
         <div class="onboarding-step__content">
           <h2 class="onboarding-step__title">${isTr ? "Siz Kimsiniz?" : "Who Are You?"}</h2>
-          <p class="onboarding-step__desc">${isTr ? "Müşteri misiniz yoksa Geliştirici mi?" : "Are you a Client or a Builder?"}</p>
+          <p class="onboarding-step__desc">${isTr ? "Müşteri misiniz yoksa Profesyonel mi?" : "Are you a Client or a Builder?"}</p>
           <div class="onboarding-role-cards">
             <button class="onboarding-role-card" type="button" data-onboarding-role="client">
               <div class="onboarding-role-card__bird" data-onboarding-bird="client">
@@ -155,7 +155,7 @@ export function createOnboardingWizard(content, locale) {
               <div class="onboarding-role-card__bird" data-onboarding-bird="developer">
                 ${BIRD_HELMET_SVG}
               </div>
-              <span class="onboarding-role-card__label">${isTr ? "Geliştirici" : "Builder"}</span>
+              <span class="onboarding-role-card__label">${isTr ? "Profesyonel" : "Professional"}</span>
               <span class="onboarding-role-card__desc">${isTr ? "İş bulun ve teklifler verin" : "Find work and place bids"}</span>
             </button>
           </div>

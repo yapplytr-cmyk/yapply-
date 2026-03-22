@@ -8,20 +8,30 @@ const RELOAD_BUTTON_STYLES = `
     flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     width: 38px; height: 38px; border-radius: 10px;
-    background: var(--surface-100, #f3f4f6);
-    border: 1px solid var(--border, rgba(255,255,255,0.08));
+    background: transparent;
+    border: none;
     cursor: pointer; -webkit-tap-highlight-color: transparent;
-    transition: background 180ms ease, transform 100ms ease;
+    transition: opacity 180ms ease, transform 100ms ease;
     margin-top: 6px;
   }
   .dashboard-reload-btn:active {
     transform: scale(0.92);
-    background: var(--surface-200, #e5e7eb);
+    opacity: 0.6;
   }
   .dashboard-reload-btn svg {
-    width: 18px; height: 18px;
-    stroke: var(--text-secondary, #9ca3af);
+    width: 20px; height: 20px;
+    stroke: var(--text-primary, #111);
     transition: stroke 200ms ease;
+  }
+  /* Dark mode: white icon */
+  [data-theme="dark"] .dashboard-reload-btn svg,
+  .dark .dashboard-reload-btn svg {
+    stroke: #fff;
+  }
+  /* Light mode: black icon */
+  [data-theme="light"] .dashboard-reload-btn svg,
+  .light .dashboard-reload-btn svg {
+    stroke: #111;
   }
   .dashboard-reload-btn--spinning svg {
     animation: dashboard-reload-spin 700ms cubic-bezier(0.4, 0, 0.2, 1);

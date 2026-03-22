@@ -499,7 +499,7 @@ export const translations = {
           ],
         },
         developer: {
-          tabLabel: "Developer Listings",
+          tabLabel: "Professional Listings",
           labels: {
             startingPrice: "Starting Price",
             deliveryRange: "Delivery Range",
@@ -566,7 +566,7 @@ export const translations = {
             {
               slug: "ridge-development-lab",
               name: "Ridge Development Lab",
-              specialty: "Developer / Delivery Team",
+              specialty: "Professional / Delivery Team",
               location: "Istanbul / Kemerburgaz",
               startingPrice: "Feasibility support from EUR 25K",
               deliveryRange: "Residential and mixed-use land strategies",
@@ -679,7 +679,7 @@ export const translations = {
             title: "Marketplace",
             links: [
               { label: "Client listings", href: "#marketplace-listings" },
-              { label: "Developer listings", href: "#marketplace-listings" },
+              { label: "Professional listings", href: "#marketplace-listings" },
               { label: "Post your project", href: "./client-project-submission.html" },
             ],
           },
@@ -788,7 +788,7 @@ export const translations = {
         acceptedLabel: "Accepted",
         closedLabel: "Closed",
         columns: {
-          developer: "Developer",
+          developer: "Professional",
           amount: "Bid Amount",
           timeline: "Timeline",
           proposal: "Proposal",
@@ -824,7 +824,7 @@ export const translations = {
       listingLabel: "Listing",
       bidCountLabel: "bids",
       columns: {
-        developer: "Developer",
+        developer: "Professional",
         amount: "Bid Amount",
         timeline: "Timeline",
         proposal: "Proposal",
@@ -844,7 +844,7 @@ export const translations = {
     },
     developerDashboardPage: {
       nav: {
-        ariaLabel: "Developer dashboard navigation",
+        ariaLabel: "Professional dashboard navigation",
         brandHref: "./index.html",
         links: [
           { label: "My Listings", href: "./developer-dashboard.html#developer-dashboard-listings" },
@@ -854,18 +854,18 @@ export const translations = {
         ],
       },
       accessDenied: {
-        eyebrow: "Developer dashboard",
-        title: "This dashboard is available for developer accounts only.",
-        description: "Sign in with a developer account to manage your listings, track your bids, and review your profile summary.",
+        eyebrow: "Professional dashboard",
+        title: "This dashboard is available for professional accounts only.",
+        description: "Sign in with a professional account to manage your listings, track your bids, and review your profile summary.",
         backLabel: "Back to Marketplace",
       },
       profileOverview: {
         heading: {
           eyebrow: "Profile overview",
-          title: "Review the core developer profile shown across your account area.",
+          title: "Review the core professional profile shown across your account area.",
           description: "See your current avatar, work description, specialties, service area, and live dashboard counts in one clean summary.",
         },
-        eyebrow: "Developer profile",
+        eyebrow: "Professional profile",
         labels: {
           profileType: "Profile Type",
           professionType: "Profile Category",
@@ -874,20 +874,20 @@ export const translations = {
           listingCount: "Listing Count",
           bidCount: "Bid Count",
         },
-        profileType: "Developer",
+        profileType: "Professional",
         emptyDescription: "Add a short work description in Account Settings to introduce your practice.",
       },
       bidsSection: {
         eyebrow: "My bids",
         title: "Track every bid you have placed on live client listings.",
         description: "Review your bid amount, timeline, proposal text, and the listing connected to each submission.",
-        empty: "No bids have been submitted from this developer account yet.",
+        empty: "No bids have been submitted from this professional account yet.",
       },
       listingsSection: {
         eyebrow: "My listings",
-        title: "Manage the professional listings published from this developer account.",
+        title: "Manage the professional listings published from this professional account.",
         description: "Review your live listing presentation, update images, and keep your listing details aligned with your current positioning.",
-        empty: "No developer listings were found for this account yet.",
+        empty: "No professional listings were found for this account yet.",
       },
       labels: {
         location: "Service Area",
@@ -920,7 +920,7 @@ export const translations = {
       editPanel: {
         heading: {
           eyebrow: "Edit listing",
-          title: "Update your developer listing without leaving the dashboard.",
+          title: "Update your professional listing without leaving the dashboard.",
           description: "Adjust category, service area, pricing, specialties, and image assets for this professional listing.",
         },
         fields: {
@@ -934,15 +934,15 @@ export const translations = {
           uploadImages: "Add New Images",
         },
         images: {
-          empty: "No uploaded images are currently stored for this developer listing.",
+          empty: "No uploaded images are currently stored for this professional listing.",
           remove: "Remove image",
         },
         uploadHint: "Upload new listing visuals to replace or extend the current image set.",
         saveLabel: "Save Changes",
         successTitle: "Listing updated.",
-        successText: "Your developer listing changes were saved in the dashboard.",
+        successText: "Your professional listing changes were saved in the dashboard.",
         errorTitle: "Listing could not be updated",
-        errorFallback: "The dashboard could not save your developer listing right now. Please try again.",
+        errorFallback: "The dashboard could not save your professional listing right now. Please try again.",
       },
       fallback: "Not provided",
       mediaFallback: "Listing Visual",
@@ -1000,11 +1000,11 @@ export const translations = {
         show: "Show password",
         hide: "Hide password",
       },
-      workDescriptionPlaceholder: "Tell clients what kind of projects, delivery model, or construction focus your developer account is built around.",
-      workDescriptionHint: "Describe your company, delivery strengths, and the kinds of construction work you want this developer profile to represent.",
+      workDescriptionPlaceholder: "Tell clients what kind of projects, delivery model, or construction focus your professional account is built around.",
+      workDescriptionHint: "Describe your company, delivery strengths, and the kinds of construction work you want this professional profile to represent.",
       profileTypes: {
         client: "Client",
-        developer: "Developer",
+        developer: "Professional",
       },
       uploadHint: "Upload a compact profile image to replace the current avatar.",
       defaultAvatarHint: "If you prefer not to upload a photo, choose {choice} instead.",
@@ -1055,7 +1055,7 @@ export const translations = {
             "Publish a structured project request so qualified developers can evaluate the opportunity and prepare future bids with the right context.",
           roleGate: {
             title: "This page is reserved for client project request listings.",
-            description: "Developer accounts can only create professional marketplace listings.",
+            description: "Professional accounts can only create professional marketplace listings.",
             actionLabel: "Create Professional Listing",
             actionHref: "./professional-listing-submission.html",
           },
@@ -1325,7 +1325,7 @@ export const translations = {
           eyebrow: "Account entry",
           title: "Choose the right Yapply account before you step into the marketplace.",
           description:
-            "Create a client or developer account through a cleaner role-based entry flow designed for premium project discovery, inquiry management, and future marketplace participation.",
+            "Create a client or professional account through a cleaner role-based entry flow designed for premium project discovery, inquiry management, and future marketplace participation.",
           primaryCta: "Choose Your Role",
           secondaryCta: "Already have an account?",
         },
@@ -1340,7 +1340,7 @@ export const translations = {
             {
               index: "01",
               value: "developer",
-              title: "Create Developer Account",
+              title: "Create Professional Account",
               description:
                 "For architects, contractors, developers, and construction professionals who want to participate in Yapply as a verified professional.",
               points: [
@@ -1348,7 +1348,7 @@ export const translations = {
                 "Show interest in client briefs",
                 "Upload and manage service listings",
               ],
-              cta: "Choose Developer Account",
+              cta: "Choose Professional Account",
             },
             {
               index: "02",
@@ -1359,7 +1359,7 @@ export const translations = {
               points: [
                 "Create project request listings",
                 "Receive bids from professionals",
-                "Inquire about developer profiles",
+                "Inquire about professional profiles",
               ],
               cta: "Choose Client Account",
             },
@@ -1376,10 +1376,10 @@ export const translations = {
           roles: [
             {
               value: "developer",
-              formTitle: "Developer account setup",
+              formTitle: "Professional account setup",
               formDescription:
                 "This role prepares architects, developers, contractors, and construction companies for future listing, bidding, and inquiry workflows.",
-              groupEyebrow: "Developer signup form",
+              groupEyebrow: "Professional signup form",
               groupTitle: "Professional account details",
               groupDescription:
                 "Complete the professional profile fields so this account is ready for future listing visibility, project interest, and marketplace participation.",
@@ -1500,7 +1500,7 @@ export const translations = {
           roles: [
             {
               value: "developer",
-              title: "Developer Login",
+              title: "Professional Login",
               formTitle: "Professional access for architects, developers, and contractors.",
               formDescription:
                 "Use this path for future listing ownership, project interest, bid participation, and professional-side marketplace activity.",
@@ -1536,7 +1536,7 @@ export const translations = {
           description:
             "The login entry is positioned to support saved project requests, professional listing visibility, bid workflows, and future owner or admin permissions.",
           items: [
-            { label: "Roles", value: "Client + Developer" },
+            { label: "Roles", value: "Client + Professional" },
             { label: "Next phase", value: "Auth + dashboards" },
             { label: "Status", value: "Frontend entry layer" },
           ],
@@ -1643,7 +1643,7 @@ export const translations = {
     authFeedback: {
       errors: {
         INVALID_JSON: "The request could not be processed. Please try again.",
-        INVALID_ROLE: "Only client and developer accounts can be created here.",
+        INVALID_ROLE: "Only client and professional accounts can be created here.",
         FULL_NAME_REQUIRED: "Please enter your full name.",
         IDENTIFIER_REQUIRED: "Please enter the moderator username or email.",
         EMAIL_INVALID: "Please enter a valid email address.",
@@ -1651,12 +1651,12 @@ export const translations = {
         PASSWORD_TOO_SHORT: "Password must be at least 8 characters.",
         PASSWORD_MISMATCH: "Password confirmation does not match.",
         PHONE_REQUIRED: "Phone number is required for this account type.",
-        COMPANY_REQUIRED: "Company or professional name is required for developer accounts.",
-        PROFESSION_REQUIRED: "Profession type is required for developer accounts.",
-        SERVICE_AREA_REQUIRED: "City or service area is required for developer accounts.",
-        EXPERIENCE_REQUIRED: "Years of experience is required for developer accounts.",
+        COMPANY_REQUIRED: "Company or professional name is required for professional accounts.",
+        PROFESSION_REQUIRED: "Profession type is required for professional accounts.",
+        SERVICE_AREA_REQUIRED: "City or service area is required for professional accounts.",
+        EXPERIENCE_REQUIRED: "Years of experience is required for professional accounts.",
         EXPERIENCE_INVALID: "Years of experience must be a valid non-negative number.",
-        SPECIALTIES_REQUIRED: "Please enter at least one specialty for the developer account.",
+        SPECIALTIES_REQUIRED: "Please enter at least one specialty for the professional account.",
         REGION_REQUIRED: "Preferred city or region is required for client accounts.",
         PASSWORD_REQUIRED: "Please enter your password.",
         LOGIN_ACCOUNT_NOT_FOUND: "No account was found for this email address.",
@@ -1691,10 +1691,10 @@ export const translations = {
         accountCreated: {
           defaultTitle: "Account created",
           defaultText: "Your account was created and a session is now active in this browser.",
-          developer: "Developer account created",
+          developer: "Professional account created",
           client: "Client account created",
           detail: {
-            developer: "Your developer account was created successfully. You are now signed in and ready for future listing, bid, and ownership flows.",
+            developer: "Your professional account was created successfully. You are now signed in and ready for future listing, bid, and ownership flows.",
             client: "Your client account was created successfully. You are now signed in and ready for future request, bid, and ownership flows.",
           },
         },
@@ -1770,7 +1770,7 @@ export const translations = {
           position: "Position",
           status: "Status",
           clientOwner: "Client Account",
-          developerOwner: "Developer Account",
+          developerOwner: "Professional Account",
           activeStatus: "active",
         },
         form: {
@@ -2076,7 +2076,7 @@ export const translations = {
     },
     developerProfilePage: {
       nav: {
-        ariaLabel: "Developer profile navigation",
+        ariaLabel: "Professional profile navigation",
         brandHref: "./index.html",
         links: [
           { label: "Back to Marketplace", href: "./open-marketplace.html" },
@@ -2144,7 +2144,7 @@ export const translations = {
             "Concept design only",
             "Architecture + permits",
             "Turnkey construction",
-            "Developer / delivery advisory",
+            "Professional / delivery advisory",
             "Facade or fit-out package",
           ],
           budgetOptions: [
@@ -2158,7 +2158,7 @@ export const translations = {
       },
       footer: {
         description:
-          "Developer profile pages on Yapply are designed to make premium practices easier to evaluate, compare, and contact through a more structured marketplace format.",
+          "Professional profile pages on Yapply are designed to make premium practices easier to evaluate, compare, and contact through a more structured marketplace format.",
         columns: [
           {
             title: "Marketplace",
@@ -2177,7 +2177,7 @@ export const translations = {
             ],
           },
         ],
-        note: "Developer profile pages are structured as marketplace-ready detail views and can evolve into authenticated public listings later.",
+        note: "Professional profile pages are structured as marketplace-ready detail views and can evolve into authenticated public listings later.",
         contact: "hello@yapply.com",
         copyrightLabel: "Yapply",
       },
@@ -2241,7 +2241,7 @@ export const translations = {
         "ridge-development-lab": {
           name: "Ridge Development Lab",
           subtitle: "A development-focused team combining feasibility thinking, land strategy, and delivery planning for residential sites.",
-          specialty: "Developer / Delivery Team",
+          specialty: "Professional / Delivery Team",
           location: "Istanbul / Kemerburgaz",
           startingPrice: "Feasibility support from EUR 25K",
           deliveryRange: "Residential and mixed-use land strategies",
@@ -2768,7 +2768,7 @@ export const translations = {
             ],
           },
           {
-            title: "Developers",
+            title: "Professionals",
             subtitle: "Teams leading residential or mixed-use projects with clarity and ambition.",
             points: [
               "Project development and land-to-delivery capability",
@@ -3041,7 +3041,7 @@ export const translations = {
           buildTime: "Tahmini 16 ay",
           summary:
             "Katmanlı terasları, güçlü cephe dili ve kontrollü tasarım-uygulama yaklaşımıyla şekillenen lüks villa önizlemesi.",
-          highlights: ["Geliştirici mantığıyla kurgulanmış planlama", "Entegre statik koordinasyon", "Peyzaja açılan yaşam senaryosu"],
+          highlights: ["Profesyonel mantığıyla kurgulanmış planlama", "Entegre statik koordinasyon", "Peyzaja açılan yaşam senaryosu"],
           visual: "urban",
           href: "./project-urban-ridge-villa.html",
           ctaLabel: "Projeyi Gör",
@@ -3107,7 +3107,7 @@ export const translations = {
         eyebrow: "Açık Pazaryeri",
         title: "İddialı yapı briefleri ve premium hizmet ilanları için küratöryel bir açık pazaryeri.",
         description:
-          "Open Marketplace, Yapply’yi yalnızca öne çıkan projelerin ötesine taşır. Müşteriler ne inşa etmek istediklerini yayınlayabilir; mimarlar, geliştiriciler ve yükleniciler ise kendi tekliflerini daha rafine bir ortamda sunabilir.",
+          "Open Marketplace, Yapply’yi yalnızca öne çıkan projelerin ötesine taşır. Müşteriler ne inşa etmek istediklerini yayınlayabilir; mimarlar, profesyoneller ve yükleniciler ise kendi tekliflerini daha rafine bir ortamda sunabilir.",
         primaryCta: { label: "İlanları İncele", href: "#marketplace-listings" },
         secondaryCta: { label: "Yükleniciler için Hizmetlerini Listele", href: "./professional-listing-submission.html" },
         highlights: [
@@ -3143,7 +3143,7 @@ export const translations = {
           {
             index: "02",
             title: "Profesyoneller kendi tekliflerini yayınlayabilir",
-            description: "Mimarlar, geliştiriciler, yükleniciler ve inşaat şirketleri uzmanlıklarını, fiyat seviyelerini ve hizmetlerini daha net anlatabilir.",
+            description: "Mimarlar, profesyoneller, yükleniciler ve inşaat şirketleri uzmanlıklarını, fiyat seviyelerini ve hizmetlerini daha net anlatabilir.",
           },
           {
             index: "03",
@@ -3258,7 +3258,7 @@ export const translations = {
               timeline: "Bu çeyrekte fizibilite",
               plotStatus: "Arsa opsiyonu görüşülüyor",
               brief:
-                "Bir geliştirici; arsaya bağlanmadan önce potansiyeli test etmek için erken aşama mimarlık ve inşaat girdisi arıyor.",
+                "Bir profesyonel; arsaya bağlanmadan önce potansiyeli test etmek için erken aşama mimarlık ve inşaat girdisi arıyor.",
               tags: ["Geliştirme", "Fizibilite", "Konut"],
               ctaLabel: "Briefi Gör",
               ctaHref: "./professional-listing-submission.html",
@@ -3333,7 +3333,7 @@ export const translations = {
             {
               slug: "ridge-development-lab",
               name: "Ridge Development Lab",
-              specialty: "Geliştirici / Teslim Ekibi",
+              specialty: "Profesyonel / Teslim Ekibi",
               location: "İstanbul / Kemerburgaz",
               startingPrice: "Fizibilite desteği EUR 25K’dan başlar",
               deliveryRange: "Konut ve karma kullanım arazi stratejileri",
@@ -3478,20 +3478,20 @@ export const translations = {
         eyebrow: "Müşteri paneli",
         title: "Canlı proje ilanlarınızı yönetin ve gelen teklifleri inceleyin.",
         description:
-          "Bu panel, müşteri hesaplarına yayınlanmış briefleri güncellemek, geliştirici tekliflerini gözden geçirmek ve tamamlanan fırsatları canlı pazaryeri akışından çıkarmak için tek bir alan sunar.",
+          "Bu panel, müşteri hesaplarına yayınlanmış briefleri güncellemek, profesyonel tekliflerini gözden geçirmek ve tamamlanan fırsatları canlı pazaryeri akışından çıkarmak için tek bir alan sunar.",
         primaryCta: "Talep İlanı Oluştur",
         secondaryCta: "Açık Pazaryeri",
       },
       accessDenied: {
         eyebrow: "Müşteri paneli",
         title: "Bu panel yalnızca müşteri hesapları için kullanılabilir.",
-        description: "Kendi pazaryeri brieflerinizi ve geliştirici tekliflerini yönetmek için bir müşteri hesabıyla giriş yapın.",
+        description: "Kendi pazaryeri brieflerinizi ve profesyonel tekliflerini yönetmek için bir müşteri hesabıyla giriş yapın.",
         backLabel: "Pazaryerine Dön",
       },
       activeSection: {
         eyebrow: "Aktif ilanlar",
         title: "Şu anda açık veya yönetilmeye devam eden ilanlar.",
-        description: "Canlı briefleri inceleyin, proje detaylarını güncelleyin ve yeni geliştirici tekliflerini takip edin.",
+        description: "Canlı briefleri inceleyin, proje detaylarını güncelleyin ve yeni profesyonel tekliflerini takip edin.",
         empty: "Bu hesap için henüz aktif müşteri ilanı bulunmuyor.",
       },
       closedSection: {
@@ -3547,7 +3547,7 @@ export const translations = {
       bidsPanel: {
         heading: {
           eyebrow: "İlan teklifleri",
-          title: "Bu proje için geliştirici tekliflerini inceleyin.",
+          title: "Bu proje için profesyonel tekliflerini inceleyin.",
           description: "Bir teklifi kabul etmeden önce fiyatı, zamanı ve teklif yaklaşımını karşılaştırın.",
         },
         empty: "Bu ilan için henüz teklif gönderilmedi.",
@@ -3555,7 +3555,7 @@ export const translations = {
         acceptedLabel: "Kabul Edildi",
         closedLabel: "Kapalı",
         columns: {
-          developer: "Geliştirici",
+          developer: "Profesyonel",
           amount: "Teklif Tutarı",
           timeline: "Takvim",
           proposal: "Teklif Notu",
@@ -3585,13 +3585,13 @@ export const translations = {
       heading: {
         eyebrow: "Tekliflerim",
         title: "İlanlarınıza gelen tüm teklifleri inceleyin",
-        description: "Projelerinize yapılan tüm geliştirici tekliflerini görün. Detaylar için genişletin ve en iyi teklifi kabul edin.",
+        description: "Projelerinize yapılan tüm profesyonel tekliflerini görün. Detaylar için genişletin ve en iyi teklifi kabul edin.",
       },
       empty: "Henüz hiçbir ilanınıza teklif gönderilmedi.",
       listingLabel: "İlan",
       bidCountLabel: "teklif",
       columns: {
-        developer: "Geliştirici",
+        developer: "Profesyonel",
         amount: "Teklif Tutarı",
         timeline: "Takvim",
         proposal: "Teklif Notu",
@@ -3611,7 +3611,7 @@ export const translations = {
     },
     developerDashboardPage: {
       nav: {
-        ariaLabel: "Geliştirici paneli gezinmesi",
+        ariaLabel: "Profesyonel paneli gezinmesi",
         brandHref: "./index.html",
         links: [
           { label: "İlanlarım", href: "./developer-dashboard.html#developer-dashboard-listings" },
@@ -3621,18 +3621,18 @@ export const translations = {
         ],
       },
       accessDenied: {
-        eyebrow: "Geliştirici paneli",
-        title: "Bu panel yalnızca geliştirici hesapları için kullanılabilir.",
-        description: "İlanlarınızı yönetmek, tekliflerinizi görmek ve profil özetinizi incelemek için geliştirici hesabıyla giriş yapın.",
+        eyebrow: "Profesyonel paneli",
+        title: "Bu panel yalnızca profesyonel hesapları için kullanılabilir.",
+        description: "İlanlarınızı yönetmek, tekliflerinizi görmek ve profil özetinizi incelemek için profesyonel hesabıyla giriş yapın.",
         backLabel: "Pazaryerine Dön",
       },
       profileOverview: {
         heading: {
           eyebrow: "Profil özeti",
-          title: "Hesap alanında görünen geliştirici profilinizi tek bakışta inceleyin.",
+          title: "Hesap alanında görünen profesyonel profilinizi tek bakışta inceleyin.",
           description: "Avatarınız, iş tanımınız, uzmanlıklarınız, hizmet bölgeniz ve dashboard sayaçları tek bir temiz özet içinde görünür.",
         },
-        eyebrow: "Geliştirici profili",
+        eyebrow: "Profesyonel profili",
         labels: {
           profileType: "Profil Tipi",
           professionType: "Profil Kategorisi",
@@ -3641,20 +3641,20 @@ export const translations = {
           listingCount: "İlan Sayısı",
           bidCount: "Teklif Sayısı",
         },
-        profileType: "Geliştirici",
+        profileType: "Profesyonel",
         emptyDescription: "Çalışmanızı tanıtmak için Hesap Ayarları bölümüne kısa bir iş açıklaması ekleyin.",
       },
       bidsSection: {
         eyebrow: "Tekliflerim",
         title: "Canlı müşteri ilanlarına verdiğiniz tüm teklifleri takip edin.",
         description: "Teklif tutarı, takvim, teklif metni ve bağlı olduğu ilanı tek yerde inceleyin.",
-        empty: "Bu geliştirici hesabından henüz teklif gönderilmedi.",
+        empty: "Bu profesyonel hesabından henüz teklif gönderilmedi.",
       },
       listingsSection: {
         eyebrow: "İlanlarım",
-        title: "Bu geliştirici hesabından yayınlanan profesyonel ilanları yönetin.",
+        title: "Bu profesyonel hesabından yayınlanan profesyonel ilanları yönetin.",
         description: "İlan sunumunuzu inceleyin, görselleri güncelleyin ve mevcut konumlandırmanıza göre detayları düzenleyin.",
-        empty: "Bu hesap için geliştirici ilanı bulunmuyor.",
+        empty: "Bu hesap için profesyonel ilanı bulunmuyor.",
       },
       labels: {
         location: "Hizmet Bölgesi",
@@ -3687,7 +3687,7 @@ export const translations = {
       editPanel: {
         heading: {
           eyebrow: "İlanı düzenle",
-          title: "Dashboard üzerinden geliştirici ilanınızı güncelleyin.",
+          title: "Dashboard üzerinden profesyonel ilanınızı güncelleyin.",
           description: "Bu profesyonel ilan için kategori, hizmet bölgesi, fiyatlandırma, uzmanlıklar ve görselleri düzenleyin.",
         },
         fields: {
@@ -3701,15 +3701,15 @@ export const translations = {
           uploadImages: "Yeni Görseller Ekle",
         },
         images: {
-          empty: "Bu geliştirici ilanı için şu anda kayıtlı görsel bulunmuyor.",
+          empty: "Bu profesyonel ilanı için şu anda kayıtlı görsel bulunmuyor.",
           remove: "Görseli kaldır",
         },
         uploadHint: "Mevcut görselleri değiştirmek veya genişletmek için yeni ilan görselleri yükleyin.",
         saveLabel: "Değişiklikleri Kaydet",
         successTitle: "İlan güncellendi.",
-        successText: "Geliştirici ilanı değişiklikleriniz dashboard içinde kaydedildi.",
+        successText: "Profesyonel ilanı değişiklikleriniz dashboard içinde kaydedildi.",
         errorTitle: "İlan güncellenemedi",
-        errorFallback: "Dashboard şu anda geliştirici ilanını kaydedemedi. Lütfen tekrar deneyin.",
+        errorFallback: "Dashboard şu anda profesyonel ilanını kaydedemedi. Lütfen tekrar deneyin.",
       },
       fallback: "Belirtilmedi",
       mediaFallback: "İlan Görseli",
@@ -3767,11 +3767,11 @@ export const translations = {
         show: "Sifreyi goster",
         hide: "Sifreyi gizle",
       },
-      workDescriptionPlaceholder: "Bu geliştirici hesabının hangi proje türlerine, teslim modeline veya inşaat odağına yönelik olduğunu anlatın.",
+      workDescriptionPlaceholder: "Bu profesyonel hesabının hangi proje türlerine, teslim modeline veya inşaat odağına yönelik olduğunu anlatın.",
       workDescriptionHint: "Şirketinizi, teslim gücünüzü ve bu profilin temsil etmesini istediğiniz iş türlerini kısa ve net şekilde açıklayın.",
       profileTypes: {
         client: "Müşteri",
-        developer: "Geliştirici",
+        developer: "Profesyonel",
       },
       uploadHint: "Mevcut avatarin yerine kullanmak için kompakt bir profil resmi yükleyin.",
       defaultAvatarHint: "Fotoğraf yüklemek istemiyorsaniz onun yerine {choice} seçebilirsiniz.",
@@ -3819,10 +3819,10 @@ export const translations = {
           eyebrow: "Müşteri intake formu",
           title: "Canlı bir müşteri proje ilanı oluşturun.",
           description:
-            "Nitelikli geliştiricilerin fırsatı doğru bağlamla değerlendirebilmesi ve gelecekte teklif hazırlayabilmesi için yapılandırılmış proje talebinizi yayınlayın.",
+            "Nitelikli profesyonellerin fırsatı doğru bağlamla değerlendirebilmesi ve gelecekte teklif hazırlayabilmesi için yapılandırılmış proje talebinizi yayınlayın.",
           roleGate: {
             title: "Bu sayfa yalnızca müşteri proje talebi ilanları içindir.",
-            description: "Geliştirici hesapları yalnızca profesyonel pazaryeri ilanı oluşturabilir.",
+            description: "Profesyonel hesapları yalnızca profesyonel pazaryeri ilanı oluşturabilir.",
             actionLabel: "Profesyonel İlan Oluştur",
             actionHref: "./professional-listing-submission.html",
           },
@@ -3833,9 +3833,9 @@ export const translations = {
             eyebrow: "İlan amacı",
             title: "Canlı teklif akışı için hazırlanmış bir müşteri talebi.",
             description:
-              "Form; kategori, proje durumu, konum, bütçe, zamanlama, görseller ve planlama bağlamını toplar; böylece gelecekteki geliştirici teklifleri doğru detaylarla hazırlanabilir.",
+              "Form; kategori, proje durumu, konum, bütçe, zamanlama, görseller ve planlama bağlamını toplar; böylece gelecekteki profesyonel teklifleri doğru detaylarla hazırlanabilir.",
             items: [
-              { label: "Hedef kitle", value: "Mimarlar, geliştiriciler, yükleniciler" },
+              { label: "Hedef kitle", value: "Mimarlar, profesyoneller, yükleniciler" },
               { label: "Kullanım", value: "Canlı müşteri ilanı" },
               { label: "Durum", value: "Tekliflere açık" },
             ],
@@ -3844,7 +3844,7 @@ export const translations = {
             projectOverviewGroup: {
               type: "group",
               label: "Proje özeti",
-              description: "Geliştiriciler ilanı görmeden önce kapsamı ve kategori yapısını netleştirin.",
+              description: "Profesyoneller ilanı görmeden önce kapsamı ve kategori yapısını netleştirin.",
               full: true,
             },
             projectTitle: { label: "Proje Başlığı", placeholder: "Özel sahil villası, havuz restorasyonu, mutfak renovasyonu...", required: true },
@@ -3969,7 +3969,7 @@ export const translations = {
           eyebrow: "Profesyonel ilan gönderimi",
           title: "Uzmanlığınızı premium bir pazaryeri formatında sunun.",
           description:
-            "Mimarlar, geliştiriciler, yükleniciler ve inşaat şirketleri bu sayfayı kullanarak Yapply’nin gelecekteki açık pazaryeri için profesyonel ilanlarını gönderebilir.",
+            "Mimarlar, profesyoneller, yükleniciler ve inşaat şirketleri bu sayfayı kullanarak Yapply’nin gelecekteki açık pazaryeri için profesyonel ilanlarını gönderebilir.",
           primaryCta: { label: "Formu Doldur", href: "#submission-form" },
           secondaryCta: { label: "Pazaryerine Dön", href: "./open-marketplace.html" },
           boardLabels: {
@@ -4014,7 +4014,7 @@ export const translations = {
               label: "Meslek Türü",
               type: "select",
               placeholder: "Meslek türünüzü seçin",
-              options: ["Mimarlık Ofisi", "Geliştirici", "İnşaat Şirketi", "Anahtar Teslim Yüklenici", "Cephe / Fit-Out Uzmanı"],
+              options: ["Mimarlık Ofisi", "Profesyonel", "İnşaat Şirketi", "Anahtar Teslim Yüklenici", "Cephe / Fit-Out Uzmanı"],
               required: true,
             },
             serviceArea: { label: "Şehir / Hizmet Alanı", placeholder: "İstanbul, İzmir, Bodrum, Ankara...", required: true },
@@ -4092,7 +4092,7 @@ export const translations = {
           eyebrow: "Hesap girişi",
           title: "Pazaryerine geçmeden önce size uygun Yapply hesabını seçin.",
           description:
-            "Müşteri veya geliştirici hesabınızı, premium proje keşfi, talep yönetimi ve gelecekteki pazaryeri kullanımı için hazırlanmış rol bazlı bir giriş akışıyla oluşturun.",
+            "Müşteri veya profesyonel hesabınızı, premium proje keşfi, talep yönetimi ve gelecekteki pazaryeri kullanımı için hazırlanmış rol bazlı bir giriş akışıyla oluşturun.",
           primaryCta: "Rolünü Seç",
           secondaryCta: "Zaten hesabın var mı?",
         },
@@ -4107,15 +4107,15 @@ export const translations = {
             {
               index: "01",
               value: "developer",
-              title: "Geliştirici Hesabı Oluştur",
+              title: "Profesyonel Hesabı Oluştur",
               description:
-                "Mimarlar, yükleniciler, geliştiriciler ve inşaat profesyonelleri için; Yapply içinde doğrulanmış profesyonel olarak yer almak isteyenlere yöneliktir.",
+                "Mimarlar, yükleniciler, profesyoneller ve inşaat profesyonelleri için; Yapply içinde doğrulanmış profesyonel olarak yer almak isteyenlere yöneliktir.",
               points: [
                 "Premium proje taleplerine teklif ver",
                 "Müşteri brieflerine ilgi göster",
                 "Hizmet ilanları yükle ve yönet",
               ],
-              cta: "Geliştirici Hesabını Seç",
+              cta: "Profesyonel Hesabını Seç",
             },
             {
               index: "02",
@@ -4126,7 +4126,7 @@ export const translations = {
               points: [
                 "Proje talep ilanları oluştur",
                 "Profesyonellerden teklif al",
-                "Geliştirici profillerine talep gönder",
+                "Profesyonel profillerine talep gönder",
               ],
               cta: "Müşteri Hesabını Seç",
             },
@@ -4143,10 +4143,10 @@ export const translations = {
           roles: [
             {
               value: "developer",
-              formTitle: "Geliştirici hesap kurulumu",
+              formTitle: "Profesyonel hesap kurulumu",
               formDescription:
-                "Bu rol; mimarlar, geliştiriciler, yükleniciler ve inşaat şirketlerini gelecekteki ilan, teklif ve talep iş akışlarına hazırlar.",
-              groupEyebrow: "Geliştirici kayıt formu",
+                "Bu rol; mimarlar, profesyoneller, yükleniciler ve inşaat şirketlerini gelecekteki ilan, teklif ve talep iş akışlarına hazırlar.",
+              groupEyebrow: "Profesyonel kayıt formu",
               groupTitle: "Profesyonel hesap detayları",
               groupDescription:
                 "Bu profesyonel profil alanlarını doldurarak hesabı gelecekteki ilan görünürlüğü, proje ilgisi ve pazaryeri katılımına hazır hale getirin.",
@@ -4157,7 +4157,7 @@ export const translations = {
                   label: "Meslek Türü",
                   type: "select",
                   placeholder: "Meslek türünüzü seçin",
-                  options: ["Mimarlık Ofisi", "Yüklenici", "Geliştirici", "İnşaat Şirketi", "Anahtar Teslim Yapımcı", "İç Mekan + Fit-Out Uzmanı"],
+                  options: ["Mimarlık Ofisi", "Yüklenici", "Profesyonel", "İnşaat Şirketi", "Anahtar Teslim Yapımcı", "İç Mekan + Fit-Out Uzmanı"],
                   required: true,
                 },
                 { name: "serviceArea", label: "Şehir / Hizmet Alanı", placeholder: "İstanbul, İzmir, Bodrum, Ankara...", required: true },
@@ -4254,7 +4254,7 @@ export const translations = {
           eyebrow: "Giriş yap",
           title: "Yapply’ye temiz ve rol odaklı bir giriş akışıyla erişin.",
           description:
-            "Bu giriş sayfası; gelecekte kayıtlı ilanlar, proje talepleri ve müşteri/geliştirici rolleri için premium bir erişim noktası olarak konumlanır.",
+            "Bu giriş sayfası; gelecekte kayıtlı ilanlar, proje talepleri ve müşteri/profesyonel rolleri için premium bir erişim noktası olarak konumlanır.",
           primaryCta: "Yapply’ye Giriş Yap",
           secondaryCta: "Hesap Oluştur",
         },
@@ -4267,8 +4267,8 @@ export const translations = {
           roles: [
             {
               value: "developer",
-              title: "Geliştirici Girişi",
-              formTitle: "Mimarlar, geliştiriciler ve yükleniciler için profesyonel erişim.",
+              title: "Profesyonel Girişi",
+              formTitle: "Mimarlar, profesyoneller ve yükleniciler için profesyonel erişim.",
               formDescription:
                 "Bu yol; gelecekte ilan sahipliği, proje ilgisi, teklif katılımı ve profesyonel taraflı pazaryeri faaliyetleri için kullanılır.",
             },
@@ -4303,7 +4303,7 @@ export const translations = {
           description:
             "Giriş akışı; kayıtlı proje talepleri, profesyonel ilan görünürlüğü, teklif süreçleri ve gelecekteki sahip/yönetici yetkilerini destekleyecek şekilde konumlanır.",
           items: [
-            { label: "Roller", value: "Müşteri + Geliştirici" },
+            { label: "Roller", value: "Müşteri + Profesyonel" },
             { label: "Sonraki faz", value: "Kimlik doğrulama + paneller" },
             { label: "Durum", value: "Frontend giriş katmanı" },
           ],
@@ -4344,7 +4344,7 @@ export const translations = {
               ],
             },
           ],
-          note: "Genel giriş artık yalnızca müşteri ve geliştirici erişimine odaklanır; gelecekteki paneller ve hesap sahipliği için hazırdır.",
+          note: "Genel giriş artık yalnızca müşteri ve profesyonel erişimine odaklanır; gelecekteki paneller ve hesap sahipliği için hazırdır.",
           contact: "hello@yapply.com",
           copyrightLabel: "Yapply",
         },
@@ -4379,7 +4379,7 @@ export const translations = {
           eyebrow: "Özel rota",
           title: "Moderasyon iş akışları için düşük görünürlüklü iç erişim.",
           description:
-            "Bu sayfa bilerek geri planda tutulur ve genel müşteri/geliştirici giriş akışından ayrı konumlanır.",
+            "Bu sayfa bilerek geri planda tutulur ve genel müşteri/profesyonel giriş akışından ayrı konumlanır.",
         },
         footer: {
           description:
@@ -4410,7 +4410,7 @@ export const translations = {
     authFeedback: {
       errors: {
         INVALID_JSON: "İstek işlenemedi. Lütfen tekrar deneyin.",
-        INVALID_ROLE: "Buradan yalnızca müşteri ve geliştirici hesapları oluşturulabilir.",
+        INVALID_ROLE: "Buradan yalnızca müşteri ve profesyonel hesapları oluşturulabilir.",
         FULL_NAME_REQUIRED: "Lütfen ad soyad bilginizi girin.",
         IDENTIFIER_REQUIRED: "Lütfen moderatör kullanıcı adı veya e-postasını girin.",
         EMAIL_INVALID: "Lütfen geçerli bir e-posta adresi girin.",
@@ -4418,12 +4418,12 @@ export const translations = {
         PASSWORD_TOO_SHORT: "Şifre en az 8 karakter olmalıdır.",
         PASSWORD_MISMATCH: "Şifre doğrulaması eşleşmiyor.",
         PHONE_REQUIRED: "Bu hesap türü için telefon numarası gereklidir.",
-        COMPANY_REQUIRED: "Geliştirici hesaplarında şirket veya profesyonel adı zorunludur.",
-        PROFESSION_REQUIRED: "Geliştirici hesaplarında meslek türü zorunludur.",
-        SERVICE_AREA_REQUIRED: "Geliştirici hesaplarında şehir veya hizmet alanı zorunludur.",
-        EXPERIENCE_REQUIRED: "Geliştirici hesaplarında deneyim yılı zorunludur.",
+        COMPANY_REQUIRED: "Profesyonel hesaplarında şirket veya profesyonel adı zorunludur.",
+        PROFESSION_REQUIRED: "Profesyonel hesaplarında meslek türü zorunludur.",
+        SERVICE_AREA_REQUIRED: "Profesyonel hesaplarında şehir veya hizmet alanı zorunludur.",
+        EXPERIENCE_REQUIRED: "Profesyonel hesaplarında deneyim yılı zorunludur.",
         EXPERIENCE_INVALID: "Deneyim yılı geçerli ve negatif olmayan bir sayı olmalıdır.",
-        SPECIALTIES_REQUIRED: "Geliştirici hesabı için en az bir uzmanlık girin.",
+        SPECIALTIES_REQUIRED: "Profesyonel hesabı için en az bir uzmanlık girin.",
         REGION_REQUIRED: "Müşteri hesaplarında tercih edilen şehir veya bölge zorunludur.",
         PASSWORD_REQUIRED: "Lütfen şifrenizi girin.",
         LOGIN_ACCOUNT_NOT_FOUND: "Bu e-posta adresi için bir hesap bulunamadı.",
@@ -4456,10 +4456,10 @@ export const translations = {
         accountCreated: {
           defaultTitle: "Hesap oluşturuldu",
           defaultText: "Hesabınız oluşturuldu ve bu tarayıcıda bir oturum başlatıldı.",
-          developer: "Geliştirici hesabı oluşturuldu",
+          developer: "Profesyonel hesabı oluşturuldu",
           client: "Müşteri hesabı oluşturuldu",
           detail: {
-            developer: "Geliştirici hesabınız başarıyla oluşturuldu. Artık giriş yaptınız ve gelecekteki ilan, teklif ve sahiplik akışları için hazırsınız.",
+            developer: "Profesyonel hesabınız başarıyla oluşturuldu. Artık giriş yaptınız ve gelecekteki ilan, teklif ve sahiplik akışları için hazırsınız.",
             client: "Müşteri hesabınız başarıyla oluşturuldu. Artık giriş yaptınız ve gelecekteki talep, teklif ve sahiplik akışları için hazırsınız.",
           },
         },
@@ -4500,7 +4500,7 @@ export const translations = {
         eyebrow: "Kısıtlı rota",
         title: "Bu panel yalnızca oturum açmış yönetici hesaplarına görünür.",
         description:
-          "Genel ziyaretçiler, müşteriler ve geliştiriciler yönetici kontrol katmanına erişemez. Devam etmek için iç moderatör girişini kullanın.",
+          "Genel ziyaretçiler, müşteriler ve profesyoneller yönetici kontrol katmanına erişemez. Devam etmek için iç moderatör girişini kullanın.",
         primaryCta: "Moderatör Girişi",
         secondaryCta: "Ana Sayfaya Dön",
       },
@@ -4514,7 +4514,7 @@ export const translations = {
         clientTitle: "Müşteri talep ilanları",
         clientDescription: "Açık pazaryerinde yayınlanan müşteri proje briefleri.",
         professionalTitle: "Profesyonel ilanlar",
-        professionalDescription: "Pazaryerinde görünen mimar, geliştirici ve yüklenici teklifleri.",
+        professionalDescription: "Pazaryerinde görünen mimar, profesyonel ve yüklenici teklifleri.",
         clientLabel: "Müşteri İlanı",
         professionalLabel: "Profesyonel İlan",
         seededLabel: "Hazır Veri",
@@ -4535,7 +4535,7 @@ export const translations = {
           position: "Pozisyon",
           status: "Durum",
           clientOwner: "Müşteri Hesabı",
-          developerOwner: "Geliştirici Hesabı",
+          developerOwner: "Profesyonel Hesabı",
           activeStatus: "aktif",
         },
         form: {
@@ -4616,7 +4616,7 @@ export const translations = {
             "Bu dizin backend üzerinden beslenir ve yalnızca oturum açmış yöneticilere görünür. Rol bazlı profil detaylarını güvenli biçimde incelemek için hesapları genişletin.",
         },
         title: "Tüm Hesaplar",
-        description: "Müşteri, geliştirici ve iç yönetici hesapları burada temiz ve genişletilebilir bir dizinde listelenir.",
+        description: "Müşteri, profesyonel ve iç yönetici hesapları burada temiz ve genişletilebilir bir dizinde listelenir.",
         loading: "Hesap dizini yükleniyor...",
         empty: "Henüz oluşturulmuş bir hesap bulunmuyor.",
         error: "Hesap dizini şu anda yüklenemedi.",
@@ -4700,7 +4700,7 @@ export const translations = {
           eyebrow: "Gönderim alındı",
           title: "Müşteri proje ilanınız artık tekliflere açık.",
           description:
-            "Yapılandırılmış proje talebiniz pazaryeri akışına kaydedildi ve gelecekteki geliştirici tekliflerine açık olarak işaretlendi.",
+            "Yapılandırılmış proje talebiniz pazaryeri akışına kaydedildi ve gelecekteki profesyonel tekliflerine açık olarak işaretlendi.",
           note: "İlan; kategori, konum, bütçe, zamanlama, proje durumu ve yüklenen görselleri birlikte saklar, böylece sonraki teklif aşaması tam brief ile ilerleyebilir.",
           viewListing: "İlanımı Gör",
           backToMarketplace: "Pazaryerine Dön",
@@ -5006,7 +5006,7 @@ export const translations = {
         "ridge-development-lab": {
           name: "Ridge Development Lab",
           subtitle: "Konut arsaları için fizibilite, arazi stratejisi ve teslim planlamasını aynı çerçevede yöneten geliştirme odaklı ekip.",
-          specialty: "Geliştirici / Teslim Ekibi",
+          specialty: "Profesyonel / Teslim Ekibi",
           location: "İstanbul / Kemerburgaz",
           startingPrice: "Fizibilite desteği EUR 25K’dan başlar",
           deliveryRange: "Konut ve karma kullanım arazi stratejileri",
@@ -5226,7 +5226,7 @@ export const translations = {
         cta: {
           title: "Doğru profesyonel ekiple bir sonraki adıma geçin.",
           description:
-            "Yapply; bu konsepti lokasyonunuza, bütçenize ve yapım stratejinize uyarlamak için sizi doğrulanmış mimarlar, geliştiriciler ve inşaat şirketleriyle buluşturabilir.",
+            "Yapply; bu konsepti lokasyonunuza, bütçenize ve yapım stratejinize uyarlamak için sizi doğrulanmış mimarlar, profesyoneller ve inşaat şirketleriyle buluşturabilir.",
           requestLabel: "Bu Projeyi Talep Et",
           requestHref: "#project-request",
           speakLabel: "Bir Profesyonelle Görüş",
@@ -5458,7 +5458,7 @@ export const translations = {
         ctaHref: "#application-form",
       },
       hero: {
-        eyebrow: "Mimarlar, geliştiriciler ve uygulayıcı ekipler için",
+        eyebrow: "Mimarlar, profesyoneller ve uygulayıcı ekipler için",
         title: "İnşaatın Geleceğinin Parçası Ol",
         description:
           "Yapply’ye katılarak uzmanlığınızı, Türkiye genelinde nitelikli konut ve geliştirme projeleri arayan müşterilere premium bir pazaryeri içinde sunun.",
@@ -5533,7 +5533,7 @@ export const translations = {
             ],
           },
           {
-            title: "Geliştiriciler",
+            title: "Profesyoneller",
             subtitle: "Konut veya karma kullanım projelerini netlik ve vizyonla yöneten ekipler.",
             points: [
               "Geliştirme yönetimi ve arsadan teslim sürecine uzanan yetkinlik",
@@ -5586,7 +5586,7 @@ export const translations = {
           description: { label: "Kısa Açıklama", placeholder: "Odak alanınızı, ölçeğinizi ve almak istediğiniz proje tiplerini kısaca anlatın." },
           upload: { label: "Dosya Yükleme", hint: "Portfolyo PDF’i, yetkinlik sunumu veya belgeler" },
         },
-        professionOptions: ["Mimar", "İnşaat Şirketi", "Geliştirici", "İç Mimarlık Stüdyosu", "Tasarım & Uygulama Firması"],
+        professionOptions: ["Mimar", "İnşaat Şirketi", "Profesyonel", "İç Mimarlık Stüdyosu", "Tasarım & Uygulama Firması"],
       },
       faq: {
         eyebrow: "SSS",
@@ -5596,7 +5596,7 @@ export const translations = {
         items: [
           {
             question: "Yapply kimler için tasarlandı?",
-            answer: "Yapply; mimarlar, geliştiriciler, inşaat şirketleri ve uzmanlığını daha premium, daha güvenilir bir zeminde sunmak isteyen ilgili stüdyolar için tasarlandı.",
+            answer: "Yapply; mimarlar, profesyoneller, inşaat şirketleri ve uzmanlığını daha premium, daha güvenilir bir zeminde sunmak isteyen ilgili stüdyolar için tasarlandı.",
           },
           {
             question: "Her başvuru kabul ediliyor mu?",
@@ -5618,7 +5618,7 @@ export const translations = {
       },
       footer: {
         description:
-          "Yapply Profesyoneller için; daha iyi uyumlanan proje fırsatlarıyla buluşmak isteyen mimarlar, geliştiriciler ve inşaat şirketleri için premium onboarding katmanını sunar.",
+          "Yapply Profesyoneller için; daha iyi uyumlanan proje fırsatlarıyla buluşmak isteyen mimarlar, profesyoneller ve inşaat şirketleri için premium onboarding katmanını sunar.",
         columns: [
           {
             title: "Keşfet",

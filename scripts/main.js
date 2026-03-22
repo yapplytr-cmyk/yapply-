@@ -2442,8 +2442,8 @@ function setupDeveloperDashboard(content) {
             : "Listing could not be updated";
         }
         setStatus("error", error?.message || (document.documentElement.lang === "tr"
-          ? "Geliştirici ilanı şu anda kaydedilemedi. Lütfen tekrar deneyin."
-          : "The developer listing could not be saved right now. Please try again."));
+          ? "Profesyonel ilanı şu anda kaydedilemedi. Lütfen tekrar deneyin."
+          : "The professional listing could not be saved right now. Please try again."));
       }
     });
   });

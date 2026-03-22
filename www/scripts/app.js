@@ -140,7 +140,7 @@ function getMarketplaceHeaderAction(content, role, isAuthenticated) {
 
   if (role === "developer") {
     return {
-      label: content.meta?.locale === "tr" ? "Geliştirici Teklifi Oluştur" : "Create Developer Proposal",
+      label: content.meta?.locale === "tr" ? "Profesyonel Teklifi Oluştur" : "Create Professional Proposal",
       href: "./professional-listing-submission.html",
     };
   }

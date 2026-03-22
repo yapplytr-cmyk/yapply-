@@ -98,7 +98,7 @@ const PROFESSIONAL_WIZARD_STEPS = [
 
 const PROFESSION_TYPE_OPTIONS_TR = [
   "Mimarlık Ofisi",
-  "Geliştirici",
+  "Profesyonel",
   "İnşaat Şirketi",
   "Anahtar Teslim Yüklenici",
   "Cephe / Fit-Out Uzmanı",
