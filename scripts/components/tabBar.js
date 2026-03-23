@@ -96,7 +96,7 @@ function birdProfileSVG(role) {
   ` : "";
 
   return `
-    <svg class="tab-bar__icon tab-bar__icon--bird" viewBox="0 0 120 120" fill="none">
+    <svg class="tab-bar__icon tab-bar__icon--bird" viewBox="14 24 82 72" fill="none">
       <g>
         <path d="M31 65 20 60 29 73 38 69Z" fill="var(--text-muted)" opacity="0.5"/>
         <ellipse cx="52" cy="64" rx="23" ry="18" fill="var(--text-muted)" opacity="0.35"/>

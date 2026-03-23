@@ -211,7 +211,22 @@ export function createNavbar(content, currentLocale) {
       <div class="nav-shell">
         <div class="nav-bar">
           <a class="brand" href="${content.nav.brandHref || "./index.html"}" aria-label="${content.brand.homeAriaLabel}">
-            <span class="brand-mark" aria-hidden="true"></span>
+            <span class="brand-mark" aria-hidden="true">
+              <svg class="brand-bird" viewBox="0 0 120 120" fill="none">
+                <path d="M31 65 20 60 29 73 38 69Z" fill="var(--text-muted)" opacity="0.5"/>
+                <ellipse cx="52" cy="64" rx="23" ry="18" fill="var(--text-muted)" opacity="0.35"/>
+                <circle cx="74" cy="50" r="13" fill="var(--text-muted)" opacity="0.4"/>
+                <ellipse cx="49" cy="65" rx="11" ry="15" transform="rotate(-24 49 65)" fill="var(--text-muted)" opacity="0.25"/>
+                <circle cx="78" cy="47" r="2.2" fill="var(--text)"/>
+                <path d="M85 50 95 46 88 55Z" fill="var(--accent)"/>
+                <path d="M49 81V89" stroke="var(--text)" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M58 81V89" stroke="var(--text)" stroke-width="2.5" stroke-linecap="round"/>
+                <g>
+                  <path d="M60 42c0-7.4 6-13.4 13.4-13.4 7 0 12.8 5.4 13.4 12.2v2.2H60V42Z" fill="var(--accent)" opacity="0.85"/>
+                  <path d="M58 43h31c1.8 0 3.2 1.4 3.2 3.2 0 1.1-.5 2-1.4 2.7H58.4c-.9-.7-1.4-1.6-1.4-2.7 0-1.8 1.4-3.2 3.2-3.2Z" fill="var(--accent)" opacity="0.7"/>
+                </g>
+              </svg>
+            </span>
             <span class="brand-text">
               <span class="brand-name">${content.brand.name}</span>
               <span class="brand-tagline">${content.brand.tagline}</span>

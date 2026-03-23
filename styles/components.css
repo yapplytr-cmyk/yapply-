@@ -45,30 +45,14 @@
     linear-gradient(140deg, #1c1f25 0%, #101114 40%, #272b32 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.brand-mark::before,
-.brand-mark::after {
-  content: "";
-  position: absolute;
-  inset: auto;
-  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
-  border-radius: 999px;
-}
-
-.brand-mark::before {
-  width: 1.55rem;
-  height: 0.18rem;
-  top: 0.88rem;
-  left: 0.7rem;
-  transform: rotate(-38deg);
-}
-
-.brand-mark::after {
-  width: 0.22rem;
-  height: 1.35rem;
-  top: 1rem;
-  left: 1.42rem;
+.brand-bird {
+  width: 2.4rem;
+  height: 2.4rem;
 }
 
 .brand-text {
