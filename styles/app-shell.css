@@ -1879,6 +1879,25 @@ html.has-tab-bar .client-dashboard-card__summary--loading::after {
   width: 100%;
 }
 
+/* Onboarding button loading spinner (reuses button-spinner keyframes from components.css) */
+[data-onboarding-resend-btn][data-loading="true"],
+[data-onboarding-verify-btn][data-loading="true"] {
+  pointer-events: none;
+}
+
+[data-onboarding-resend-btn][data-loading="true"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: button-spinner 720ms linear infinite;
+  opacity: 0.86;
+  vertical-align: middle;
+}
+
 /* Success */
 .onboarding-success {
   gap: 1.5rem;

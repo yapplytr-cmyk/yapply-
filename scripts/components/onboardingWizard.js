@@ -538,9 +538,12 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       }
 
       const submitBtn = form.querySelector(".onboarding-submit-btn");
+      const _submitOrigLabel = submitBtn?.textContent || "";
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = isTr ? "Oluşturuluyor..." : "Creating...";
+        submitBtn.dataset.loading = "true";
+        submitBtn.setAttribute("aria-busy", "true");
+        submitBtn.textContent = "";
       }
 
       try {
@@ -586,7 +589,9 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         }
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = isTr ? "Hesap Oluştur" : "Create Account";
+          submitBtn.removeAttribute("data-loading");
+          submitBtn.removeAttribute("aria-busy");
+          submitBtn.textContent = _submitOrigLabel || (isTr ? "Hesap Oluştur" : "Create Account");
         }
       }
     });
@@ -662,7 +667,9 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       if (otpError) otpError.hidden = true;
 
       verifyBtn.disabled = true;
-      verifyBtn.textContent = isTr ? "Doğrulanıyor..." : "Verifying...";
+      verifyBtn.dataset.loading = "true";
+      verifyBtn.setAttribute("aria-busy", "true");
+      verifyBtn.textContent = "";
 
       try {
         const authApi = await loadAuthApi();
@@ -684,6 +691,8 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
           otpError.hidden = false;
         }
         verifyBtn.disabled = false;
+        verifyBtn.removeAttribute("data-loading");
+        verifyBtn.removeAttribute("aria-busy");
         verifyBtn.textContent = isTr ? "Doğrula" : "Verify";
 
         // Clear OTP inputs on error so user can retry
@@ -703,19 +712,25 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       if (!pendingEmail) return;
 
       resendBtn.disabled = true;
-      resendBtn.textContent = isTr ? "Gönderiliyor..." : "Sending...";
+      resendBtn.dataset.loading = "true";
+      resendBtn.setAttribute("aria-busy", "true");
+      resendBtn.textContent = "";
 
       try {
         const authApi = await loadAuthApi();
         if (authApi?.resendSignupOtp) {
           await authApi.resendSignupOtp(pendingEmail);
         }
+        resendBtn.removeAttribute("data-loading");
+        resendBtn.removeAttribute("aria-busy");
         resendBtn.textContent = isTr ? "Gönderildi!" : "Sent!";
         setTimeout(() => {
           resendBtn.textContent = isTr ? "Tekrar Gönder" : "Resend";
           resendBtn.disabled = false;
         }, 3000);
       } catch (err) {
+        resendBtn.removeAttribute("data-loading");
+        resendBtn.removeAttribute("aria-busy");
         resendBtn.textContent = isTr ? "Tekrar Gönder" : "Resend";
         resendBtn.disabled = false;
         const otpError = wizard.querySelector("[data-onboarding-otp-error]");
