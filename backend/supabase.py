@@ -44,6 +44,7 @@ PROFILE_COLUMNS = ",".join(
     "preferred_region",
     "website",
     "avatar_url",
+    "work_description",
     "created_at",
     "updated_at",
   ]
@@ -471,6 +472,7 @@ def normalize_profile_row(row: dict[str, Any] | None) -> dict[str, Any] | None:
     "preferredRegion": row.get("preferred_region"),
     "website": row.get("website"),
     "avatarUrl": row.get("avatar_url"),
+    "workDescription": row.get("work_description"),
     "createdAt": row.get("created_at"),
     "updatedAt": row.get("updated_at"),
   }
@@ -1165,10 +1167,20 @@ def update_own_account_settings(access_token: str, payload: dict[str, Any]) -> d
 
   profile_picture_url = str(profile.get("avatarUrl") or "").strip() or None
 
+  # Map default avatar IDs to their local asset paths
+  _DEFAULT_AVATAR_MAP = {
+    "client-bird-1": "./assets/avatars/avatar-bird-business.png",
+    "client-bird-2": "./assets/avatars/avatar-bird-sport.png",
+    "client-bird-3": "./assets/avatars/avatar-bird-architect.png",
+    "developer-bird-1": "./assets/avatars/avatar-bird-business.png",
+    "developer-bird-2": "./assets/avatars/avatar-bird-sport.png",
+    "developer-bird-3": "./assets/avatars/avatar-bird-architect.png",
+  }
+
   if profile_picture_type == "default":
     if not profile_picture_id:
       raise SupabaseError("PROFILE_PICTURE_INVALID", "Please select a default profile picture.", 400)
-    profile_picture_url = None
+    profile_picture_url = _DEFAULT_AVATAR_MAP.get(profile_picture_id) or "./assets/avatars/avatar-bird-business.png"
   else:
     upload_data_url = str(payload.get("profilePictureUploadDataUrl") or "").strip()
     upload_name = str(payload.get("profilePictureUploadName") or "").strip()
@@ -1210,9 +1222,12 @@ def update_own_account_settings(access_token: str, payload: dict[str, Any]) -> d
     f"/rest/v1/profiles?{profile_query}",
     method="PATCH",
     payload={
-      "username": username,
-      "email": email,
-      "avatar_url": profile_picture_url,
+      k: v for k, v in {
+        "username": username,
+        "email": email,
+        "avatar_url": profile_picture_url,
+        "work_description": work_description if profile.get("role") == "developer" else None,
+      }.items() if v is not None
     },
     use_service_role=True,
     extra_headers={"Prefer": "return=representation"},
