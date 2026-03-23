@@ -181,61 +181,6 @@ function createDeveloperOverviewSection(content, session, listingCount, bidCount
       </div>
       <div class="developer-dashboard-overview">
         ${createBidCounterCard(session, locale)}
-        <article class="panel developer-dashboard-profile">
-          <div class="developer-dashboard-profile__header">
-            <div class="account-settings-avatar developer-dashboard-profile__avatar">
-              <img src="${avatar}" alt="${profileName}" loading="lazy" decoding="async" fetchpriority="low" />
-            </div>
-            <div class="developer-dashboard-profile__copy">
-              <p class="eyebrow">${content.profileOverview.eyebrow}</p>
-              <h3>${profileName}</h3>
-              <p>${workDescription}</p>
-              <div style="margin-top:0.5rem">
-                ${createButton({ href: "./developer-public-profile.html", label: locale === "tr" ? "Profilim" : "My Profile", variant: "primary" })}
-              </div>
-            </div>
-          </div>
-          <div class="project-detail-card__facts developer-dashboard-profile__facts">
-            <div>
-              <span>${content.profileOverview.labels.profileType}</span>
-              <strong>${content.profileOverview.profileType}</strong>
-            </div>
-            <div>
-              <span>${content.profileOverview.labels.professionType}</span>
-              <strong>${professionType}</strong>
-            </div>
-            <div>
-              <span>${content.profileOverview.labels.specialties}</span>
-              <strong>${specialties}</strong>
-            </div>
-            <div>
-              <span>${content.profileOverview.labels.serviceArea}</span>
-              <strong>${serviceArea}</strong>
-            </div>
-            <div>
-              <span>${content.profileOverview.labels.listingCount}</span>
-              <strong>${listingCount}</strong>
-            </div>
-            <div>
-              <span>${content.profileOverview.labels.bidCount}</span>
-              <strong>${bidCount}</strong>
-            </div>
-            <div>
-              <span>${wonBidsLabel}</span>
-              <strong>${wonBidCount}</strong>
-            </div>
-            <div>
-              <span>${avgRatingLabel}</span>
-              <strong style="display:flex;align-items:center;gap:6px">
-                ${ratingCount > 0 ? `${createStarDisplay(ratingAverage)} ${ratingAverage.toFixed(1)}` : noReviewsLabel}
-              </strong>
-            </div>
-            <div>
-              <span>${reviewCountLabel}</span>
-              <strong>${ratingCount}</strong>
-            </div>
-          </div>
-        </article>
       </div>
     </section>
   `;

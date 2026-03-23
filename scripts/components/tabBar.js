@@ -32,8 +32,16 @@ function getTabConfig(locale, role) {
     isCenter: true,
   };
 
-  // Developer: flat tabs (no popup) — Keşfet | İlan Ver | Tekliflerim | Ayarlar
+  // Developer: flat 5 tabs — Profil | Keşfet | İlan Ver | Tekliflerim | Ayarlar
   if (role === "developer") {
+    const profileTab = {
+      id: "tab-profile",
+      label: isTr ? "Profil" : "Profile",
+      href: "./developer-public-profile.html",
+      icon: profileTabIconSVG,
+      page: "developer-public-profile",
+    };
+
     const bidsTab = {
       id: "tab-bids",
       label: isTr ? "Tekliflerim" : "My Bids",
@@ -50,7 +58,7 @@ function getTabConfig(locale, role) {
       page: "account-settings",
     };
 
-    return [searchTab, createTab, bidsTab, settingsTab];
+    return [profileTab, searchTab, createTab, bidsTab, settingsTab];
   }
 
   // Client: keep popup-based dashboard tab
@@ -65,6 +73,13 @@ function getTabConfig(locale, role) {
 
   return [searchTab, createTab, dashboardTab];
 }
+
+const profileTabIconSVG = `
+  <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+`;
 
 const searchIconSVG = `
   <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -211,7 +226,7 @@ export function createTabBar(locale) {
       `;
     }
 
-    const needsAuth = tab.id === "tab-dashboard" || tab.id === "tab-bids" || tab.id === "tab-settings";
+    const needsAuth = tab.id === "tab-dashboard" || tab.id === "tab-bids" || tab.id === "tab-settings" || tab.id === "tab-profile";
     const href = needsAuth && !isAuthenticated ? "./login.html" : tab.href;
     return `
       <a class="tab-bar__item${activeClass}" href="${href}" data-tab-page="${tab.page}" id="${tab.id}">
