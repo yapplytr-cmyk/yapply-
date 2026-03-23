@@ -1,79 +1,95 @@
 /* ─────────────────────────────────────────────────
    Wizard Bird Mascot — Pure SVG / Code-built
-   Teal bird with orange beak & feet, big eyes.
-   Each step gets a unique pose with contextual prop.
+   Matches the Explore page toggle bird style exactly:
+   warm golden body, dark wing, small dark eye,
+   golden beak, simple geometric shapes.
    ───────────────────────────────────────────────── */
 
-// ── Shared palette ──
+// ── Shared palette (mirrors Explore page bird CSS) ──
+// The Explore bird uses color-mix with --accent. We resolve
+// the light-mode accent (#c9a84c) inline so SVG works everywhere.
 const C = {
-  body: "#5fb8c2",       // teal body
-  bodyDk: "#4a9ea8",     // darker teal (shadow / wing)
-  belly: "#8ad4db",      // lighter belly
-  beak: "#f5a623",       // orange beak
-  beakDk: "#d4891a",     // darker beak
-  feet: "#f5a623",       // orange feet
-  eye: "#2c3e50",        // dark eye
-  eyeW: "#ffffff",       // eye white
-  pupil: "#1a252f",      // pupil
-  helmet: "#f5c542",     // construction helmet
-  helmetDk: "#d4a832",   // helmet shadow
-  paper: "#eef4f5",      // paper / tablet
-  paperLn: "#c8d8da",    // paper lines
-  phone: "#34495e",      // phone body
-  phoneSc: "#5dade2",    // phone screen
-  money: "#2ecc71",      // money green
-  moneyDk: "#27ae60",    // money dark
-  camera: "#5d6d7e",     // camera body
-  cameraDk: "#4a5568",   // camera dark
-  cameraL: "#85929e",    // camera lens ring
-  envelope: "#f0e6d3",   // envelope
-  envFlap: "#e0d0b8",    // envelope flap
-  heart: "#e74c3c",      // heart on envelope
-  blueprint: "#2980b9",  // blueprint blue
-  bpLine: "#5dade2",     // blueprint line
+  // Body / head / tail: color-mix(in srgb, #c9a84c 78%, #fff2c9 22%)
+  body: "#d1b25e",
+  // Wing: color-mix(in srgb, #e0c06d 80%, #b98d2e 20%)
+  wing: "#d8b65f",
+  // Darker wing for contrast
+  wingDk: "#b8932e",
+  // Eye
+  eye: "#121317",
+  // Beak & pen tip
+  beak: "#f4b766",
+  beakDk: "#d99a3e",
+  // Legs
+  leg: "#cfa84e",
+  // Shadow
+  shadow: "rgba(6, 8, 12, 0.16)",
+  // Helmet
+  helmetShell: "#cfa84c",
+  helmetRim: "#9e7420",
+  helmetStripe: "#fff4cb",
+  // Pen
+  penBody: "#f2d17f",
+  penCap: "#fff0bf",
+  // Props
+  paper: "#eef4f5",
+  paperLn: "#c8d8da",
+  phone: "#34495e",
+  phoneSc: "#5dade2",
+  money: "#2ecc71",
+  moneyDk: "#27ae60",
+  camera: "#5d6d7e",
+  cameraDk: "#4a5568",
+  cameraL: "#85929e",
+  envelope: "#f0e6d3",
+  envFlap: "#e0d0b8",
+  heart: "#e74c3c",
+  blueprint: "#2980b9",
+  bpLine: "#5dade2",
+  check: "#2ecc71",
 };
 
-// ── Base bird body (reusable across poses) ──
+// ── Base bird body (matches Explore page proportions exactly) ──
+// Explore bird viewBox="0 0 120 120", character centered.
+// We build the same shape language: ellipse body, circle head,
+// ellipse wing, path tail, circle eye, path beak, path legs.
 function birdBody(opts = {}) {
-  const { flip = false, tiltHead = 0, wingUp = false, wingAngle = 0 } = opts;
-  const tx = flip ? "scale(-1,1) translate(-100,0)" : "";
-  const headTilt = tiltHead ? `rotate(${tiltHead},50,28)` : "";
+  const {
+    flip = false,
+    headTilt = 0,
+    wingAngle = -24,  // default matches Explore idle
+    lookDir = 0,      // shift eye position: -1 left, 0 center, 1 right
+  } = opts;
+  const tx = flip ? "translate(100,0) scale(-1,1)" : "";
+  const headG = headTilt ? `rotate(${headTilt},52,32)` : "";
+  const eyeShift = lookDir * 1.5;
 
   return `
     <g transform="${tx}">
-      <!-- Body -->
-      <ellipse cx="50" cy="58" rx="26" ry="24" fill="${C.body}" />
-      <!-- Belly -->
-      <ellipse cx="50" cy="63" rx="18" ry="16" fill="${C.belly}" opacity="0.5" />
+      <!-- Tail -->
+      <path d="M22 52 L12 46 L20 60 L28 56Z" fill="${C.body}" />
 
-      <!-- Wing (back) -->
-      <ellipse cx="${wingUp ? 28 : 30}" cy="${wingUp ? 42 : 55}" rx="14" ry="8"
-        fill="${C.bodyDk}" transform="rotate(${wingUp ? -40 + wingAngle : -15 + wingAngle},30,55)" />
+      <!-- Body -->
+      <ellipse cx="42" cy="50" rx="22" ry="17" fill="${C.body}" />
 
       <!-- Head -->
-      <g transform="${headTilt}">
-        <circle cx="50" cy="30" r="20" fill="${C.body}" />
+      <g transform="${headG}">
+        <circle cx="62" cy="34" r="13" fill="${C.body}" />
 
-        <!-- Eye whites -->
-        <ellipse cx="43" cy="27" rx="7" ry="7.5" fill="${C.eyeW}" />
-        <ellipse cx="57" cy="27" rx="7" ry="7.5" fill="${C.eyeW}" />
-
-        <!-- Pupils -->
-        <circle cx="44" cy="27" r="4" fill="${C.eye}" />
-        <circle cx="58" cy="27" r="4" fill="${C.eye}" />
-        <circle cx="45" cy="26" r="1.5" fill="${C.eyeW}" />
-        <circle cx="59" cy="26" r="1.5" fill="${C.eyeW}" />
+        <!-- Eye (single small dark circle, Explore style) -->
+        <circle cx="${66 + eyeShift}" cy="31" r="2.2" fill="${C.eye}" />
 
         <!-- Beak -->
-        <path d="M47,33 L50,40 L53,33 Z" fill="${C.beak}" />
-        <path d="M47,33 L50,36 L53,33 Z" fill="${C.beakDk}" opacity="0.3" />
+        <path d="M73 34 L83 30 L76 39Z" fill="${C.beak}" />
       </g>
 
-      <!-- Feet -->
-      <g>
-        <path d="M40,80 L36,86 M40,80 L40,86 M40,80 L44,86" stroke="${C.feet}" stroke-width="2" stroke-linecap="round" fill="none" />
-        <path d="M60,80 L56,86 M60,80 L60,86 M60,80 L64,86" stroke="${C.feet}" stroke-width="2" stroke-linecap="round" fill="none" />
-      </g>
+      <!-- Wing (animated ellipse, same as Explore) -->
+      <ellipse cx="39" cy="51" rx="11" ry="14"
+        fill="${C.wingDk}" transform="rotate(${wingAngle} 39 51)" />
+
+      <!-- Legs (stroke-based, Explore style) -->
+      <path d="M38 66V74" stroke="${C.leg}" stroke-width="3" stroke-linecap="round" fill="none" />
+      <path d="M47 66V74" stroke="${C.leg}" stroke-width="3" stroke-linecap="round" fill="none" />
     </g>
   `;
 }
@@ -81,215 +97,196 @@ function birdBody(opts = {}) {
 // ── Step-specific SVG poses ──
 
 function birdWriting() {
-  // Bird leaning forward writing on a tablet/clipboard
-  return `<svg viewBox="0 0 110 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Tablet -->
-    <rect x="58" y="50" width="40" height="30" rx="3" fill="${C.paper}" stroke="${C.paperLn}" stroke-width="1" transform="rotate(-5,78,65)" />
-    <line x1="65" y1="58" x2="90" y2="57" stroke="${C.paperLn}" stroke-width="1" />
-    <line x1="65" y1="63" x2="85" y2="62" stroke="${C.paperLn}" stroke-width="1" />
-    <path d="M68,69 L72,73 L80,64" stroke="${C.money}" stroke-width="2" fill="none" stroke-linecap="round" />
+  return `<svg viewBox="0 0 110 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Clipboard -->
+    <rect x="60" y="38" width="36" height="28" rx="3" fill="${C.paper}" stroke="${C.paperLn}" stroke-width="0.8" transform="rotate(-5,78,52)" />
+    <line x1="66" y1="46" x2="88" y2="45" stroke="${C.paperLn}" stroke-width="0.8" />
+    <line x1="66" y1="51" x2="84" y2="50" stroke="${C.paperLn}" stroke-width="0.8" />
+    <path d="M68,56 L71,59 L78,52" stroke="${C.check}" stroke-width="1.5" fill="none" stroke-linecap="round" />
 
-    <!-- Pencil in wing -->
-    <line x1="64" y1="48" x2="72" y2="68" stroke="${C.beak}" stroke-width="2.5" stroke-linecap="round" />
-    <polygon points="72,68 70,72 74,72" fill="${C.beakDk}" />
+    <!-- Pen in wing area -->
+    <rect x="56" y="44" width="24" height="4" rx="2" fill="${C.penBody}" transform="rotate(-22 56 44)" />
+    <path d="M79 36 L84 33 L81 40Z" fill="${C.beak}" />
 
-    ${birdBody({ tiltHead: 8 })}
+    ${birdBody({ headTilt: 6, lookDir: 1 })}
   </svg>`;
 }
 
 function birdThinking() {
-  // Bird with wing on chin, thought bubble
-  return `<svg viewBox="0 0 110 95" fill="none" xmlns="http://www.w3.org/2000/svg">
+  return `<svg viewBox="0 0 100 82" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- Thought bubbles -->
-    <circle cx="80" cy="12" r="8" fill="${C.belly}" opacity="0.35" />
-    <circle cx="72" cy="22" r="4" fill="${C.belly}" opacity="0.25" />
-    <circle cx="67" cy="28" r="2" fill="${C.belly}" opacity="0.2" />
+    <circle cx="78" cy="10" r="7" fill="${C.body}" opacity="0.25" />
+    <circle cx="72" cy="20" r="3.5" fill="${C.body}" opacity="0.18" />
+    <circle cx="68" cy="26" r="1.8" fill="${C.body}" opacity="0.14" />
 
-    <!-- Lightbulb in thought -->
-    <circle cx="80" cy="12" r="5" fill="none" stroke="${C.beak}" stroke-width="1.2" opacity="0.6" />
-    <line x1="80" y1="8" x2="80" y2="16" stroke="${C.beak}" stroke-width="1" opacity="0.5" />
+    <!-- Lightbulb icon in thought -->
+    <circle cx="78" cy="10" r="4" fill="none" stroke="${C.beak}" stroke-width="1" opacity="0.5" />
+    <line x1="78" y1="7" x2="78" y2="13" stroke="${C.beak}" stroke-width="0.8" opacity="0.4" />
 
-    ${birdBody({ tiltHead: -5 })}
-
-    <!-- Wing touching chin -->
-    <ellipse cx="42" cy="38" rx="10" ry="5" fill="${C.bodyDk}" transform="rotate(30,42,38)" />
+    ${birdBody({ headTilt: -4, lookDir: 1, wingAngle: -18 })}
   </svg>`;
 }
 
 function birdFocused() {
-  // Bird writing in a book, leaning forward
-  return `<svg viewBox="0 0 110 95" fill="none" xmlns="http://www.w3.org/2000/svg">
+  return `<svg viewBox="0 0 110 82" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- Open book -->
-    <path d="M55,55 Q70,50 90,55 L90,80 Q70,75 55,80 Z" fill="${C.paper}" stroke="${C.paperLn}" stroke-width="0.8" />
-    <path d="M55,55 Q40,50 20,55 L20,80 Q40,75 55,80 Z" fill="${C.paper}" stroke="${C.paperLn}" stroke-width="0.8" opacity="0.7" />
-    <line x1="55" y1="55" x2="55" y2="80" stroke="${C.paperLn}" stroke-width="0.8" />
-    <line x1="62" y1="62" x2="82" y2="60" stroke="${C.paperLn}" stroke-width="0.7" opacity="0.5" />
-    <line x1="62" y1="67" x2="80" y2="65" stroke="${C.paperLn}" stroke-width="0.7" opacity="0.5" />
+    <path d="M52,44 Q66,40 86,44 L86,68 Q66,64 52,68 Z" fill="${C.paper}" stroke="${C.paperLn}" stroke-width="0.7" />
+    <path d="M52,44 Q38,40 18,44 L18,68 Q38,64 52,68 Z" fill="${C.paper}" stroke="${C.paperLn}" stroke-width="0.7" opacity="0.7" />
+    <line x1="52" y1="44" x2="52" y2="68" stroke="${C.paperLn}" stroke-width="0.7" />
+    <line x1="58" y1="51" x2="78" y2="49" stroke="${C.paperLn}" stroke-width="0.6" opacity="0.4" />
+    <line x1="58" y1="56" x2="76" y2="54" stroke="${C.paperLn}" stroke-width="0.6" opacity="0.4" />
 
-    <!-- Pencil -->
-    <line x1="68" y1="45" x2="75" y2="62" stroke="${C.beak}" stroke-width="2" stroke-linecap="round" />
+    <!-- Pen -->
+    <line x1="64" y1="36" x2="70" y2="52" stroke="${C.beak}" stroke-width="2" stroke-linecap="round" />
 
-    ${birdBody({ tiltHead: 10 })}
+    ${birdBody({ headTilt: 8, lookDir: 1 })}
   </svg>`;
 }
 
 function birdPhone() {
-  // Bird holding a phone
-  return `<svg viewBox="0 0 110 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-    ${birdBody({ tiltHead: -3 })}
+  return `<svg viewBox="0 0 100 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+    ${birdBody({ headTilt: -2, lookDir: 1 })}
 
     <!-- Phone -->
-    <rect x="66" y="30" width="20" height="35" rx="3" fill="${C.phone}" />
-    <rect x="68" y="34" width="16" height="25" rx="1" fill="${C.phoneSc}" />
-    <!-- Screen lines -->
-    <line x1="70" y1="39" x2="82" y2="39" stroke="${C.eyeW}" stroke-width="1" opacity="0.6" />
-    <line x1="70" y1="43" x2="80" y2="43" stroke="${C.eyeW}" stroke-width="1" opacity="0.4" />
-    <line x1="70" y1="47" x2="78" y2="47" stroke="${C.eyeW}" stroke-width="1" opacity="0.4" />
-    <!-- Checkmark -->
-    <path d="M72,51 L75,54 L81,48" stroke="${C.money}" stroke-width="1.5" fill="none" stroke-linecap="round" />
+    <rect x="64" y="22" width="18" height="30" rx="3" fill="${C.phone}" />
+    <rect x="66" y="26" width="14" height="22" rx="1" fill="${C.phoneSc}" />
+    <line x1="68" y1="31" x2="78" y2="31" stroke="#fff" stroke-width="0.8" opacity="0.5" />
+    <line x1="68" y1="35" x2="76" y2="35" stroke="#fff" stroke-width="0.8" opacity="0.3" />
+    <path d="M70,40 L72,42 L78,36" stroke="${C.check}" stroke-width="1.2" fill="none" stroke-linecap="round" />
 
     <!-- Wing holding phone -->
-    <ellipse cx="65" cy="50" rx="10" ry="6" fill="${C.bodyDk}" transform="rotate(-10,65,50)" />
+    <ellipse cx="62" cy="40" rx="10" ry="5" fill="${C.wingDk}" transform="rotate(-8,62,40)" />
   </svg>`;
 }
 
 function birdMoney() {
-  // Bird holding money/coins
-  return `<svg viewBox="0 0 100 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-    ${birdBody({})}
+  return `<svg viewBox="0 0 100 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+    ${birdBody({ wingAngle: -30 })}
 
     <!-- Money bill -->
-    <rect x="28" y="52" width="25" height="14" rx="2" fill="${C.money}" transform="rotate(-8,40,59)" />
-    <rect x="30" y="54" width="21" height="10" rx="1" fill="none" stroke="${C.moneyDk}" stroke-width="0.7" transform="rotate(-8,40,59)" />
-    <text x="39" y="62" font-size="7" fill="${C.moneyDk}" font-weight="bold" text-anchor="middle" transform="rotate(-8,39,62)">₺</text>
+    <rect x="24" y="42" width="22" height="13" rx="2" fill="${C.money}" transform="rotate(-6,35,48)" />
+    <rect x="26" y="44" width="18" height="9" rx="1" fill="none" stroke="${C.moneyDk}" stroke-width="0.6" transform="rotate(-6,35,48)" />
+    <text x="34" y="51" font-size="7" fill="${C.moneyDk}" font-weight="bold" text-anchor="middle" transform="rotate(-6,34,51)">₺</text>
 
     <!-- Coins -->
-    <ellipse cx="62" cy="55" rx="7" ry="6" fill="${C.beak}" />
-    <ellipse cx="62" cy="54" rx="7" ry="6" fill="${C.helmet}" />
-    <ellipse cx="68" cy="60" rx="6" ry="5" fill="${C.beak}" opacity="0.8" />
-    <ellipse cx="68" cy="59" rx="6" ry="5" fill="${C.helmet}" opacity="0.9" />
+    <ellipse cx="60" cy="44" rx="6" ry="5" fill="${C.beakDk}" />
+    <ellipse cx="60" cy="43" rx="6" ry="5" fill="${C.beak}" />
+    <ellipse cx="65" cy="48" rx="5" ry="4" fill="${C.beakDk}" opacity="0.8" />
+    <ellipse cx="65" cy="47" rx="5" ry="4" fill="${C.beak}" opacity="0.9" />
 
     <!-- Wings holding -->
-    <ellipse cx="34" cy="55" rx="10" ry="5" fill="${C.bodyDk}" transform="rotate(20,34,55)" />
-    <ellipse cx="66" cy="55" rx="10" ry="5" fill="${C.bodyDk}" transform="rotate(-20,66,55)" />
+    <ellipse cx="30" cy="46" rx="9" ry="4" fill="${C.wingDk}" transform="rotate(18,30,46)" />
+    <ellipse cx="62" cy="44" rx="9" ry="4" fill="${C.wingDk}" transform="rotate(-18,62,44)" />
   </svg>`;
 }
 
 function birdHardhat() {
-  // Bird with construction helmet, saluting
-  return `<svg viewBox="0 0 100 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-    ${birdBody({ tiltHead: -2 })}
+  return `<svg viewBox="0 0 100 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+    ${birdBody({ headTilt: -2, wingAngle: -20 })}
 
-    <!-- Hard hat -->
-    <path d="M30,23 Q50,5 70,23 L72,28 L28,28 Z" fill="${C.helmet}" />
-    <rect x="26" y="26" width="48" height="5" rx="2" fill="${C.helmetDk}" />
-    <ellipse cx="50" cy="15" rx="4" ry="2" fill="${C.helmetDk}" opacity="0.3" />
+    <!-- Hard hat (Explore style helmet) -->
+    <path d="M48 26c0-7 6-12.6 13-12.6 6.6 0 12 5 12.6 11.4v2H48V26Z" fill="${C.helmetShell}" />
+    <path d="M46 27h29c1.7 0 3 1.3 3 3 0 1-.5 1.8-1.3 2.5H46.4c-.8-.7-1.4-1.5-1.4-2.5 0-1.7 1.3-3 3-3Z" fill="${C.helmetRim}" />
+    <path d="M60 14h3.5v12H60z" fill="${C.helmetStripe}" />
 
     <!-- Wing saluting -->
-    <ellipse cx="72" cy="30" rx="10" ry="5" fill="${C.bodyDk}" transform="rotate(-45,72,30)" />
+    <ellipse cx="78" cy="26" rx="9" ry="4" fill="${C.wingDk}" transform="rotate(-40,78,26)" />
   </svg>`;
 }
 
 function birdBlueprint() {
-  // Bird looking at a blueprint
-  return `<svg viewBox="0 0 120 95" fill="none" xmlns="http://www.w3.org/2000/svg">
+  return `<svg viewBox="0 0 120 82" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- Blueprint paper -->
-    <rect x="55" y="48" width="50" height="35" rx="2" fill="${C.blueprint}" opacity="0.8" />
-    <line x1="60" y1="55" x2="100" y2="55" stroke="${C.bpLine}" stroke-width="0.7" opacity="0.5" />
-    <line x1="60" y1="62" x2="95" y2="62" stroke="${C.bpLine}" stroke-width="0.7" opacity="0.5" />
-    <rect x="65" y="65" width="15" height="10" rx="1" fill="none" stroke="${C.bpLine}" stroke-width="0.7" opacity="0.6" />
-    <line x1="85" y1="65" x2="85" y2="78" stroke="${C.bpLine}" stroke-width="0.5" opacity="0.4" />
+    <rect x="56" y="38" width="48" height="32" rx="2" fill="${C.blueprint}" opacity="0.8" />
+    <line x1="62" y1="45" x2="98" y2="45" stroke="${C.bpLine}" stroke-width="0.6" opacity="0.4" />
+    <line x1="62" y1="52" x2="94" y2="52" stroke="${C.bpLine}" stroke-width="0.6" opacity="0.4" />
+    <rect x="66" y="55" width="14" height="9" rx="1" fill="none" stroke="${C.bpLine}" stroke-width="0.6" opacity="0.5" />
+    <line x1="84" y1="55" x2="84" y2="66" stroke="${C.bpLine}" stroke-width="0.4" opacity="0.3" />
 
     <!-- Ruler -->
-    <rect x="58" y="42" width="35" height="5" rx="1" fill="${C.beak}" opacity="0.8" />
+    <rect x="58" y="33" width="32" height="4" rx="1" fill="${C.beak}" opacity="0.7" />
 
-    ${birdBody({ tiltHead: 5 })}
+    ${birdBody({ headTilt: 4, lookDir: 1 })}
 
-    <!-- Hard hat for blueprint step too -->
-    <path d="M30,23 Q50,5 70,23 L72,28 L28,28 Z" fill="${C.helmet}" />
-    <rect x="26" y="26" width="48" height="5" rx="2" fill="${C.helmetDk}" />
+    <!-- Hard hat -->
+    <path d="M48 26c0-7 6-12.6 13-12.6 6.6 0 12 5 12.6 11.4v2H48V26Z" fill="${C.helmetShell}" />
+    <path d="M46 27h29c1.7 0 3 1.3 3 3 0 1-.5 1.8-1.3 2.5H46.4c-.8-.7-1.4-1.5-1.4-2.5 0-1.7 1.3-3 3-3Z" fill="${C.helmetRim}" />
   </svg>`;
 }
 
 function birdCamera() {
-  // Bird holding a camera
-  return `<svg viewBox="0 0 110 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-    ${birdBody({ tiltHead: 3 })}
+  return `<svg viewBox="0 0 110 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+    ${birdBody({ headTilt: 3, lookDir: 1 })}
 
     <!-- Camera body -->
-    <rect x="60" y="38" width="28" height="20" rx="4" fill="${C.camera}" />
-    <rect x="63" y="34" width="10" height="6" rx="2" fill="${C.cameraDk}" />
+    <rect x="60" y="28" width="26" height="18" rx="3.5" fill="${C.camera}" />
+    <rect x="63" y="24" width="9" height="5" rx="2" fill="${C.cameraDk}" />
     <!-- Lens -->
-    <circle cx="74" cy="48" r="7" fill="${C.cameraDk}" />
-    <circle cx="74" cy="48" r="5" fill="${C.cameraL}" />
-    <circle cx="74" cy="48" r="3" fill="${C.eye}" />
-    <circle cx="73" cy="47" r="1" fill="${C.eyeW}" opacity="0.5" />
+    <circle cx="73" cy="37" r="6.5" fill="${C.cameraDk}" />
+    <circle cx="73" cy="37" r="4.5" fill="${C.cameraL}" />
+    <circle cx="73" cy="37" r="2.5" fill="${C.eye}" />
+    <circle cx="72" cy="36" r="0.8" fill="#fff" opacity="0.4" />
     <!-- Flash -->
-    <rect x="83" y="37" width="4" height="4" rx="1" fill="${C.eyeW}" opacity="0.4" />
+    <rect x="82" y="27" width="3" height="3" rx="0.8" fill="#fff" opacity="0.3" />
 
     <!-- Wing holding camera -->
-    <ellipse cx="62" cy="48" rx="10" ry="5" fill="${C.bodyDk}" transform="rotate(5,62,48)" />
-
-    <!-- Hard hat -->
-    <path d="M30,23 Q50,5 70,23 L72,28 L28,28 Z" fill="${C.helmet}" />
-    <rect x="26" y="26" width="48" height="5" rx="2" fill="${C.helmetDk}" />
+    <ellipse cx="60" cy="38" rx="9" ry="4.5" fill="${C.wingDk}" transform="rotate(4,60,38)" />
   </svg>`;
 }
 
 function birdReady() {
-  // Bird in a proud ready pose — used for summary
-  return `<svg viewBox="0 0 100 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-    ${birdBody({ wingUp: true, wingAngle: -20 })}
+  return `<svg viewBox="0 0 100 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+    ${birdBody({ wingAngle: -44 })}
 
-    <!-- Thumbs-up wing -->
-    <ellipse cx="26" cy="40" rx="12" ry="6" fill="${C.bodyDk}" transform="rotate(-50,26,40)" />
+    <!-- Wing up (raised) -->
+    <ellipse cx="22" cy="30" rx="11" ry="5" fill="${C.wingDk}" transform="rotate(-48,22,30)" />
 
     <!-- Sparkles -->
-    <g opacity="0.5">
-      <path d="M80,20 L82,15 L84,20 L89,22 L84,24 L82,29 L80,24 L75,22 Z" fill="${C.beak}" />
-      <path d="M18,15 L19,12 L20,15 L23,16 L20,17 L19,20 L18,17 L15,16 Z" fill="${C.beak}" opacity="0.4" />
+    <g opacity="0.4">
+      <path d="M78,14 L80,9 L82,14 L87,16 L82,18 L80,23 L78,18 L73,16 Z" fill="${C.beak}" />
+      <path d="M16,10 L17,7 L18,10 L21,11 L18,12 L17,15 L16,12 L13,11 Z" fill="${C.beak}" opacity="0.5" />
     </g>
+
+    <!-- Checkmark above -->
+    <path d="M72,8 L76,12 L84,3" stroke="${C.check}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6" />
   </svg>`;
 }
 
 function birdFlying() {
-  // Bird flying with envelope — for submit animation
-  return `<svg viewBox="0 0 130 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Body (slightly tilted for flight) -->
-    <g transform="rotate(-8,60,45)">
-      <ellipse cx="60" cy="50" rx="22" ry="19" fill="${C.body}" />
-      <ellipse cx="60" cy="54" rx="15" ry="13" fill="${C.belly}" opacity="0.5" />
+  return `<svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Bird in flight (tilted) -->
+    <g transform="rotate(-10,55,38)">
+      <!-- Tail -->
+      <path d="M20 42 L10 36 L18 50 L26 46Z" fill="${C.body}" />
+
+      <!-- Body -->
+      <ellipse cx="48" cy="42" rx="20" ry="15" fill="${C.body}" />
 
       <!-- Head -->
-      <circle cx="60" cy="28" r="17" fill="${C.body}" />
+      <circle cx="68" cy="28" r="12" fill="${C.body}" />
 
-      <!-- Eyes -->
-      <ellipse cx="54" cy="25" rx="6" ry="6.5" fill="${C.eyeW}" />
-      <ellipse cx="66" cy="25" rx="6" ry="6.5" fill="${C.eyeW}" />
-      <circle cx="55" cy="25" r="3.5" fill="${C.eye}" />
-      <circle cx="67" cy="25" r="3.5" fill="${C.eye}" />
-      <circle cx="56" cy="24" r="1.2" fill="${C.eyeW}" />
-      <circle cx="68" cy="24" r="1.2" fill="${C.eyeW}" />
+      <!-- Eye -->
+      <circle cx="72" cy="25" r="2" fill="${C.eye}" />
 
       <!-- Beak -->
-      <path d="M57,31 L60,37 L63,31 Z" fill="${C.beak}" />
+      <path d="M78 28 L88 24 L82 33Z" fill="${C.beak}" />
 
-      <!-- Wings spread out -->
-      <ellipse cx="30" cy="38" rx="22" ry="8" fill="${C.bodyDk}" transform="rotate(-25,30,38)" />
-      <ellipse cx="90" cy="38" rx="22" ry="8" fill="${C.bodyDk}" transform="rotate(25,90,38)" />
+      <!-- Wings spread -->
+      <ellipse cx="28" cy="30" rx="20" ry="7" fill="${C.wingDk}" transform="rotate(-22,28,30)" />
+      <ellipse cx="68" cy="30" rx="20" ry="7" fill="${C.wingDk}" transform="rotate(22,68,30)" />
 
-      <!-- Feet tucked -->
-      <path d="M52,68 L50,72 M55,69 L55,73" stroke="${C.feet}" stroke-width="1.5" stroke-linecap="round" />
-      <path d="M65,68 L67,72 M68,67 L70,71" stroke="${C.feet}" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Legs tucked -->
+      <path d="M42,56 L40,60" stroke="${C.leg}" stroke-width="2" stroke-linecap="round" fill="none" />
+      <path d="M50,57 L50,61" stroke="${C.leg}" stroke-width="2" stroke-linecap="round" fill="none" />
     </g>
 
     <!-- Envelope held below -->
-    <g transform="translate(46,62)">
-      <rect x="0" y="0" width="28" height="18" rx="2" fill="${C.envelope}" />
-      <path d="M0,0 L14,10 L28,0" fill="${C.envFlap}" />
-      <path d="M0,0 L14,10 L28,0" fill="none" stroke="${C.paperLn}" stroke-width="0.5" />
+    <g transform="translate(38,54)">
+      <rect x="0" y="0" width="26" height="16" rx="2" fill="${C.envelope}" />
+      <path d="M0,0 L13,9 L26,0" fill="${C.envFlap}" />
+      <path d="M0,0 L13,9 L26,0" fill="none" stroke="${C.paperLn}" stroke-width="0.4" />
       <!-- Heart seal -->
-      <path d="M12,8 C12,6 14,5 14,7 C14,5 16,6 16,8 L14,11 Z" fill="${C.heart}" />
+      <path d="M11,6 C11,4.5 13,3.5 13,5.5 C13,3.5 15,4.5 15,6 L13,9 Z" fill="${C.heart}" />
     </g>
   </svg>`;
 }
