@@ -155,20 +155,27 @@ export function createDeveloperPublicProfilePage(content) {
   const serviceArea = profile.service_area || "";
   const professionType = profile.profession_type || "";
   const specialties = profile.specialties || "";
-  const avatar = profile.profile_picture_src || "";
+
+  // Avatar resolution chain:
+  // 1. profile_picture_src from Supabase fetch (may include default avatar fallback)
+  // 2. Session avatar when viewing own profile (authoritative source from account settings)
+  // 3. Hard-coded default bird avatar as last resort
+  const DEFAULT_BIRD_AVATAR = "./assets/avatars/avatar-bird-business.png";
+  const avatar =
+    (isDeveloperOwn && session.user?.profilePictureSrc) ||
+    profile.profile_picture_src ||
+    DEFAULT_BIRD_AVATAR;
 
   // Completed listings where this developer has an accepted bid (for review)
   const completedListings = content.completedListings || [];
 
   return `
     <section class="section-shell" id="developer-public-profile">
-      ${avatar ? `
-        <div class="dev-profile-hero-avatar">
-          <img class="dev-profile-hero-avatar__img" src="${avatar}" alt="${profileName}" loading="lazy" decoding="async" fetchpriority="low" />
-          <p class="dev-profile-hero-avatar__name">${profileName}</p>
-          ${professionType ? `<p class="dev-profile-hero-avatar__subtitle">${professionType}</p>` : ""}
-        </div>
-      ` : ""}
+      <div class="dev-profile-hero-avatar">
+        <img class="dev-profile-hero-avatar__img" src="${avatar}" alt="${profileName}" loading="lazy" decoding="async" fetchpriority="low" />
+        <p class="dev-profile-hero-avatar__name">${profileName}</p>
+        ${professionType ? `<p class="dev-profile-hero-avatar__subtitle">${professionType}</p>` : ""}
+      </div>
 
       <div class="developer-dashboard-overview" style="margin-bottom:2rem">
         <article class="panel developer-dashboard-profile">
