@@ -267,12 +267,17 @@ html:not(.has-tab-bar) .app-splash {
 
 html.has-tab-bar body {
   padding-bottom: calc(52px + env(safe-area-inset-bottom) + 1rem);
-  /* Lock body to viewport — only inner content scrolls via overflow */
+  /* Lock body to viewport — only inner content scrolls via overflow.
+     Use --full-vh (set by JS on load) so the body height is locked
+     to the initial viewport and doesn't shrink when the iOS keyboard
+     opens and the WebView resizes. Falls back to bottom:0 if --full-vh
+     isn't set yet. */
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  height: var(--full-vh, 100%);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
@@ -309,20 +314,21 @@ html.has-tab-bar .theme-fab {
 }
 
 /* ── Keyboard-open state (iOS native) ────────────── */
-/* When keyboard is visible, stop centering the wizard,
-   hide the tab bar, and let the body scroll freely
-   so the focused input stays visible. */
+/* Body is already height-locked via --full-vh so it won't shrink.
+   When keyboard is visible, hide the tab bar, stop centering the
+   wizard, and add bottom padding so user can scroll past keyboard. */
 html.keyboard-open .tab-bar {
   transform: translateY(100%);
   pointer-events: none;
   transition: transform 0.2s ease;
 }
 html.keyboard-open.has-tab-bar body {
-  padding-bottom: 0;
+  padding-bottom: 2rem;
 }
 html.keyboard-open .wizard-container {
   justify-content: flex-start !important;
   min-height: auto !important;
+  padding-bottom: 260px; /* space below inputs so they can scroll above keyboard */
 }
 html.keyboard-open .theme-fab {
   display: none;
