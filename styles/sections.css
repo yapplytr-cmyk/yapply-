@@ -3438,17 +3438,17 @@ html[data-theme="light"] .auth-role-card.is-active {
 }
 
 .marketplace-detail-visual {
+  min-height: 26rem;
   position: relative;
-  overflow: hidden;
 }
 
 .marketplace-detail-visual--compact {
-  /* inherits relative positioning */
+  min-height: 20.5rem;
 }
 
 .marketplace-detail-visual--media {
   padding: 0;
-  background: rgba(6, 10, 15, 0.96);
+  background: var(--bg);
 }
 
 .marketplace-detail-visual--media::before,
@@ -3457,22 +3457,28 @@ html[data-theme="light"] .auth-role-card.is-active {
 }
 
 .marketplace-detail-visual-gallery {
-  position: relative;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
 }
 
 .marketplace-detail-visual-slide {
-  display: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 320ms ease;
+  pointer-events: none;
 }
 
 .marketplace-detail-visual-slide--active {
-  display: block;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .marketplace-detail-visual-slide img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -3532,12 +3538,7 @@ html[data-theme="light"] .auth-role-card.is-active {
 }
 
 .marketplace-detail-visual--client {
-  background:
-    radial-gradient(circle at 22% 18%, rgba(201, 168, 76, 0.18), transparent 22%),
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(160deg, rgba(10, 15, 23, 0.96), rgba(18, 24, 34, 0.92));
-  background-size: auto, 1.8rem 1.8rem, 1.8rem 1.8rem, auto;
+  background: var(--bg);
 }
 
 .project-hero-board {
@@ -5118,10 +5119,12 @@ html[data-theme="dark"] .marketplace-bid-accordion {
   }
 
   .marketplace-detail-visual {
+    min-height: 28rem;
     overflow: hidden;
   }
 
   .marketplace-detail-visual--compact {
+    min-height: 16rem;
     overflow: hidden;
   }
 
