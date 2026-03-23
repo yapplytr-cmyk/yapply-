@@ -71,13 +71,11 @@ function writeJson(key, value) {
   return writeJsonTo(getStorage(), key, value);
 }
 
+const _escHtmlMap = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const _escHtmlRe = /[&<>"']/g;
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+  const s = String(value ?? "");
+  return _escHtmlRe.test(s) ? s.replace(_escHtmlRe, (c) => _escHtmlMap[c]) : s;
 }
 
 function buildPublicListingsCacheKey({

@@ -308,6 +308,7 @@ let tabBarApiPromise = null;
 appApiPromise = import("./app.js").catch(() => null);
 i18nApiPromise = import("./core/i18n.js").catch(() => null);
 authApiPromise = import("./core/auth.js?v=20260312-public-auth-backend").catch(() => null);
+if (IS_NATIVE_APP) tabBarApiPromise = import("./components/tabBar.js").catch(() => null);
 
 function getLoadingCopy(locale = "tr") {
   if (locale === "en") {
@@ -405,13 +406,11 @@ function getBootErrorMessage(error) {
   return String(error);
 }
 
+const _escapeHtmlMap = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const _escapeHtmlRe = /[&<>"']/g;
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+  const s = String(value ?? "");
+  return _escapeHtmlRe.test(s) ? s.replace(_escapeHtmlRe, (c) => _escapeHtmlMap[c]) : s;
 }
 
 function renderBootFallback(appRoot, error) {
@@ -735,27 +734,31 @@ function hydrateMarketplaceDeferredCards(kind = "client") {
 
 // REMOVED: setupAdminSectionNavigation() - admin-dashboard removed
 
-function markMotionTargets() {
-  const sections = [...document.querySelectorAll(".section-shell")];
-  const itemSelector =
-    ".metric-card, .step-card, .feature-card, .project-card, .testimonial-card, .footer-card, .audience-card, .process-card, .stats-card, .application-panel, .faq-item, .professionals-stage, .project-spec, .project-hero-visual, .project-detail-card, .project-budget-card, .detail-list-card, .timeline-card, .ideal-card, .project-note, .project-cta-panel, .project-inquiry-summary, .marketplace-stage, .marketplace-card, .submission-stage, .submission-summary, .developer-profile-visual, .developer-profile-fact, .developer-project-card";
+const _motionItemSelector =
+  ".metric-card, .step-card, .feature-card, .project-card, .testimonial-card, .footer-card, .audience-card, .process-card, .stats-card, .application-panel, .faq-item, .professionals-stage, .project-spec, .project-hero-visual, .project-detail-card, .project-budget-card, .detail-list-card, .timeline-card, .ideal-card, .project-note, .project-cta-panel, .project-inquiry-summary, .marketplace-stage, .marketplace-card, .submission-stage, .submission-summary, .developer-profile-visual, .developer-profile-fact, .developer-project-card";
 
-  sections.forEach((section, sectionIndex) => {
+function markMotionTargets() {
+  const sections = document.querySelectorAll(".section-shell");
+  if (sections.length === 0) return;
+
+  for (let s = 0; s < sections.length; s++) {
+    const section = sections[s];
     section.classList.add("reveal-section");
 
-    const items = [...section.querySelectorAll(itemSelector)];
-    items.forEach((item, itemIndex) => {
-      item.classList.add("reveal-item");
-      item.style.setProperty("--reveal-delay", `${Math.min(itemIndex * 70 + sectionIndex * 20, 320)}ms`);
-    });
-  });
+    const items = section.querySelectorAll(_motionItemSelector);
+    for (let i = 0; i < items.length; i++) {
+      items[i].classList.add("reveal-item");
+      items[i].style.setProperty("--reveal-delay", `${Math.min(i * 70 + s * 20, 320)}ms`);
+    }
+  }
 }
 
 function setupRevealAnimations() {
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const sections = [...document.querySelectorAll(".reveal-section")];
-  const items = [...document.querySelectorAll(".reveal-item")];
-  const allTargets = [...sections, ...items];
+  const sections = document.querySelectorAll(".reveal-section");
+  const items = document.querySelectorAll(".reveal-item");
+  // Use NodeLists directly where possible; only spread when needed for combined iteration
+  const allTargets = sections.length + items.length > 0 ? [...sections, ...items] : [];
   const isSmallTouchViewport =
     window.matchMedia("(max-width: 820px)").matches &&
     ("ontouchstart" in window || navigator.maxTouchPoints > 0);
@@ -2935,11 +2938,8 @@ function setupCardTapAnimations() {
 }
 
 function bindInteractions(content) {
-  cleanupRevealAnimations();
-  cleanupParallax();
-  cleanupHeroScene();
-  cleanupCounters();
-  cleanupBirdScroll();
+  // Note: cleanup is already called by renderPage() before bindInteractions()
+  // so we skip redundant cleanup here for faster page transitions
 
   const page = getCurrentPage();
 
@@ -3440,42 +3440,53 @@ function invalidateAllMarketplaceSwrCaches() {
 
 /* ─── Persist listing feed data into detail SWR cache ─── */
 function seedDetailSwrCache(listings) {
-  if (!Array.isArray(listings)) return;
-  listings.forEach((l) => {
-    if (!l?.id) return;
-    // Only seed detail cache if the listing has bid data (non-card responses).
-    // Card-level responses have empty latestBids and bidCount=0, which would
-    // cause the detail page to show "no bids" even when bids exist.
+  if (!Array.isArray(listings) || listings.length === 0) return;
+  // Batch: collect all writes first, then write to localStorage in one pass
+  // This avoids repeated localStorage reads (swrRead) for each listing
+  const toWrite = [];
+  for (let i = 0; i < listings.length; i++) {
+    const l = listings[i];
+    if (!l?.id) continue;
     const meta = l.marketplaceMeta || {};
     const hasBidData = (Array.isArray(meta.latestBids) && meta.latestBids.length > 0) || (Array.isArray(l.bids) && l.bids.length > 0);
-    const existingDetail = swrRead(`detail-${l.id}`);
-    // Don't overwrite a detail cache that already has bid data with card data that doesn't
-    if (!hasBidData && existingDetail?.data) return;
-    seedListingDetailCache(l); // In-memory cache (same session)
-    swrWrite(`detail-${l.id}`, l); // localStorage cache (survives page navigation)
-  });
+    // Only check in-memory cache first (fast) — skip expensive localStorage parse
+    const memCached = _swrMemory.get(`detail-${l.id}`);
+    if (!hasBidData && memCached?.data) continue;
+    seedListingDetailCache(l);
+    toWrite.push(l);
+  }
+  // Batch localStorage writes
+  for (let i = 0; i < toWrite.length; i++) {
+    swrWrite(`detail-${toWrite[i].id}`, toWrite[i]);
+  }
 }
 
 /* ─── Background avatar DOM patching ─── */
 function patchAvatarsInDOM(listings) {
-  if (!Array.isArray(listings)) return;
-  listings.forEach((listing) => {
-    if (!listing?.id || !listing?.creatorAvatarSrc) return;
-    // Find all avatar images for this listing and update src
-    document.querySelectorAll(`[data-listing-id="${listing.id}"] .marketplace-card__avatar img, [data-listing-id="${listing.id}"] .marketplace-detail-avatar img`).forEach((img) => {
-      if (img.src !== listing.creatorAvatarSrc) {
-        img.src = listing.creatorAvatarSrc;
-      }
-    });
-    // Also patch by href-based cards (marketplace cards link to listing detail)
-    document.querySelectorAll(`.marketplace-card a[href*="id=${listing.id}"]`).forEach((link) => {
-      const card = link.closest(".marketplace-card");
-      if (!card) return;
-      const img = card.querySelector(".marketplace-card__avatar img");
-      if (img && img.src !== listing.creatorAvatarSrc) {
-        img.src = listing.creatorAvatarSrc;
-      }
-    });
+  if (!Array.isArray(listings) || listings.length === 0) return;
+  // Build a lookup map to avoid per-listing querySelectorAll calls
+  const avatarMap = new Map();
+  for (let i = 0; i < listings.length; i++) {
+    const l = listings[i];
+    if (l?.id && l?.creatorAvatarSrc) avatarMap.set(String(l.id), l.creatorAvatarSrc);
+  }
+  if (avatarMap.size === 0) return;
+  // Single DOM scan: patch all listing avatar images at once
+  document.querySelectorAll("[data-listing-id] .marketplace-card__avatar img, [data-listing-id] .marketplace-detail-avatar img").forEach((img) => {
+    const listingEl = img.closest("[data-listing-id]");
+    const src = listingEl && avatarMap.get(listingEl.dataset.listingId);
+    if (src && img.src !== src) img.src = src;
+  });
+  // Patch href-based marketplace cards
+  document.querySelectorAll(".marketplace-card a[href*='id=']").forEach((link) => {
+    const href = link.getAttribute("href") || "";
+    const match = href.match(/[?&]id=([^&]+)/);
+    if (!match) return;
+    const src = avatarMap.get(match[1]);
+    if (!src) return;
+    const card = link.closest(".marketplace-card");
+    const img = card?.querySelector(".marketplace-card__avatar img");
+    if (img && img.src !== src) img.src = src;
   });
 }
 
@@ -3775,19 +3786,26 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
         const { fetchMyListings } = await import("./core/supabaseMarketplace.js");
         try {
           const myListings = await fetchMyListings(session.user.id);
+          // Collect matching listings first, then check reviews in parallel
+          const matched = [];
           for (const listing of myListings) {
             const acceptedBidId = listing.accepted_bid_id || listing.marketplaceMeta?.acceptedBidId || "";
             const bids = listing.listing_bids || listing.bids || [];
             const acceptedBid = bids.find((b) => b.id === acceptedBidId);
             const devId = acceptedBid?.bidder_user_id || acceptedBid?.bidderUserId || "";
             if (devId === developerUserId && acceptedBid) {
-              const reviewed = await hasExistingReview(session.user.id, listing.id);
-              completedListings.push({
-                listing: { id: listing.id, title: listing.title || listing.payload?.title || "" },
-                bid: { id: acceptedBid.id, bidderUserId: devId, bidder_user_id: devId },
-                hasReview: reviewed,
-              });
+              matched.push({ listing, acceptedBid, devId });
             }
+          }
+          if (matched.length > 0) {
+            const reviewChecks = await Promise.all(
+              matched.map((m) => hasExistingReview(session.user.id, m.listing.id).catch(() => false))
+            );
+            completedListings = matched.map((m, i) => ({
+              listing: { id: m.listing.id, title: m.listing.title || m.listing.payload?.title || "" },
+              bid: { id: m.acceptedBid.id, bidderUserId: m.devId, bidder_user_id: m.devId },
+              hasReview: reviewChecks[i],
+            }));
           }
         } catch (_) {}
       }
@@ -4109,6 +4127,20 @@ async function renderPage(localeOverride) {
     document.documentElement.lang = content.meta.locale;
     applyTheme(getTheme());
 
+    // Eagerly preload page-specific component modules so they're cached by the time
+    // data loading finishes. This runs in parallel with auth sync and data fetches.
+    const _preloadMap = {
+      "open-marketplace": () => import("./components/openMarketplacePage.js"),
+      "developer-dashboard": () => import("./components/developerDashboardPage.js"),
+      "client-dashboard": () => import("./components/clientDashboardPage.js"),
+      "client-bids": () => import("./components/clientBidsPage.js"),
+      "marketplace-listing-detail": () => import("./components/marketplaceListingDetailPage.js"),
+      "account-settings": () => import("./components/accountSettingsPage.js"),
+      "developer-public-profile": () => import("./components/developerPublicProfilePage.js"),
+      "marketplace-submission": () => import("./components/marketplaceSubmissionPage.js"),
+    };
+    if (_preloadMap[page]) _preloadMap[page]().catch(() => {});
+
     // Fast-path pages: render from cache instantly (SWR pattern)
     const fastPathPages = new Set(["open-marketplace", "developer-dashboard", "client-dashboard", "client-bids", "marketplace-listing-detail"]);
     // Auth-dependent fast-path pages: need auth resolved before first render
@@ -4252,14 +4284,19 @@ async function renderPage(localeOverride) {
       const tabBarApi = await loadTabBarApi();
       if (tabBarApi) {
         const locale = localeOverride || getLocale("tr");
-        // Remove any existing tab bar before re-rendering
-        document.querySelector("#tab-bar-root")?.remove();
-        document.querySelector(".tab-bar")?.remove();
-        const tabBarContainer = document.createElement("div");
-        tabBarContainer.id = "tab-bar-root";
-        tabBarContainer.innerHTML = tabBarApi.createTabBar(locale);
-        document.body.appendChild(tabBarContainer);
-        document.documentElement.classList.add("has-tab-bar");
+        const newTabBarHtml = tabBarApi.createTabBar(locale);
+        const existingTabBar = document.getElementById("tab-bar-root");
+        // Only rebuild tab bar if HTML changed or it doesn't exist yet
+        if (!existingTabBar || existingTabBar._cachedHtml !== newTabBarHtml) {
+          existingTabBar?.remove();
+          document.querySelector(".tab-bar")?.remove();
+          const tabBarContainer = document.createElement("div");
+          tabBarContainer.id = "tab-bar-root";
+          tabBarContainer.innerHTML = newTabBarHtml;
+          tabBarContainer._cachedHtml = newTabBarHtml;
+          document.body.appendChild(tabBarContainer);
+          document.documentElement.classList.add("has-tab-bar");
+        }
         if (tabBarApi.initTabBarInteractions) {
           tabBarApi.initTabBarInteractions();
         }
