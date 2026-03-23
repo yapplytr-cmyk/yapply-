@@ -320,6 +320,9 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   const wizard = document.querySelector("[data-onboarding-wizard]");
   if (!wizard) return;
 
+  // Always reset the tutorial-seen flag so every new account sees the onboarding popup
+  try { localStorage.removeItem("yapply-onboarding-tutorial-seen"); } catch (_) {}
+
   let isTr = document.documentElement.lang === "tr" || localStorage.getItem("yapply-locale") !== "en";
   let currentStep = 1;
   let selectedRole = "client";
