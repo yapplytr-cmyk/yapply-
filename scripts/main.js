@@ -2439,7 +2439,15 @@ function setupInlineReviewForms(session, content) {
         stars.forEach((s) => {
           const sVal = parseInt(s.getAttribute("data-star-value"), 10);
           const svg = s.querySelector("svg");
-          if (svg) svg.setAttribute("fill", sVal <= val ? "var(--accent-500, #f59e0b)" : "none");
+          const path = s.querySelector("[data-star-path]") || s.querySelector("path");
+          const gradId = s.getAttribute("data-grad-id");
+          if (svg && path) {
+            const active = sVal <= val;
+            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #f59e0b)" : "none");
+            path.setAttribute("stroke", active ? "#b45309" : "var(--text-300, #9ca3af)");
+            path.setAttribute("stroke-width", active ? "0.6" : "1.2");
+            svg.className = active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty";
+          }
         });
       });
     });
@@ -2537,8 +2545,14 @@ function setupDeveloperPublicProfile(content) {
         stars.forEach((s) => {
           const sVal = parseInt(s.getAttribute("data-star-value"), 10);
           const svg = s.querySelector("svg");
-          if (svg) {
-            svg.setAttribute("fill", sVal <= val ? "var(--accent-500, #f59e0b)" : "none");
+          const path = s.querySelector("[data-star-path]") || s.querySelector("path");
+          const gradId = s.getAttribute("data-grad-id");
+          if (svg && path) {
+            const active = sVal <= val;
+            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #f59e0b)" : "none");
+            path.setAttribute("stroke", active ? "#b45309" : "var(--text-300, #9ca3af)");
+            path.setAttribute("stroke-width", active ? "0.6" : "1.2");
+            svg.className = active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty";
           }
         });
       });

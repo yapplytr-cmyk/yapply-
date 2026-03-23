@@ -35,14 +35,19 @@ function createStarDisplay(rating, size = 18) {
 
 function createStarInput(content) {
   const labels = content.reviewForm;
+  const starPath = "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z";
   const starInputs = [1, 2, 3, 4, 5]
     .map(
-      (n) => `
-      <button type="button" class="dev-profile-star-input" data-star-value="${n}" aria-label="${n} star${n > 1 ? "s" : ""}">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.5">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>
+      (n) => {
+        const gid = `si${Math.random().toString(36).slice(2, 8)}`;
+        return `
+      <button type="button" class="dev-profile-star-input yapply-star-input-btn" data-star-value="${n}" data-grad-id="${gid}" aria-label="${n} star${n > 1 ? "s" : ""}">
+        <svg class="yapply-star yapply-star--empty" width="28" height="28" viewBox="0 0 24 24">
+          <defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient></defs>
+          <path d="${starPath}" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.2" data-star-path/>
         </svg>
-      </button>`
+      </button>`;
+      }
     )
     .join("");
 
