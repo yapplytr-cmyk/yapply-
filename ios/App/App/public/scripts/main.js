@@ -30,6 +30,38 @@ function _isNativeApp() {
 }
 const IS_NATIVE_APP = _isNativeApp();
 
+/* ── iOS keyboard handling — prevent page shift ─── */
+(function initKeyboardHandler() {
+  if (!IS_NATIVE_APP) return;
+  const vv = window.visualViewport;
+  if (!vv) return;
+
+  let _keyboardOpen = false;
+  const THRESHOLD = 100; // px difference to detect keyboard
+
+  function onViewportResize() {
+    const diff = window.innerHeight - vv.height;
+    const isOpen = diff > THRESHOLD;
+
+    if (isOpen && !_keyboardOpen) {
+      _keyboardOpen = true;
+      document.documentElement.classList.add("keyboard-open");
+      // Scroll focused input into view after a brief delay
+      requestAnimationFrame(() => {
+        const el = document.activeElement;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT")) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+    } else if (!isOpen && _keyboardOpen) {
+      _keyboardOpen = false;
+      document.documentElement.classList.remove("keyboard-open");
+    }
+  }
+
+  vv.addEventListener("resize", onViewportResize);
+})();
+
 /* ── SPA-style soft navigation for native app (no white flash) ─── */
 const _pageRouteMap = {
   "open-marketplace.html":                    { page: "open-marketplace" },

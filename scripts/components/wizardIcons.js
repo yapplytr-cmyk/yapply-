@@ -63,25 +63,24 @@ function iconPhone() {
 }
 
 function iconMoney() {
-  // Currency / coins — Budget
+  // Paper bill / banknote — Budget
   return `<svg viewBox="${VB}" fill="${NONE}" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="20" cy="24" r="13" stroke="${S}" stroke-width="${SW}"/>
-    <path d="M20 16v16" stroke="${S}" stroke-width="1.2" stroke-linecap="round" opacity="0.3"/>
-    <path d="M16 20c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 3-4 3-4 1.8-4 4 1.8 4 4 4 4-1.8 4-4" stroke="${S}" stroke-width="${SW}" stroke-linecap="round"/>
-    <circle cx="32" cy="18" r="8" stroke="${S}" stroke-width="1.2" opacity="0.25"/>
-    <circle cx="34" cy="32" r="6" stroke="${S}" stroke-width="1.2" opacity="0.15"/>
+    <rect x="5" y="12" width="38" height="24" rx="3" stroke="${S}" stroke-width="${SW}" stroke-linejoin="round"/>
+    <rect x="9" y="16" width="30" height="16" rx="1.5" stroke="${S}" stroke-width="1" opacity="0.2"/>
+    <circle cx="24" cy="24" r="7" stroke="${S}" stroke-width="${SW}"/>
+    <text x="24" y="27.5" font-size="10" fill="${S}" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif">₺</text>
+    <path d="M9 18v12" stroke="${S}" stroke-width="1.2" stroke-linecap="round" opacity="0.2"/>
+    <path d="M39 18v12" stroke="${S}" stroke-width="1.2" stroke-linecap="round" opacity="0.2"/>
   </svg>`;
 }
 
 function iconHelmet() {
-  // Construction helmet — Construction Status
+  // Construction helmet — Construction Status (round dome)
   return `<svg viewBox="${VB}" fill="${NONE}" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 30h28" stroke="${S}" stroke-width="${SW}" stroke-linecap="round"/>
-    <path d="M12 30c0-10 5.4-18 12-18s12 8 12 18" stroke="${S}" stroke-width="${SW}" stroke-linecap="round"/>
-    <path d="M8 30v4c0 1.1.9 2 2 2h28c1.1 0 2-.9 2-2v-4" stroke="${S}" stroke-width="${SW}" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M24 12v6" stroke="${S}" stroke-width="${SW}" stroke-linecap="round" opacity="0.35"/>
-    <path d="M17 18l2 4" stroke="${S}" stroke-width="1.2" stroke-linecap="round" opacity="0.2"/>
-    <path d="M31 18l-2 4" stroke="${S}" stroke-width="1.2" stroke-linecap="round" opacity="0.2"/>
+    <ellipse cx="24" cy="26" rx="16" ry="4" stroke="${S}" stroke-width="${SW}" stroke-linecap="round"/>
+    <path d="M10 26c0-10 6.3-16 14-16s14 6 14 16" stroke="${S}" stroke-width="${SW}" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M22 10h4v8h-4" stroke="${S}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
+    <path d="M14 20a14 14 0 0 1 20 0" stroke="${S}" stroke-width="1" stroke-linecap="round" opacity="0.15"/>
   </svg>`;
 }
 

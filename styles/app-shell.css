@@ -308,6 +308,26 @@ html.has-tab-bar .theme-fab {
   bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
+/* ── Keyboard-open state (iOS native) ────────────── */
+/* When keyboard is visible, stop centering the wizard,
+   hide the tab bar, and let the body scroll freely
+   so the focused input stays visible. */
+html.keyboard-open .tab-bar {
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+html.keyboard-open.has-tab-bar body {
+  padding-bottom: 0;
+}
+html.keyboard-open .wizard-container {
+  justify-content: flex-start !important;
+  min-height: auto !important;
+}
+html.keyboard-open .theme-fab {
+  display: none;
+}
+
 /* ── Light mode adjustments ────────────────────── */
 
 html[data-theme="light"] .tab-bar {
