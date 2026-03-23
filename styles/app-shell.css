@@ -264,17 +264,21 @@ html:not(.has-tab-bar) .app-splash {
 /* Ayarlar (col 5) */
 .tab-bar--dev > .tab-bar__item:nth-child(5) { grid-column: 5; }
 
-/* Slightly smaller icons & labels for side tabs in dev layout */
+/* Equal sizing for all side tabs in dev layout */
 .tab-bar--dev > .tab-bar__item:not(.tab-bar__item--center) .tab-bar__icon {
-  width: 19px;
-  height: 19px;
+  width: 20px;
+  height: 20px;
 }
 .tab-bar--dev > .tab-bar__item:not(.tab-bar__item--center) .tab-bar__icon--bird {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
 }
 .tab-bar--dev > .tab-bar__item:not(.tab-bar__item--center) .tab-bar__label {
-  font-size: 0.52rem;
+  font-size: 0.55rem;
+}
+.tab-bar--dev > .tab-bar__item:not(.tab-bar__item--center) {
+  min-width: 0;
+  width: 100%;
 }
 
 /* ── Tab bar root container ───────────────────── */

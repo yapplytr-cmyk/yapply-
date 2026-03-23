@@ -38,7 +38,7 @@ function getTabConfig(locale, role) {
       id: "tab-profile",
       label: isTr ? "Profil" : "Profile",
       href: "./developer-public-profile.html",
-      icon: profileTabIconSVG,
+      icon: birdProfileSVG(role),
       page: "developer-public-profile",
     };
 
@@ -46,7 +46,7 @@ function getTabConfig(locale, role) {
       id: "tab-bids",
       label: isTr ? "Tekliflerim" : "My Bids",
       href: "./developer-dashboard.html#developer-dashboard-bids",
-      icon: birdProfileSVG(role),
+      icon: moneyTabIconSVG,
       page: "developer-dashboard",
     };
 
@@ -74,10 +74,10 @@ function getTabConfig(locale, role) {
   return [searchTab, createTab, dashboardTab];
 }
 
-const profileTabIconSVG = `
+const moneyTabIconSVG = `
   <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
+    <line x1="12" y1="1" x2="12" y2="23"/>
+    <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
   </svg>
 `;
 
