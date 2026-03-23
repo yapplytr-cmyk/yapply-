@@ -1177,6 +1177,16 @@ export async function submitMarketplaceBid(formData) {
     throw createSubmissionError("BIDDER_ROLE_INVALID", "Only developer accounts can submit bids.");
   }
 
+  // ── Bid limit enforcement ──
+  const { consumeDeveloperBid } = await import("./supabaseMarketplace.js?v=20260321v6");
+  const bidResult = await consumeDeveloperBid(session.user.id);
+  if (!bidResult.success) {
+    const err = createSubmissionError("BID_LIMIT_REACHED", "You have reached your bid limit for this cycle.");
+    err.bidsRemaining = bidResult.bidsRemaining;
+    err.bidLimit = bidResult.bidLimit;
+    throw err;
+  }
+
   const bid = validateMarketplaceBidDraft({
     listingId: escapeHtml(formData.get("listingId") || ""),
     bidAmount: {

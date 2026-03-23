@@ -3,7 +3,7 @@ import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js?v=20
 import { getDefaultAvatarOptions } from "./accountSettingsStore.js";
 
 const PROFILE_SELECT_FIELDS =
-  "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,avatar_url,work_description,created_at,updated_at";
+  "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,avatar_url,work_description,developer_type,business_name,business_website,business_locations,business_description,business_photos,portfolio_links,selfie_url,current_plan,bid_limit,bids_used,bid_cycle_start,created_at,updated_at";
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -114,6 +114,18 @@ function mapProfileRecord(data) {
     website: data.website,
     avatarUrl: data.avatar_url,
     workDescription: data.work_description || null,
+    developerType: data.developer_type || null,
+    businessName: data.business_name || null,
+    businessWebsite: data.business_website || null,
+    businessLocations: data.business_locations || null,
+    businessDescription: data.business_description || null,
+    businessPhotos: data.business_photos || [],
+    portfolioLinks: data.portfolio_links || [],
+    selfieUrl: data.selfie_url || null,
+    currentPlan: data.current_plan || "free",
+    bidLimit: data.bid_limit ?? 15,
+    bidsUsed: data.bids_used ?? 0,
+    bidCycleStart: data.bid_cycle_start || null,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
@@ -143,6 +155,18 @@ function normalizeSessionUser(authUser, profile) {
     preferredRegion: profile.preferredRegion || normalizeText(metadata.preferred_region || metadata.preferredRegion) || null,
     website: profile.website || normalizeText(metadata.website) || null,
     workDescription: normalizeText(metadata.work_description || metadata.workDescription) || null,
+    developerType: profile.developerType || normalizeText(metadata.developer_type || metadata.developerType) || null,
+    businessName: profile.businessName || normalizeText(metadata.business_name || metadata.businessName) || null,
+    businessWebsite: profile.businessWebsite || normalizeText(metadata.business_website || metadata.businessWebsite) || null,
+    businessLocations: profile.businessLocations || normalizeText(metadata.business_locations || metadata.businessLocations) || null,
+    businessDescription: profile.businessDescription || normalizeText(metadata.business_description || metadata.businessDescription) || null,
+    businessPhotos: profile.businessPhotos || metadata.business_photos || metadata.businessPhotos || [],
+    portfolioLinks: profile.portfolioLinks || metadata.portfolio_links || metadata.portfolioLinks || [],
+    selfieUrl: profile.selfieUrl || normalizeText(metadata.selfie_url || metadata.selfieUrl) || null,
+    currentPlan: profile.currentPlan || "free",
+    bidLimit: profile.bidLimit ?? 15,
+    bidsUsed: profile.bidsUsed ?? 0,
+    bidCycleStart: profile.bidCycleStart || null,
     createdAt: profile.createdAt || authUser.created_at || null,
     profilePictureSrc: profilePicture.profilePictureSrc,
     profilePictureId: profilePicture.profilePictureId,
@@ -254,6 +278,11 @@ function mapProfileToUpsert(authUser, metadata, fallbackRole = "", existingProfi
       metadata.avatar_url || metadata.avatarUrl ||
       profile.avatarUrl
     ) || resolveDefaultAvatarSrc(role, normalizeText(metadata.profile_picture_id || metadata.profilePictureId) || "") || null,
+    developer_type: normalizeText(metadata.developer_type || metadata.developerType || profile.developerType) || null,
+    business_name: normalizeText(metadata.business_name || metadata.businessName || profile.businessName) || null,
+    business_website: normalizeText(metadata.business_website || metadata.businessWebsite || profile.businessWebsite) || null,
+    business_locations: normalizeText(metadata.business_locations || metadata.businessLocations || profile.businessLocations) || null,
+    business_description: normalizeText(metadata.business_description || metadata.businessDescription || profile.businessDescription) || null,
   };
 }
 
@@ -489,6 +518,16 @@ function ensurePublicSignupPayload(payload) {
     throw createAuthError("REGION_REQUIRED", "Preferred city or region is required for client accounts.");
   }
 
+  // Developer expansion fields (optional, pass-through)
+  const developerType = normalizeText(payload.developerType);
+  const businessName = normalizeText(payload.businessName);
+  const businessWebsite = normalizeText(payload.businessWebsite);
+  const businessLocations = normalizeText(payload.businessLocations);
+  const businessDescription = normalizeText(payload.businessDescription);
+  const businessPhotos = Array.isArray(payload.businessPhotos) ? payload.businessPhotos : [];
+  const portfolioLinks = Array.isArray(payload.portfolioLinks) ? payload.portfolioLinks : [];
+  const selfieUrl = normalizeText(payload.selfieUrl);
+
   return {
     role,
     fullName,
@@ -502,6 +541,14 @@ function ensurePublicSignupPayload(payload) {
     specialties: specialties || null,
     preferredRegion: preferredRegion || null,
     website: website || null,
+    developerType: developerType || null,
+    businessName: businessName || null,
+    businessWebsite: businessWebsite || null,
+    businessLocations: businessLocations || null,
+    businessDescription: businessDescription || null,
+    businessPhotos,
+    portfolioLinks,
+    selfieUrl: selfieUrl || null,
   };
 }
 

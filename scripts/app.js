@@ -93,6 +93,10 @@ function loadDeveloperDashboardApi() {
   return loadComponentModule("developer-dashboard-page", () => import("./components/developerDashboardPage.js"));
 }
 
+function loadDeveloperMembershipApi() {
+  return loadComponentModule("developer-membership-page", () => import("./components/developerMembershipPage.js"));
+}
+
 function loadDeveloperProfileApi() {
   return loadComponentModule("developer-profile-page", () => import("./components/developerProfilePage.js"));
 }
@@ -1150,6 +1154,25 @@ async function createDeveloperDashboard(content, locale, runtimeData) {
   `;
 }
 
+async function createDeveloperMembership(content, locale) {
+  const session = getAuthSession();
+  const [{ createNavbar }, { createDeveloperMembershipPage }, { createFooter }] = await Promise.all([
+    loadNavbarApi(),
+    loadDeveloperMembershipApi(),
+    loadFooterApi(),
+  ]);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(content, locale)}
+      <main>
+        ${createDeveloperMembershipPage(content, session)}
+      </main>
+      ${createFooter(content)}
+    </div>
+  `;
+}
+
 async function createDeveloperPublicProfile(content, locale, runtimeData) {
   const developerUserId = runtimeData.developerUserId || "";
   const profileData = runtimeData.developerProfileData || {};
@@ -1209,6 +1232,10 @@ export async function createApp(
 
   if (page === "developer-dashboard") {
     return createDeveloperDashboard(content, locale, runtimeData);
+  }
+
+  if (page === "developer-membership") {
+    return createDeveloperMembership(content, locale);
   }
 
   if (page === "developer-public-profile") {

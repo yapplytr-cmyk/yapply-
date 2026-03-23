@@ -184,14 +184,39 @@ export function createOnboardingWizard(content, locale) {
         </div>
       </div>
 
-      <!-- Step 4: Account Form -->
+      <!-- Step 4: Developer Type (Bireysel / İşletme) — only shown for developers -->
       <div class="onboarding-step" data-onboarding-step="4" hidden>
+        <div class="onboarding-step__content">
+          <h2 class="onboarding-step__title" data-onboarding-devtype-title>${isTr ? "Hesap Türü" : "Account Type"}</h2>
+          <p class="onboarding-step__desc" data-onboarding-devtype-desc>${isTr ? "Bireysel mi yoksa işletme olarak mı kayıt oluyorsunuz?" : "Are you registering as an individual or a business?"}</p>
+          <div class="onboarding-role-cards">
+            <button class="onboarding-role-card" type="button" data-onboarding-devtype="individual">
+              <div class="onboarding-role-card__bird">
+                ${BIRD_SPORT_SVG}
+              </div>
+              <span class="onboarding-role-card__label">${isTr ? "Bireysel" : "Individual"}</span>
+              <span class="onboarding-role-card__desc">${isTr ? "Kendi adınıza iş yapın" : "Work under your own name"}</span>
+            </button>
+            <button class="onboarding-role-card" type="button" data-onboarding-devtype="business">
+              <div class="onboarding-role-card__bird">
+                ${BIRD_ARCHITECT_SVG}
+              </div>
+              <span class="onboarding-role-card__label">${isTr ? "İşletme" : "Business"}</span>
+              <span class="onboarding-role-card__desc">${isTr ? "Şirketiniz adına kayıt olun" : "Register as a company"}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Account Form -->
+      <div class="onboarding-step" data-onboarding-step="5" hidden>
         <div class="onboarding-step__content">
           <h2 class="onboarding-step__title">${isTr ? "Hesap Bilgileri" : "Account Details"}</h2>
           <p class="onboarding-step__desc" data-onboarding-form-desc></p>
 
           <form class="onboarding-form" data-onboarding-form novalidate>
             <input type="hidden" name="accountRole" value="client" data-onboarding-role-input />
+            <input type="hidden" name="developerType" value="" data-onboarding-devtype-input />
 
             <div class="onboarding-form-error" data-onboarding-error hidden>
               <p data-onboarding-error-text></p>
@@ -231,11 +256,11 @@ export function createOnboardingWizard(content, locale) {
               </label>
             </div>
 
-            <!-- Developer-specific fields -->
+            <!-- Developer shared fields -->
             <div class="onboarding-role-fields" data-onboarding-role-fields="developer" hidden>
               <label class="onboarding-field">
-                <span>${isTr ? "Şirket Adı" : "Company Name"}</span>
-                <input type="text" name="companyName" placeholder="${isTr ? "Firma adınız" : "Your company"}" />
+                <span>${isTr ? "Şirket / Profesyonel Adı" : "Company / Professional Name"}</span>
+                <input type="text" name="companyName" placeholder="${isTr ? "Firma veya profesyonel adınız" : "Your company or professional name"}" />
               </label>
               <label class="onboarding-field">
                 <span>${isTr ? "Hizmet Bölgesi" : "Service Area"}</span>
@@ -249,6 +274,62 @@ export function createOnboardingWizard(content, locale) {
                 <span>${isTr ? "Uzmanlık Alanı" : "Specialty"}</span>
                 <input type="text" name="specialties" placeholder="${isTr ? "Villa yapımı, renovasyon..." : "Villa construction, renovation..."}" />
               </label>
+
+              <!-- Business-specific extra fields -->
+              <div data-onboarding-business-fields hidden>
+                <label class="onboarding-field">
+                  <span>${isTr ? "İşletme Adı" : "Business Name"}</span>
+                  <input type="text" name="businessName" placeholder="${isTr ? "Şirket adınız" : "Your business name"}" />
+                </label>
+                <label class="onboarding-field">
+                  <span>${isTr ? "İşletme Web Sitesi" : "Business Website"}</span>
+                  <input type="url" name="businessWebsite" placeholder="https://example.com" />
+                </label>
+                <label class="onboarding-field">
+                  <span>${isTr ? "İşletme Konumu" : "Business Location(s)"}</span>
+                  <input type="text" name="businessLocations" placeholder="${isTr ? "İstanbul, Bodrum..." : "Istanbul, Bodrum..."}" />
+                </label>
+                <label class="onboarding-field">
+                  <span>${isTr ? "İşletme Açıklaması" : "Business Description"}</span>
+                  <textarea name="businessDescription" rows="3" placeholder="${isTr ? "Şirketiniz hakkında kısa bilgi..." : "Brief description of your business..."}"></textarea>
+                </label>
+                <label class="onboarding-field">
+                  <span>${isTr ? "Portföy Linki (İsteğe Bağlı)" : "Portfolio Link (Optional)"}</span>
+                  <input type="url" name="portfolioLink" placeholder="https://portfolio.com" />
+                </label>
+                <div class="onboarding-field">
+                  <span>${isTr ? "İşletme Fotoğrafları (En fazla 3)" : "Business Photos (Up to 3)"}</span>
+                  <input type="file" name="businessPhotos" accept="image/*" multiple data-onboarding-business-photos style="margin-top:6px" />
+                  <div data-onboarding-business-photos-preview style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
+                </div>
+              </div>
+
+              <!-- Individual-specific extra fields -->
+              <div data-onboarding-individual-fields hidden>
+                <label class="onboarding-field">
+                  <span>${isTr ? "Portföy Linki (İsteğe Bağlı)" : "Portfolio Link (Optional)"}</span>
+                  <input type="url" name="individualPortfolioLink" placeholder="https://portfolio.com" />
+                </label>
+                <div class="onboarding-field">
+                  <span>${isTr ? "Selfie (Zorunlu)" : "Selfie (Required)"}</span>
+                  <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Ön kamerayla bir selfie çekin" : "Take a selfie with the front camera"}</p>
+                  <video data-onboarding-selfie-video autoplay playsinline muted style="width:100%;max-width:280px;border-radius:var(--radius-sm);display:none"></video>
+                  <canvas data-onboarding-selfie-canvas style="display:none"></canvas>
+                  <img data-onboarding-selfie-preview style="display:none;width:100%;max-width:280px;border-radius:var(--radius-sm);margin-top:8px" />
+                  <div style="display:flex;gap:8px;margin-top:10px">
+                    <button type="button" class="button button--secondary" data-onboarding-selfie-start style="font-size:0.85rem;padding:8px 16px">
+                      ${isTr ? "Kamerayı Aç" : "Open Camera"}
+                    </button>
+                    <button type="button" class="button button--primary" data-onboarding-selfie-capture style="font-size:0.85rem;padding:8px 16px;display:none">
+                      ${isTr ? "Fotoğraf Çek" : "Take Photo"}
+                    </button>
+                    <button type="button" class="button button--secondary" data-onboarding-selfie-retake style="font-size:0.85rem;padding:8px 16px;display:none">
+                      ${isTr ? "Tekrar Çek" : "Retake"}
+                    </button>
+                  </div>
+                  <input type="hidden" name="selfieData" data-onboarding-selfie-data />
+                </div>
+              </div>
             </div>
 
             <button class="button button--primary onboarding-submit-btn" type="submit">
@@ -258,8 +339,8 @@ export function createOnboardingWizard(content, locale) {
         </div>
       </div>
 
-      <!-- Step 5: Email Verification -->
-      <div class="onboarding-step" data-onboarding-step="5" hidden>
+      <!-- Step 6: Email Verification -->
+      <div class="onboarding-step" data-onboarding-step="6" hidden>
         <div class="onboarding-step__content" style="text-align:center">
           <div class="onboarding-email-bird" style="width:140px;height:140px;margin:0 auto 16px">
             ${BIRD_EMAIL_SVG}
@@ -291,8 +372,8 @@ export function createOnboardingWizard(content, locale) {
         </div>
       </div>
 
-      <!-- Step 6: Success -->
-      <div class="onboarding-step" data-onboarding-step="6" hidden>
+      <!-- Step 7: Success -->
+      <div class="onboarding-step" data-onboarding-step="7" hidden>
         <div class="onboarding-step__content onboarding-success">
           <div class="onboarding-success__bird" data-onboarding-success-bird></div>
           <h2 class="onboarding-step__title" data-onboarding-success-title></h2>
@@ -311,6 +392,7 @@ export function createOnboardingWizard(content, locale) {
         <span class="onboarding-dot" data-onboarding-dot="4"></span>
         <span class="onboarding-dot" data-onboarding-dot="5"></span>
         <span class="onboarding-dot" data-onboarding-dot="6"></span>
+        <span class="onboarding-dot" data-onboarding-dot="7"></span>
       </div>
     </div>
   `;
@@ -326,6 +408,10 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   let isTr = document.documentElement.lang === "tr" || localStorage.getItem("yapply-locale") !== "en";
   let currentStep = 1;
   let selectedRole = "client";
+  let selectedDevType = ""; // "individual" or "business"
+  let selfieStream = null; // MediaStream for selfie camera
+  let selfieDataUrl = ""; // base64 selfie capture
+  let businessPhotoFiles = []; // File objects for business photos
 
   // Pending verification state (set when signup returns PENDING_EMAIL_VERIFICATION)
   let pendingEmail = "";
@@ -355,8 +441,36 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
     currentStep = step;
   }
 
-  // ─── Shared: show success step (step 6) ───
+  // ─── Shared: show success step (step 7) ───
   function showSuccessStep() {
+    // Fire-and-forget admin notification for developer signups
+    if (selectedRole === "developer") {
+      try {
+        import("../core/emailNotifier.js").then(({ notifyDeveloperSignup }) => {
+          const form = wizard.querySelector("[data-onboarding-form]");
+          const formData = form ? new FormData(form) : new FormData();
+          notifyDeveloperSignup({
+            email: formData.get("email") || "",
+            fullName: formData.get("fullName") || "",
+            role: "developer",
+            developerType: selectedDevType,
+            companyName: formData.get("companyName") || "",
+            businessName: formData.get("businessName") || "",
+            businessWebsite: formData.get("businessWebsite") || "",
+            businessLocations: formData.get("businessLocations") || "",
+            businessDescription: formData.get("businessDescription") || "",
+            businessPhotos: businessPhotoFiles.map((f) => f.name || ""),
+            portfolioLinks: [formData.get("portfolioLink") || formData.get("individualPortfolioLink") || ""].filter(Boolean),
+            selfieUrl: selfieDataUrl ? "(selfie captured)" : "",
+            serviceArea: formData.get("serviceArea") || "",
+            specialties: formData.get("specialties") || "",
+            yearsExperience: formData.get("yearsExperience") || "",
+            phoneNumber: formData.get("phoneNumber") || "",
+          });
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     const successBird = wizard.querySelector("[data-onboarding-success-bird]");
     const successTitle = wizard.querySelector("[data-onboarding-success-title]");
     const successDesc = wizard.querySelector("[data-onboarding-success-desc]");
@@ -402,7 +516,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       });
     }
 
-    goToStep(6);
+    goToStep(7);
   }
 
   // Step 1: Language selection
@@ -511,8 +625,49 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
           : (isTr ? "Kişisel bilgilerinizi girin" : "Enter your personal details");
       }
 
-      // Go to step 4 after brief delay
-      setTimeout(() => goToStep(4), 500);
+      // Developers go to step 4 (dev type), clients skip to step 5 (form)
+      setTimeout(() => goToStep(selectedRole === "developer" ? 4 : 5), 500);
+    });
+  });
+
+  // Step 4: Developer type selection (Bireysel / İşletme)
+  wizard.querySelectorAll("[data-onboarding-devtype]").forEach((card) => {
+    card.addEventListener("click", () => {
+      selectedDevType = card.dataset.onboardingDevtype;
+
+      // Highlight selected
+      wizard.querySelectorAll("[data-onboarding-devtype]").forEach((c) => {
+        c.classList.toggle("onboarding-role-card--selected", c === card);
+      });
+
+      // Set developer type in form
+      const devTypeInput = wizard.querySelector("[data-onboarding-devtype-input]");
+      if (devTypeInput) devTypeInput.value = selectedDevType;
+
+      // Show/hide business vs individual extra fields
+      const businessFields = wizard.querySelector("[data-onboarding-business-fields]");
+      const individualFields = wizard.querySelector("[data-onboarding-individual-fields]");
+      if (businessFields) {
+        businessFields.hidden = selectedDevType !== "business";
+        businessFields.querySelectorAll("input, textarea").forEach((f) => { f.disabled = selectedDevType !== "business"; });
+      }
+      if (individualFields) {
+        individualFields.hidden = selectedDevType !== "individual";
+        individualFields.querySelectorAll("input, textarea").forEach((f) => { f.disabled = selectedDevType !== "individual"; });
+      }
+
+      // Update form description based on dev type
+      const desc = wizard.querySelector("[data-onboarding-form-desc]");
+      if (desc) {
+        if (selectedDevType === "business") {
+          desc.textContent = isTr ? "İşletme bilgilerinizi girin" : "Enter your business details";
+        } else {
+          desc.textContent = isTr ? "Kişisel bilgilerinizi girin" : "Enter your personal details";
+        }
+      }
+
+      // Go to step 5 (form) after brief delay
+      setTimeout(() => goToStep(5), 500);
     });
   });
 
@@ -550,6 +705,27 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         const formData = new FormData(form);
         const payload = Object.fromEntries(formData.entries());
 
+        // Enrich payload with developer expansion data
+        if (selectedRole === "developer") {
+          payload.developerType = selectedDevType;
+
+          if (selectedDevType === "business") {
+            // Collect portfolio link
+            const portfolioLink = payload.portfolioLink;
+            if (portfolioLink) payload.portfolioLinks = [portfolioLink];
+            // Business photos are stored as base64 data URLs
+            if (businessPhotoFiles.length > 0) {
+              payload.businessPhotos = businessPhotoFiles.map((f) => f.dataUrl || "");
+            }
+          } else if (selectedDevType === "individual") {
+            // Collect portfolio link
+            const indivPortfolio = payload.individualPortfolioLink;
+            if (indivPortfolio) payload.portfolioLinks = [indivPortfolio];
+            // Selfie data
+            if (selfieDataUrl) payload.selfieUrl = selfieDataUrl;
+          }
+        }
+
         const authApi = await loadAuthApi();
         if (!authApi) throw new Error("Auth unavailable");
 
@@ -575,7 +751,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
           if (emailDisplay) emailDisplay.textContent = pendingEmail;
 
           // Focus first OTP input when transitioning
-          goToStep(5);
+          goToStep(6);
           setTimeout(() => {
             const firstOtp = wizard.querySelector('[data-otp-digit="0"]');
             if (firstOtp) firstOtp.focus();
@@ -702,6 +878,105 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         });
         otpDigits[0]?.focus();
       }
+    });
+  }
+
+  // ─── Selfie camera logic (individual developers) ───
+  const selfieStartBtn = wizard.querySelector("[data-onboarding-selfie-start]");
+  const selfieCaptureBtn = wizard.querySelector("[data-onboarding-selfie-capture]");
+  const selfieRetakeBtn = wizard.querySelector("[data-onboarding-selfie-retake]");
+  const selfieVideo = wizard.querySelector("[data-onboarding-selfie-video]");
+  const selfieCanvas = wizard.querySelector("[data-onboarding-selfie-canvas]");
+  const selfiePreview = wizard.querySelector("[data-onboarding-selfie-preview]");
+  const selfieDataInput = wizard.querySelector("[data-onboarding-selfie-data]");
+
+  function stopSelfieStream() {
+    if (selfieStream) {
+      selfieStream.getTracks().forEach((t) => t.stop());
+      selfieStream = null;
+    }
+  }
+
+  if (selfieStartBtn) {
+    selfieStartBtn.addEventListener("click", async () => {
+      try {
+        stopSelfieStream();
+        selfieStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        if (selfieVideo) {
+          selfieVideo.srcObject = selfieStream;
+          selfieVideo.style.display = "block";
+        }
+        selfieStartBtn.style.display = "none";
+        if (selfieCaptureBtn) selfieCaptureBtn.style.display = "";
+        if (selfiePreview) selfiePreview.style.display = "none";
+        if (selfieRetakeBtn) selfieRetakeBtn.style.display = "none";
+      } catch (err) {
+        console.warn("[yapply] Camera error:", err);
+        const errorEl = wizard.querySelector("[data-onboarding-error]");
+        const errorText = wizard.querySelector("[data-onboarding-error-text]");
+        if (errorEl && errorText) {
+          errorText.textContent = isTr ? "Kamera erişimi reddedildi" : "Camera access denied";
+          errorEl.hidden = false;
+        }
+      }
+    });
+  }
+
+  if (selfieCaptureBtn) {
+    selfieCaptureBtn.addEventListener("click", () => {
+      if (!selfieVideo || !selfieCanvas) return;
+      selfieCanvas.width = selfieVideo.videoWidth;
+      selfieCanvas.height = selfieVideo.videoHeight;
+      const ctx = selfieCanvas.getContext("2d");
+      ctx.drawImage(selfieVideo, 0, 0);
+      selfieDataUrl = selfieCanvas.toDataURL("image/jpeg", 0.8);
+      if (selfieDataInput) selfieDataInput.value = selfieDataUrl;
+      if (selfiePreview) {
+        selfiePreview.src = selfieDataUrl;
+        selfiePreview.style.display = "block";
+      }
+      if (selfieVideo) selfieVideo.style.display = "none";
+      stopSelfieStream();
+      selfieCaptureBtn.style.display = "none";
+      if (selfieRetakeBtn) selfieRetakeBtn.style.display = "";
+    });
+  }
+
+  if (selfieRetakeBtn) {
+    selfieRetakeBtn.addEventListener("click", () => {
+      selfieDataUrl = "";
+      if (selfieDataInput) selfieDataInput.value = "";
+      if (selfiePreview) selfiePreview.style.display = "none";
+      selfieRetakeBtn.style.display = "none";
+      if (selfieStartBtn) selfieStartBtn.style.display = "";
+      selfieStartBtn?.click();
+    });
+  }
+
+  // ─── Business photo upload preview ───
+  const businessPhotosInput = wizard.querySelector("[data-onboarding-business-photos]");
+  const businessPhotosPreview = wizard.querySelector("[data-onboarding-business-photos-preview]");
+
+  if (businessPhotosInput) {
+    businessPhotosInput.addEventListener("change", () => {
+      businessPhotoFiles = [];
+      if (businessPhotosPreview) businessPhotosPreview.innerHTML = "";
+
+      const files = Array.from(businessPhotosInput.files || []).slice(0, 3);
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+          businessPhotoFiles.push({ name: file.name, dataUrl });
+          if (businessPhotosPreview) {
+            const img = document.createElement("img");
+            img.src = dataUrl;
+            img.style.cssText = "width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid var(--line)";
+            businessPhotosPreview.appendChild(img);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     });
   }
 

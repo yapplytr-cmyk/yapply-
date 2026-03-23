@@ -69,6 +69,7 @@ const _pageRouteMap = {
   "marketplace-client-listing.html":          { page: "marketplace-listing-detail", listingType: "client" },
   "marketplace-professional-listing.html":    { page: "marketplace-listing-detail", listingType: "professional" },
   "developer-dashboard.html":                 { page: "developer-dashboard" },
+  "developer-membership.html":                { page: "developer-membership" },
   "client-dashboard.html":                    { page: "client-dashboard" },
   "client-bids.html":                          { page: "client-bids" },
   "login.html":                               { page: "login" },
@@ -2056,6 +2057,12 @@ function setupMarketplaceBidForm(content) {
     } catch (error) {
       setButtonLoading(submitButton, false);
 
+      // ── Bid limit reached — show modal and redirect ──
+      if (error?.code === "BID_LIMIT_REACHED") {
+        showBidLimitModal();
+        return;
+      }
+
       if (errorTitle) {
         errorTitle.textContent = copy.errorTitle;
       }
@@ -2066,6 +2073,60 @@ function setupMarketplaceBidForm(content) {
 
       setBidStatus("error");
     }
+  });
+}
+
+/**
+ * Show a popup/modal when developer has reached their bid limit.
+ * Offers to redirect them to the membership/upgrade page.
+ */
+function showBidLimitModal() {
+  const isTr = document.documentElement.lang === "tr";
+
+  // Remove any existing modal
+  document.querySelector("[data-bid-limit-modal]")?.remove();
+
+  const modal = document.createElement("div");
+  modal.setAttribute("data-bid-limit-modal", "");
+  modal.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:1rem";
+
+  modal.innerHTML = `
+    <div style="background:var(--bg-panel-strong,#1a1c22);border:1px solid var(--line,rgba(255,255,255,0.08));border-radius:var(--radius-lg,1.5rem);padding:2rem;max-width:420px;width:100%;text-align:center;box-shadow:var(--shadow-strong)">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem">&#9888;&#65039;</div>
+      <h3 style="color:var(--text,#f4f0e8);font-size:1.2rem;margin-bottom:0.5rem">
+        ${isTr ? "Teklif Limitine Ulaştınız" : "Bid Limit Reached"}
+      </h3>
+      <p style="color:var(--text-muted,#b3ada0);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem">
+        ${isTr
+          ? "Bu döngüdeki ücretsiz teklif hakkınızı kullandınız. Daha fazla teklif vermek için planınızı yükseltin."
+          : "You have used all your free bids for this cycle. Upgrade your plan to place more bids."}
+      </p>
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+        <button class="button button--primary" data-bid-limit-upgrade style="font-size:0.9rem;padding:10px 24px">
+          ${isTr ? "Planı Yükselt" : "Upgrade Plan"}
+        </button>
+        <button class="button button--secondary" data-bid-limit-close style="font-size:0.9rem;padding:10px 24px">
+          ${isTr ? "Kapat" : "Close"}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.querySelector("[data-bid-limit-close]")?.addEventListener("click", () => {
+    modal.remove();
+  });
+
+  modal.querySelector("[data-bid-limit-upgrade]")?.addEventListener("click", () => {
+    modal.remove();
+    // Redirect to website membership page
+    window.location.href = "https://yapplytr.com/developer-membership.html";
+  });
+
+  // Close on backdrop click
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
   });
 }
 
@@ -3741,6 +3802,11 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     return await fetchPromise;
   }
 
+  if (page === "developer-membership") {
+    // Membership page reads plan/bid info from session — no extra data fetch needed
+    return {};
+  }
+
   if (page === "developer-public-profile") {
     const params = new URLSearchParams(window.location.search);
     let developerUserId = params.get("dev") || "";
@@ -4132,6 +4198,7 @@ async function renderPage(localeOverride) {
     const _preloadMap = {
       "open-marketplace": () => import("./components/openMarketplacePage.js"),
       "developer-dashboard": () => import("./components/developerDashboardPage.js"),
+      "developer-membership": () => import("./components/developerMembershipPage.js"),
       "client-dashboard": () => import("./components/clientDashboardPage.js"),
       "client-bids": () => import("./components/clientBidsPage.js"),
       "marketplace-listing-detail": () => import("./components/marketplaceListingDetailPage.js"),

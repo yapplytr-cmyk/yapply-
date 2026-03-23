@@ -118,6 +118,46 @@ function createStarDisplay(rating, size = 18) {
   return `<span class="yapply-stars" style="display:inline-flex;align-items:center;gap:2px">${starFull.repeat(full)}${hasHalf ? starHalf : ""}${starEmpty.repeat(empty)}</span>`;
 }
 
+function createBidCounterCard(session, locale) {
+  const user = session.user || {};
+  const plan = user.currentPlan || "free";
+  const bidLimit = user.bidLimit ?? 15;
+  const bidsUsed = user.bidsUsed ?? 0;
+  const bidsRemaining = Math.max(bidLimit - bidsUsed, 0);
+  const cycleStart = user.bidCycleStart ? new Date(user.bidCycleStart) : new Date();
+  const cycleEnd = new Date(cycleStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const resetDate = new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", { day: "numeric", month: "short", year: "numeric" }).format(cycleEnd);
+
+  const planLabels = {
+    free: locale === "tr" ? "Ücretsiz Plan" : "Free Plan",
+    pro40: locale === "tr" ? "40 Teklif Planı" : "40 Bid Plan",
+    unlimited: locale === "tr" ? "Sınırsız Plan" : "Unlimited Plan",
+  };
+  const planLabel = planLabels[plan] || planLabels.free;
+  const isUnlimited = plan === "unlimited";
+
+  const pct = isUnlimited ? 100 : bidLimit > 0 ? Math.round((bidsRemaining / bidLimit) * 100) : 0;
+  const barColor = pct > 30 ? "var(--accent,#c9a84c)" : pct > 10 ? "#e89040" : "#e05050";
+
+  return `
+    <article class="panel developer-dashboard-bid-counter" style="padding:1.25rem;display:grid;gap:0.75rem">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h4 style="font-size:0.95rem;color:var(--text,#f4f0e8);margin:0">${locale === "tr" ? "Teklif Hakkı" : "Bid Allowance"}</h4>
+        <span style="font-size:0.78rem;padding:4px 10px;border-radius:999px;background:var(--gold-soft,rgba(201,168,76,0.16));color:var(--accent,#c9a84c);font-weight:600">${planLabel}</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span style="font-size:2rem;font-weight:700;color:var(--text,#f4f0e8)">${isUnlimited ? "∞" : bidsRemaining}</span>
+        <span style="font-size:0.85rem;color:var(--text-muted,#b3ada0)">/ ${isUnlimited ? "∞" : bidLimit} ${locale === "tr" ? "kalan" : "remaining"}</span>
+      </div>
+      <div style="height:6px;border-radius:3px;background:var(--surface-soft,#171a1f);overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width 400ms ease"></div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-dim,#8f8a7d);margin:0">${locale === "tr" ? "Yenileme tarihi:" : "Resets on:"} ${resetDate}</p>
+      ${plan === "free" ? `<a href="https://yapplytr.com/developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${locale === "tr" ? "Planı Yükselt" : "Upgrade Plan"}</a>` : ""}
+    </article>
+  `;
+}
+
 function createDeveloperOverviewSection(content, session, listingCount, bidCount, wonBidCount, ratingAverage, ratingCount) {
   const locale = getDeveloperDashboardLocale(content);
   const user = session.user || {};
@@ -140,6 +180,7 @@ function createDeveloperOverviewSection(content, session, listingCount, bidCount
         ${createDashboardReloadButton()}
       </div>
       <div class="developer-dashboard-overview">
+        ${createBidCounterCard(session, locale)}
         <article class="panel developer-dashboard-profile">
           <div class="developer-dashboard-profile__header">
             <div class="account-settings-avatar developer-dashboard-profile__avatar">

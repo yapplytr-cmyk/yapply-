@@ -45,6 +45,18 @@ PROFILE_COLUMNS = ",".join(
     "website",
     "avatar_url",
     "work_description",
+    "developer_type",
+    "business_name",
+    "business_website",
+    "business_locations",
+    "business_description",
+    "business_photos",
+    "portfolio_links",
+    "selfie_url",
+    "current_plan",
+    "bid_limit",
+    "bids_used",
+    "bid_cycle_start",
     "created_at",
     "updated_at",
   ]
@@ -473,6 +485,18 @@ def normalize_profile_row(row: dict[str, Any] | None) -> dict[str, Any] | None:
     "website": row.get("website"),
     "avatarUrl": row.get("avatar_url"),
     "workDescription": row.get("work_description"),
+    "developerType": row.get("developer_type"),
+    "businessName": row.get("business_name"),
+    "businessWebsite": row.get("business_website"),
+    "businessLocations": row.get("business_locations"),
+    "businessDescription": row.get("business_description"),
+    "businessPhotos": row.get("business_photos") or [],
+    "portfolioLinks": row.get("portfolio_links") or [],
+    "selfieUrl": row.get("selfie_url"),
+    "currentPlan": row.get("current_plan") or "free",
+    "bidLimit": row.get("bid_limit") or 15,
+    "bidsUsed": row.get("bids_used") or 0,
+    "bidCycleStart": row.get("bid_cycle_start"),
     "createdAt": row.get("created_at"),
     "updatedAt": row.get("updated_at"),
   }
@@ -582,6 +606,14 @@ def upsert_profile(
   avatar_url: str | None = None,
   username: str | None = None,
   status: str = "active",
+  developer_type: str | None = None,
+  business_name: str | None = None,
+  business_website: str | None = None,
+  business_locations: str | None = None,
+  business_description: str | None = None,
+  business_photos: list | None = None,
+  portfolio_links: list | None = None,
+  selfie_url: str | None = None,
 ) -> dict[str, Any]:
   _ensure_service_config()
 
@@ -602,6 +634,24 @@ def upsert_profile(
     "website": website,
     "avatar_url": avatar_url,
   }
+
+  # Developer-specific fields — only include when present to avoid overwriting
+  if developer_type:
+    payload["developer_type"] = developer_type
+  if business_name:
+    payload["business_name"] = business_name
+  if business_website:
+    payload["business_website"] = business_website
+  if business_locations:
+    payload["business_locations"] = business_locations
+  if business_description:
+    payload["business_description"] = business_description
+  if business_photos is not None:
+    payload["business_photos"] = business_photos
+  if portfolio_links is not None:
+    payload["portfolio_links"] = portfolio_links
+  if selfie_url:
+    payload["selfie_url"] = selfie_url
 
   response = _supabase_request(
     f"/rest/v1/profiles?{urlencode({'select': PROFILE_COLUMNS})}",
@@ -1285,6 +1335,16 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
     if not str(payload.get("specialties") or "").strip():
       raise SupabaseError("SPECIALTIES_REQUIRED", "Please enter at least one specialty for the developer account.", 400)
 
+  # Developer expansion fields
+  developer_type = str(payload.get("developerType") or "").strip() or None
+  business_name_val = str(payload.get("businessName") or "").strip() or None
+  business_website_val = str(payload.get("businessWebsite") or "").strip() or None
+  business_locations_val = str(payload.get("businessLocations") or "").strip() or None
+  business_description_val = str(payload.get("businessDescription") or "").strip() or None
+  business_photos_val = payload.get("businessPhotos") if isinstance(payload.get("businessPhotos"), list) else []
+  portfolio_links_val = payload.get("portfolioLinks") if isinstance(payload.get("portfolioLinks"), list) else []
+  selfie_url_val = str(payload.get("selfieUrl") or "").strip() or None
+
   metadata = {
     "role": role,
     "full_name": full_name,
@@ -1296,6 +1356,13 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
     "specialties": str(payload.get("specialties") or "").strip() or None,
     "preferred_region": str(payload.get("preferredRegion") or "").strip() or None,
     "website": str(payload.get("website") or "").strip() or None,
+    "developer_type": developer_type,
+    "business_name": business_name_val,
+    "business_website": business_website_val,
+    "business_locations": business_locations_val,
+    "business_description": business_description_val,
+    "portfolio_links": portfolio_links_val,
+    "selfie_url": selfie_url_val,
   }
 
   # Use sign_up_with_password so Supabase sends a confirmation OTP email
@@ -1327,6 +1394,14 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
       specialties=metadata["specialties"],
       preferred_region=metadata["preferred_region"],
       website=metadata["website"],
+      developer_type=developer_type,
+      business_name=business_name_val,
+      business_website=business_website_val,
+      business_locations=business_locations_val,
+      business_description=business_description_val,
+      business_photos=business_photos_val,
+      portfolio_links=portfolio_links_val,
+      selfie_url=selfie_url_val,
     )
     return {
       "pendingVerification": False,
@@ -1371,6 +1446,14 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
       specialties=metadata["specialties"],
       preferred_region=metadata["preferred_region"],
       website=metadata["website"],
+      developer_type=developer_type,
+      business_name=business_name_val,
+      business_website=business_website_val,
+      business_locations=business_locations_val,
+      business_description=business_description_val,
+      business_photos=business_photos_val,
+      portfolio_links=portfolio_links_val,
+      selfie_url=selfie_url_val,
     )
 
   return {

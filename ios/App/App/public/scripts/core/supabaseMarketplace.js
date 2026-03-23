@@ -919,3 +919,54 @@ export async function fetchDeveloperPublicProfile(developerUserId) {
     ratingCount: reviews.length,
   };
 }
+
+// ─── Developer Bid Limit System ─────────────────────────────
+
+/**
+ * Check how many bids remain in the current 30-day cycle.
+ * Calls the Supabase RPC function `check_and_reset_bid_cycle`.
+ */
+export async function checkDeveloperBidStatus(userId) {
+  const supabase = await getSupabaseClient();
+  try {
+    const { data, error } = await supabase.rpc("check_and_reset_bid_cycle", { p_user_id: userId });
+    if (error) {
+      console.warn("[yapply] checkDeveloperBidStatus error:", error.message);
+      return { bidsRemaining: 15, bidLimit: 15, cycleEnd: null };
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      bidsRemaining: row?.bids_remaining ?? 15,
+      bidLimit: row?.bid_limit ?? 15,
+      cycleEnd: row?.cycle_end || null,
+    };
+  } catch (e) {
+    console.warn("[yapply] checkDeveloperBidStatus threw:", e?.message);
+    return { bidsRemaining: 15, bidLimit: 15, cycleEnd: null };
+  }
+}
+
+/**
+ * Consume one bid from the developer's allocation.
+ * Returns { success, bidsRemaining, bidLimit }.
+ * If success is false, the developer has hit their limit.
+ */
+export async function consumeDeveloperBid(userId) {
+  const supabase = await getSupabaseClient();
+  try {
+    const { data, error } = await supabase.rpc("consume_developer_bid", { p_user_id: userId });
+    if (error) {
+      console.warn("[yapply] consumeDeveloperBid error:", error.message);
+      return { success: false, bidsRemaining: 0, bidLimit: 15 };
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      success: row?.success ?? false,
+      bidsRemaining: row?.bids_remaining ?? 0,
+      bidLimit: row?.bid_limit ?? 15,
+    };
+  } catch (e) {
+    console.warn("[yapply] consumeDeveloperBid threw:", e?.message);
+    return { success: false, bidsRemaining: 0, bidLimit: 15 };
+  }
+}

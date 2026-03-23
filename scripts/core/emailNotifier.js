@@ -117,6 +117,35 @@ export function notifyBidAccepted(listing, bid) {
  * @param {object} listing - The developer listing
  * @param {object} inquiry - The inquiry data
  */
+/**
+ * Notify admin (yapplytr@gmail.com) about a new developer signup for background review.
+ * @param {object} user - The new developer user data
+ */
+export function notifyDeveloperSignup(user) {
+  _sendNotification("developer_signup", {
+    adminEmail: "yapplytr@gmail.com",
+    user: {
+      id: user?.id || "",
+      email: user?.email || "",
+      fullName: user?.fullName || "",
+      role: user?.role || "developer",
+      developerType: user?.developerType || "",
+      companyName: user?.companyName || "",
+      businessName: user?.businessName || "",
+      businessWebsite: user?.businessWebsite || "",
+      businessLocations: user?.businessLocations || "",
+      businessDescription: user?.businessDescription || "",
+      businessPhotos: user?.businessPhotos || [],
+      portfolioLinks: user?.portfolioLinks || [],
+      selfieUrl: user?.selfieUrl || "",
+      serviceArea: user?.serviceArea || "",
+      specialties: user?.specialties || "",
+      yearsExperience: user?.yearsExperience || "",
+      phoneNumber: user?.phoneNumber || "",
+    },
+  });
+}
+
 export function notifyInquiryReceived(listing, inquiry) {
   _sendNotification("inquiry_received", {
     listing: {
