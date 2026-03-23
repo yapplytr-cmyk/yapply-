@@ -14,7 +14,7 @@ function createSummaryItems(items) {
     .join("");
 }
 
-function createAttachmentMarkup(attachments = []) {
+function createAttachmentMarkup(attachments = [], isTr = false) {
   if (!Array.isArray(attachments) || attachments.length === 0) {
     return "";
   }
@@ -52,10 +52,10 @@ function createAttachmentMarkup(attachments = []) {
                 (item) => `
                   <a class="marketplace-file-card panel" href="${item.dataUrl}" download="${item.name}">
                     <div>
-                      <span>Attachment</span>
+                      <span>${isTr ? "Ek Dosya" : "Attachment"}</span>
                       <strong>${item.name}</strong>
                     </div>
-                    <span class="marketplace-file-card__action">Download</span>
+                    <span class="marketplace-file-card__action">${isTr ? "İndir" : "Download"}</span>
                   </a>
                 `
               )
@@ -68,6 +68,7 @@ function createAttachmentMarkup(attachments = []) {
 }
 
 export function createMarketplaceSubmissionSuccessPage(content, listing, submissionType) {
+  const isTr = content?.meta?.locale === "tr";
   const pageContent = content.marketplaceFlow.success[submissionType];
 
   if (!listing) {
@@ -131,8 +132,8 @@ export function createMarketplaceSubmissionSuccessPage(content, listing, submiss
                 { label: pageContent.summary.type, value: listing.projectType },
                 { label: pageContent.summary.location, value: listing.location },
                 { label: pageContent.summary.budget, value: listing.budget },
-                { label: pageContent.summary.timeline || "Timeline", value: listing.timeline },
-                { label: pageContent.summary.plotStatus || "Plot Status", value: listing.plotStatus },
+                { label: pageContent.summary.timeline || (isTr ? "Zaman Çizelgesi" : "Timeline"), value: listing.timeline },
+                { label: pageContent.summary.plotStatus || (isTr ? "Arsa Durumu" : "Plot Status"), value: listing.plotStatus },
               ])}
             </div>
           </article>
@@ -155,7 +156,7 @@ export function createMarketplaceSubmissionSuccessPage(content, listing, submiss
           ${createSummaryItems(summaryItems)}
         </div>
         ${detailMarkup}
-        ${createAttachmentMarkup(listing.attachments)}
+        ${createAttachmentMarkup(listing.attachments, isTr)}
         <div class="hero-actions">
           ${createButton({ href: getMarketplaceListingHref(submissionType, listing.id), label: pageContent.viewListing, variant: "primary" })}
           ${createButton({ href: pageContent.marketplaceHref, label: pageContent.backToMarketplace, variant: "secondary" })}

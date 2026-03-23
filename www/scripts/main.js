@@ -3934,14 +3934,33 @@ function setupPullToRefresh() {
     el.dataset.progress = String(stage);
   }
 
+  function getScrollTop() {
+    // Robust scroll position for iOS / Capacitor WebView
+    return Math.max(
+      0,
+      Math.round(
+        window.scrollY ||
+        window.pageYOffset ||
+        document.scrollingElement?.scrollTop ||
+        document.documentElement.scrollTop ||
+        document.body.scrollTop ||
+        0
+      )
+    );
+  }
+
   function onTouchStart(e) {
     // Only activate pull-to-refresh when scrolled ALL the way to the top (position 0)
-    const scrollTop = Math.round(document.scrollingElement?.scrollTop || document.documentElement.scrollTop || 0);
-    if (scrollTop > 0) return;
+    if (getScrollTop() > 2) return;
     // Skip pull-to-refresh when touching interactive elements (buttons, links, form inputs, expandable panels)
     const target = e.target;
     if (target && target.closest && target.closest("button, a, input, select, textarea, [data-client-bids-toggle], [data-client-bids-group-toggle], [data-client-dashboard-toggle], [data-client-bids-accept], [data-client-dashboard-accept-bid], .client-bids-card, .client-dashboard-card__panel")) {
       return;
+    }
+    // Also skip if the touch starts inside a scrollable child container
+    if (target && target.closest && target.closest("[data-scroll], .overflow-auto, .overflow-y-auto, .overflow-scroll")) {
+      const scrollableParent = target.closest("[data-scroll], .overflow-auto, .overflow-y-auto, .overflow-scroll");
+      if (scrollableParent && scrollableParent.scrollTop > 0) return;
     }
     startY = e.touches[0].clientY;
     pulling = true;
@@ -3949,6 +3968,9 @@ function setupPullToRefresh() {
 
   function onTouchMove(e) {
     if (!pulling) return;
+    // Re-verify scroll position during the move — user may have started at top
+    // but a momentum scroll or layout shift moved content
+    if (getScrollTop() > 2) { pulling = false; return; }
     const dy = e.touches[0].clientY - startY;
     if (dy < 0) { pulling = false; return; }
     if (dy > 10) {

@@ -187,6 +187,7 @@ function createMarketplaceHeaderNav(content, role, isAuthenticated) {
 
 function createHomePageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     nav: withAdminNav(content.nav, content.adminDashboardPage.navLabel),
@@ -204,6 +205,7 @@ function createHomePageContent(content) {
 
 function createProfessionalsPageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.professionalsPage,
@@ -217,6 +219,7 @@ function createProjectDetailPageContent(content, projectSlug) {
   const selectedProject = detailPage.projects[projectSlug] || projectEntries[0]?.[1];
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     nav: {
@@ -232,6 +235,7 @@ function createProjectDetailPageContent(content, projectSlug) {
 
 function createCreateAccountPageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.authPages.createAccount,
@@ -241,6 +245,7 @@ function createCreateAccountPageContent(content) {
 
 function createLoginPageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.authPages.login,
@@ -250,6 +255,7 @@ function createLoginPageContent(content) {
 
 function createModeratorLoginPageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.authPages.moderatorLogin,
@@ -686,6 +692,7 @@ function createMarketplaceSubmissionPageContent(content, submissionType) {
   const isAuthenticated = Boolean(session?.authenticated && session?.user);
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...submissionPage,
@@ -705,6 +712,7 @@ function createMarketplaceSubmissionSuccessContent(content, submissionType, list
   const listing = getSubmittedListing(submissionType, resolvedId) || getLastSubmissionDetail(submissionType, resolvedId);
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.marketplaceSubmissionPages[submissionType],
@@ -745,6 +753,7 @@ function createDeveloperProfilePageContent(content, developerSlug) {
   const selectedProfile = developerPage.profiles[developerSlug] || profileEntries[0]?.[1];
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     nav: {
@@ -772,6 +781,7 @@ function createAdminDashboardPageContent(content, runtimeData = {}) {
   );
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.adminDashboardPage,
