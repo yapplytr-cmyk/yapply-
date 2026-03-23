@@ -89,17 +89,22 @@ const settingsTabIconSVG = `
 
 function birdProfileSVG(_role) {
   return `
-    <svg class="tab-bar__icon tab-bar__icon--bird" viewBox="0 0 120 120" fill="none">
-      <path d="M28 62 18 56 24 68 32 65Z" fill="var(--accent)"/>
-      <ellipse cx="55" cy="65" rx="25" ry="20" fill="var(--accent)"/>
-      <circle cx="76" cy="50" r="14" fill="var(--accent)"/>
-      <ellipse cx="50" cy="65" rx="13" ry="13" fill="var(--accent)" opacity="0.55"/>
-      <circle cx="80" cy="47" r="3" fill="var(--bg)"/>
-      <path d="M89 49 100 50 91 55Z" fill="var(--text)"/>
-      <path d="M48 83V93" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round"/>
-      <path d="M44 93H52" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round"/>
-      <path d="M60 83V93" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round"/>
-      <path d="M56 93H64" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round"/>
+    <svg class="tab-bar__icon tab-bar__icon--bird marketplace-toggle-bird" viewBox="0 0 120 120" fill="none">
+      <g class="marketplace-toggle-bird__character">
+        <path class="marketplace-toggle-bird__tail" d="M31 65 20 60 29 73 38 69Z"/>
+        <ellipse class="marketplace-toggle-bird__body" cx="52" cy="64" rx="23" ry="18"/>
+        <circle class="marketplace-toggle-bird__head" cx="74" cy="50" r="13"/>
+        <ellipse class="marketplace-toggle-bird__wing" cx="49" cy="65" rx="11" ry="15" transform="rotate(-24 49 65)"/>
+        <circle class="marketplace-toggle-bird__eye" cx="78" cy="47" r="2.2"/>
+        <path class="marketplace-toggle-bird__beak" d="M85 50 95 46 88 55Z"/>
+        <path class="marketplace-toggle-bird__leg" d="M49 81V89"/>
+        <path class="marketplace-toggle-bird__leg" d="M58 81V89"/>
+        <g class="marketplace-toggle-bird__helmet">
+          <path class="marketplace-toggle-bird__helmet-shell" d="M60 42c0-7.4 6-13.4 13.4-13.4 7 0 12.8 5.4 13.4 12.2v2.2H60V42Z"/>
+          <path class="marketplace-toggle-bird__helmet-rim" d="M58 43h31c1.8 0 3.2 1.4 3.2 3.2 0 1.1-.5 2-1.4 2.7H58.4c-.9-.7-1.4-1.6-1.4-2.7 0-1.8 1.4-3.2 3.2-3.2Z"/>
+          <path class="marketplace-toggle-bird__helmet-stripe" d="M72 29h4v14h-4z"/>
+        </g>
+      </g>
     </svg>
   `;
 }

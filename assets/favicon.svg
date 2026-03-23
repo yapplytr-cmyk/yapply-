@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
   <!-- Tail -->
-  <path d="M28 62 18 56 24 68 32 65Z" fill="#b8973e"/>
+  <path d="M31 65 20 60 29 73 38 69Z" fill="#c9a84c"/>
   <!-- Body -->
-  <ellipse cx="55" cy="65" rx="25" ry="20" fill="#c9a84c"/>
+  <ellipse cx="52" cy="64" rx="23" ry="18" fill="#c9a84c"/>
   <!-- Head -->
-  <circle cx="76" cy="50" r="14" fill="#c9a84c"/>
+  <circle cx="74" cy="50" r="13" fill="#c9a84c"/>
   <!-- Wing -->
-  <ellipse cx="50" cy="65" rx="13" ry="13" fill="#b8973e" opacity="0.6"/>
+  <ellipse cx="49" cy="65" rx="11" ry="15" transform="rotate(-24 49 65)" fill="#b8973e"/>
   <!-- Eye -->
-  <circle cx="80" cy="47" r="3" fill="#1a1a1a"/>
+  <circle cx="78" cy="47" r="2.2" fill="#121317"/>
   <!-- Beak -->
-  <path d="M89 49 100 50 91 55Z" fill="#e8e4da"/>
-  <!-- Left leg -->
-  <path d="M48 83V93" stroke="#c9a84c" stroke-width="2.8" stroke-linecap="round"/>
-  <path d="M44 93H52" stroke="#c9a84c" stroke-width="2.8" stroke-linecap="round"/>
-  <!-- Right leg -->
-  <path d="M60 83V93" stroke="#c9a84c" stroke-width="2.8" stroke-linecap="round"/>
-  <path d="M56 93H64" stroke="#c9a84c" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M85 50 95 46 88 55Z" fill="#f4b766"/>
+  <!-- Legs -->
+  <path d="M49 81V89" stroke="#c9a84c" stroke-width="3" stroke-linecap="round"/>
+  <path d="M58 81V89" stroke="#c9a84c" stroke-width="3" stroke-linecap="round"/>
+  <!-- Pen -->
+  <rect x="67" y="73" width="30" height="5" rx="2.5" transform="rotate(-22 67 73)" fill="#f2d17f"/>
+  <rect x="67" y="73" width="6" height="5" rx="1.2" transform="rotate(-22 67 73)" fill="#fff0bf"/>
+  <path d="M97 61 104 58 101 66Z" fill="#f4b766"/>
 </svg>
