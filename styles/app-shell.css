@@ -845,6 +845,54 @@ html.has-tab-bar .wizard-progress {
   50% { box-shadow: 0 0 0 6px rgba(201, 168, 76, 0); }
 }
 
+/* ── Wizard Bird Mascot ─────────────────────────── */
+
+.wizard-bird {
+  --bird-progress: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 110px;
+  margin-bottom: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wizard-bird__img {
+  height: 100px;
+  width: auto;
+  object-fit: contain;
+  position: relative;
+  /* Bird walks left→right: translate based on --bird-progress (0 to 1) */
+  transform: translateX(calc((var(--bird-progress) - 0.5) * 120px));
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  opacity: 1;
+}
+
+/* Crossfade exit */
+.wizard-bird__img--exit {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Crossfade enter */
+.wizard-bird__img--enter {
+  opacity: 1;
+  transition: opacity 0.3s ease 0.05s;
+}
+
+/* On smaller screens, keep bird more compact */
+@media (max-height: 600px) {
+  .wizard-bird {
+    height: 80px;
+    margin-bottom: 0.25rem;
+  }
+  .wizard-bird__img {
+    height: 72px;
+  }
+}
+
 
 /* ─────────────────────────────────────────────────
    MARKETPLACE (KEŞFET) — Native App Layout Tweaks

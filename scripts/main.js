@@ -2446,7 +2446,7 @@ function setupInlineReviewForms(session, content) {
             path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #f59e0b)" : "none");
             path.setAttribute("stroke", active ? "#b45309" : "var(--text-300, #9ca3af)");
             path.setAttribute("stroke-width", active ? "0.6" : "1.2");
-            svg.className = active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty";
+            svg.setAttribute("class", active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty");
           }
         });
       });
@@ -2552,7 +2552,7 @@ function setupDeveloperPublicProfile(content) {
             path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #f59e0b)" : "none");
             path.setAttribute("stroke", active ? "#b45309" : "var(--text-300, #9ca3af)");
             path.setAttribute("stroke-width", active ? "0.6" : "1.2");
-            svg.className = active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty";
+            svg.setAttribute("class", active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty");
           }
         });
       });

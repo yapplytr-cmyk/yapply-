@@ -865,20 +865,25 @@ export async function fetchDeveloperPublicProfile(developerUserId) {
   } catch (_) {}
 
   // Resolve avatar — profile_picture_src for the template
+  // Default bird avatars by role (inlined so this never fails)
+  const DEFAULT_AVATARS = {
+    developer: "./assets/avatars/avatar-bird-business.png",
+    client: "./assets/avatars/avatar-bird-business.png",
+  };
   if (profile) {
-    try {
-      const { getDefaultAvatarOptions } = await import("./accountSettingsStore.js");
-      const role = profile.role || "developer";
-      const avatarUrl = profile.avatar_url || "";
-      if (avatarUrl) {
-        profile.profile_picture_src = avatarUrl;
-      } else {
-        // Fall back to default avatar for role
+    const role = profile.role || "developer";
+    const avatarUrl = profile.avatar_url || "";
+    if (avatarUrl) {
+      profile.profile_picture_src = avatarUrl;
+    } else {
+      // Try to use accountSettingsStore for full avatar options
+      try {
+        const { getDefaultAvatarOptions } = await import("./accountSettingsStore.js");
         const options = getDefaultAvatarOptions(role);
-        profile.profile_picture_src = options[0]?.src || "";
+        profile.profile_picture_src = options[0]?.src || DEFAULT_AVATARS[role] || DEFAULT_AVATARS.developer;
+      } catch (_) {
+        profile.profile_picture_src = DEFAULT_AVATARS[role] || DEFAULT_AVATARS.developer;
       }
-    } catch (_) {
-      profile.profile_picture_src = profile.avatar_url || "";
     }
   }
 

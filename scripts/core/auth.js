@@ -252,7 +252,7 @@ function mapProfileToUpsert(authUser, metadata, fallbackRole = "", existingProfi
       metadata.profile_picture_url || metadata.profilePictureUrl ||
       metadata.avatar_url || metadata.avatarUrl ||
       profile.avatarUrl
-    ) || null,
+    ) || resolveDefaultAvatarSrc(role, normalizeText(metadata.profile_picture_id || metadata.profilePictureId) || "") || null,
   };
 }
 
