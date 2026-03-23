@@ -88,10 +88,11 @@ function createReviewsSection(content, reviews, locale) {
 
   return `
     <div class="dev-profile-reviews-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
-        <h3>${labels.title} (${reviews.length})</h3>
-        <button class="button button--secondary" type="button" data-dev-profile-toggle-reviews style="font-size:0.85rem;padding:0.35rem 0.75rem">
-          ${labels.viewAll}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem">
+        <h3 style="margin:0;flex:1;min-width:0">${labels.title} (${reviews.length})</h3>
+        <button class="button button--secondary" type="button" data-dev-profile-toggle-reviews style="font-size:0.78rem;padding:0.4rem 0.85rem;white-space:nowrap;flex-shrink:0">
+          <span data-dev-profile-toggle-reviews-label>${labels.viewAll}</span>
+          <span style="margin-left:4px;display:inline-block;transition:transform 200ms" data-dev-profile-toggle-arrow>▼</span>
         </button>
       </div>
       <div class="dev-profile-reviews-list" data-dev-profile-reviews-list hidden>

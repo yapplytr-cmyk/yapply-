@@ -2618,13 +2618,17 @@ function setupDeveloperPublicProfile(content) {
     btn.addEventListener("click", () => {
       const list = document.querySelector("[data-dev-profile-reviews-list]");
       if (!list) return;
+      const label = btn.querySelector("[data-dev-profile-toggle-reviews-label]");
+      const arrow = btn.querySelector("[data-dev-profile-toggle-arrow]");
       const isHidden = list.hasAttribute("hidden");
       if (isHidden) {
         list.removeAttribute("hidden");
-        btn.textContent = content.developerPublicProfilePage?.reviewsSection?.hideAll || "Hide Reviews";
+        if (label) label.textContent = content.developerPublicProfilePage?.reviewsSection?.hideAll || "Gizle";
+        if (arrow) arrow.style.transform = "rotate(180deg)";
       } else {
         list.setAttribute("hidden", "");
-        btn.textContent = content.developerPublicProfilePage?.reviewsSection?.viewAll || "View All Reviews";
+        if (label) label.textContent = content.developerPublicProfilePage?.reviewsSection?.viewAll || "Tüm Değerlendirmeleri Gör";
+        if (arrow) arrow.style.transform = "rotate(0deg)";
       }
     });
   });
@@ -4328,8 +4332,8 @@ async function renderPage(localeOverride) {
         }).catch(() => {});
       }
 
-      // Native onboarding wizard for create-account page
-      if (IS_NATIVE_APP && page === "create-account") {
+      // Onboarding wizard for create-account page (app + website)
+      if (page === "create-account") {
         try {
           const { createOnboardingWizard, initOnboardingWizard } = await import("./components/onboardingWizard.js");
           const currentLocale = localeOverride || getLocale("tr");

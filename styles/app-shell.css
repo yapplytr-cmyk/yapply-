@@ -247,22 +247,25 @@ html:not(.has-tab-bar) .app-splash {
 
 /* ── Developer 4-tab layout: center İlan Ver precisely ── */
 .tab-bar--dev {
-  display: grid;
+  display: grid !important;
   grid-template-columns: 1fr 1fr 68px 1fr 1fr;
   justify-items: center;
   align-items: end;
+  justify-content: unset;
 }
 
-/* Profil (col 1) */
-.tab-bar--dev > .tab-bar__item:nth-child(1) { grid-column: 1; }
-/* Keşfet (col 2) */
-.tab-bar--dev > .tab-bar__item:nth-child(2) { grid-column: 2; }
+/* Override flex: 1 from base .tab-bar__item inside grid */
+.tab-bar--dev > .tab-bar__item {
+  flex: unset;
+  width: 100%;
+  min-width: 0;
+  justify-self: center;
+}
+
 /* İlan Ver absolute center (col 3) */
-.tab-bar--dev > .tab-bar__item--center { grid-column: 3; }
-/* Tekliflerim (col 4) */
-.tab-bar--dev > .tab-bar__item:nth-child(4) { grid-column: 4; }
-/* Ayarlar (col 5) */
-.tab-bar--dev > .tab-bar__item:nth-child(5) { grid-column: 5; }
+.tab-bar--dev > .tab-bar__item--center {
+  width: 68px;
+}
 
 /* Equal sizing for all side tabs in dev layout */
 .tab-bar--dev > .tab-bar__item:not(.tab-bar__item--center) .tab-bar__icon {
@@ -275,10 +278,6 @@ html:not(.has-tab-bar) .app-splash {
 }
 .tab-bar--dev > .tab-bar__item:not(.tab-bar__item--center) .tab-bar__label {
   font-size: 0.55rem;
-}
-.tab-bar--dev > .tab-bar__item:not(.tab-bar__item--center) {
-  min-width: 0;
-  width: 100%;
 }
 
 /* ── Tab bar root container ───────────────────── */
@@ -1670,12 +1669,15 @@ html.has-tab-bar .client-dashboard-card__summary--loading::after {
 
 .onboarding-wizard {
   position: relative;
-  min-height: calc(100vh - 80px);
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 2rem 1.25rem;
+  margin: 0 auto;
+  max-width: 600px;
 }
 
 .onboarding-step {
