@@ -21,10 +21,29 @@
 
     <script>
       document.documentElement.dataset.theme = localStorage.getItem("yapply-theme") || "dark";
+      // Detect Capacitor native app
+      (function() {
+        var origin = window.location.origin;
+        var hostname = window.location.hostname;
+        var port = window.location.port;
+        var isNative = origin === "capacitor://localhost" || (hostname === "localhost" && !port);
+        if (isNative) {
+          document.documentElement.classList.add("has-tab-bar");
+          // Prevent pinch-to-zoom
+          document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+          document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+          // Sync bg color with theme
+          var t = localStorage.getItem('yapply-theme') || 'dark';
+          var bgc = t === 'light' ? '#f3efe6' : '#060709';
+          document.documentElement.style.backgroundColor = bgc;
+          var tc = document.querySelector('meta[name="theme-color"]');
+          if (tc) tc.content = bgc;
+        }
+      })();
     </script>
   </head>
   <body data-page="developer-membership">
-    <div id="app-root" data-loading="true"></div>
+    <div id="app"></div>
     <script type="module" src="./scripts/main.js"></script>
   </body>
 </html>

@@ -109,7 +109,7 @@ export function createDeveloperMembershipPage(content, session) {
       : "";
 
     return `
-      <article class="panel" style="position:relative;padding:1.75rem;display:grid;gap:1rem;${isPopular ? "border-color:var(--accent,#c9a84c);box-shadow:0 0 30px rgba(201,168,76,0.15)" : ""}${isCurrent ? ";outline:2px solid var(--accent,#c9a84c);outline-offset:2px" : ""}">
+      <article class="panel" style="position:relative;padding:1.75rem;display:grid;gap:1rem;${isPopular ? "overflow:visible;border-color:var(--accent,#c9a84c);box-shadow:0 0 30px rgba(201,168,76,0.15)" : ""}${isCurrent ? ";outline:2px solid var(--accent,#c9a84c);outline-offset:2px" : ""}">
         ${popularBadge}
         <div>
           <h3 style="font-size:1.15rem;margin:0 0 4px">${plan.name}</h3>
@@ -151,7 +151,7 @@ export function createDeveloperMembershipPage(content, session) {
       </div>
 
       <!-- Plan cards -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-bottom:2rem">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-bottom:2rem;padding-top:14px">
         ${planCard("free", false)}
         ${planCard("pro40", true)}
         ${planCard("unlimited", false)}
