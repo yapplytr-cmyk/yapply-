@@ -245,7 +245,7 @@ export function createOnboardingWizard(content, locale) {
             </label>
             <label class="onboarding-field">
               <span>${isTr ? "Telefon" : "Phone"}</span>
-              <input type="tel" name="phoneNumber" placeholder="${isTr ? "+90 5XX XXX XX XX" : "+1 (555) 000-0000"}" autocomplete="tel" />
+              <input type="tel" name="phoneNumber" placeholder="+90 5XX XXX XX XX" autocomplete="tel" />
             </label>
 
             <!-- Client-specific fields -->

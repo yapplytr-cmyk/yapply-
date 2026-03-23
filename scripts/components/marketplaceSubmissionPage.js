@@ -249,7 +249,7 @@ function renderStepContact(data, isTr) {
         type="tel"
         id="wiz-phone"
         name="phone"
-        placeholder="${isTr ? "+90 5XX XXX XX XX" : "+1 (555) 000-0000"}"
+        placeholder="${isTr ? "+90 5XX XXX XX XX" : "+90 5XX XXX XX XX"}"
         autocomplete="tel"
         value="${escapeAttr(data.phone || "")}"
         required
@@ -569,7 +569,7 @@ function renderStepProfessionalContact(data, isTr) {
         type="tel"
         id="wiz-phone"
         name="phone"
-        placeholder="${isTr ? "+90 5XX XXX XX XX" : "+1 (555) 000-0000"}"
+        placeholder="${isTr ? "+90 5XX XXX XX XX" : "+90 5XX XXX XX XX"}"
         autocomplete="tel"
         value="${escapeAttr(data.phone || "")}"
         required

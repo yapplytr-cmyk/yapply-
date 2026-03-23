@@ -2,8 +2,16 @@ import { clearAuthSession, getAuthSession, setAuthSession } from "./state.js";
 import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
 import { getDefaultAvatarOptions } from "./accountSettingsStore.js";
 
-const PROFILE_SELECT_FIELDS =
-  "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,avatar_url,work_description,developer_type,business_name,business_website,business_locations,business_description,business_photos,portfolio_links,selfie_url,current_plan,bid_limit,bids_used,bid_cycle_start,created_at,updated_at";
+const PROFILE_BASE_FIELDS =
+  "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,avatar_url,work_description,created_at,updated_at";
+
+const PROFILE_EXPANSION_FIELDS =
+  "developer_type,business_name,business_website,business_locations,business_description,business_photos,portfolio_links,selfie_url,current_plan,bid_limit,bids_used,bid_cycle_start";
+
+const PROFILE_SELECT_FIELDS = PROFILE_BASE_FIELDS + "," + PROFILE_EXPANSION_FIELDS;
+
+// If expansion columns don't exist yet (migration not run), fall back to base fields only
+let _useBaseFieldsOnly = false;
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -278,20 +286,36 @@ function mapProfileToUpsert(authUser, metadata, fallbackRole = "", existingProfi
       metadata.avatar_url || metadata.avatarUrl ||
       profile.avatarUrl
     ) || resolveDefaultAvatarSrc(role, normalizeText(metadata.profile_picture_id || metadata.profilePictureId) || "") || null,
-    developer_type: normalizeText(metadata.developer_type || metadata.developerType || profile.developerType) || null,
-    business_name: normalizeText(metadata.business_name || metadata.businessName || profile.businessName) || null,
-    business_website: normalizeText(metadata.business_website || metadata.businessWebsite || profile.businessWebsite) || null,
-    business_locations: normalizeText(metadata.business_locations || metadata.businessLocations || profile.businessLocations) || null,
-    business_description: normalizeText(metadata.business_description || metadata.businessDescription || profile.businessDescription) || null,
+    // Expansion columns — only include if migration has been applied
+    ...(_useBaseFieldsOnly ? {} : {
+      developer_type: normalizeText(metadata.developer_type || metadata.developerType || profile.developerType) || null,
+      business_name: normalizeText(metadata.business_name || metadata.businessName || profile.businessName) || null,
+      business_website: normalizeText(metadata.business_website || metadata.businessWebsite || profile.businessWebsite) || null,
+      business_locations: normalizeText(metadata.business_locations || metadata.businessLocations || profile.businessLocations) || null,
+      business_description: normalizeText(metadata.business_description || metadata.businessDescription || profile.businessDescription) || null,
+    }),
   };
 }
 
 async function fetchOwnProfile(supabase, userId) {
-  const { data, error } = await supabase
+  const fields = _useBaseFieldsOnly ? PROFILE_BASE_FIELDS : PROFILE_SELECT_FIELDS;
+  let { data, error } = await supabase
     .from("profiles")
-    .select(PROFILE_SELECT_FIELDS)
+    .select(fields)
     .eq("id", userId)
     .maybeSingle();
+
+  // If expansion columns don't exist yet, retry with base fields only
+  if (error && !_useBaseFieldsOnly && error.message && error.message.includes("does not exist")) {
+    _useBaseFieldsOnly = true;
+    const retry = await supabase
+      .from("profiles")
+      .select(PROFILE_BASE_FIELDS)
+      .eq("id", userId)
+      .maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     throw mapSupabaseError(error, "ACCOUNT_PROFILE_MISSING");
@@ -315,12 +339,26 @@ async function ensureOwnProfile(supabase, authUser, expectedRole = "") {
   }
 
   const payload = mapProfileToUpsert(authUser, metadata, fallbackRole, profile);
+  const selectFields = _useBaseFieldsOnly ? PROFILE_BASE_FIELDS : PROFILE_SELECT_FIELDS;
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("profiles")
     .upsert(payload, { onConflict: "id" })
-    .select(PROFILE_SELECT_FIELDS)
+    .select(selectFields)
     .single();
+
+  // If expansion columns don't exist, strip them and retry with base fields
+  if (error && !_useBaseFieldsOnly && error.message && error.message.includes("does not exist")) {
+    _useBaseFieldsOnly = true;
+    const basePayload = mapProfileToUpsert(authUser, metadata, fallbackRole, profile);
+    const retry = await supabase
+      .from("profiles")
+      .upsert(basePayload, { onConflict: "id" })
+      .select(PROFILE_BASE_FIELDS)
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     throw mapSupabaseError(error, "ACCOUNT_PROFILE_MISSING");
