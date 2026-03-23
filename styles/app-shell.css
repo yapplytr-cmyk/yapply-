@@ -845,76 +845,80 @@ html.has-tab-bar .wizard-progress {
   50% { box-shadow: 0 0 0 6px rgba(201, 168, 76, 0); }
 }
 
-/* ── Wizard Bird Mascot ─────────────────────────── */
+/* ── Wizard Bird Mascot (SVG-based) ───────────── */
 
 .wizard-bird {
   --bird-progress: 0;
   position: relative;
   width: 100%;
-  height: 120px;
-  margin-bottom: 0.25rem;
+  height: 110px;
+  margin-bottom: 0.35rem;
   pointer-events: none;
   overflow: visible;
 }
 
-/* Track: the bird slides along this invisible rail left→right */
+/* Invisible horizontal rail */
 .wizard-bird__track {
   position: absolute;
   bottom: 0;
-  left: 10%;
-  right: 10%;
+  left: 8%;
+  right: 8%;
   height: 100%;
-  /* The inner wrapper moves along the track */
 }
 
+/* Moves along the track via --bird-progress (0→1) */
 .wizard-bird__mover {
   position: absolute;
   bottom: 0;
-  /* Horizontal position driven by --bird-progress (0→1) */
   left: calc(var(--bird-progress) * 100%);
   transform: translateX(-50%);
-  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.55s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: flex-end;
   justify-content: center;
 }
 
-.wizard-bird__img {
-  height: 105px;
-  width: auto;
-  max-width: 160px;
-  object-fit: contain;
+/* The SVG pose container */
+.wizard-bird__pose {
+  width: 100px;
+  height: 100px;
   opacity: 1;
-  transition: opacity 0.25s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   transform: scale(1) translateY(0);
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+  transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.18));
 }
 
-/* Crossfade: fade out old pose */
-.wizard-bird__img--exit {
+.wizard-bird__pose svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Crossfade out */
+.wizard-bird__pose--exit {
   opacity: 0;
-  transform: scale(0.92) translateY(4px);
+  transform: scale(0.88) translateY(6px);
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-/* Crossfade: fade in new pose */
-.wizard-bird__img--enter {
+/* Crossfade in */
+.wizard-bird__pose--enter {
   opacity: 1;
   transform: scale(1) translateY(0);
-  transition: opacity 0.32s ease 0.06s, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s;
+  transition: opacity 0.35s ease 0.05s, transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) 0.05s;
 }
 
-/* Submit step: bird flies off to the right */
-.wizard-bird__img--fly-off {
+/* Fly off to the right on submit */
+.wizard-bird__pose--fly {
   opacity: 0;
-  transform: scale(0.8) translate(120px, -60px);
-  transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.7) translate(160px, -50px) rotate(-8deg);
+  transition: opacity 0.7s ease 0.1s, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Smaller screens */
 @media (max-height: 600px) {
-  .wizard-bird { height: 90px; }
-  .wizard-bird__img { height: 78px; max-width: 130px; }
+  .wizard-bird { height: 85px; }
+  .wizard-bird__pose { width: 80px; height: 80px; }
 }
 
 

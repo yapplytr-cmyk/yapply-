@@ -1,32 +1,10 @@
 import { createButton } from "./primitives.js";
+import { getBirdSvg, getBirdFlyingSvg } from "./wizardBird.js";
 
 /* ─────────────────────────────────────────────────
    Marketplace Listing Submission — Step-by-Step Wizard
    Supports both client and professional (developer) flows
    ───────────────────────────────────────────────── */
-
-/* ── Bird mascot images per wizard step ───────── */
-const BIRD_STEP_IMAGES = {
-  // Client wizard step IDs → bird image
-  projectTitle:        "./assets/wizard-birds/step-bird-title.png",
-  projectType:         "./assets/wizard-birds/step-bird-category.png",
-  projectBrief:        "./assets/wizard-birds/step-bird-description.png",
-  contact:             "./assets/wizard-birds/step-bird-contact.png",
-  budget:              "./assets/wizard-birds/step-bird-budget.png",
-  constructionStarted: "./assets/wizard-birds/step-bird-construction.png",
-  projectSize:         "./assets/wizard-birds/step-bird-size.png",
-  photos:              "./assets/wizard-birds/step-bird-photos.png",
-  summary:             "./assets/wizard-birds/step-bird-submit.png",
-  // Professional wizard step IDs → reuse birds that match context
-  companyInfo:           "./assets/wizard-birds/step-bird-title.png",
-  serviceArea:           "./assets/wizard-birds/step-bird-category.png",
-  specialties:           "./assets/wizard-birds/step-bird-description.png",
-  pricing:               "./assets/wizard-birds/step-bird-budget.png",
-  portfolio:             "./assets/wizard-birds/step-bird-photos.png",
-  professionalContact:   "./assets/wizard-birds/step-bird-contact.png",
-  professionalUploads:   "./assets/wizard-birds/step-bird-photos.png",
-  professionalSummary:   "./assets/wizard-birds/step-bird-submit.png",
-};
 
 function getWizardLocale(pageContent) {
   return pageContent?.meta?.locale === "tr" ? "tr" : "en";
@@ -683,13 +661,14 @@ export function createMarketplaceSubmissionPage(pageContent, submissionType) {
   const isProfessional = submissionType === "professional";
   const steps = isProfessional ? professionalWizardSteps(isTr) : clientWizardSteps(isTr);
   const step = steps[0];
-  const firstBird = BIRD_STEP_IMAGES[step.id] || BIRD_STEP_IMAGES.projectTitle;
   return `
     <section class="wizard-container section-shell" data-wizard-root data-wizard-type="${isProfessional ? "professional" : "client"}" data-wizard-locale="${isTr ? "tr" : "en"}">
       <div class="wizard-bird" data-wizard-bird>
         <div class="wizard-bird__track">
           <div class="wizard-bird__mover" data-wizard-bird-mover>
-            <img class="wizard-bird__img" src="${firstBird}" alt="" data-wizard-bird-img />
+            <div class="wizard-bird__pose" data-wizard-bird-pose>
+              ${getBirdSvg(step.id)}
+            </div>
           </div>
         </div>
       </div>
@@ -957,27 +936,24 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
 
     /* ── Bird mascot transition ── */
     const birdMover = root.querySelector("[data-wizard-bird-mover]");
-    const birdImg = root.querySelector("[data-wizard-bird-img]");
-    if (birdMover && birdImg) {
-      const nextSrc = BIRD_STEP_IMAGES[step.id] || "";
+    const birdPose = root.querySelector("[data-wizard-bird-pose]");
+    if (birdMover && birdPose) {
       const progress = WIZARD_STEPS.length > 1 ? currentStep / (WIZARD_STEPS.length - 1) : 0;
 
-      // Move the bird along the track (left → right)
+      // Slide bird along the horizontal track
       birdMover.style.setProperty("--bird-progress", progress);
 
-      // Swap bird pose with crossfade if image changed
-      if (nextSrc && !birdImg.src.endsWith(nextSrc.replace("./", ""))) {
-        birdImg.classList.remove("wizard-bird__img--enter", "wizard-bird__img--fly-off");
-        birdImg.classList.add("wizard-bird__img--exit");
+      // Crossfade to new pose SVG
+      birdPose.classList.remove("wizard-bird__pose--enter", "wizard-bird__pose--fly");
+      birdPose.classList.add("wizard-bird__pose--exit");
+      setTimeout(() => {
+        birdPose.innerHTML = getBirdSvg(step.id);
+        birdPose.classList.remove("wizard-bird__pose--exit");
+        birdPose.classList.add("wizard-bird__pose--enter");
         setTimeout(() => {
-          birdImg.src = nextSrc;
-          birdImg.classList.remove("wizard-bird__img--exit");
-          birdImg.classList.add("wizard-bird__img--enter");
-          setTimeout(() => {
-            birdImg.classList.remove("wizard-bird__img--enter");
-          }, 380);
-        }, 200);
-      }
+          birdPose.classList.remove("wizard-bird__pose--enter");
+        }, 400);
+      }, 180);
     }
 
     backBtn.hidden = currentStep === 0;
@@ -1123,11 +1099,12 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
     nextBtn.disabled = true;
     nextBtn.textContent = isTr ? "Gönderiliyor..." : "Submitting...";
 
-    // Bird flies off to the right on submit
-    const flyBirdImg = root.querySelector("[data-wizard-bird-img]");
-    if (flyBirdImg) {
-      flyBirdImg.classList.remove("wizard-bird__img--enter", "wizard-bird__img--exit");
-      flyBirdImg.classList.add("wizard-bird__img--fly-off");
+    // Bird transforms into flying pose and flies off to the right
+    const flyPose = root.querySelector("[data-wizard-bird-pose]");
+    if (flyPose) {
+      flyPose.innerHTML = getBirdFlyingSvg();
+      flyPose.classList.remove("wizard-bird__pose--enter", "wizard-bird__pose--exit");
+      flyPose.classList.add("wizard-bird__pose--fly");
     }
 
     try {
