@@ -95,8 +95,8 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
     let query = supabase
       .from("marketplace_listings")
       .select(`
-        *,
-        listing_bids (id, bidder_user_id, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
+        id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload,
+        listing_bids (id, status)
       `)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -114,7 +114,7 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
 
   // ── Attempt 2: Raw REST API ──
   const params = new URLSearchParams({
-    select: "*,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
+    select: "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload,listing_bids(id,status)",
     order: "created_at.desc",
     limit: String(limit),
   });

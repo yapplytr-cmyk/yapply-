@@ -3602,6 +3602,12 @@ html[data-theme="light"] .auth-role-card.is-active {
 .marketplace-bid-accordion {
   padding: 0;
   overflow: hidden;
+  border-radius: var(--radius-lg, 1rem);
+}
+
+html[data-theme="dark"] .marketplace-bid-accordion {
+  border-color: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
 }
 
 .marketplace-bid-row {
