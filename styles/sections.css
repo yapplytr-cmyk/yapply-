@@ -649,11 +649,10 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   z-index: 1;
   opacity: 0.94;
-  transform: scale(1.01);
 }
 
 .project-villa {
@@ -3480,7 +3479,7 @@ html[data-theme="light"] .auth-role-card.is-active {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .gallery-arrow {
@@ -3725,7 +3724,7 @@ html[data-theme="dark"] .marketplace-bid-accordion {
 .marketplace-media-slide img {
   width: 100%;
   aspect-ratio: 4 / 3;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background:
