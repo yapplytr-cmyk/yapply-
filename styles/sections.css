@@ -3438,12 +3438,12 @@ html[data-theme="light"] .auth-role-card.is-active {
 }
 
 .marketplace-detail-visual {
-  min-height: 26rem;
   position: relative;
+  overflow: hidden;
 }
 
 .marketplace-detail-visual--compact {
-  min-height: 20.5rem;
+  /* inherits relative positioning */
 }
 
 .marketplace-detail-visual--media {
@@ -3457,28 +3457,22 @@ html[data-theme="light"] .auth-role-card.is-active {
 }
 
 .marketplace-detail-visual-gallery {
-  position: absolute;
-  inset: 0;
+  position: relative;
   overflow: hidden;
 }
 
 .marketplace-detail-visual-slide {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 320ms ease;
-  pointer-events: none;
+  display: none;
 }
 
 .marketplace-detail-visual-slide--active {
-  opacity: 1;
-  pointer-events: auto;
+  display: block;
 }
 
 .marketplace-detail-visual-slide img {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: contain;
 }
 
@@ -5124,12 +5118,10 @@ html[data-theme="dark"] .marketplace-bid-accordion {
   }
 
   .marketplace-detail-visual {
-    min-height: 28rem;
     overflow: hidden;
   }
 
   .marketplace-detail-visual--compact {
-    min-height: 16rem;
     overflow: hidden;
   }
 
