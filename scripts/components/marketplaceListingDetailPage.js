@@ -268,21 +268,21 @@ function createBidSubmissionSection(content, listing) {
               <span>${bidForm.timeframe}</span>
               <select name="estimatedCompletionTimeframe" required>
                 <option value="" disabled selected>${bidForm.timeframePlaceholder}</option>
-                <option value="1 hafta">1 hafta</option>
-                <option value="2 hafta">2 hafta</option>
-                <option value="3 hafta">3 hafta</option>
-                <option value="1 ay">1 ay</option>
-                <option value="2 ay">2 ay</option>
-                <option value="3 ay">3 ay</option>
-                <option value="4 ay">4 ay</option>
-                <option value="5 ay">5 ay</option>
-                <option value="6 ay">6 ay</option>
-                <option value="7 ay">7 ay</option>
-                <option value="8 ay">8 ay</option>
-                <option value="9 ay">9 ay</option>
-                <option value="10 ay">10 ay</option>
-                <option value="11 ay">11 ay</option>
-                <option value="12 ay">12 ay</option>
+                <option value="${locale === "tr" ? "1 hafta" : "1 week"}">${locale === "tr" ? "1 hafta" : "1 week"}</option>
+                <option value="${locale === "tr" ? "2 hafta" : "2 weeks"}">${locale === "tr" ? "2 hafta" : "2 weeks"}</option>
+                <option value="${locale === "tr" ? "3 hafta" : "3 weeks"}">${locale === "tr" ? "3 hafta" : "3 weeks"}</option>
+                <option value="${locale === "tr" ? "1 ay" : "1 month"}">${locale === "tr" ? "1 ay" : "1 month"}</option>
+                <option value="${locale === "tr" ? "2 ay" : "2 months"}">${locale === "tr" ? "2 ay" : "2 months"}</option>
+                <option value="${locale === "tr" ? "3 ay" : "3 months"}">${locale === "tr" ? "3 ay" : "3 months"}</option>
+                <option value="${locale === "tr" ? "4 ay" : "4 months"}">${locale === "tr" ? "4 ay" : "4 months"}</option>
+                <option value="${locale === "tr" ? "5 ay" : "5 months"}">${locale === "tr" ? "5 ay" : "5 months"}</option>
+                <option value="${locale === "tr" ? "6 ay" : "6 months"}">${locale === "tr" ? "6 ay" : "6 months"}</option>
+                <option value="${locale === "tr" ? "7 ay" : "7 months"}">${locale === "tr" ? "7 ay" : "7 months"}</option>
+                <option value="${locale === "tr" ? "8 ay" : "8 months"}">${locale === "tr" ? "8 ay" : "8 months"}</option>
+                <option value="${locale === "tr" ? "9 ay" : "9 months"}">${locale === "tr" ? "9 ay" : "9 months"}</option>
+                <option value="${locale === "tr" ? "10 ay" : "10 months"}">${locale === "tr" ? "10 ay" : "10 months"}</option>
+                <option value="${locale === "tr" ? "11 ay" : "11 months"}">${locale === "tr" ? "11 ay" : "11 months"}</option>
+                <option value="${locale === "tr" ? "12 ay" : "12 months"}">${locale === "tr" ? "12 ay" : "12 months"}</option>
               </select>
             </label>
             <label class="form-field form-field--full">

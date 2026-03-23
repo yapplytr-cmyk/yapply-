@@ -2585,6 +2585,7 @@ function setupDeveloperPublicProfile(content) {
           feedback.style.color = "var(--success-500, #22c55e)";
         }
         form.querySelectorAll("input, textarea, button").forEach((el) => { el.disabled = true; });
+        showStatusToast("success", formLabels.successMessage || "Review submitted successfully!");
       } catch (err) {
         if (feedback) {
           feedback.textContent = err?.message || formLabels.errorMessage || "Could not submit review.";
