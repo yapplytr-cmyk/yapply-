@@ -376,14 +376,25 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
     }
 
     if (goBtn) {
-      goBtn.addEventListener("click", () => {
+      goBtn.addEventListener("click", async () => {
         const target = selectedRole === "developer"
           ? "./open-marketplace.html"
           : "./client-project-submission.html";
-        if (typeof window.navigateTo === "function") {
-          window.navigateTo(target);
-        } else {
-          window.location.href = target;
+        const nav = () => {
+          if (typeof window.navigateTo === "function") {
+            window.navigateTo(target);
+          } else {
+            window.location.href = target;
+          }
+        };
+        // Show post-signup onboarding tutorial (3 slides) before navigating
+        try {
+          const { showOnboardingTutorial } = await import("./onboardingTutorial.js");
+          const lang = isTr ? "tr" : "en";
+          showOnboardingTutorial(lang, nav);
+        } catch (_tutorialErr) {
+          console.warn("[yapply] Tutorial load error", _tutorialErr);
+          nav(); // fallback: navigate directly
         }
       });
     }

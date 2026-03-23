@@ -31,73 +31,38 @@ function _isNativeApp() {
 const IS_NATIVE_APP = _isNativeApp();
 
 /* ── iOS keyboard handling — prevent page shift ─── */
-// The problem: when the iOS keyboard opens, the WKWebView shrinks.
-// Because <body> is position:fixed with bottom:0, it compresses and
-// the content jumps upward. Fix: lock the body to the INITIAL full
-// viewport height so the native resize cannot affect it. Then use
-// visualViewport to detect the keyboard and scroll the focused input
-// into view ourselves.
+// Lock <body> height to the initial viewport so it never shrinks when
+// the iOS keyboard opens and the WKWebView resizes. No layout changes,
+// no scrolling, no class-toggling that moves content. Page stays still.
 (function initKeyboardHandler() {
   if (!IS_NATIVE_APP) return;
 
-  // Capture the full viewport height before any keyboard opens.
+  // Lock body height to the initial full viewport.
   const fullHeight = window.innerHeight;
-  const html = document.documentElement;
-  const body = document.body;
+  document.documentElement.style.setProperty("--full-vh", fullHeight + "px");
 
-  // Lock body to this height via a CSS custom property.
-  // CSS will use this instead of bottom:0.
-  html.style.setProperty("--full-vh", fullHeight + "px");
-
+  // Toggle a minimal class so we can fade out the floating tab bar / FAB
+  // (both position:fixed — no layout impact whatsoever).
   const vv = window.visualViewport;
-  let _keyboardOpen = false;
-  const THRESHOLD = 80; // px shrink to count as keyboard
+  if (!vv) return;
 
-  function onViewportChange() {
-    if (!vv) return;
-    const isOpen = (fullHeight - vv.height) > THRESHOLD;
-
-    if (isOpen && !_keyboardOpen) {
-      _keyboardOpen = true;
-      html.classList.add("keyboard-open");
-      // Scroll focused input into the visible area
-      setTimeout(() => {
-        const el = document.activeElement;
-        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT")) {
-          // Calculate where the element is relative to the visible viewport
-          const rect = el.getBoundingClientRect();
-          const visibleBottom = vv.height + vv.offsetTop;
-          // If the input is below the visible area, scroll body to reveal it
-          if (rect.bottom > visibleBottom - 20) {
-            const scrollBy = rect.bottom - visibleBottom + 80;
-            body.scrollTop += scrollBy;
-          }
-        }
-      }, 50);
-    } else if (!isOpen && _keyboardOpen) {
-      _keyboardOpen = false;
-      html.classList.remove("keyboard-open");
+  let _open = false;
+  vv.addEventListener("resize", () => {
+    const isOpen = (fullHeight - vv.height) > 80;
+    if (isOpen !== _open) {
+      _open = isOpen;
+      document.documentElement.classList.toggle("keyboard-open", isOpen);
     }
-  }
-
-  if (vv) {
-    vv.addEventListener("resize", onViewportChange);
-    vv.addEventListener("scroll", onViewportChange);
-  }
-
-  // Fallback: also listen for focus/blur on inputs
-  document.addEventListener("focusin", (e) => {
-    const t = e.target;
-    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) {
-      // Give keyboard time to appear, then re-check
-      setTimeout(onViewportChange, 300);
-      setTimeout(onViewportChange, 600);
-    }
-  });
-  document.addEventListener("focusout", () => {
-    setTimeout(onViewportChange, 100);
   });
 })();
+
+/* ── Welcome page tracking ─── */
+function _hasShownWelcome() {
+  try {
+    return sessionStorage.getItem("yapply-welcome-dismissed") === "1"
+      || localStorage.getItem("yapply-onboarding-tutorial-seen") === "1";
+  } catch (_) { return false; }
+}
 
 /* ── SPA-style soft navigation for native app (no white flash) ─── */
 const _pageRouteMap = {
@@ -4166,6 +4131,26 @@ async function renderPage(localeOverride) {
       const authSyncPromise = syncAuthState();
       if (authFastPathPages.has(page)) {
         await authSyncPromise.catch(() => {});
+      }
+
+      // ── Native welcome page for first-time unauthenticated users ──
+      if (IS_NATIVE_APP && page === "open-marketplace") {
+        await authSyncPromise.catch(() => {});
+        const _welcomeSession = getAuthSession();
+        if (!_welcomeSession?.authenticated && !_hasShownWelcome()) {
+          try {
+            const { createWelcomePage, initWelcomePage } = await import("./components/welcomePage.js");
+            appRoot.innerHTML = createWelcomePage(locale);
+            initWelcomePage(navigateTo);
+            // Dismiss splash + loader, but NO tab bar on welcome page
+            if (_birdLoaderTimeout) { clearTimeout(_birdLoaderTimeout); _birdLoaderTimeout = null; }
+            hideBirdLoader();
+            dismissSplashScreen();
+            return;
+          } catch (welcomeErr) {
+            console.error("[yapply] Welcome page error", welcomeErr);
+          }
+        }
       }
 
       // Load data in parallel (SWR cache returns instantly if available)

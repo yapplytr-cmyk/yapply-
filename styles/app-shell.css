@@ -276,8 +276,7 @@ html.has-tab-bar body {
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: var(--full-vh, 100%);
+  height: var(--full-vh, 100vh);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
@@ -314,24 +313,18 @@ html.has-tab-bar .theme-fab {
 }
 
 /* ── Keyboard-open state (iOS native) ────────────── */
-/* Body is already height-locked via --full-vh so it won't shrink.
-   When keyboard is visible, hide the tab bar, stop centering the
-   wizard, and add bottom padding so user can scroll past keyboard. */
+/* Body height is locked via --full-vh so it never shrinks.
+   NOTHING changes on the page layout when the keyboard opens.
+   We only hide the floating tab bar (position:fixed, no layout impact). */
 html.keyboard-open .tab-bar {
-  transform: translateY(100%);
+  opacity: 0;
   pointer-events: none;
-  transition: transform 0.2s ease;
-}
-html.keyboard-open.has-tab-bar body {
-  padding-bottom: 2rem;
-}
-html.keyboard-open .wizard-container {
-  justify-content: flex-start !important;
-  min-height: auto !important;
-  padding-bottom: 260px; /* space below inputs so they can scroll above keyboard */
+  transition: opacity 0.15s ease;
 }
 html.keyboard-open .theme-fab {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
 }
 
 /* ── Light mode adjustments ────────────────────── */
@@ -1924,4 +1917,273 @@ html.has-tab-bar .client-dashboard-card__summary--loading::after {
 .onboarding-dot--done {
   background: var(--accent);
   opacity: 0.5;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   WELCOME PAGE (first launch, unauthenticated)
+   ═══════════════════════════════════════════════════ */
+
+.welcome-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.welcome-page__inner {
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.welcome-page__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcome-page__bird {
+  width: 120px;
+  height: 110px;
+  margin-bottom: 1.5rem;
+}
+
+.welcome-page__bird svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.welcome-page__title {
+  font-family: var(--font-display, "Inter", sans-serif);
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.welcome-page__subtitle {
+  font-family: var(--font-body, "Sora", sans-serif);
+  font-size: 0.92rem;
+  color: var(--text-dim, #9ca3af);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.welcome-page__actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.welcome-page__btn {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  font-family: var(--font-body, "Sora", sans-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-xs, 0.875rem);
+  border: none;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.welcome-page__btn:active {
+  transform: scale(0.97);
+}
+
+.welcome-page__btn--primary {
+  background: var(--accent, #c9a84c);
+  color: #fff;
+}
+
+html[data-theme="light"] .welcome-page__btn--primary {
+  color: #fff;
+}
+
+.welcome-page__btn--secondary {
+  background: var(--surface, #101216);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+html[data-theme="light"] .welcome-page__btn--secondary {
+  background: var(--surface, #ffffff);
+}
+
+.welcome-page__skip {
+  background: none;
+  border: none;
+  color: var(--text-dim, #9ca3af);
+  font-family: var(--font-body, "Sora", sans-serif);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  opacity: 0.7;
+  transition: opacity 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.welcome-page__skip:active {
+  opacity: 1;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   POST-SIGNUP ONBOARDING TUTORIAL (3-slide overlay)
+   ═══════════════════════════════════════════════════ */
+
+.ob-tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  padding: 1.25rem;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.ob-tutorial--visible {
+  opacity: 1;
+}
+
+.ob-tutorial__card {
+  background: var(--bg, #060709);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 1.5rem);
+  max-width: 380px;
+  width: 100%;
+  padding: 2rem 1.5rem 1.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.ob-tutorial__slides {
+  position: relative;
+  min-height: 260px;
+  touch-action: pan-y;
+}
+
+.ob-tutorial__slide {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 0.5rem;
+}
+
+.ob-tutorial__slide--active {
+  display: flex;
+  animation: ob-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ob-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ob-tutorial__icon {
+  width: 80px;
+  height: 80px;
+  color: var(--accent, #c9a84c);
+  margin-bottom: 0.5rem;
+}
+
+.ob-tutorial__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ob-tutorial__title {
+  font-family: var(--font-display, "Inter", sans-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.ob-tutorial__desc {
+  font-family: var(--font-body, "Sora", sans-serif);
+  font-size: 0.88rem;
+  color: var(--text-dim, #9ca3af);
+  margin: 0;
+  line-height: 1.55;
+  max-width: 300px;
+}
+
+.ob-tutorial__dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 1.25rem 0 1rem;
+}
+
+.ob-tutorial__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: background 250ms, transform 250ms;
+}
+
+.ob-tutorial__dot--active {
+  background: var(--accent, #c9a84c);
+  transform: scale(1.3);
+}
+
+.ob-tutorial__btn {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 1.5rem;
+  font-family: var(--font-body, "Sora", sans-serif);
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-radius: var(--radius-xs, 0.875rem);
+  border: none;
+  background: var(--accent, #c9a84c);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ob-tutorial__btn:active {
+  transform: scale(0.97);
+}
+
+html[data-theme="dark"] .ob-tutorial__card {
+  background: var(--bg, #060709);
+}
+
+html[data-theme="light"] .ob-tutorial__card {
+  background: var(--bg, #f3efe6);
+}
+
+html[data-theme="light"] .ob-tutorial__btn {
+  color: #fff;
 }
