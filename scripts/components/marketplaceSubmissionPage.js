@@ -687,7 +687,11 @@ export function createMarketplaceSubmissionPage(pageContent, submissionType) {
   return `
     <section class="wizard-container section-shell" data-wizard-root data-wizard-type="${isProfessional ? "professional" : "client"}" data-wizard-locale="${isTr ? "tr" : "en"}">
       <div class="wizard-bird" data-wizard-bird>
-        <img class="wizard-bird__img" src="${firstBird}" alt="" data-wizard-bird-img />
+        <div class="wizard-bird__track">
+          <div class="wizard-bird__mover" data-wizard-bird-mover>
+            <img class="wizard-bird__img" src="${firstBird}" alt="" data-wizard-bird-img />
+          </div>
+        </div>
       </div>
       ${createProgressDots(steps.length, 0)}
       <div class="wizard-card" data-wizard-card>
@@ -952,15 +956,18 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
     }
 
     /* ── Bird mascot transition ── */
-    const birdContainer = root.querySelector("[data-wizard-bird]");
+    const birdMover = root.querySelector("[data-wizard-bird-mover]");
     const birdImg = root.querySelector("[data-wizard-bird-img]");
-    if (birdContainer && birdImg) {
+    if (birdMover && birdImg) {
       const nextSrc = BIRD_STEP_IMAGES[step.id] || "";
-      if (nextSrc && birdImg.src !== nextSrc) {
-        // Horizontal position: bird walks left→right across steps
-        const progress = WIZARD_STEPS.length > 1 ? currentStep / (WIZARD_STEPS.length - 1) : 0;
-        birdContainer.style.setProperty("--bird-progress", progress);
-        // Crossfade: fade out, swap src, fade in
+      const progress = WIZARD_STEPS.length > 1 ? currentStep / (WIZARD_STEPS.length - 1) : 0;
+
+      // Move the bird along the track (left → right)
+      birdMover.style.setProperty("--bird-progress", progress);
+
+      // Swap bird pose with crossfade if image changed
+      if (nextSrc && !birdImg.src.endsWith(nextSrc.replace("./", ""))) {
+        birdImg.classList.remove("wizard-bird__img--enter", "wizard-bird__img--fly-off");
         birdImg.classList.add("wizard-bird__img--exit");
         setTimeout(() => {
           birdImg.src = nextSrc;
@@ -968,12 +975,9 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
           birdImg.classList.add("wizard-bird__img--enter");
           setTimeout(() => {
             birdImg.classList.remove("wizard-bird__img--enter");
-          }, 350);
+          }, 380);
         }, 200);
       }
-      // Update position even if image didn't change
-      const progress = WIZARD_STEPS.length > 1 ? currentStep / (WIZARD_STEPS.length - 1) : 0;
-      birdContainer.style.setProperty("--bird-progress", progress);
     }
 
     backBtn.hidden = currentStep === 0;
@@ -1118,6 +1122,13 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
   async function handleSubmit() {
     nextBtn.disabled = true;
     nextBtn.textContent = isTr ? "Gönderiliyor..." : "Submitting...";
+
+    // Bird flies off to the right on submit
+    const flyBirdImg = root.querySelector("[data-wizard-bird-img]");
+    if (flyBirdImg) {
+      flyBirdImg.classList.remove("wizard-bird__img--enter", "wizard-bird__img--exit");
+      flyBirdImg.classList.add("wizard-bird__img--fly-off");
+    }
 
     try {
       const formData = new FormData();
