@@ -153,7 +153,7 @@ function createBidCounterCard(session, locale) {
         <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width 400ms ease"></div>
       </div>
       <p style="font-size:0.78rem;color:var(--text-dim,#8f8a7d);margin:0">${locale === "tr" ? "Yenileme tarihi:" : "Resets on:"} ${resetDate}</p>
-      ${plan === "free" ? `<a href="https://yapplytr.com/developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${locale === "tr" ? "Planı Yükselt" : "Upgrade Plan"}</a>` : ""}
+      ${plan === "free" ? `<a href="./developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${locale === "tr" ? "Planı Yükselt" : "Upgrade Plan"}</a>` : ""}
     </article>
   `;
 }

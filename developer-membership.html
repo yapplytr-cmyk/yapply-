@@ -23,8 +23,8 @@
       document.documentElement.dataset.theme = localStorage.getItem("yapply-theme") || "dark";
     </script>
   </head>
-  <body>
-    <div id="app-root"></div>
+  <body data-page="developer-membership">
+    <div id="app-root" data-loading="true"></div>
     <script type="module" src="./scripts/main.js"></script>
   </body>
 </html>

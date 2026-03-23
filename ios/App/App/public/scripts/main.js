@@ -2121,7 +2121,7 @@ function showBidLimitModal() {
   modal.querySelector("[data-bid-limit-upgrade]")?.addEventListener("click", () => {
     modal.remove();
     // Redirect to website membership page
-    window.location.href = "https://yapplytr.com/developer-membership.html";
+    window.location.href = "./developer-membership.html";
   });
 
   // Close on backdrop click
