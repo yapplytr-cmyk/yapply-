@@ -96,6 +96,15 @@ export function createNavbar(content, currentLocale) {
     } else {
       navLinksSource.unshift(createListingLink);
     }
+
+    // "Tekliflerim" (My Bids) link — web navbar only (not native tab bar)
+    const bidsLink = {
+      href: "./client-bids.html",
+      label: currentLocale === "tr" ? "Tekliflerim" : "My Bids",
+    };
+    if (!navLinksSource.some((l) => l.href === bidsLink.href)) {
+      navLinksSource.push(bidsLink);
+    }
   }
 
   const navLinks = navLinksSource
