@@ -59,8 +59,7 @@ const IS_NATIVE_APP = _isNativeApp();
 /* ── Welcome page tracking ─── */
 function _hasShownWelcome() {
   try {
-    return sessionStorage.getItem("yapply-welcome-dismissed") === "1"
-      || localStorage.getItem("yapply-onboarding-tutorial-seen") === "1";
+    return sessionStorage.getItem("yapply-welcome-dismissed") === "1";
   } catch (_) { return false; }
 }
 
