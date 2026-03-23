@@ -224,8 +224,9 @@ export function createTabBar(locale) {
     `;
   }).join("");
 
+  const devClass = role === "developer" ? " tab-bar--dev" : "";
   return `
-    <nav class="tab-bar" aria-label="App navigation">
+    <nav class="tab-bar${devClass}" aria-label="App navigation">
       ${tabItems}
     </nav>
   `;
