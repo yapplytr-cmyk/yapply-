@@ -10,7 +10,7 @@ const BIRD_BUSINESS_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-svg
 
 const BIRD_SPORT_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-svg"><circle cx="100" cy="100" r="96" fill="#e0e8d8" stroke="#333" stroke-width="3"/><ellipse cx="100" cy="120" rx="45" ry="35" fill="#8e4878"/><circle cx="100" cy="80" r="30" fill="#9e5888"/><circle cx="112" cy="72" r="4" fill="#222"/><circle cx="112" cy="72" r="1.5" fill="#fff"/><path d="M126 80l16-6-10 14z" fill="#f0a030"/><rect x="68" y="100" width="64" height="55" rx="6" fill="#2a3560"/><path d="M68 118h64" stroke="#c9a84c" stroke-width="3"/><path d="M68 126h64" stroke="#c9a84c" stroke-width="1.5"/><path d="M88 100v55M112 100v55" stroke="#3a4570" stroke-width="1"/></svg>`;
 
-const BIRD_ARCHITECT_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-svg"><circle cx="100" cy="100" r="96" fill="#f0e8d0" stroke="#333" stroke-width="3"/><ellipse cx="100" cy="120" rx="45" ry="35" fill="#a0b848"/><circle cx="100" cy="80" r="30" fill="#b0c858"/><circle cx="108" cy="72" r="7" fill="none" stroke="#555" stroke-width="2.5"/><circle cx="120" cy="72" r="7" fill="none" stroke="#555" stroke-width="2.5"/><path d="M96 72h4M117 72h6" stroke="#555" stroke-width="2"/><path d="M126 82l16-6-10 14z" fill="#f0a030"/><rect x="75" y="108" width="50" height="8" rx="3" fill="#8a7a50"/><path d="M80 116l-8 20M120 116l8 20" stroke="#8a7a50" stroke-width="3" stroke-linecap="round"/><rect x="140" y="70" width="12" height="50" rx="3" fill="#6090c0" opacity="0.7"/></svg>`;
+const BRIEFCASE_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-svg"><circle cx="100" cy="100" r="96" fill="#f0e8d0" stroke="#333" stroke-width="3"/><rect x="50" y="85" width="100" height="70" rx="10" fill="#c9a84c" stroke="#a08030" stroke-width="2.5"/><path d="M78 85V72a22 22 0 0144 0v13" fill="none" stroke="#a08030" stroke-width="3" stroke-linecap="round"/><rect x="50" y="108" width="100" height="6" rx="2" fill="#d4b050"/><rect x="88" y="102" width="24" height="16" rx="4" fill="#f5e6a3" stroke="#a08030" stroke-width="1.5"/><circle cx="100" cy="110" r="3" fill="#a08030"/></svg>`;
 
 const BIRD_HELMET_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-svg"><circle cx="100" cy="100" r="96" fill="#e0e8f0" stroke="#333" stroke-width="3"/><ellipse cx="100" cy="120" rx="45" ry="35" fill="#e8823a"/><circle cx="100" cy="80" r="30" fill="#e8823a"/><circle cx="112" cy="72" r="4" fill="#222"/><circle cx="112" cy="72" r="1.5" fill="#fff"/><path d="M126 80l16-6-10 14z" fill="#f0a030"/><path d="M72 78c0-16 12-30 28-30s28 14 28 30" fill="#c9a84c" stroke="#a08030" stroke-width="2"/><rect x="68" y="76" width="64" height="8" rx="3" fill="#d4b050"/><rect x="70" y="105" width="60" height="45" rx="5" fill="#4a7a40"/><path d="M90 105v45M110 105v45" stroke="#3a6a30" stroke-width="1"/></svg>`;
 
@@ -199,7 +199,7 @@ export function createOnboardingWizard(content, locale) {
             </button>
             <button class="onboarding-role-card" type="button" data-onboarding-devtype="business">
               <div class="onboarding-role-card__bird">
-                ${BIRD_ARCHITECT_SVG}
+                ${BRIEFCASE_SVG}
               </div>
               <span class="onboarding-role-card__label">${isTr ? "İşletme" : "Business"}</span>
               <span class="onboarding-role-card__desc">${isTr ? "Şirketiniz adına kayıt olun" : "Register as a company"}</span>
