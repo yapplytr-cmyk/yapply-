@@ -2672,7 +2672,7 @@ function setupDeveloperPublicProfile(content) {
       try {
         const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
         const supabase = await getSupabaseClient();
-        await supabase.from("profiles").update({ specialties: newDesc }).eq("id", session.user.id);
+        await supabase.from("profiles").update({ work_description: newDesc }).eq("id", session.user.id);
         descForm.setAttribute("hidden", "");
         descDisplay.removeAttribute("hidden");
         const descP = descDisplay.querySelector("p");
