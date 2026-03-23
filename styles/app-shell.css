@@ -248,19 +248,19 @@ html:not(.has-tab-bar) .app-splash {
 /* ── Developer 4-tab layout: center İlan Ver precisely ── */
 .tab-bar--dev {
   display: grid;
-  grid-template-columns: 1fr 1fr 68px 1fr 1fr;
+  grid-template-columns: 1fr 68px 1fr 1fr;
   justify-items: center;
-  align-items: stretch;
+  align-items: end;
 }
 
-/* Keşfet sits in col 1 */
-.tab-bar--dev > .tab-bar__item:nth-child(1) { grid-column: 1; }
-/* İlan Ver center button in col 3 (dead center) */
-.tab-bar--dev > .tab-bar__item--center { grid-column: 3; }
-/* Tekliflerim in col 4 */
-.tab-bar--dev > .tab-bar__item:nth-child(3) { grid-column: 4; }
-/* Ayarlar in col 5 */
-.tab-bar--dev > .tab-bar__item:nth-child(4) { grid-column: 5; }
+/* Keşfet centered between left edge and İlan Ver */
+.tab-bar--dev > .tab-bar__item:nth-child(1) { grid-column: 1; justify-self: center; }
+/* İlan Ver dead center */
+.tab-bar--dev > .tab-bar__item--center { grid-column: 2; }
+/* Tekliflerim */
+.tab-bar--dev > .tab-bar__item:nth-child(3) { grid-column: 3; }
+/* Ayarlar */
+.tab-bar--dev > .tab-bar__item:nth-child(4) { grid-column: 4; }
 
 /* Slightly smaller icons & labels for side tabs in dev layout */
 .tab-bar--dev > .tab-bar__item:not(.tab-bar__item--center) .tab-bar__icon {
