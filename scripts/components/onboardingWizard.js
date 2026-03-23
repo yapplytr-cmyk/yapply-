@@ -310,23 +310,31 @@ export function createOnboardingWizard(content, locale) {
                   <span>${isTr ? "Portföy Linki (İsteğe Bağlı)" : "Portfolio Link (Optional)"}</span>
                   <input type="url" name="individualPortfolioLink" placeholder="https://portfolio.com" />
                 </label>
-                <div class="onboarding-field">
+                <div class="onboarding-field" data-onboarding-selfie-section>
                   <span>${isTr ? "Selfie (Zorunlu)" : "Selfie (Required)"}</span>
-                  <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Ön kamerayla bir selfie çekin" : "Take a selfie with the front camera"}</p>
-                  <video data-onboarding-selfie-video autoplay playsinline muted style="width:100%;max-width:280px;border-radius:var(--radius-sm);display:none"></video>
-                  <canvas data-onboarding-selfie-canvas style="display:none"></canvas>
-                  <img data-onboarding-selfie-preview style="display:none;width:100%;max-width:280px;border-radius:var(--radius-sm);margin-top:8px" />
-                  <div style="display:flex;gap:8px;margin-top:10px">
-                    <button type="button" class="button button--secondary" data-onboarding-selfie-start style="font-size:0.85rem;padding:8px 16px">
-                      ${isTr ? "Kamerayı Aç" : "Open Camera"}
-                    </button>
-                    <button type="button" class="button button--primary" data-onboarding-selfie-capture style="font-size:0.85rem;padding:8px 16px;display:none">
-                      ${isTr ? "Fotoğraf Çek" : "Take Photo"}
-                    </button>
-                    <button type="button" class="button button--secondary" data-onboarding-selfie-retake style="font-size:0.85rem;padding:8px 16px;display:none">
-                      ${isTr ? "Tekrar Çek" : "Retake"}
-                    </button>
+                  <!-- Native app: camera UI -->
+                  <div data-onboarding-selfie-camera-ui>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Ön kamerayla bir selfie çekin" : "Take a selfie with the front camera"}</p>
+                    <video data-onboarding-selfie-video autoplay playsinline muted style="width:100%;max-width:280px;border-radius:var(--radius-sm);display:none"></video>
+                    <canvas data-onboarding-selfie-canvas style="display:none"></canvas>
+                    <div style="display:flex;gap:8px;margin-top:10px">
+                      <button type="button" class="button button--secondary" data-onboarding-selfie-start style="font-size:0.85rem;padding:8px 16px">
+                        ${isTr ? "Kamerayı Aç" : "Open Camera"}
+                      </button>
+                      <button type="button" class="button button--primary" data-onboarding-selfie-capture style="font-size:0.85rem;padding:8px 16px;display:none">
+                        ${isTr ? "Fotoğraf Çek" : "Take Photo"}
+                      </button>
+                      <button type="button" class="button button--secondary" data-onboarding-selfie-retake style="font-size:0.85rem;padding:8px 16px;display:none">
+                        ${isTr ? "Tekrar Çek" : "Retake"}
+                      </button>
+                    </div>
                   </div>
+                  <!-- Website: file upload UI -->
+                  <div data-onboarding-selfie-upload-ui style="display:none">
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Bir selfie fotoğrafı yükleyin" : "Upload a selfie photo"}</p>
+                    <input type="file" accept="image/*" data-onboarding-selfie-file style="margin-top:6px" />
+                  </div>
+                  <img data-onboarding-selfie-preview style="display:none;width:100%;max-width:280px;border-radius:var(--radius-sm);margin-top:8px" />
                   <input type="hidden" name="selfieData" data-onboarding-selfie-data />
                 </div>
               </div>
@@ -412,6 +420,20 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   let selfieStream = null; // MediaStream for selfie camera
   let selfieDataUrl = ""; // base64 selfie capture
   let businessPhotoFiles = []; // File objects for business photos
+
+  // Detect native app vs website
+  const _origin = window.location.origin;
+  const _hostname = window.location.hostname;
+  const _port = window.location.port;
+  const isNativeApp = _origin === "capacitor://localhost" || (_hostname === "localhost" && !_port);
+
+  // Toggle selfie UI: camera for native, file upload for website
+  const selfieCameraUI = wizard.querySelector("[data-onboarding-selfie-camera-ui]");
+  const selfieUploadUI = wizard.querySelector("[data-onboarding-selfie-upload-ui]");
+  if (!isNativeApp) {
+    if (selfieCameraUI) selfieCameraUI.style.display = "none";
+    if (selfieUploadUI) selfieUploadUI.style.display = "";
+  }
 
   // Pending verification state (set when signup returns PENDING_EMAIL_VERIFICATION)
   let pendingEmail = "";
@@ -557,6 +579,12 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       const theme = btn.dataset.onboardingTheme;
       document.documentElement.dataset.theme = theme;
       try { localStorage.setItem("yapply-theme", theme); } catch (_) {}
+      // Update background color for website and native
+      const bgColor = theme === "light" ? "#f3efe6" : "#060709";
+      document.documentElement.style.backgroundColor = bgColor;
+      document.body.style.backgroundColor = bgColor;
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.content = bgColor;
       wizard.querySelectorAll("[data-onboarding-theme]").forEach((b) => {
         b.classList.toggle("onboarding-theme-btn--active", b === btn);
       });
@@ -950,6 +978,25 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       selfieRetakeBtn.style.display = "none";
       if (selfieStartBtn) selfieStartBtn.style.display = "";
       selfieStartBtn?.click();
+    });
+  }
+
+  // ─── Selfie file upload for website ───
+  const selfieFileInput = wizard.querySelector("[data-onboarding-selfie-file]");
+  if (selfieFileInput) {
+    selfieFileInput.addEventListener("change", () => {
+      const file = selfieFileInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        selfieDataUrl = e.target.result;
+        if (selfieDataInput) selfieDataInput.value = selfieDataUrl;
+        if (selfiePreview) {
+          selfiePreview.src = selfieDataUrl;
+          selfiePreview.style.display = "block";
+        }
+      };
+      reader.readAsDataURL(file);
     });
   }
 

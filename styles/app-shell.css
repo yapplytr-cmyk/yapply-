@@ -262,6 +262,11 @@ html:not(.has-tab-bar) .app-splash {
   justify-self: center;
 }
 
+/* Keşfet nudge left */
+.tab-bar--dev > .tab-bar__item:nth-child(2) { transform: translateX(-6px); }
+/* Tekliflerim nudge right */
+.tab-bar--dev > .tab-bar__item:nth-child(4) { transform: translateX(6px); }
+
 /* İlan Ver absolute center (col 3) */
 .tab-bar--dev > .tab-bar__item--center {
   width: 68px;
@@ -2243,4 +2248,67 @@ html[data-theme="light"] .ob-tutorial__card {
 
 html[data-theme="light"] .ob-tutorial__btn {
   color: #fff;
+}
+
+/* ── Desktop / Website wizard scaling ──────────── */
+/* When not in native app (no .has-tab-bar), make wizard larger for desktop screens */
+@media (min-width: 768px) {
+  html:not(.has-tab-bar) .onboarding-wizard {
+    max-width: 720px;
+    padding: 3rem 2rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-step {
+    max-width: 540px;
+  }
+
+  html:not(.has-tab-bar) .onboarding-step__title {
+    font-size: 2rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-step__desc {
+    font-size: 1rem;
+    max-width: 420px;
+  }
+
+  html:not(.has-tab-bar) .onboarding-field span {
+    font-size: 0.85rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-field input,
+  html:not(.has-tab-bar) .onboarding-field select,
+  html:not(.has-tab-bar) .onboarding-field textarea {
+    padding: 0.85rem 1.1rem;
+    font-size: 1rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-submit-btn {
+    padding: 0.9rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-theme-btn {
+    padding: 1rem 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-role-btn {
+    padding: 1.2rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-role-btn__name {
+    font-size: 1rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-role-btn__desc {
+    font-size: 0.85rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-devtype-btn {
+    padding: 1.2rem;
+  }
+
+  html:not(.has-tab-bar) .onboarding-form-group {
+    gap: 1rem;
+  }
 }

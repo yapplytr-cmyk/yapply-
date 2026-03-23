@@ -61,18 +61,42 @@ function getTabConfig(locale, role) {
     return [profileTab, searchTab, createTab, bidsTab, settingsTab];
   }
 
-  // Client: keep popup-based dashboard tab
-  const dashboardTab = {
-    id: "tab-dashboard",
-    label: isTr ? "Hesabım" : "My Account",
+  // Client: flat 5 tabs — İlanlarım | Keşfet | İlan Ver | Tekliflerim | Ayarlar
+  const listingsTab = {
+    id: "tab-listings",
+    label: isTr ? "İlanlarım" : "Listings",
     href: "./client-dashboard.html",
-    icon: birdProfileSVG(role),
+    icon: mailboxTabIconSVG,
     page: "client-dashboard",
-    isDashboard: true,
   };
 
-  return [searchTab, createTab, dashboardTab];
+  const clientBidsTab = {
+    id: "tab-client-bids",
+    label: isTr ? "Tekliflerim" : "My Bids",
+    href: "./client-bids.html",
+    icon: moneyTabIconSVG,
+    page: "client-bids",
+  };
+
+  const clientSettingsTab = {
+    id: "tab-settings",
+    label: isTr ? "Ayarlar" : "Settings",
+    href: "./account-settings.html",
+    icon: settingsTabIconSVG,
+    page: "account-settings",
+  };
+
+  return [listingsTab, searchTab, createTab, clientBidsTab, clientSettingsTab];
 }
+
+const mailboxTabIconSVG = `
+  <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 11V19C4 19.5523 4.44772 20 5 20H19C19.5523 20 20 19.5523 20 19V11"/>
+    <path d="M2 11L12 4L22 11"/>
+    <rect x="8" y="12" width="8" height="4" rx="1" opacity="0.3"/>
+    <path d="M10 12V10C10 8.89543 10.8954 8 12 8C13.1046 8 14 8.89543 14 10V12"/>
+  </svg>
+`;
 
 const moneyTabIconSVG = `
   <svg class="tab-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -169,7 +193,7 @@ export function createTabBar(locale) {
   const settingsHref = "./account-settings.html";
 
   const tabItems = tabs.map((tab) => {
-    const isActive = tab.page === currentPage || (tab.isDashboard && (currentPage === "account-settings" || currentPage === "client-bids"));
+    const isActive = tab.page === currentPage;
     const activeClass = isActive ? " tab-bar__item--active" : "";
     const centerClass = tab.isCenter ? " tab-bar__item--center" : "";
 
@@ -230,7 +254,7 @@ export function createTabBar(locale) {
       `;
     }
 
-    const needsAuth = tab.id === "tab-dashboard" || tab.id === "tab-bids" || tab.id === "tab-settings" || tab.id === "tab-profile";
+    const needsAuth = tab.id === "tab-dashboard" || tab.id === "tab-bids" || tab.id === "tab-settings" || tab.id === "tab-profile" || tab.id === "tab-listings" || tab.id === "tab-client-bids";
     const href = needsAuth && !isAuthenticated ? "./login.html" : tab.href;
     return `
       <a class="tab-bar__item${activeClass}" href="${href}" data-tab-page="${tab.page}" id="${tab.id}">
@@ -240,7 +264,7 @@ export function createTabBar(locale) {
     `;
   }).join("");
 
-  const devClass = role === "developer" ? " tab-bar--dev" : "";
+  const devClass = (role === "developer" || role === "client") ? " tab-bar--dev" : "";
   return `
     <nav class="tab-bar${devClass}" aria-label="App navigation">
       ${tabItems}
