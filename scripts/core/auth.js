@@ -3,7 +3,7 @@ import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js?v=20
 import { getDefaultAvatarOptions } from "./accountSettingsStore.js";
 
 const PROFILE_SELECT_FIELDS =
-  "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,avatar_url,work_description,created_at,updated_at";
+  "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,avatar_url,created_at,updated_at";
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -113,7 +113,6 @@ function mapProfileRecord(data) {
     preferredRegion: data.preferred_region,
     website: data.website,
     avatarUrl: data.avatar_url,
-    workDescription: data.work_description || null,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
