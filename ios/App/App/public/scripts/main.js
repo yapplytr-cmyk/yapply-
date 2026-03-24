@@ -2041,30 +2041,27 @@ function setupMarketplaceBidForm(content) {
       form.setAttribute("hidden", "");
       setBidStatus("success");
 
+      // Notification is auto-created by PostgreSQL trigger (trg_notify_new_bid).
+      // Here we just fire the push notification Edge Function for iPhone alerts.
       try {
         const listingOwner = result?.listing?.ownerUserId;
-        const listingTitle = result?.listing?.title || result?.listing?.name || "";
-        const listingId = result?.listing?.id || formData.get("listingId") || "";
-        const currentUserId = getAuthSession()?.user?.id || "";
-        const isTR = document.documentElement.lang === "tr";
-        console.log("[yapply-notif] Bid notification target:", { listingOwner, listingId, listingTitle });
         if (listingOwner) {
-          const { addNotification } = await import("./core/notifications.js");
-          const notifResult = await addNotification(listingOwner, {
-            type: "new-bid",
-            title: isTR ? "Yeni Teklif" : "New Bid",
-            message: isTR ? `Bir geliştirici "${listingTitle}" ilanınıza teklif verdi` : `A developer placed a bid on "${listingTitle}"`,
-            href: "./client-dashboard.html#client-dashboard-active",
-            listingId,
-            senderUserId: currentUserId,
-          });
-          console.log("[yapply-notif] Bid notification result:", notifResult?.id || "null");
-        } else {
-          console.warn("[yapply-notif] No listingOwner found — notification skipped. result.listing:", JSON.stringify(result?.listing?.id || "none"));
+          const listingTitle = result?.listing?.title || result?.listing?.name || "";
+          const listingId = result?.listing?.id || formData.get("listingId") || "";
+          const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+          const supabase = await getSupabaseClient();
+          supabase.functions.invoke("send-push-notification", {
+            body: {
+              user_id: listingOwner,
+              title: "Yeni Teklif",
+              message: "Bir gelistirici " + (listingTitle || "") + " ilanina teklif verdi",
+              type: "new-bid",
+              listing_id: listingId || null,
+            },
+          }).catch((e) => console.warn("[yapply-push] Push invoke error:", e?.message));
+          console.log("[yapply-notif] Push invoked for listing owner:", listingOwner);
         }
-      } catch (notifErr) {
-        console.error("[yapply-notif] Bid notification error:", notifErr?.message || notifErr);
-      }
+      } catch (_) {}
 
       window.setTimeout(async () => {
         await renderPage(content.meta.locale);
