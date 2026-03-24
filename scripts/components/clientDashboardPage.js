@@ -261,6 +261,9 @@ function createListingCard(listing, content, kind = "active") {
     kind === "closed" && acceptedDevUserId && !alreadyReviewed
       ? `<button class="button button--primary" type="button" data-client-dashboard-toggle="review" data-listing-id="${listing.id}">${content.actions.leaveReview}</button>`
       : "",
+    kind === "closed"
+      ? `<button class="button button--danger" type="button" data-client-dashboard-delete="${listing.id}">${content.actions.deleteListing || "Delete"}</button>`
+      : "",
   ]
     .filter(Boolean)
     .join("");

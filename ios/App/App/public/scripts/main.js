@@ -3,6 +3,7 @@ import { getDefaultAvatarOptions } from "./core/accountSettingsStore.js";
 import {
   acceptClientDashboardBid,
   closeClientDashboardListing,
+  deleteBackendMarketplaceListing,
   deleteMarketplaceListing,
   enrichMarketplaceListingWithCreatorAvatar,
   enrichMarketplaceListingsWithCreatorAvatars,
@@ -2387,6 +2388,33 @@ function setupClientDashboard(content) {
         setButtonLoading(button, false);
         console.error("[yapply] Listing close failed:", error);
         window.alert(error?.message || (document.documentElement.lang === "tr" ? "İlan kapatılamadı." : "The listing could not be closed."));
+      }
+    });
+  });
+
+  // ─── Delete closed listing buttons ───
+  document.querySelectorAll("[data-client-dashboard-delete]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const listingId = button.getAttribute("data-client-dashboard-delete") || "";
+      if (!listingId) return;
+
+      const isTR = document.documentElement.lang === "tr";
+      const confirmMsg = isTR
+        ? "Bu ilanı kalıcı olarak silmek istediğinize emin misiniz?"
+        : "Are you sure you want to permanently delete this listing?";
+      if (!window.confirm(confirmMsg)) return;
+
+      setButtonLoading(button, true);
+      try {
+        await deleteBackendMarketplaceListing(listingId);
+        invalidateAllMarketplaceSwrCaches();
+        showStatusToast("deleted", isTR ? "İlan silindi" : "Listing deleted");
+        const card = button.closest("[data-listing-id]");
+        if (card) card.remove();
+      } catch (error) {
+        setButtonLoading(button, false);
+        console.error("[yapply] Listing delete failed:", error);
+        window.alert(error?.message || (isTR ? "İlan silinemedi." : "The listing could not be deleted."));
       }
     });
   });
