@@ -4,10 +4,12 @@ from urllib.parse import parse_qs, urlparse
 
 from api._utils import (
   handle_marketplace_bid_create,
+  handle_marketplace_inquiry_create,
   handle_marketplace_listing_create,
   handle_marketplace_listing_index,
   handle_marketplace_listing_detail,
   handle_marketplace_listing_status_update,
+  handle_notification_send,
   json_response,
   run_api_action,
 )
@@ -159,6 +161,14 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "marketplace/bids/create":
       run_supabase_action(self, handle_supabase_bid_create)
+      return
+
+    if route == "marketplace/inquiry/create":
+      run_api_action(self, handle_marketplace_inquiry_create)
+      return
+
+    if route == "notify":
+      run_api_action(self, handle_notification_send)
       return
 
     json_response(

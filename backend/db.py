@@ -1075,6 +1075,11 @@ def serialize_marketplace_listing(row: sqlite3.Row, connection: sqlite3.Connecti
   if skip_bids:
     latest_bids = []
     bid_count = 0
+  elif isinstance(row, dict) and "_pg_bids" in row:
+    # Row fetched directly from PG REST API — bids are already embedded
+    pg_bids = row.get("_pg_bids") or []
+    latest_bids = [serialize_marketplace_bid(b) for b in pg_bids[:BID_PREVIEW_LIMIT]]
+    bid_count = len(pg_bids)
   elif _uses_remote_marketplace_store() and not isinstance(row, sqlite3.Row):
     latest_bids = _list_remote_marketplace_bids_for_listing(row["id"], BID_PREVIEW_LIMIT)
     bid_count = _count_remote_marketplace_bids_for_listing(row["id"])
@@ -1331,10 +1336,140 @@ def delete_marketplace_listing(listing_id: str) -> bool:
     return deleted.rowcount > 0
 
 
+def _fetch_pg_listing_via_rest(listing_id: str) -> dict | None:
+  """Fetch a listing directly from the Supabase PostgreSQL REST API (bypasses cloud storage)."""
+  if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+    return None
+  try:
+    rest_path = f"/rest/v1/marketplace_listings?id=eq.{quote(listing_id)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&limit=1"
+    req = Request(
+      f"{SUPABASE_URL}{rest_path}",
+      method="GET",
+      headers={
+        "Accept": "application/json",
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+        "Prefer": "return=representation",
+      },
+    )
+    with urlopen(req, timeout=12) as resp:
+      rows = json.loads(resp.read())
+    if isinstance(rows, list) and rows:
+      row = rows[0]
+      # Normalize to the shape serialize_marketplace_listing expects
+      bids_raw = row.pop("listing_bids", []) or []
+      bids = []
+      for b in bids_raw:
+        bid_payload = b.get("payload") or {}
+        bids.append({
+          "id": b.get("id"),
+          "listing_id": listing_id,
+          "bidder_user_id": b.get("bidder_user_id"),
+          "bidder_role": b.get("bidder_role", "developer"),
+          "status": b.get("status", "submitted"),
+          "payload_json": json.dumps({
+            **bid_payload,
+            "id": b.get("id"),
+            "companyName": b.get("company_name", ""),
+            "bidAmount": bid_payload.get("bidAmount") or {"label": b.get("bid_amount", "")},
+            "estimatedCompletionTimeframe": bid_payload.get("estimatedCompletionTimeframe") or {"label": b.get("estimated_timeframe", "")},
+            "proposalMessage": b.get("proposal_message", ""),
+            "developerProfileReference": bid_payload.get("developerProfileReference") or {"userId": b.get("bidder_user_id")},
+          }),
+          "created_at": b.get("created_at"),
+        })
+      payload_data = row.get("payload") or {}
+      return {
+        "id": row.get("id"),
+        "listing_type": row.get("listing_type", "client"),
+        "status": row.get("status", "open-for-bids"),
+        "title": row.get("title", ""),
+        "description": row.get("description", ""),
+        "location": row.get("location", ""),
+        "budget": row.get("budget", ""),
+        "timeframe": row.get("timeframe", ""),
+        "project_type": row.get("project_type", ""),
+        "category": row.get("category", ""),
+        "owner_user_id": row.get("owner_user_id", ""),
+        "owner_email": row.get("owner_email", ""),
+        "owner_role": row.get("owner_role", "client"),
+        "created_at": row.get("created_at"),
+        "updated_at": row.get("updated_at"),
+        "payload_json": json.dumps({
+          **payload_data,
+          "type": row.get("listing_type", "client"),
+          "status": row.get("status", "open-for-bids"),
+          "marketplaceMeta": {
+            **(payload_data.get("marketplaceMeta") or {}),
+            "listingStatus": row.get("status", "open-for-bids"),
+            "category": row.get("category", ""),
+            "bidCount": len(bids),
+          },
+        }),
+        "_pg_bids": bids,
+      }
+  except Exception:
+    pass
+  return None
+
+
+def _insert_pg_bid_via_rest(bid_id: str, listing_id: str, bidder_user_id: str, bidder_role: str, status: str, payload_json: str, created_at: str) -> dict | None:
+  """Insert a bid directly into Supabase PostgreSQL via REST API (service role, bypasses RLS)."""
+  if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+    return None
+  try:
+    record = {
+      "id": bid_id,
+      "listing_id": listing_id,
+      "bidder_user_id": bidder_user_id,
+      "bidder_role": bidder_role,
+      "status": status,
+      "proposal_message": "",
+      "company_name": "",
+      "bid_amount": "",
+      "estimated_timeframe": "",
+      "payload": json.loads(payload_json) if isinstance(payload_json, str) else payload_json,
+      "created_at": created_at,
+    }
+    # Extract fields from payload for PG columns
+    parsed = json.loads(payload_json) if isinstance(payload_json, str) else (payload_json or {})
+    record["proposal_message"] = parsed.get("proposalMessage") or ""
+    record["bid_amount"] = (parsed.get("bidAmount") or {}).get("label") if isinstance(parsed.get("bidAmount"), dict) else str(parsed.get("bidAmount") or "")
+    record["estimated_timeframe"] = (parsed.get("estimatedCompletionTimeframe") or {}).get("label") if isinstance(parsed.get("estimatedCompletionTimeframe"), dict) else str(parsed.get("estimatedCompletionTimeframe") or "")
+    dev_ref = parsed.get("developerProfileReference") or {}
+    record["company_name"] = dev_ref.get("companyName") or ""
+
+    req = Request(
+      f"{SUPABASE_URL}/rest/v1/listing_bids",
+      method="POST",
+      data=json.dumps(record).encode("utf-8"),
+      headers={
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+        "Prefer": "return=representation",
+      },
+    )
+    with urlopen(req, timeout=12) as resp:
+      rows = json.loads(resp.read())
+    if isinstance(rows, list) and rows:
+      return rows[0]
+    return record
+  except Exception:
+    return None
+
+
 def get_marketplace_listing(listing_id: str) -> dict | None:
   if _uses_remote_marketplace_store():
     row = _load_remote_marketplace_listing_record(listing_id)
-    return serialize_marketplace_listing(row) if row else None
+    if row:
+      return serialize_marketplace_listing(row)
+    # Fallback: listing may exist in PostgreSQL but not in cloud storage
+    pg_row = _fetch_pg_listing_via_rest(listing_id)
+    if pg_row:
+      return serialize_marketplace_listing(pg_row)
+    return None
 
   with get_connection() as connection:
     row = connection.execute("SELECT * FROM marketplace_listings WHERE id = ? LIMIT 1", (listing_id,)).fetchone()
@@ -1429,16 +1564,30 @@ def create_marketplace_bid(payload: dict) -> dict:
 
   if _uses_remote_kv_marketplace_store():
     listing_row = _load_remote_marketplace_listing_record(listing_id)
+    listing_is_pg_only = False
+    if not listing_row:
+      listing_row = _fetch_pg_listing_via_rest(listing_id)
+      listing_is_pg_only = bool(listing_row)
     if not listing_row:
       raise ValueError("The target marketplace listing could not be found.")
+
+    bid_role = payload.get("bidderRole") or "developer"
+    bid_payload_json = json.dumps({**validated_payload, "id": bid_id, "createdAt": now})
+
+    if listing_is_pg_only:
+      # Listing lives in PG — insert bid into PG too (via service role, bypasses RLS)
+      pg_result = _insert_pg_bid_via_rest(bid_id, listing_id, bidder_user_id, bid_role, validated_payload["status"], bid_payload_json, now)
+      if pg_result:
+        return serialize_marketplace_bid({"id": bid_id, "listing_id": listing_id, "bidder_user_id": bidder_user_id, "bidder_role": bid_role, "status": validated_payload["status"], "payload_json": bid_payload_json, "created_at": now})
+      raise ValueError("The bid could not be saved to the database.")
 
     record = {
       "id": bid_id,
       "listing_id": listing_id,
       "bidder_user_id": bidder_user_id,
-      "bidder_role": payload.get("bidderRole") or "developer",
+      "bidder_role": bid_role,
       "status": validated_payload["status"],
-      "payload_json": json.dumps({**validated_payload, "id": bid_id, "createdAt": now}),
+      "payload_json": bid_payload_json,
       "created_at": now,
     }
     _kv_set(_marketplace_bid_record_key(bid_id), json.dumps(record))
@@ -1447,16 +1596,30 @@ def create_marketplace_bid(payload: dict) -> dict:
 
   if _uses_supabase_marketplace_store():
     listing_row = _load_remote_marketplace_listing_record(listing_id)
+    listing_is_pg_only = False
+    if not listing_row:
+      listing_row = _fetch_pg_listing_via_rest(listing_id)
+      listing_is_pg_only = bool(listing_row)
     if not listing_row:
       raise ValueError("The target marketplace listing could not be found.")
+
+    bid_role = payload.get("bidderRole") or "developer"
+    bid_payload_json = json.dumps({**validated_payload, "id": bid_id, "createdAt": now})
+
+    if listing_is_pg_only:
+      # Listing lives in PG — insert bid into PG too (via service role, bypasses RLS)
+      pg_result = _insert_pg_bid_via_rest(bid_id, listing_id, bidder_user_id, bid_role, validated_payload["status"], bid_payload_json, now)
+      if pg_result:
+        return serialize_marketplace_bid({"id": bid_id, "listing_id": listing_id, "bidder_user_id": bidder_user_id, "bidder_role": bid_role, "status": validated_payload["status"], "payload_json": bid_payload_json, "created_at": now})
+      raise ValueError("The bid could not be saved to the database.")
 
     record = {
       "id": bid_id,
       "listing_id": listing_id,
       "bidder_user_id": bidder_user_id,
-      "bidder_role": payload.get("bidderRole") or "developer",
+      "bidder_role": bid_role,
       "status": validated_payload["status"],
-      "payload_json": json.dumps({**validated_payload, "id": bid_id, "createdAt": now}),
+      "payload_json": bid_payload_json,
       "created_at": now,
     }
     _upload_supabase_storage_json(_supabase_marketplace_bid_path(listing_id, bid_id), record)

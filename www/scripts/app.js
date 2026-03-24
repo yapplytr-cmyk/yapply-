@@ -471,16 +471,15 @@ function createOpenMarketplacePageContent(content, runtimeData = {}) {
   // Backend is considered "active" if we got data OR the request completed without error.
   // Seed data is ONLY used when the backend is completely unreachable (dev/preview mode).
   const hasBackendProfessionalListings = publicProfessionalListings.length > 0 || runtimeData.publicProfessionalListingError === false;
+  // If EITHER listing type came from the backend, the backend is reachable —
+  // never mix in seed / local-storage data because it creates ghost listings.
+  const backendIsReachable = hasBackendClientListings || hasBackendProfessionalListings;
   const clientSeedFallback = hasBackendClientListings ? [] : managedCollections.client;
-  // Include the user's own locally-submitted listings so they're never lost,
-  // but only if the backend didn't already return them (avoid duplicates).
-  const rawLocalProfessional = getSubmittedListings("professional");
-  const backendProIds = new Set(publicProfessionalListings.map(l => l?.id).filter(Boolean));
-  const localProfessionalSubmissions = hasBackendProfessionalListings
-    ? rawLocalProfessional.filter(l => l?.id && !backendProIds.has(l.id))
-    : rawLocalProfessional;
-  // Only fall back to seed data when backend is completely unavailable
-  const professionalSeedFallback = hasBackendProfessionalListings ? [] : managedCollections.professional;
+  // When backend is reachable, skip ALL local professional submissions and seed data.
+  // This is the aggressive fix: local submissions and seed data only matter in
+  // fully-offline / dev-preview mode where the backend is completely unreachable.
+  const localProfessionalSubmissions = backendIsReachable ? [] : getSubmittedListings("professional");
+  const professionalSeedFallback = backendIsReachable ? [] : managedCollections.professional;
   const dedupeListings = (items) => items.filter((item, index, all) => {
     const itemKey = item?.id || item?.slug || item?.adminKey;
     if (!itemKey) return true;
