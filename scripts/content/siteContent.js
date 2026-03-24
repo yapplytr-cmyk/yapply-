@@ -2738,8 +2738,8 @@ export const translations = {
       ],
       note: "English and Turkish content now share the same premium translation system, ready for the next product phase.",
       moderatorPortal: {
-        label: "Moderator Access",
-        href: "./moderator-login.html",
+        label: "Privacy",
+        href: "./privacy.html",
       },
       contact: "hello@yapply.com",
       copyrightLabel: "Yapply",
@@ -5569,8 +5569,8 @@ export const translations = {
       ],
 	      note: "İngilizce ve Türkçe içerik artık aynı premium çeviri sistemi üzerinde çalışıyor ve sonraki ürün fazına hazır durumda.",
 	      moderatorPortal: {
-	        label: "Moderatör Erişimi",
-	        href: "./moderator-login.html",
+	        label: "Gizlilik",
+	        href: "./privacy.html",
 	      },
 	      contact: "hello@yapply.com",
 	      copyrightLabel: "Yapply",
