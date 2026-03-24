@@ -2610,6 +2610,27 @@ function setupInlineReviewForms(session, content) {
     });
   });
 
+  // Photo upload preview (max 2 files)
+  document.querySelectorAll("[data-review-photo-input]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const preview = input.closest("form")?.querySelector("[data-review-photo-preview]");
+      if (!preview) return;
+      preview.innerHTML = "";
+      const files = Array.from(input.files || []).slice(0, 2);
+      // Enforce max 2 files
+      if (input.files && input.files.length > 2) {
+        const dt = new DataTransfer();
+        files.forEach((f) => dt.items.add(f));
+        input.files = dt.files;
+      }
+      files.forEach((file) => {
+        if (!file.type.startsWith("image/")) return;
+        const url = URL.createObjectURL(file);
+        preview.insertAdjacentHTML("beforeend", `<img src="${url}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--line)" />`);
+      });
+    });
+  });
+
   document.querySelectorAll("[data-inline-review-form]").forEach((form) => {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -2630,6 +2651,10 @@ function setupInlineReviewForms(session, content) {
       const submitBtn = form.querySelector('button[type="submit"]');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "..."; }
 
+      // Gather photo files (max 2)
+      const photoInput = form.querySelector("[data-review-photo-input]");
+      const photoFiles = photoInput?.files ? Array.from(photoInput.files).slice(0, 2) : [];
+
       try {
         const { submitDeveloperReview } = await import("./core/supabaseMarketplace.js");
         await submitDeveloperReview({
@@ -2639,6 +2664,7 @@ function setupInlineReviewForms(session, content) {
           bidId: form.getAttribute("data-review-bid") || "",
           rating,
           comment: form.querySelector('[name="comment"]')?.value || "",
+          photoFiles,
         });
 
         const wrapper = form.closest(".panel") || form.parentElement;
@@ -2720,6 +2746,26 @@ function setupDeveloperPublicProfile(content) {
     });
   });
 
+  // Photo upload preview for dev profile review form (max 2 files)
+  document.querySelectorAll("[data-dev-profile-review-form] [data-review-photo-input]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const preview = input.closest("form")?.querySelector("[data-review-photo-preview]");
+      if (!preview) return;
+      preview.innerHTML = "";
+      const files = Array.from(input.files || []).slice(0, 2);
+      if (input.files && input.files.length > 2) {
+        const dt = new DataTransfer();
+        files.forEach((f) => dt.items.add(f));
+        input.files = dt.files;
+      }
+      files.forEach((file) => {
+        if (!file.type.startsWith("image/")) return;
+        const url = URL.createObjectURL(file);
+        preview.insertAdjacentHTML("beforeend", `<img src="${url}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--line)" />`);
+      });
+    });
+  });
+
   // Review form submission
   document.querySelectorAll("[data-dev-profile-review-form]").forEach((form) => {
     form.addEventListener("submit", async (e) => {
@@ -2743,6 +2789,10 @@ function setupDeveloperPublicProfile(content) {
         submitBtn.textContent = "...";
       }
 
+      // Gather photo files (max 2)
+      const photoInput = form.querySelector("[data-review-photo-input]");
+      const photoFiles = photoInput?.files ? Array.from(photoInput.files).slice(0, 2) : [];
+
       try {
         const { submitDeveloperReview } = await import("./core/supabaseMarketplace.js");
         await submitDeveloperReview({
@@ -2752,6 +2802,7 @@ function setupDeveloperPublicProfile(content) {
           bidId: form.querySelector('[name="bidId"]')?.value || "",
           rating,
           comment: form.querySelector('[name="comment"]')?.value || "",
+          photoFiles,
         });
 
         if (feedback) {

@@ -801,8 +801,43 @@ export async function fetchReviewsForDeveloper(developerUserId) {
  * - The reviewer is the listing owner (client)
  * - The listing has an accepted bid from the developer
  */
-export async function submitDeveloperReview({ developerUserId, reviewerUserId, listingId, bidId, rating, comment }) {
+export async function submitDeveloperReview({ developerUserId, reviewerUserId, listingId, bidId, rating, comment, photoFiles }) {
   const supabase = await getSupabaseClient();
+
+  // Upload review photos to Supabase Storage (max 2)
+  const photoUrls = [];
+  if (Array.isArray(photoFiles) && photoFiles.length > 0) {
+    const filesToUpload = photoFiles.slice(0, 2);
+    let accessToken = null;
+    try {
+      const raw = localStorage.getItem("sb-sgoicvqgfydwfpttzgqu-auth-token");
+      if (raw) { const parsed = JSON.parse(raw); if (parsed?.access_token) accessToken = parsed.access_token; }
+    } catch (_) {}
+
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      if (!(file instanceof File) || file.size === 0) continue;
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `${developerUserId}/${Date.now()}-${i}.${ext}`;
+      try {
+        const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/review-photos/${fileName}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": file.type || "image/jpeg",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${accessToken || SUPABASE_ANON_KEY}`,
+            "x-upsert": "true",
+          },
+          body: file,
+        });
+        if (resp.ok) {
+          photoUrls.push(`${SUPABASE_URL}/storage/v1/object/public/review-photos/${fileName}`);
+        }
+      } catch (e) {
+        console.warn("[yapply] Review photo upload failed:", e?.message);
+      }
+    }
+  }
 
   const { data, error } = await supabase
     .from("developer_reviews")
@@ -813,6 +848,7 @@ export async function submitDeveloperReview({ developerUserId, reviewerUserId, l
       bid_id: bidId,
       rating: Math.min(5, Math.max(1, Math.round(rating))),
       comment: (comment || "").trim(),
+      photos: photoUrls,
     })
     .select()
     .single();

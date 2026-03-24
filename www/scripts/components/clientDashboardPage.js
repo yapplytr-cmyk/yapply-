@@ -221,6 +221,13 @@ function createInlineReviewPanel(listing, content, acceptedDevUserId, acceptedBi
           <span style="font-size:0.85rem;color:var(--text-muted)">${labels.commentLabel || "Comment (optional)"}</span>
           <textarea name="comment" rows="3" placeholder="${labels.commentPlaceholder || ""}" style="width:100%;resize:vertical;margin-top:0.25rem;padding:0.5rem;border-radius:8px;border:1px solid var(--border-200, #333);background:var(--surface-100, #1a1a1a);color:var(--text-100, #fff);font-size:0.9rem"></textarea>
         </label>
+        <div style="margin-top:0.75rem">
+          <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.35rem">${labels.photosLabel || "Add photos of the work (max 2)"}</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="file" name="review-photos" accept="image/*" multiple data-review-photo-input style="font-size:0.85rem;max-width:240px" />
+            <div data-review-photo-preview style="display:flex;gap:6px"></div>
+          </div>
+        </div>
         <div data-inline-review-feedback hidden style="padding:0.4rem 0;font-size:0.85rem"></div>
         <div style="margin-top:0.75rem">
           <button class="button button--primary" type="submit" style="font-size:0.9rem">${labels.submitLabel || "Submit Review"}</button>

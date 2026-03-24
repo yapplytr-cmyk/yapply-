@@ -64,6 +64,10 @@ function createStarInput(content) {
 
 function createReviewCard(review, locale) {
   const dateLabel = formatDate(review.created_at, locale);
+  const photos = Array.isArray(review.photos) ? review.photos.filter(Boolean) : [];
+  const photosMarkup = photos.length > 0
+    ? `<div style="display:flex;gap:8px;margin-top:8px">${photos.map((url) => `<a href="${url}" target="_blank" rel="noopener" style="display:block;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0"><img src="${url}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover" /></a>`).join("")}</div>`
+    : "";
   return `
     <article class="dev-profile-review-card panel" style="padding:1rem;margin-bottom:0.75rem">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -71,6 +75,7 @@ function createReviewCard(review, locale) {
         <span style="color:var(--text-300);font-size:0.85rem">${dateLabel}</span>
       </div>
       ${review.comment ? `<p style="margin:0;color:var(--text-100)">${review.comment}</p>` : ""}
+      ${photosMarkup}
     </article>
   `;
 }
@@ -116,6 +121,13 @@ function createReviewForm(content, listing, bid) {
           <span>${labels.commentLabel}</span>
           <textarea name="comment" rows="3" placeholder="${labels.commentPlaceholder}" style="width:100%;resize:vertical"></textarea>
         </label>
+        <div style="margin-top:0.75rem">
+          <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.35rem">${labels.photosLabel || "Add photos of the work (max 2)"}</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="file" name="review-photos" accept="image/*" multiple data-review-photo-input style="font-size:0.85rem;max-width:240px" />
+            <div data-review-photo-preview style="display:flex;gap:6px"></div>
+          </div>
+        </div>
         <div class="dev-profile-review-form-feedback" data-review-feedback hidden style="padding:0.5rem 0"></div>
         <div style="margin-top:0.75rem">
           <button class="button button--primary" type="submit">${labels.submitLabel}</button>
