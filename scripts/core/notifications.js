@@ -21,6 +21,7 @@ export async function addNotification(targetUserId, { type, message, title, href
 
   try {
     const supabase = await getSupabaseClient();
+    console.log("[yapply-notif] Inserting notification for user:", targetUserId, "type:", type);
     const { data, error } = await supabase
       .from("notifications")
       .insert({
@@ -38,9 +39,10 @@ export async function addNotification(targetUserId, { type, message, title, href
       .single();
 
     if (error) {
-      console.warn("[yapply-notif] Failed to add notification:", error.message);
+      console.error("[yapply-notif] Failed to add notification:", error.message, error.code, error.details);
       return null;
     }
+    console.log("[yapply-notif] Notification inserted OK:", data?.id);
 
     // Trigger push notification via Edge Function (fire-and-forget)
     try {

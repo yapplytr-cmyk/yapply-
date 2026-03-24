@@ -25,25 +25,40 @@ function isNative() {
 }
 
 /**
- * Dynamically import the Capacitor Push Notifications plugin.
+ * Get the Capacitor Push Notifications plugin.
+ * In a non-bundled Capacitor app, we must use the globally-injected bridge.
  * Returns null if not available (web environment).
  */
 async function getPushPlugin() {
   if (_PushNotifications) return _PushNotifications;
 
+  // Method 1: Use Capacitor's global registerPlugin (injected by native bridge)
+  // This is the correct approach for non-bundled Capacitor 5+/8 apps.
   try {
-    // Capacitor 5+ uses @capacitor/push-notifications
-    const mod = await import("@capacitor/push-notifications");
-    _PushNotifications = mod.PushNotifications;
-    return _PushNotifications;
-  } catch (_) {}
+    if (window.Capacitor?.registerPlugin) {
+      _PushNotifications = window.Capacitor.registerPlugin("PushNotifications", {});
+      console.log("[yapply-push] Plugin obtained via Capacitor.registerPlugin");
+      return _PushNotifications;
+    }
+  } catch (e) {
+    console.warn("[yapply-push] registerPlugin failed:", e?.message);
+  }
 
-  // Try Capacitor global (older setups)
+  // Method 2: Try Capacitor.Plugins (may be pre-populated)
   try {
     if (window.Capacitor?.Plugins?.PushNotifications) {
       _PushNotifications = window.Capacitor.Plugins.PushNotifications;
+      console.log("[yapply-push] Plugin obtained via Capacitor.Plugins");
       return _PushNotifications;
     }
+  } catch (_) {}
+
+  // Method 3: Try dynamic import (only works with bundler)
+  try {
+    const mod = await import("@capacitor/push-notifications");
+    _PushNotifications = mod.PushNotifications;
+    console.log("[yapply-push] Plugin obtained via ES module import");
+    return _PushNotifications;
   } catch (_) {}
 
   return null;

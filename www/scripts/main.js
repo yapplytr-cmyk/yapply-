@@ -2047,9 +2047,10 @@ function setupMarketplaceBidForm(content) {
         const listingId = result?.listing?.id || formData.get("listingId") || "";
         const currentUserId = getAuthSession()?.user?.id || "";
         const isTR = document.documentElement.lang === "tr";
+        console.log("[yapply-notif] Bid notification target:", { listingOwner, listingId, listingTitle });
         if (listingOwner) {
           const { addNotification } = await import("./core/notifications.js");
-          addNotification(listingOwner, {
+          const notifResult = await addNotification(listingOwner, {
             type: "new-bid",
             title: isTR ? "Yeni Teklif" : "New Bid",
             message: isTR ? `Bir geliştirici "${listingTitle}" ilanınıza teklif verdi` : `A developer placed a bid on "${listingTitle}"`,
@@ -2057,8 +2058,13 @@ function setupMarketplaceBidForm(content) {
             listingId,
             senderUserId: currentUserId,
           });
+          console.log("[yapply-notif] Bid notification result:", notifResult?.id || "null");
+        } else {
+          console.warn("[yapply-notif] No listingOwner found — notification skipped. result.listing:", JSON.stringify(result?.listing?.id || "none"));
         }
-      } catch (_) {}
+      } catch (notifErr) {
+        console.error("[yapply-notif] Bid notification error:", notifErr?.message || notifErr);
+      }
 
       window.setTimeout(async () => {
         await renderPage(content.meta.locale);
