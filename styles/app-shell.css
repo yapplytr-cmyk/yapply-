@@ -2353,6 +2353,7 @@ html[data-theme="light"] .ob-tutorial__btn {
   right: 0;
   z-index: 9999;
   padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 0 0;
+  transition: opacity 0.25s ease;
 }
 
 /* On web (no tab bar), position in flow near header */

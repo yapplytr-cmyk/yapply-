@@ -474,14 +474,14 @@ export function createDeveloperDashboardSkeleton() {
   `;
 }
 
-export function createDeveloperDashboardPage(content) {
+export async function createDeveloperDashboardPage(content) {
   const session = content.viewerSession || { authenticated: false, user: null };
 
   if (!session.authenticated || session.user?.role !== "developer") {
     return createAccessDenied(content);
   }
 
-  const notifications = getUnreadNotifications(session.user.id).filter((n) => n.type === "bid-accepted");
+  const notifications = (await getUnreadNotifications(session.user.id)).filter((n) => n.type === "bid-accepted");
   const bellSvg = `<svg class="dashboard-notification-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
   const notificationBanner = notifications.length > 0
     ? `<div class="dashboard-notification-banner" data-dashboard-notifications>

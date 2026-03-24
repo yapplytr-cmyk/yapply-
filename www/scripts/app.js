@@ -1089,7 +1089,7 @@ async function createClientDashboard(content, locale) {
     <div class="page-shell">
       ${createNavbar(pageContent, locale)}
       <main>
-        ${createClientDashboardPage(pageContent)}
+        ${await createClientDashboardPage(pageContent)}
       </main>
       ${createFooter(pageContent)}
     </div>
@@ -1147,7 +1147,7 @@ async function createDeveloperDashboard(content, locale, runtimeData) {
     <div class="page-shell">
       ${createNavbar(pageContent, locale)}
       <main>
-        ${createDeveloperDashboardPage(pageContent)}
+        ${await createDeveloperDashboardPage(pageContent)}
       </main>
       ${createFooter(pageContent)}
     </div>

@@ -17,6 +17,7 @@ const bellIconSVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"
 let _bellRoot = null;
 let _panelOpen = false;
 let _unreadCount = 0;
+let _scrollHandler = null;
 
 /**
  * Create and inject the notification bell into the DOM.
@@ -97,6 +98,12 @@ export function createNotificationBell() {
   if (titleEl) titleEl.textContent = isTR ? "Bildirimler" : "Notifications";
   const emptyEl = container.querySelector("[data-notification-empty]");
   if (emptyEl) emptyEl.textContent = isTR ? "Henüz bildirim yok" : "No notifications yet";
+
+  // Scroll-based fade: visible at top, fades away on scroll
+  _setupScrollFade(container);
+
+  // Hide on Keşfet page (page changes are detected via MutationObserver)
+  _setupPageVisibility(container);
 
   return container;
 }
@@ -260,6 +267,10 @@ export async function initNotificationBell(userId) {
  * Clean up bell on logout.
  */
 export async function destroyNotificationBell() {
+  if (_scrollHandler) {
+    window.removeEventListener("scroll", _scrollHandler, { passive: true });
+    _scrollHandler = null;
+  }
   _bellRoot?.remove();
   _bellRoot = null;
   _panelOpen = false;
@@ -269,6 +280,63 @@ export async function destroyNotificationBell() {
     const { unsubscribeFromNotifications } = await import("../core/notifications.js");
     await unsubscribeFromNotifications();
   } catch (_) {}
+}
+
+// ── Scroll fade & page visibility ──
+
+function _setupScrollFade(container) {
+  // Remove previous handler if any
+  if (_scrollHandler) {
+    window.removeEventListener("scroll", _scrollHandler, { passive: true });
+  }
+
+  const FADE_START = 30;   // start fading after 30px scroll
+  const FADE_END = 120;    // fully hidden at 120px scroll
+
+  _scrollHandler = () => {
+    if (_panelOpen) return; // don't fade while panel is open
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+
+    if (scrollY <= FADE_START) {
+      container.style.opacity = "1";
+      container.style.pointerEvents = "auto";
+    } else if (scrollY >= FADE_END) {
+      container.style.opacity = "0";
+      container.style.pointerEvents = "none";
+    } else {
+      const progress = (scrollY - FADE_START) / (FADE_END - FADE_START);
+      container.style.opacity = String(1 - progress);
+      container.style.pointerEvents = "auto";
+    }
+  };
+
+  window.addEventListener("scroll", _scrollHandler, { passive: true });
+  // Run once to set initial state
+  _scrollHandler();
+}
+
+function _isKesfetPage() {
+  const page = document.body?.dataset?.page || "";
+  return page === "marketplace" || page === "kesfet" || page === "explore";
+}
+
+function _setupPageVisibility(container) {
+  // Check immediately
+  _updateBellVisibilityForPage(container);
+
+  // Observe body data-page changes
+  const observer = new MutationObserver(() => {
+    _updateBellVisibilityForPage(container);
+  });
+  observer.observe(document.body, { attributes: true, attributeFilter: ["data-page"] });
+}
+
+function _updateBellVisibilityForPage(container) {
+  if (_isKesfetPage()) {
+    container.style.display = "none";
+  } else {
+    container.style.display = "";
+  }
 }
 
 // ── Helpers ──
