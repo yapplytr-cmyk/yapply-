@@ -3790,6 +3790,20 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
             });
           });
 
+        // Also enrich professional listings with creator avatars
+        enrichMarketplaceListingsWithCreatorAvatars(publicProfessionalListings)
+          .then((decorated) => {
+            swrWrite(proCacheId, decorated);
+            patchAvatarsInDOM(decorated);
+          })
+          .catch((error) => {
+            console.error("Yapply professional avatar enrichment failed", {
+              code: error?.code || "",
+              message: error?.message || "",
+              error,
+            });
+          });
+
         return {
           publicClientListings,
           // When professional fetch failed, use the results from the .catch
