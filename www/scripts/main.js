@@ -2305,6 +2305,19 @@ function setupClientDashboard(content) {
               listingId,
               senderUserId: session?.user?.id || "",
             });
+
+            // Push notification to developer's iPhone
+            const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+            const supabase = await getSupabaseClient();
+            supabase.functions.invoke("send-push-notification", {
+              body: {
+                user_id: developerId,
+                title: isTR_bid ? "Teklif Kabul Edildi" : "Bid Accepted",
+                message: isTR_bid ? `"${listingTitle}" ilanındaki teklifiniz kabul edildi!` : `Your bid on "${listingTitle}" was accepted!`,
+                type: "bid-accepted",
+                listing_id: listingId || null,
+              },
+            }).catch((e) => console.warn("[yapply-push] Push invoke error:", e?.message));
           }
         } catch (_) {}
 
@@ -2546,6 +2559,20 @@ function setupClientBidsPage(content) {
               listingId,
               senderUserId: session?.user?.id || "",
             });
+
+            // Push notification to developer's iPhone
+            const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+            const supabase_cb = await getSupabaseClient();
+            const listingTitle_cb = updatedListing?.title || updatedListing?.name || "";
+            supabase_cb.functions.invoke("send-push-notification", {
+              body: {
+                user_id: developerUserId,
+                title: isTR_cb ? "Teklif Kabul Edildi" : "Bid Accepted",
+                message: isTR_cb ? `"${listingTitle_cb}" ilanındaki teklifiniz kabul edildi!` : `Your bid on "${listingTitle_cb}" was accepted!`,
+                type: "bid-accepted",
+                listing_id: listingId || null,
+              },
+            }).catch((e) => console.warn("[yapply-push] Push invoke error:", e?.message));
           }
         } catch (_) {}
 
