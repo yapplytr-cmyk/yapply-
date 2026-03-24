@@ -41,6 +41,9 @@ export function createNotificationBell() {
     <div class="notification-panel" data-notification-panel style="display:none">
       <div class="notification-panel__header">
         <span class="notification-panel__title" data-notification-panel-title>Notifications</span>
+        <button class="notification-panel__clear-all" type="button" data-notification-clear-all title="Tümünü Sil / Clear All">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
         <button class="notification-panel__mark-read" type="button" data-notification-mark-all-read>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
@@ -82,6 +85,20 @@ export function createNotificationBell() {
       container.querySelectorAll(".notification-item--unread").forEach((el) => {
         el.classList.remove("notification-item--unread");
       });
+    } catch (_) {}
+  });
+
+  // Clear all notifications (delete from DB)
+  container.querySelector("[data-notification-clear-all]").addEventListener("click", async (e) => {
+    e.stopPropagation();
+    const userId = getAuthSession()?.user?.id;
+    if (!userId) return;
+    try {
+      const { deleteAllNotifications } = await import("../core/notifications.js");
+      await deleteAllNotifications(userId);
+      updateBadge(0);
+      // Re-render empty list
+      renderNotificationList([]);
     } catch (_) {}
   });
 

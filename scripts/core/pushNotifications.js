@@ -31,14 +31,27 @@ async function saveDeviceToken(userId, token) {
   if (!userId || !token) return;
   try {
     const supabase = await getSupabaseClient();
+
+    // Try upsert first
     const { error } = await supabase
       .from("device_tokens")
       .upsert(
         { user_id: userId, token, platform: "ios", updated_at: new Date().toISOString() },
         { onConflict: "user_id,platform" }
       );
+
     if (error) {
-      await debugLog(userId, "token_save_error", error.message);
+      // Fallback: delete existing + fresh insert
+      await debugLog(userId, "upsert_failed_trying_delete_insert", error.message);
+      await supabase.from("device_tokens").delete().eq("user_id", userId).eq("platform", "ios");
+      const { error: insertErr } = await supabase.from("device_tokens").insert({
+        user_id: userId, token, platform: "ios", updated_at: new Date().toISOString(),
+      });
+      if (insertErr) {
+        await debugLog(userId, "insert_also_failed", insertErr.message);
+      } else {
+        await debugLog(userId, "token_saved_via_delete_insert", token.substring(0, 20) + "...");
+      }
     } else {
       await debugLog(userId, "token_saved", token.substring(0, 20) + "...");
     }

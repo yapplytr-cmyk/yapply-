@@ -188,6 +188,33 @@ export async function markAllRead(userId) {
 }
 
 /**
+ * Delete ALL notifications for a user (clear inbox).
+ */
+export async function deleteAllNotifications(userId) {
+  if (!userId) return;
+
+  try {
+    const supabase = await getSupabaseClient();
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", userId);
+
+    if (error) {
+      console.warn("[yapply-notif] Failed to delete all notifications:", error.message);
+      return;
+    }
+
+    // Clear cache
+    _cache[userId] = [];
+    _fireOnChange(userId);
+    console.log("[yapply-notif] All notifications deleted for user:", userId);
+  } catch (err) {
+    console.warn("[yapply-notif] deleteAllNotifications error:", err?.message);
+  }
+}
+
+/**
  * Mark a single notification as read.
  */
 export async function markRead(notificationId, userId) {

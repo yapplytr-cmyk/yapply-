@@ -2460,6 +2460,7 @@ html:not(.has-tab-bar) .notification-panel {
   color: var(--text-primary, #f9fafb);
 }
 
+.notification-panel__clear-all,
 .notification-panel__mark-read,
 .notification-panel__close {
   display: flex;
@@ -2475,9 +2476,14 @@ html:not(.has-tab-bar) .notification-panel {
   transition: background 0.15s;
 }
 
+.notification-panel__clear-all:hover,
 .notification-panel__mark-read:hover,
 .notification-panel__close:hover {
   background: var(--surface-200, rgba(0,0,0,0.06));
+}
+
+.notification-panel__clear-all:hover {
+  color: #ef4444;
 }
 
 .notification-panel__list {
