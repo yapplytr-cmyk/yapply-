@@ -380,14 +380,14 @@ export function createClientDashboardSkeleton() {
   `;
 }
 
-export function createClientDashboardPage(content) {
+export async function createClientDashboardPage(content) {
   const session = content.viewerSession || { authenticated: false, user: null };
 
   if (!session.authenticated || session.user?.role !== "client") {
     return createAccessDenied(content);
   }
 
-  const notifications = getUnreadNotifications(session.user.id).filter((n) => n.type === "new-bid");
+  const notifications = (await getUnreadNotifications(session.user.id)).filter((n) => n.type === "new-bid");
   const notificationBanner = notifications.length > 0
     ? `<div class="dashboard-notification-banner" data-dashboard-notifications>
         ${notifications.map((n) => `<a class="dashboard-notification-item" href="${n.href || "#"}">${n.message}</a>`).join("")}
