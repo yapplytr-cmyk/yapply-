@@ -739,6 +739,7 @@ function normalizeBid(row) {
   const payloadData = typeof row.payload === "object" && row.payload !== null ? row.payload : {};
 
   return {
+    ...payloadData,
     id: row.id,
     listingId: row.listing_id,
     developerId: row.bidder_user_id || "",
@@ -752,7 +753,6 @@ function normalizeBid(row) {
     proposalMessage: row.proposal_message || payloadData.proposalMessage || "",
     createdAt: row.created_at,
     developerProfileReference: payloadData.developerProfileReference || { userId: row.bidder_user_id },
-    ...payloadData,
   };
 }
 
