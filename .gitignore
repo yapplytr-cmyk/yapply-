@@ -8,6 +8,5 @@ backend/data/*.sqlite3
 .vercel
 .env*.local
 node_modules/
-ios/
 www/
 .fuse_hidden*
