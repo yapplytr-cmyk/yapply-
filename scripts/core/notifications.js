@@ -42,6 +42,23 @@ export async function addNotification(targetUserId, { type, message, title, href
       return null;
     }
 
+    // Trigger push notification via Edge Function (fire-and-forget)
+    try {
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          user_id: targetUserId,
+          title: title || "",
+          message: message || "",
+          type: type || "general",
+          href: href || "",
+          listing_id: listingId || null,
+          bid_id: bidId || null,
+        },
+      }).catch((pushErr) => {
+        console.warn("[yapply-notif] Push send error:", pushErr?.message);
+      });
+    } catch (_) {}
+
     // Update local cache
     if (_cache[targetUserId]) {
       _cache[targetUserId].unshift(data);

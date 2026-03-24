@@ -68,7 +68,7 @@ async function saveDeviceToken(userId, token, platform = "ios") {
           platform: platform,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "user_id,token" }
+        { onConflict: "user_id,platform" }
       );
 
     if (error) {
