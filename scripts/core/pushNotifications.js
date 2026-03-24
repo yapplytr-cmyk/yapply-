@@ -32,6 +32,10 @@ async function saveDeviceToken(userId, token) {
   try {
     const supabase = await getSupabaseClient();
 
+    // Remove this token from ANY other user — ensures only the current
+    // logged-in user receives pushes on this device (uses SECURITY DEFINER function)
+    await supabase.rpc("claim_device_token", { p_token: token });
+
     // Try upsert first
     const { error } = await supabase
       .from("device_tokens")
