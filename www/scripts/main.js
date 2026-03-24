@@ -2394,11 +2394,28 @@ function setupClientDashboard(content) {
 
   // ─── Delete closed listing buttons ───
   document.querySelectorAll("[data-client-dashboard-delete]").forEach((button) => {
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const listingId = button.getAttribute("data-client-dashboard-delete") || "";
       if (!listingId) return;
 
       const isTR = document.documentElement.lang === "tr";
+      const card = button.closest("[data-listing-id]");
+
+      // Check if listing has a review — if not, prompt to leave one first
+      const hasReview = card?.querySelector("[data-client-dashboard-toggle='review']") === null;
+      if (!hasReview) {
+        const reviewMsg = isTR
+          ? "Bu ilan için henüz değerlendirme yapmadınız. Silmeden önce değerlendirme yapmak ister misiniz?"
+          : "You haven't left a review for this listing yet. Would you like to leave a review before deleting?";
+        if (window.confirm(reviewMsg)) {
+          // Open the review panel instead of deleting
+          const reviewBtn = card?.querySelector("[data-client-dashboard-toggle='review']");
+          if (reviewBtn) { reviewBtn.click(); return; }
+        }
+      }
+
       const confirmMsg = isTR
         ? "Bu ilanı kalıcı olarak silmek istediğinize emin misiniz?"
         : "Are you sure you want to permanently delete this listing?";
@@ -2409,8 +2426,23 @@ function setupClientDashboard(content) {
         await deleteBackendMarketplaceListing(listingId);
         invalidateAllMarketplaceSwrCaches();
         showStatusToast("deleted", isTR ? "İlan silindi" : "Listing deleted");
-        const card = button.closest("[data-listing-id]");
-        if (card) card.remove();
+        if (card) {
+          card.style.transition = "opacity 0.35s ease, transform 0.35s ease, max-height 0.4s ease";
+          card.style.overflow = "hidden";
+          card.style.maxHeight = card.offsetHeight + "px";
+          requestAnimationFrame(() => {
+            card.style.opacity = "0";
+            card.style.transform = "translateX(-60px)";
+            card.style.maxHeight = "0";
+            card.style.paddingTop = "0";
+            card.style.paddingBottom = "0";
+            card.style.marginTop = "0";
+            card.style.marginBottom = "0";
+            card.style.borderWidth = "0";
+          });
+          card.addEventListener("transitionend", () => card.remove(), { once: true });
+          setTimeout(() => { if (card.parentNode) card.remove(); }, 500);
+        }
       } catch (error) {
         setButtonLoading(button, false);
         console.error("[yapply] Listing delete failed:", error);
@@ -3570,6 +3602,12 @@ function patchAvatarsInDOM(listings) {
   document.querySelectorAll("[data-listing-id] .marketplace-card__avatar img, [data-listing-id] .marketplace-detail-avatar img").forEach((img) => {
     const listingEl = img.closest("[data-listing-id]");
     const src = listingEl && avatarMap.get(listingEl.dataset.listingId);
+    if (src && img.src !== src) img.src = src;
+  });
+  // Patch detail page title avatar (no data-listing-id wrapper)
+  document.querySelectorAll(".marketplace-detail-title-avatar img").forEach((img) => {
+    // Detail page shows one listing — use the first avatar in the map
+    const src = avatarMap.values().next().value;
     if (src && img.src !== src) img.src = src;
   });
   // Patch href-based marketplace cards
