@@ -1,7 +1,7 @@
 /**
  * pushNotifications.js
  * Capacitor Push Notifications integration for iOS.
- * Writes debug info to push_debug_log table for remote diagnostics.
+ * Uses native AppDelegate token injection (bypasses broken Capacitor plugin listeners).
  */
 
 import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
@@ -15,7 +15,6 @@ function isNative() {
   );
 }
 
-/** Write a debug log entry to Supabase so we can read it remotely */
 async function debugLog(userId, step, detail) {
   try {
     console.log("[yapply-push]", step, detail || "");
@@ -23,27 +22,9 @@ async function debugLog(userId, step, detail) {
     await supabase.from("push_debug_log").insert({
       user_id: userId || "unknown",
       step,
-      detail: String(detail || ""),
+      detail: String(detail || "").substring(0, 500),
     });
-  } catch (_) {
-    console.warn("[yapply-push] debugLog write failed:", _?.message);
-  }
-}
-
-function getPushPlugin() {
-  try {
-    if (window.Capacitor?.registerPlugin) {
-      return window.Capacitor.registerPlugin("PushNotifications", {});
-    }
-  } catch (e) {
-    return null;
-  }
-  try {
-    if (window.Capacitor?.Plugins?.PushNotifications) {
-      return window.Capacitor.Plugins.PushNotifications;
-    }
   } catch (_) {}
-  return null;
 }
 
 async function saveDeviceToken(userId, token) {
@@ -67,97 +48,82 @@ async function saveDeviceToken(userId, token) {
 }
 
 export async function initPushNotifications(userId, onNotificationTap) {
-  if (_initialized) return;
-  if (!isNative()) {
-    console.log("[yapply-push] Not native — skipping");
-    return;
-  }
-
-  await debugLog(userId, "init_start", "isNative=true");
-
-  // Log Capacitor state
-  const capState = {
-    exists: !!window.Capacitor,
-    registerPlugin: typeof window.Capacitor?.registerPlugin,
-    isPluginAvailable: "unknown",
-    pluginsKeys: "none",
-  };
-  try {
-    capState.isPluginAvailable = String(window.Capacitor?.isPluginAvailable?.("PushNotifications"));
-  } catch (_) {}
-  try {
-    capState.pluginsKeys = Object.keys(window.Capacitor?.Plugins || {}).join(",") || "empty";
-  } catch (_) {}
-  await debugLog(userId, "capacitor_state", JSON.stringify(capState));
-
-  const Push = getPushPlugin();
-  if (!Push) {
-    await debugLog(userId, "plugin_not_found", "getPushPlugin returned null");
-    return;
-  }
-  await debugLog(userId, "plugin_found", "OK");
-
+  if (_initialized || !isNative()) return;
   _initialized = true;
 
-  // Check permissions
+  await debugLog(userId, "init_v2_start", "native token injection approach");
+
+  // Step 1: Request push permission via Capacitor plugin
   try {
+    const Push = window.Capacitor?.Plugins?.PushNotifications;
+    if (!Push) {
+      await debugLog(userId, "no_plugin", "Capacitor.Plugins.PushNotifications missing");
+      return;
+    }
+
     let perm = await Push.checkPermissions();
-    await debugLog(userId, "permission_check", JSON.stringify(perm));
+    await debugLog(userId, "perm_check", JSON.stringify(perm));
 
     if (perm.receive !== "granted") {
       perm = await Push.requestPermissions();
-      await debugLog(userId, "permission_request", JSON.stringify(perm));
+      await debugLog(userId, "perm_request", JSON.stringify(perm));
     }
-
     if (perm.receive !== "granted") {
-      await debugLog(userId, "permission_denied", perm.receive);
+      await debugLog(userId, "perm_denied", perm.receive);
       return;
     }
-  } catch (err) {
-    await debugLog(userId, "permission_error", err?.message || String(err));
-    return;
-  }
 
-  // Register with APNs
-  try {
+    // Step 2: Call register() — this triggers APNs registration
     await Push.register();
-    await debugLog(userId, "apns_register_called", "OK");
+    await debugLog(userId, "register_called", "OK");
+
   } catch (err) {
-    await debugLog(userId, "apns_register_error", err?.message || String(err));
+    await debugLog(userId, "plugin_error", err?.message || String(err));
     return;
   }
 
-  // Token listener
-  Push.addListener("registration", (tokenData) => {
-    const token = tokenData?.value || "";
-    debugLog(userId, "token_received", token.substring(0, 30) + "...");
+  // Step 3: Listen for token injected by AppDelegate.swift (bypasses broken plugin listeners)
+  // The native AppDelegate dispatches a 'yapply-apns-token' CustomEvent on window
+  window.addEventListener("yapply-apns-token", (event) => {
+    const token = event?.detail?.token || "";
+    debugLog(userId, "native_token_received", token.substring(0, 30) + "...");
     try { localStorage.setItem("yapply-push-token", token); } catch (_) {}
     saveDeviceToken(userId, token);
   });
 
-  // Error listener
-  Push.addListener("registrationError", (err) => {
-    debugLog(userId, "registration_error", JSON.stringify(err));
+  // Also listen for errors from native
+  window.addEventListener("yapply-apns-error", (event) => {
+    debugLog(userId, "native_apns_error", event?.detail?.error || "unknown");
   });
 
-  // Foreground
-  Push.addListener("pushNotificationReceived", (notification) => {
-    debugLog(userId, "foreground_notification", notification?.title);
-    try {
-      import("../components/notificationBell.js").then(async ({ updateBadge }) => {
-        const { getUnreadCount } = await import("./notifications.js");
-        updateBadge(await getUnreadCount(userId));
-      });
-    } catch (_) {}
-  });
+  // Step 4: Check if token was already injected (native may fire before JS listener is ready)
+  if (window.__yapplyAPNsToken) {
+    const token = window.__yapplyAPNsToken;
+    await debugLog(userId, "token_already_present", token.substring(0, 30) + "...");
+    try { localStorage.setItem("yapply-push-token", token); } catch (_) {}
+    await saveDeviceToken(userId, token);
+  }
 
-  // Tap
-  Push.addListener("pushNotificationActionPerformed", (action) => {
-    const data = action?.notification?.data || {};
-    if (typeof onNotificationTap === "function") onNotificationTap(data);
-  });
+  if (window.__yapplyAPNsError) {
+    await debugLog(userId, "error_already_present", window.__yapplyAPNsError);
+  }
 
-  await debugLog(userId, "listeners_registered", "waiting for token...");
+  // Step 5: Also try polling for the global token (belt and suspenders)
+  let pollCount = 0;
+  const pollInterval = setInterval(() => {
+    pollCount++;
+    if (window.__yapplyAPNsToken && !localStorage.getItem("yapply-push-token-saved")) {
+      const token = window.__yapplyAPNsToken;
+      debugLog(userId, "token_found_by_poll", token.substring(0, 30) + "...");
+      localStorage.setItem("yapply-push-token", token);
+      localStorage.setItem("yapply-push-token-saved", "1");
+      saveDeviceToken(userId, token);
+      clearInterval(pollInterval);
+    }
+    if (pollCount >= 20) clearInterval(pollInterval); // stop after 10 seconds
+  }, 500);
+
+  await debugLog(userId, "listeners_v2_ready", "waiting for native token injection...");
 }
 
 export async function cleanupPushNotifications(userId) {
@@ -169,6 +135,7 @@ export async function cleanupPushNotifications(userId) {
       await supabase.from("device_tokens").delete().eq("user_id", userId).eq("token", token);
     }
     localStorage.removeItem("yapply-push-token");
+    localStorage.removeItem("yapply-push-token-saved");
   } catch (_) {}
   _initialized = false;
 }
