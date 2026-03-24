@@ -401,33 +401,8 @@ export function normalizeMarketplaceListing(listing) {
     .map((item, index) => normalizeMarketplaceImageItem(item, index))
     .filter((item) => item && !seenSources.has(item.src) && seenSources.add(item.src));
 
-  // Map snake_case backend fields → camelCase frontend fields
-  // (Supabase returns snake_case from PostgreSQL columns)
-  const fieldMap = {
-    starting_price: "startingPrice",
-    delivery_range: "deliveryRange",
-    company_name: "companyName",
-    years_experience: "yearsExperience",
-    service_area: "serviceArea",
-    owner_user_id: "ownerUserId",
-    image_src: "imageSrc",
-    profession_type: "professionType",
-    preferred_region: "preferredRegion",
-    avatar_url: "avatarUrl",
-    created_at: "createdAt",
-    updated_at: "updatedAt",
-    admin_key: "adminKey",
-  };
-  const mapped = {};
-  for (const [snakeKey, camelKey] of Object.entries(fieldMap)) {
-    if (listing[snakeKey] !== undefined && listing[camelKey] === undefined) {
-      mapped[camelKey] = listing[snakeKey];
-    }
-  }
-
   const normalized = {
     ...listing,
-    ...mapped,
     marketplaceMeta,
     images,
   };

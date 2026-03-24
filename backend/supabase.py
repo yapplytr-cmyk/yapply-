@@ -19,11 +19,6 @@ from .config import (
   SUPABASE_SERVICE_KEY_SOURCE,
   SUPABASE_URL,
   SUPABASE_URL_SOURCE,
-  SEEDED_ADMIN_USERNAME,
-  SEEDED_ADMIN_EMAIL,
-  SEEDED_ADMIN_PASSWORD,
-  SEEDED_ADMIN_FULL_NAME,
-  SEEDED_ADMIN_ROLE,
 )
 
 
@@ -44,19 +39,6 @@ PROFILE_COLUMNS = ",".join(
     "preferred_region",
     "website",
     "avatar_url",
-    "work_description",
-    "developer_type",
-    "business_name",
-    "business_website",
-    "business_locations",
-    "business_description",
-    "business_photos",
-    "portfolio_links",
-    "selfie_url",
-    "current_plan",
-    "bid_limit",
-    "bids_used",
-    "bid_cycle_start",
     "created_at",
     "updated_at",
   ]
@@ -484,19 +466,6 @@ def normalize_profile_row(row: dict[str, Any] | None) -> dict[str, Any] | None:
     "preferredRegion": row.get("preferred_region"),
     "website": row.get("website"),
     "avatarUrl": row.get("avatar_url"),
-    "workDescription": row.get("work_description"),
-    "developerType": row.get("developer_type"),
-    "businessName": row.get("business_name"),
-    "businessWebsite": row.get("business_website"),
-    "businessLocations": row.get("business_locations"),
-    "businessDescription": row.get("business_description"),
-    "businessPhotos": row.get("business_photos") or [],
-    "portfolioLinks": row.get("portfolio_links") or [],
-    "selfieUrl": row.get("selfie_url"),
-    "currentPlan": row.get("current_plan") or "free",
-    "bidLimit": row.get("bid_limit") or 15,
-    "bidsUsed": row.get("bids_used") or 0,
-    "bidCycleStart": row.get("bid_cycle_start"),
     "createdAt": row.get("created_at"),
     "updatedAt": row.get("updated_at"),
   }
@@ -606,14 +575,6 @@ def upsert_profile(
   avatar_url: str | None = None,
   username: str | None = None,
   status: str = "active",
-  developer_type: str | None = None,
-  business_name: str | None = None,
-  business_website: str | None = None,
-  business_locations: str | None = None,
-  business_description: str | None = None,
-  business_photos: list | None = None,
-  portfolio_links: list | None = None,
-  selfie_url: str | None = None,
 ) -> dict[str, Any]:
   _ensure_service_config()
 
@@ -634,24 +595,6 @@ def upsert_profile(
     "website": website,
     "avatar_url": avatar_url,
   }
-
-  # Developer-specific fields — only include when present to avoid overwriting
-  if developer_type:
-    payload["developer_type"] = developer_type
-  if business_name:
-    payload["business_name"] = business_name
-  if business_website:
-    payload["business_website"] = business_website
-  if business_locations:
-    payload["business_locations"] = business_locations
-  if business_description:
-    payload["business_description"] = business_description
-  if business_photos is not None:
-    payload["business_photos"] = business_photos
-  if portfolio_links is not None:
-    payload["portfolio_links"] = portfolio_links
-  if selfie_url:
-    payload["selfie_url"] = selfie_url
 
   response = _supabase_request(
     f"/rest/v1/profiles?{urlencode({'select': PROFILE_COLUMNS})}",
@@ -1029,67 +972,8 @@ def require_public_access(access_token: str, expected_role: str = "") -> tuple[d
   return auth_user, profile
 
 
-def _bootstrap_seeded_admin() -> dict[str, Any] | None:
-  """Auto-create the seeded admin user + profile if it doesn't exist in Supabase yet."""
-  import traceback
-
-  print(f"[yapply] Bootstrapping seeded admin: {SEEDED_ADMIN_USERNAME} / {SEEDED_ADMIN_EMAIL}")
-  user_id = ""
-
-  # Step 1: Try to sign in (auth user might already exist, just profile missing)
-  try:
-    session = sign_in_with_password(SEEDED_ADMIN_EMAIL, SEEDED_ADMIN_PASSWORD)
-    user_obj = session.get("user") if isinstance(session, dict) else None
-    user_id = str(user_obj.get("id") or "").strip() if isinstance(user_obj, dict) else ""
-    print(f"[yapply] Seeded admin sign-in OK, user_id={user_id}")
-  except Exception as e:
-    print(f"[yapply] Seeded admin sign-in failed ({e}), will try creating auth user")
-
-  # Step 2: If sign-in failed, create the auth user
-  if not user_id:
-    try:
-      result = create_user_with_service_role(
-        SEEDED_ADMIN_EMAIL,
-        SEEDED_ADMIN_PASSWORD,
-        {"full_name": SEEDED_ADMIN_FULL_NAME, "role": SEEDED_ADMIN_ROLE},
-      )
-      user_obj = result.get("user") if isinstance(result.get("user"), dict) else result
-      user_id = str(user_obj.get("id") or "").strip() if isinstance(user_obj, dict) else ""
-      print(f"[yapply] Seeded admin auth user created, user_id={user_id}")
-    except Exception as e:
-      print(f"[yapply] Failed to create seeded admin auth user: {e}")
-      traceback.print_exc()
-      return None
-
-  if not user_id:
-    print("[yapply] No user_id for seeded admin — giving up")
-    return None
-
-  # Step 3: Upsert the profile row
-  try:
-    profile = upsert_profile(
-      user_id=user_id,
-      email=SEEDED_ADMIN_EMAIL,
-      role=SEEDED_ADMIN_ROLE,
-      full_name=SEEDED_ADMIN_FULL_NAME,
-      username=SEEDED_ADMIN_USERNAME,
-      status="active",
-    )
-    print(f"[yapply] Seeded admin profile created/updated: {profile.get('id')}")
-    return profile
-  except Exception as e:
-    print(f"[yapply] Failed to upsert seeded admin profile: {e}")
-    traceback.print_exc()
-    return None
-
-
 def resolve_admin_email(identifier: str) -> dict[str, Any]:
   profile = get_profile_by_identifier(identifier)
-
-  # Auto-bootstrap the seeded admin if not found
-  if not profile and identifier.strip().lower() == SEEDED_ADMIN_USERNAME.lower():
-    profile = _bootstrap_seeded_admin()
-
   if not profile:
     raise SupabaseError("LOGIN_ACCOUNT_NOT_FOUND", "The admin account could not be found.", 404)
   if profile.get("role") not in ADMIN_ROLES:
@@ -1217,20 +1101,10 @@ def update_own_account_settings(access_token: str, payload: dict[str, Any]) -> d
 
   profile_picture_url = str(profile.get("avatarUrl") or "").strip() or None
 
-  # Map default avatar IDs to their local asset paths
-  _DEFAULT_AVATAR_MAP = {
-    "client-bird-1": "./assets/avatars/avatar-bird-business.png",
-    "client-bird-2": "./assets/avatars/avatar-bird-sport.png",
-    "client-bird-3": "./assets/avatars/avatar-bird-architect.png",
-    "developer-bird-1": "./assets/avatars/avatar-bird-business.png",
-    "developer-bird-2": "./assets/avatars/avatar-bird-sport.png",
-    "developer-bird-3": "./assets/avatars/avatar-bird-architect.png",
-  }
-
   if profile_picture_type == "default":
     if not profile_picture_id:
       raise SupabaseError("PROFILE_PICTURE_INVALID", "Please select a default profile picture.", 400)
-    profile_picture_url = _DEFAULT_AVATAR_MAP.get(profile_picture_id) or "./assets/avatars/avatar-bird-business.png"
+    profile_picture_url = None
   else:
     upload_data_url = str(payload.get("profilePictureUploadDataUrl") or "").strip()
     upload_name = str(payload.get("profilePictureUploadName") or "").strip()
@@ -1272,12 +1146,9 @@ def update_own_account_settings(access_token: str, payload: dict[str, Any]) -> d
     f"/rest/v1/profiles?{profile_query}",
     method="PATCH",
     payload={
-      k: v for k, v in {
-        "username": username,
-        "email": email,
-        "avatar_url": profile_picture_url,
-        "work_description": work_description if profile.get("role") == "developer" else None,
-      }.items() if v is not None
+      "username": username,
+      "email": email,
+      "avatar_url": profile_picture_url,
     },
     use_service_role=True,
     extra_headers={"Prefer": "return=representation"},
@@ -1335,16 +1206,6 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
     if not str(payload.get("specialties") or "").strip():
       raise SupabaseError("SPECIALTIES_REQUIRED", "Please enter at least one specialty for the developer account.", 400)
 
-  # Developer expansion fields
-  developer_type = str(payload.get("developerType") or "").strip() or None
-  business_name_val = str(payload.get("businessName") or "").strip() or None
-  business_website_val = str(payload.get("businessWebsite") or "").strip() or None
-  business_locations_val = str(payload.get("businessLocations") or "").strip() or None
-  business_description_val = str(payload.get("businessDescription") or "").strip() or None
-  business_photos_val = payload.get("businessPhotos") if isinstance(payload.get("businessPhotos"), list) else []
-  portfolio_links_val = payload.get("portfolioLinks") if isinstance(payload.get("portfolioLinks"), list) else []
-  selfie_url_val = str(payload.get("selfieUrl") or "").strip() or None
-
   metadata = {
     "role": role,
     "full_name": full_name,
@@ -1356,13 +1217,6 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
     "specialties": str(payload.get("specialties") or "").strip() or None,
     "preferred_region": str(payload.get("preferredRegion") or "").strip() or None,
     "website": str(payload.get("website") or "").strip() or None,
-    "developer_type": developer_type,
-    "business_name": business_name_val,
-    "business_website": business_website_val,
-    "business_locations": business_locations_val,
-    "business_description": business_description_val,
-    "portfolio_links": portfolio_links_val,
-    "selfie_url": selfie_url_val,
   }
 
   # Use sign_up_with_password so Supabase sends a confirmation OTP email
@@ -1394,14 +1248,6 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
       specialties=metadata["specialties"],
       preferred_region=metadata["preferred_region"],
       website=metadata["website"],
-      developer_type=developer_type,
-      business_name=business_name_val,
-      business_website=business_website_val,
-      business_locations=business_locations_val,
-      business_description=business_description_val,
-      business_photos=business_photos_val,
-      portfolio_links=portfolio_links_val,
-      selfie_url=selfie_url_val,
     )
     return {
       "pendingVerification": False,
@@ -1446,14 +1292,6 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
       specialties=metadata["specialties"],
       preferred_region=metadata["preferred_region"],
       website=metadata["website"],
-      developer_type=developer_type,
-      business_name=business_name_val,
-      business_website=business_website_val,
-      business_locations=business_locations_val,
-      business_description=business_description_val,
-      business_photos=business_photos_val,
-      portfolio_links=portfolio_links_val,
-      selfie_url=selfie_url_val,
     )
 
   return {

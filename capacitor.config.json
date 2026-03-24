@@ -14,14 +14,7 @@
   },
   "plugins": {
     "CapacitorHttp": {
-      "enabled": false
-    },
-    "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
-    },
-    "Keyboard": {
-      "resize": "none",
-      "scrollPadding": false
+      "enabled": true
     }
   },
   "ios": {

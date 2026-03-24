@@ -1,2 +1,113 @@
 <!DOCTYPE html>
-<html><head><meta http-equiv="refresh" content="0;url=index.html"></head><body></body></html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#060709" />
+    <title>Yapply | Moderator Login</title>
+    <meta
+      name="description"
+      content="Internal Yapply moderator access for review, moderation, and admin workflows."
+    />
+    <meta
+      name="keywords"
+      content="Yapply moderator login, admin portal, internal login"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles/tokens.css?v=20260312-supabase-auth" />
+    <link rel="stylesheet" href="./styles/base.css?v=20260312-supabase-auth" />
+    <link rel="stylesheet" href="./styles/components.css?v=20260312-supabase-auth" />
+    <link rel="stylesheet" href="./styles/sections.css?v=20260312-supabase-auth" />
+    <link rel="stylesheet" href="./styles/app-shell.css" />
+
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem("yapply-theme") || "dark";
+      } catch (error) {
+        document.documentElement.dataset.theme = "dark";
+      }
+      // Detect Capacitor native app
+      (function() {
+        var origin = window.location.origin;
+        var hostname = window.location.hostname;
+        var port = window.location.port;
+        var isNative = origin === "capacitor://localhost" || (hostname === "localhost" && !port);
+        if (isNative) {
+          document.documentElement.classList.add("has-tab-bar");
+          // Prevent pinch-to-zoom
+          document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+          document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+          // Sync bg color with theme
+          var t = localStorage.getItem('yapply-theme') || 'dark';
+          var bgc = t === 'light' ? '#f3efe6' : '#060709';
+          document.documentElement.style.backgroundColor = bgc;
+          var tc = document.querySelector('meta[name="theme-color"]');
+          if (tc) tc.content = bgc;
+        }
+      })();
+    
+    </script>
+  </head>
+  <body>
+    
+    <div class="page-shell">
+      <main>
+        <section class="section-shell auth-admin-shell">
+          <div class="section-heading">
+            <p class="eyebrow">Internal Access</p>
+            <h2 class="section-title">Moderator login</h2>
+            <p class="section-description">This route is reserved for internal moderation and admin access.</p>
+          </div>
+          <div class="panel auth-admin-panel">
+            <div class="auth-admin-panel__intro">
+              <span class="auth-admin-panel__eyebrow">Private route</span>
+              <h3>Low-visibility internal access for moderation workflows.</h3>
+              <p>This page is intentionally understated and separate from the public client and developer login flow.</p>
+            </div>
+            <form class="application-form auth-admin-form" id="moderator-login-form" novalidate>
+              <div class="auth-form-error form-field--full" id="moderator-login-error" hidden>
+                <strong>Please review the moderator form</strong>
+                <p id="moderator-login-error-text">Enter valid moderator credentials to continue.</p>
+              </div>
+              <label class="form-field">
+                <span>Moderator Username or Email</span>
+                <input
+                  type="text"
+                  name="adminIdentifier"
+                  placeholder="armandino or armandino@yapply.internal"
+                  autocomplete="username"
+                  required
+                />
+              </label>
+              <label class="form-field">
+                <span>Moderator Password</span>
+                <input
+                  type="password"
+                  name="adminPassword"
+                  placeholder="Enter moderator password"
+                  autocomplete="current-password"
+                  required
+                />
+              </label>
+              <div class="form-actions form-field--full">
+                <button class="button button--secondary" type="submit" id="moderator-login-submit">Enter Moderator Portal</button>
+              </div>
+              <a class="auth-inline-link" href="./login.html">Return to public login</a>
+              <p class="section-description" id="moderator-login-debug" style="font-size:0.82rem; margin:0;"></p>
+            </form>
+            <div class="form-success" id="moderator-login-success" hidden>
+              <h3>Moderator access granted</h3>
+              <p id="moderator-login-success-text">Admin authentication succeeded. Redirecting to the dashboard...</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./scripts/moderatorPortal.js?v=20260312-moderator-asset-trace"></script>
+  </body>
+</html>
