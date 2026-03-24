@@ -1,147 +1,165 @@
 import { createButton } from "./primitives.js";
+import { getStepIcon, getSubmitIcon } from "./wizardIcons.js";
 
 /* ─────────────────────────────────────────────────
    Marketplace Listing Submission — Step-by-Step Wizard
    Supports both client and professional (developer) flows
    ───────────────────────────────────────────────── */
 
-const CLIENT_WIZARD_STEPS = [
-  {
-    id: "projectTitle",
-    title: "Proje Başlığı",
-    subtitle: "Projenize kısa ve açık bir başlık verin.",
-  },
-  {
-    id: "projectType",
-    title: "Proje Kategorisi",
-    subtitle: "Projenize en uygun kategoriyi seçin.",
-  },
-  {
-    id: "projectBrief",
-    title: "Proje Açıklaması",
-    subtitle: "Projenizi detaylı bir şekilde tanımlayın.",
-  },
-  {
-    id: "contact",
-    title: "İletişim ve Konum",
-    subtitle: "Telefon numaranızı ve proje konumunu girin.",
-  },
-  {
-    id: "budget",
-    title: "Bütçe Aralığı",
-    subtitle: "Projeniz için tahmini bütçenizi belirleyin.",
-  },
-  {
-    id: "constructionStarted",
-    title: "İnşaat Durumu",
-    subtitle: "İnşaat başladı mı?",
-  },
-  {
-    id: "projectSize",
-    title: "Proje Büyüklüğü",
-    subtitle: "Projenizin yaklaşık büyüklüğünü girin.",
-  },
-  {
-    id: "photos",
-    title: "Fotoğraflar",
-    subtitle: "Proje alanı veya referans fotoğraflarını yükleyin.",
-  },
-  {
-    id: "summary",
-    title: "Özet",
-    subtitle: "Bilgilerinizi kontrol edin ve ilanınızı yayınlayın.",
-  },
-];
+function getWizardLocale(pageContent) {
+  return pageContent?.meta?.locale === "tr" ? "tr" : "en";
+}
 
-const PROFESSIONAL_WIZARD_STEPS = [
-  {
-    id: "companyInfo",
-    title: "Şirket Bilgileri",
-    subtitle: "Şirket adınızı ve meslek türünüzü girin.",
-  },
-  {
-    id: "serviceArea",
-    title: "Hizmet Alanı ve Deneyim",
-    subtitle: "Hizmet verdiğiniz bölgeyi ve deneyim sürenizi belirtin.",
-  },
-  {
-    id: "specialties",
-    title: "Uzmanlık Alanları",
-    subtitle: "Sunduğunuz hizmetleri ve uzmanlıklarınızı tanımlayın.",
-  },
-  {
-    id: "pricing",
-    title: "Fiyatlama",
-    subtitle: "Başlangıç fiyatınızı veya fiyatlama modelinizi belirtin.",
-  },
-  {
-    id: "portfolio",
-    title: "Portfolyo ve Şirket Profili",
-    subtitle: "Geçmiş projelerinizi ve şirketinizi tanıtın.",
-  },
-  {
-    id: "professionalContact",
-    title: "İletişim Bilgileri",
-    subtitle: "E-posta, telefon ve website bilgilerinizi girin.",
-  },
-  {
-    id: "professionalUploads",
-    title: "Görseller",
-    subtitle: "Logo, proje görselleri veya portfolyo materyali yükleyin.",
-  },
-  {
-    id: "professionalSummary",
-    title: "Özet",
-    subtitle: "Bilgilerinizi kontrol edin ve ilanınızı gönderin.",
-  },
-];
+function clientWizardSteps(isTr) {
+  return [
+    {
+      id: "projectTitle",
+      title: isTr ? "Proje Başlığı" : "Project Title",
+      subtitle: isTr ? "Projenize kısa ve açık bir başlık verin." : "Give your project a short, clear title.",
+    },
+    {
+      id: "projectType",
+      title: isTr ? "Proje Kategorisi" : "Project Category",
+      subtitle: isTr ? "Projenize en uygun kategoriyi seçin." : "Choose the best category for your project.",
+    },
+    {
+      id: "projectBrief",
+      title: isTr ? "Proje Açıklaması" : "Project Description",
+      subtitle: isTr ? "Projenizi detaylı bir şekilde tanımlayın." : "Describe your project in detail.",
+    },
+    {
+      id: "contact",
+      title: isTr ? "İletişim ve Konum" : "Contact & Location",
+      subtitle: isTr ? "Telefon numaranızı ve proje konumunu girin." : "Enter your phone number and project location.",
+    },
+    {
+      id: "budget",
+      title: isTr ? "Bütçe Aralığı" : "Budget Range",
+      subtitle: isTr ? "Projeniz için tahmini bütçenizi belirleyin." : "Set your estimated budget for the project.",
+    },
+    {
+      id: "constructionStarted",
+      title: isTr ? "İnşaat Durumu" : "Construction Status",
+      subtitle: isTr ? "İnşaat başladı mı?" : "Has construction started?",
+    },
+    {
+      id: "projectSize",
+      title: isTr ? "Proje Büyüklüğü" : "Project Size",
+      subtitle: isTr ? "Projenizin yaklaşık büyüklüğünü girin." : "Enter the approximate size of your project.",
+    },
+    {
+      id: "photos",
+      title: isTr ? "Fotoğraflar" : "Photos",
+      subtitle: isTr ? "Proje alanı veya referans fotoğraflarını yükleyin." : "Upload site photos or reference images.",
+    },
+    {
+      id: "summary",
+      title: isTr ? "Özet" : "Summary",
+      subtitle: isTr ? "Bilgilerinizi kontrol edin ve ilanınızı yayınlayın." : "Review your info and publish your listing.",
+    },
+  ];
+}
 
-const PROFESSION_TYPE_OPTIONS_TR = [
-  "Mimarlık Ofisi",
-  "Geliştirici",
-  "İnşaat Şirketi",
-  "Anahtar Teslim Yüklenici",
-  "Cephe / Fit-Out Uzmanı",
-];
+function professionalWizardSteps(isTr) {
+  return [
+    {
+      id: "companyInfo",
+      title: isTr ? "Şirket Bilgileri" : "Company Info",
+      subtitle: isTr ? "Şirket adınızı ve meslek türünüzü girin." : "Enter your company name and profession type.",
+    },
+    {
+      id: "serviceArea",
+      title: isTr ? "Hizmet Alanı ve Deneyim" : "Service Area & Experience",
+      subtitle: isTr ? "Hizmet verdiğiniz bölgeyi ve deneyim sürenizi belirtin." : "Specify your service region and years of experience.",
+    },
+    {
+      id: "specialties",
+      title: isTr ? "Uzmanlık Alanları" : "Specialties",
+      subtitle: isTr ? "Sunduğunuz hizmetleri ve uzmanlıklarınızı tanımlayın." : "Describe the services and specialties you offer.",
+    },
+    {
+      id: "pricing",
+      title: isTr ? "Fiyatlama" : "Pricing",
+      subtitle: isTr ? "Başlangıç fiyatınızı veya fiyatlama modelinizi belirtin." : "State your starting price or pricing model.",
+    },
+    {
+      id: "portfolio",
+      title: isTr ? "Portfolyo ve Şirket Profili" : "Portfolio & Company Profile",
+      subtitle: isTr ? "Geçmiş projelerinizi ve şirketinizi tanıtın." : "Introduce your past projects and company.",
+    },
+    {
+      id: "professionalContact",
+      title: isTr ? "İletişim Bilgileri" : "Contact Details",
+      subtitle: isTr ? "E-posta, telefon ve website bilgilerinizi girin." : "Enter your email, phone, and website.",
+    },
+    {
+      id: "professionalUploads",
+      title: isTr ? "Görseller" : "Images",
+      subtitle: isTr ? "Logo, proje görselleri veya portfolyo materyali yükleyin." : "Upload your logo, project images, or portfolio materials.",
+    },
+    {
+      id: "professionalSummary",
+      title: isTr ? "Özet" : "Summary",
+      subtitle: isTr ? "Bilgilerinizi kontrol edin ve ilanınızı gönderin." : "Review your info and submit your listing.",
+    },
+  ];
+}
 
-const CATEGORY_OPTIONS_TR = [
-  "Havuz Renovasyonu",
-  "Havuz Yapımı",
-  "Duvar Yapımı",
-  "İç Mekan Renovasyonu",
-  "Mutfak Renovasyonu",
-  "Banyo Renovasyonu",
-  "Komple Villa Yapımı",
-  "Peyzaj",
-  "Dış Cephe Renovasyonu",
-  "Çatı",
-  "Zemin Kaplama",
-  "Boya",
-  "Seramik / Fayans",
-  "Sıhhi Tesisat",
-  "Elektrik",
-  "Cephe Uygulaması",
-  "Bahçe Tasarımı",
-  "Pergola / Dış Mekan Yapıları",
-  "Yıkım / Saha Hazırlığı",
-  "Genel İnşaat",
-  "Mimarlık / Tasarım",
-  "Özel Proje",
-];
+function professionTypeOptions(isTr) {
+  if (isTr) return ["Mimarlık Ofisi", "Profesyonel", "İnşaat Şirketi", "Anahtar Teslim Yüklenici", "Cephe / Fit-Out Uzmanı"];
+  return ["Architecture Firm", "Professional", "Construction Company", "Turnkey Contractor", "Facade / Fit-Out Specialist"];
+}
 
-const BUDGET_OPTIONS_TR = [
-  { label: "1.000 - 10.000 TL", value: "1000-10000" },
-  { label: "10.000 - 50.000 TL", value: "10000-50000" },
-  { label: "50.000 - 150.000 TL", value: "50000-150000" },
-  { label: "150.000 - 500.000 TL", value: "150000-500000" },
-  { label: "500.000 - 1.500.000 TL", value: "500000-1500000" },
-  { label: "1.500.000 TL+", value: "1500000+" },
-];
+function categoryOptions(isTr) {
+  if (isTr) {
+    return [
+      "Havuz Yapımı", "Havuz Renovasyonu", "Sauna Yapımı", "Jakuzi Kurulumu",
+      "Komple Villa Yapımı", "İç Mekan Renovasyonu", "Mutfak Renovasyonu",
+      "Banyo Renovasyonu", "Dış Cephe Renovasyonu", "Çatı", "Zemin Kaplama",
+      "Boya", "Seramik / Fayans", "Duvar Yapımı", "Sıhhi Tesisat", "Elektrik",
+      "Aydınlatma Tasarımı", "Cephe Uygulaması", "Peyzaj", "Bahçe Tasarımı",
+      "Pergola / Dış Mekan Yapıları", "Teras Düzenlemesi", "Çit / Korkuluk Yapımı",
+      "Garaj Yapımı / Renovasyonu", "Ev Ofis Yapımı", "Spor Salonu / Fitness Alanı",
+      "Akıllı Ev Sistemleri", "Güvenlik Sistemleri", "Güneş Paneli Kurulumu",
+      "Şarap Mahzeni", "Isıtma / Soğutma Sistemleri", "Yalıtım",
+      "Kapı / Pencere Montajı", "Merdiven / Korkuluk", "Asansör Kurulumu",
+      "Depolama / Dolap Sistemleri", "Yıkım / Saha Hazırlığı", "Genel İnşaat",
+      "Mimarlık / Tasarım", "Özel Proje",
+    ];
+  }
+  return [
+    "Pool Construction", "Pool Renovation", "Sauna Construction", "Jacuzzi Installation",
+    "Full Villa Construction", "Interior Renovation", "Kitchen Renovation",
+    "Bathroom Renovation", "Exterior Renovation", "Roofing", "Flooring",
+    "Painting", "Tile / Ceramics", "Wall Construction", "Plumbing", "Electrical",
+    "Lighting Design", "Facade Application", "Landscaping", "Garden Design",
+    "Pergola / Outdoor Structures", "Terrace Design", "Fence / Railing Construction",
+    "Garage Construction / Renovation", "Home Office Build", "Gym / Fitness Area",
+    "Smart Home Systems", "Security Systems", "Solar Panel Installation",
+    "Wine Cellar", "Heating / Cooling Systems", "Insulation",
+    "Door / Window Installation", "Staircase / Railing", "Elevator Installation",
+    "Storage / Cabinet Systems", "Demolition / Site Preparation", "General Construction",
+    "Architecture / Design", "Custom Project",
+  ];
+}
 
-const CONSTRUCTION_STARTED_OPTIONS_TR = [
-  { label: "Hayır, inşaat henüz başlamadı", value: "no" },
-  { label: "Evet, inşaat başladı", value: "yes" },
-];
+function budgetOptions(isTr) {
+  return [
+    { label: isTr ? "1.000 - 10.000 TL" : "1,000 - 10,000 TL", value: "1000-10000" },
+    { label: isTr ? "10.000 - 50.000 TL" : "10,000 - 50,000 TL", value: "10000-50000" },
+    { label: isTr ? "50.000 - 150.000 TL" : "50,000 - 150,000 TL", value: "50000-150000" },
+    { label: isTr ? "150.000 - 500.000 TL" : "150,000 - 500,000 TL", value: "150000-500000" },
+    { label: isTr ? "500.000 - 1.500.000 TL" : "500,000 - 1,500,000 TL", value: "500000-1500000" },
+    { label: isTr ? "1.500.000 TL+" : "1,500,000 TL+", value: "1500000+" },
+  ];
+}
+
+function constructionOptions(isTr) {
+  return [
+    { label: isTr ? "Hayır, inşaat henüz başlamadı" : "No, construction has not started", value: "no" },
+    { label: isTr ? "Evet, inşaat başladı" : "Yes, construction has started", value: "yes" },
+  ];
+}
 
 /* ── Progress Dots ─────────────────────────────── */
 
@@ -165,16 +183,16 @@ function createProgressDots(totalSteps, currentStep) {
 
 /* ── Individual Step Renderers ─────────────────── */
 
-function renderStepProjectTitle(data) {
+function renderStepProjectTitle(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-project-title">Proje Başlığı</label>
+      <label class="wizard-label" for="wiz-project-title">${isTr ? "Proje Başlığı" : "Project Title"}</label>
       <input
         class="wizard-input"
         type="text"
         id="wiz-project-title"
         name="projectTitle"
-        placeholder="Özel sahil villası, havuz restorasyonu, mutfak renovasyonu..."
+        placeholder="${isTr ? "Özel sahil villası, havuz restorasyonu, mutfak renovasyonu..." : "Beach villa, pool renovation, kitchen remodel..."}"
         value="${escapeAttr(data.projectTitle || "")}"
         required
       />
@@ -182,18 +200,19 @@ function renderStepProjectTitle(data) {
   `;
 }
 
-function renderStepProjectType(data) {
-  const options = CATEGORY_OPTIONS_TR.map((cat) => {
+function renderStepProjectType(data, isTr) {
+  const cats = categoryOptions(isTr);
+  const options = cats.map((cat) => {
     const selected = data.projectType === cat ? "selected" : "";
     return `<option value="${escapeAttr(cat)}" ${selected}>${cat}</option>`;
   }).join("");
 
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-project-type">Kategori</label>
+      <label class="wizard-label" for="wiz-project-type">${isTr ? "Kategori" : "Category"}</label>
       <div class="wizard-select-wrapper">
         <select class="wizard-select" id="wiz-project-type" name="projectType" required>
-          <option value="" disabled ${!data.projectType ? "selected" : ""}>Bir kategori seçin</option>
+          <option value="" disabled ${!data.projectType ? "selected" : ""}>${isTr ? "Bir kategori seçin" : "Select a category"}</option>
           ${options}
         </select>
         <svg class="wizard-select-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -204,46 +223,46 @@ function renderStepProjectType(data) {
   `;
 }
 
-function renderStepProjectBrief(data) {
+function renderStepProjectBrief(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-project-brief">Proje Açıklaması</label>
+      <label class="wizard-label" for="wiz-project-brief">${isTr ? "Proje Açıklaması" : "Project Description"}</label>
       <textarea
         class="wizard-textarea"
         id="wiz-project-brief"
         name="projectBrief"
         rows="6"
-        placeholder="Ne inşa ettirmek, yeniletmek veya tamamlatmak istediğinizi açıklayın."
+        placeholder="${isTr ? "Ne inşa ettirmek, yeniletmek veya tamamlatmak istediğinizi açıklayın." : "Describe what you want to build, renovate, or complete."}"
         required
       >${escapeHtml(data.projectBrief || "")}</textarea>
-      <small class="wizard-hint">İletişim bilgilerini proje açıklamasına yazmayınız.</small>
+      <small class="wizard-hint">${isTr ? "İletişim bilgilerini proje açıklamasına yazmayınız." : "Do not include contact details in the description."}</small>
     </div>
   `;
 }
 
-function renderStepContact(data) {
+function renderStepContact(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-phone">Telefon Numarası</label>
+      <label class="wizard-label" for="wiz-phone">${isTr ? "Telefon Numarası" : "Phone Number"}</label>
       <input
         class="wizard-input"
         type="tel"
         id="wiz-phone"
         name="phone"
-        placeholder="+90 5XX XXX XX XX"
+        placeholder="${isTr ? "+90 5XX XXX XX XX" : "+90 5XX XXX XX XX"}"
         autocomplete="tel"
         value="${escapeAttr(data.phone || "")}"
         required
       />
     </div>
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-location">Proje Konumu</label>
+      <label class="wizard-label" for="wiz-location">${isTr ? "Proje Konumu" : "Project Location"}</label>
       <input
         class="wizard-input"
         type="text"
         id="wiz-location"
         name="preferredLocation"
-        placeholder="İstanbul, İzmir, Bodrum..."
+        placeholder="${isTr ? "İstanbul, İzmir, Bodrum..." : "Istanbul, Izmir, Bodrum..."}"
         value="${escapeAttr(data.preferredLocation || "")}"
         required
       />
@@ -251,18 +270,19 @@ function renderStepContact(data) {
   `;
 }
 
-function renderStepBudget(data) {
-  const options = BUDGET_OPTIONS_TR.map((opt) => {
+function renderStepBudget(data, isTr) {
+  const opts = budgetOptions(isTr);
+  const options = opts.map((opt) => {
     const selected = data.estimatedBudget === opt.value ? "selected" : "";
     return `<option value="${escapeAttr(opt.value)}" ${selected}>${opt.label}</option>`;
   }).join("");
 
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-budget">Tahmini Bütçe</label>
+      <label class="wizard-label" for="wiz-budget">${isTr ? "Tahmini Bütçe" : "Estimated Budget"}</label>
       <div class="wizard-select-wrapper">
         <select class="wizard-select" id="wiz-budget" name="estimatedBudget" required>
-          <option value="" disabled ${!data.estimatedBudget ? "selected" : ""}>Bütçe aralığı seçin</option>
+          <option value="" disabled ${!data.estimatedBudget ? "selected" : ""}>${isTr ? "Bütçe aralığı seçin" : "Select a budget range"}</option>
           ${options}
         </select>
         <svg class="wizard-select-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -273,18 +293,19 @@ function renderStepBudget(data) {
   `;
 }
 
-function renderStepConstructionStarted(data) {
-  const options = CONSTRUCTION_STARTED_OPTIONS_TR.map((opt) => {
+function renderStepConstructionStarted(data, isTr) {
+  const opts = constructionOptions(isTr);
+  const options = opts.map((opt) => {
     const selected = data.constructionStarted === opt.value ? "selected" : "";
     return `<option value="${escapeAttr(opt.value)}" ${selected}>${opt.label}</option>`;
   }).join("");
 
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-construction">İnşaat başladı mı?</label>
+      <label class="wizard-label" for="wiz-construction">${isTr ? "İnşaat başladı mı?" : "Has construction started?"}</label>
       <div class="wizard-select-wrapper">
         <select class="wizard-select" id="wiz-construction" name="constructionStarted" required>
-          <option value="" disabled ${!data.constructionStarted ? "selected" : ""}>Seçin</option>
+          <option value="" disabled ${!data.constructionStarted ? "selected" : ""}>${isTr ? "Seçin" : "Select"}</option>
           ${options}
         </select>
         <svg class="wizard-select-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -295,26 +316,26 @@ function renderStepConstructionStarted(data) {
   `;
 }
 
-function renderStepProjectSize(data) {
+function renderStepProjectSize(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-project-size">Proje Büyüklüğü</label>
+      <label class="wizard-label" for="wiz-project-size">${isTr ? "Proje Büyüklüğü" : "Project Size"}</label>
       <input
         class="wizard-input"
         type="text"
         id="wiz-project-size"
         name="projectSize"
-        placeholder="Yaklaşık 280 m² iç mekan / 900 m² arsa"
+        placeholder="${isTr ? "Yaklaşık 280 m² iç mekan / 900 m² arsa" : "Approx. 280 m² interior / 900 m² plot"}"
         value="${escapeAttr(data.projectSize || "")}"
       />
     </div>
   `;
 }
 
-function renderStepPhotos() {
+function renderStepPhotos(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label">Fotoğraf Yükleme</label>
+      <label class="wizard-label">${isTr ? "Fotoğraf Yükleme" : "Upload Photos"}</label>
       <div class="wizard-upload-area" data-wizard-upload-area>
         <div class="wizard-upload-icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -323,8 +344,8 @@ function renderStepPhotos() {
             <polyline points="21 15 16 10 5 21"/>
           </svg>
         </div>
-        <p class="wizard-upload-text">Fotoğraf yüklemek için dokunun</p>
-        <small class="wizard-upload-hint">En fazla 3 görsel, max 2MB</small>
+        <p class="wizard-upload-text">${isTr ? "Fotoğraf yüklemek için dokunun" : "Tap to upload photos"}</p>
+        <small class="wizard-upload-hint">${isTr ? "En fazla 3 görsel, max 2MB" : "Up to 3 images, max 2MB each"}</small>
         <input
           type="file"
           name="referenceUpload"
@@ -340,17 +361,17 @@ function renderStepPhotos() {
   `;
 }
 
-function renderStepSummary(data) {
+function renderStepSummary(data, isTr) {
   const rows = [
-    { label: "Proje Başlığı", value: data.projectTitle },
-    { label: "Kategori", value: data.projectType },
-    { label: "Açıklama", value: data.projectBrief ? truncateText(data.projectBrief, 120) : "" },
-    { label: "Telefon", value: data.phone },
-    { label: "Konum", value: data.preferredLocation },
-    { label: "Bütçe", value: getBudgetLabel(data.estimatedBudget) },
-    { label: "İnşaat Durumu", value: getConstructionLabel(data.constructionStarted) },
-    { label: "Proje Büyüklüğü", value: data.projectSize },
-    { label: "Fotoğraflar", value: data._photoCount ? `${data._photoCount} fotoğraf` : "Yüklenmedi" },
+    { label: isTr ? "Proje Başlığı" : "Project Title", value: data.projectTitle },
+    { label: isTr ? "Kategori" : "Category", value: data.projectType },
+    { label: isTr ? "Açıklama" : "Description", value: data.projectBrief ? truncateText(data.projectBrief, 120) : "" },
+    { label: isTr ? "Telefon" : "Phone", value: data.phone },
+    { label: isTr ? "Konum" : "Location", value: data.preferredLocation },
+    { label: isTr ? "Bütçe" : "Budget", value: getBudgetLabel(data.estimatedBudget, isTr) },
+    { label: isTr ? "İnşaat Durumu" : "Construction Status", value: getConstructionLabel(data.constructionStarted, isTr) },
+    { label: isTr ? "Proje Büyüklüğü" : "Project Size", value: data.projectSize },
+    { label: isTr ? "Fotoğraflar" : "Photos", value: data._photoCount ? `${data._photoCount} ${isTr ? "fotoğraf" : "photo(s)"}` : (isTr ? "Yüklenmedi" : "None uploaded") },
   ];
 
   const rowsHtml = rows
@@ -387,56 +408,45 @@ function truncateText(text, maxLen) {
   return text.slice(0, maxLen).trim() + "...";
 }
 
-function getBudgetLabel(value) {
+function getBudgetLabel(value, isTr) {
   if (!value) return "";
-  const opt = BUDGET_OPTIONS_TR.find((o) => o.value === value);
+  const opt = budgetOptions(isTr).find((o) => o.value === value);
   return opt ? opt.label : value;
 }
 
-function getConstructionLabel(value) {
+function getConstructionLabel(value, isTr) {
   if (!value) return "";
-  const opt = CONSTRUCTION_STARTED_OPTIONS_TR.find((o) => o.value === value);
+  const opt = constructionOptions(isTr).find((o) => o.value === value);
   return opt ? opt.label : value;
 }
-
-const CLIENT_STEP_RENDERERS = [
-  renderStepProjectTitle,
-  renderStepProjectType,
-  renderStepProjectBrief,
-  renderStepContact,
-  renderStepBudget,
-  renderStepConstructionStarted,
-  renderStepProjectSize,
-  renderStepPhotos,
-  renderStepSummary,
-];
 
 /* ── Professional (Developer) Step Renderers ───── */
 
-function renderStepCompanyInfo(data) {
-  const options = PROFESSION_TYPE_OPTIONS_TR.map((opt) => {
+function renderStepCompanyInfo(data, isTr) {
+  const opts = professionTypeOptions(isTr);
+  const options = opts.map((opt) => {
     const selected = data.professionType === opt ? "selected" : "";
     return `<option value="${escapeAttr(opt)}" ${selected}>${opt}</option>`;
   }).join("");
 
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-company-name">Şirket Adı</label>
+      <label class="wizard-label" for="wiz-company-name">${isTr ? "Şirket Adı" : "Company Name"}</label>
       <input
         class="wizard-input"
         type="text"
         id="wiz-company-name"
         name="companyName"
-        placeholder="Stüdyo veya firma adı"
+        placeholder="${isTr ? "Stüdyo veya firma adı" : "Studio or company name"}"
         value="${escapeAttr(data.companyName || "")}"
         required
       />
     </div>
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-profession-type">Meslek Türü</label>
+      <label class="wizard-label" for="wiz-profession-type">${isTr ? "Meslek Türü" : "Profession Type"}</label>
       <div class="wizard-select-wrapper">
         <select class="wizard-select" id="wiz-profession-type" name="professionType" required>
-          <option value="" disabled ${!data.professionType ? "selected" : ""}>Meslek türünüzü seçin</option>
+          <option value="" disabled ${!data.professionType ? "selected" : ""}>${isTr ? "Meslek türünüzü seçin" : "Select your profession type"}</option>
           ${options}
         </select>
         <svg class="wizard-select-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -447,22 +457,22 @@ function renderStepCompanyInfo(data) {
   `;
 }
 
-function renderStepServiceArea(data) {
+function renderStepServiceArea(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-service-area">Şehir / Hizmet Alanı</label>
+      <label class="wizard-label" for="wiz-service-area">${isTr ? "Şehir / Hizmet Alanı" : "City / Service Area"}</label>
       <input
         class="wizard-input"
         type="text"
         id="wiz-service-area"
         name="serviceArea"
-        placeholder="İstanbul, İzmir, Bodrum, Ankara..."
+        placeholder="${isTr ? "İstanbul, İzmir, Bodrum, Ankara..." : "Istanbul, Izmir, Bodrum, Ankara..."}"
         value="${escapeAttr(data.serviceArea || "")}"
         required
       />
     </div>
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-experience">Deneyim Yılı</label>
+      <label class="wizard-label" for="wiz-experience">${isTr ? "Deneyim Yılı" : "Years of Experience"}</label>
       <input
         class="wizard-input"
         type="number"
@@ -477,32 +487,32 @@ function renderStepServiceArea(data) {
   `;
 }
 
-function renderStepSpecialties(data) {
+function renderStepSpecialties(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-specialties">Uzmanlıklar / Sunulan Hizmetler</label>
+      <label class="wizard-label" for="wiz-specialties">${isTr ? "Uzmanlıklar / Sunulan Hizmetler" : "Specialties / Services Offered"}</label>
       <textarea
         class="wizard-textarea"
         id="wiz-specialties"
         name="specialties"
         rows="4"
-        placeholder="Villa projeleri, anahtar teslim işler, renovasyon teslimi, fizibilite..."
+        placeholder="${isTr ? "Villa projeleri, anahtar teslim işler, renovasyon teslimi, fizibilite..." : "Villa projects, turnkey builds, renovation delivery, feasibility..."}"
         required
       >${escapeHtml(data.specialties || "")}</textarea>
     </div>
   `;
 }
 
-function renderStepPricing(data) {
+function renderStepPricing(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-pricing">Başlangıç Fiyatı veya Fiyatlama Modeli</label>
+      <label class="wizard-label" for="wiz-pricing">${isTr ? "Başlangıç Fiyatı veya Fiyatlama Modeli" : "Starting Price or Pricing Model"}</label>
       <input
         class="wizard-input"
         type="text"
         id="wiz-pricing"
         name="pricingModel"
-        placeholder="Konsept paketleri EUR 45K'dan / Anahtar teslim EUR 780K'dan"
+        placeholder="${isTr ? "Konsept paketleri EUR 45K'dan / Anahtar teslim EUR 780K'dan" : "Concept packages from EUR 45K / Turnkey from EUR 780K"}"
         value="${escapeAttr(data.pricingModel || "")}"
         required
       />
@@ -510,80 +520,80 @@ function renderStepPricing(data) {
   `;
 }
 
-function renderStepPortfolio(data) {
+function renderStepPortfolio(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-portfolio">Geçmiş Projeler / Portfolyo Özeti</label>
+      <label class="wizard-label" for="wiz-portfolio">${isTr ? "Geçmiş Projeler / Portfolyo Özeti" : "Past Projects / Portfolio Summary"}</label>
       <textarea
         class="wizard-textarea"
         id="wiz-portfolio"
         name="portfolioSummary"
         rows="5"
-        placeholder="İlgili geçmiş işlerinizi, hizmet verdiğiniz sektörleri ve teslim gücünüzü özetleyin."
+        placeholder="${isTr ? "İlgili geçmiş işlerinizi, hizmet verdiğiniz sektörleri ve teslim gücünüzü özetleyin." : "Summarize your relevant past work, sectors served, and delivery capabilities."}"
         required
       >${escapeHtml(data.portfolioSummary || "")}</textarea>
     </div>
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-company-desc">Kısa Şirket Tanımı</label>
+      <label class="wizard-label" for="wiz-company-desc">${isTr ? "Kısa Şirket Tanımı" : "Brief Company Description"}</label>
       <textarea
         class="wizard-textarea"
         id="wiz-company-desc"
         name="companyDescription"
         rows="4"
-        placeholder="Konumlanmanızı, ekip gücünüzü ve pazardaki uygunluğunuzu kısa ve premium bir tonda anlatın."
+        placeholder="${isTr ? "Konumlanmanızı, ekip gücünüzü ve pazardaki uygunluğunuzu kısa ve premium bir tonda anlatın." : "Describe your positioning, team strengths, and market fit in a concise, premium tone."}"
         required
       >${escapeHtml(data.companyDescription || "")}</textarea>
     </div>
   `;
 }
 
-function renderStepProfessionalContact(data) {
+function renderStepProfessionalContact(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-contact-email">İletişim E-postası</label>
+      <label class="wizard-label" for="wiz-contact-email">${isTr ? "İletişim E-postası" : "Contact Email"}</label>
       <input
         class="wizard-input"
         type="email"
         id="wiz-contact-email"
         name="contactEmail"
-        placeholder="ekip@sirket.com"
+        placeholder="${isTr ? "ekip@sirket.com" : "team@company.com"}"
         autocomplete="email"
         value="${escapeAttr(data.contactEmail || "")}"
         required
       />
     </div>
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-phone">Telefon Numarası</label>
+      <label class="wizard-label" for="wiz-phone">${isTr ? "Telefon Numarası" : "Phone Number"}</label>
       <input
         class="wizard-input"
         type="tel"
         id="wiz-phone"
         name="phone"
-        placeholder="+90 5XX XXX XX XX"
+        placeholder="${isTr ? "+90 5XX XXX XX XX" : "+90 5XX XXX XX XX"}"
         autocomplete="tel"
         value="${escapeAttr(data.phone || "")}"
         required
       />
     </div>
     <div class="wizard-field">
-      <label class="wizard-label" for="wiz-website">Website / Portfolyo URL</label>
+      <label class="wizard-label" for="wiz-website">${isTr ? "Website / Portfolyo URL" : "Website / Portfolio URL"}</label>
       <input
         class="wizard-input"
         type="url"
         id="wiz-website"
         name="website"
-        placeholder="https://studionuz.com"
+        placeholder="${isTr ? "https://studionuz.com" : "https://yourstudio.com"}"
         value="${escapeAttr(data.website || "")}"
       />
-      <small class="wizard-hint">İsteğe bağlı</small>
+      <small class="wizard-hint">${isTr ? "İsteğe bağlı" : "Optional"}</small>
     </div>
   `;
 }
 
-function renderStepProfessionalUploads() {
+function renderStepProfessionalUploads(data, isTr) {
   return `
     <div class="wizard-field">
-      <label class="wizard-label">Logo / Proje Görselleri</label>
+      <label class="wizard-label">${isTr ? "Logo / Proje Görselleri" : "Logo / Project Images"}</label>
       <div class="wizard-upload-area" data-wizard-upload-area>
         <div class="wizard-upload-icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -592,8 +602,8 @@ function renderStepProfessionalUploads() {
             <polyline points="21 15 16 10 5 21"/>
           </svg>
         </div>
-        <p class="wizard-upload-text">Görsel yüklemek için dokunun</p>
-        <small class="wizard-upload-hint">En fazla 3 görsel, max 2MB</small>
+        <p class="wizard-upload-text">${isTr ? "Görsel yüklemek için dokunun" : "Tap to upload images"}</p>
+        <small class="wizard-upload-hint">${isTr ? "En fazla 3 görsel, max 2MB" : "Up to 3 images, max 2MB each"}</small>
         <input
           type="file"
           name="uploads"
@@ -605,24 +615,24 @@ function renderStepProfessionalUploads() {
       </div>
       <div class="wizard-upload-preview" data-wizard-upload-preview hidden></div>
       <p class="wizard-upload-message" data-wizard-upload-message hidden></p>
-      <small class="wizard-hint">İsteğe bağlı — görseller ilanınızı güçlendirir.</small>
+      <small class="wizard-hint">${isTr ? "İsteğe bağlı — görseller ilanınızı güçlendirir." : "Optional — images help strengthen your listing."}</small>
     </div>
   `;
 }
 
-function renderStepProfessionalSummary(data) {
+function renderStepProfessionalSummary(data, isTr) {
   const rows = [
-    { label: "Şirket Adı", value: data.companyName },
-    { label: "Meslek Türü", value: data.professionType },
-    { label: "Hizmet Alanı", value: data.serviceArea },
-    { label: "Deneyim", value: data.experience ? `${data.experience} yıl` : "" },
-    { label: "Uzmanlıklar", value: data.specialties ? truncateText(data.specialties, 100) : "" },
-    { label: "Fiyatlama", value: data.pricingModel },
-    { label: "Portfolyo", value: data.portfolioSummary ? truncateText(data.portfolioSummary, 80) : "" },
-    { label: "E-posta", value: data.contactEmail },
-    { label: "Telefon", value: data.phone },
+    { label: isTr ? "Şirket Adı" : "Company Name", value: data.companyName },
+    { label: isTr ? "Meslek Türü" : "Profession Type", value: data.professionType },
+    { label: isTr ? "Hizmet Alanı" : "Service Area", value: data.serviceArea },
+    { label: isTr ? "Deneyim" : "Experience", value: data.experience ? `${data.experience} ${isTr ? "yıl" : "years"}` : "" },
+    { label: isTr ? "Uzmanlıklar" : "Specialties", value: data.specialties ? truncateText(data.specialties, 100) : "" },
+    { label: isTr ? "Fiyatlama" : "Pricing", value: data.pricingModel },
+    { label: isTr ? "Portfolyo" : "Portfolio", value: data.portfolioSummary ? truncateText(data.portfolioSummary, 80) : "" },
+    { label: isTr ? "E-posta" : "Email", value: data.contactEmail },
+    { label: isTr ? "Telefon" : "Phone", value: data.phone },
     { label: "Website", value: data.website },
-    { label: "Görseller", value: data._photoCount ? `${data._photoCount} görsel` : "Yüklenmedi" },
+    { label: isTr ? "Görseller" : "Images", value: data._photoCount ? `${data._photoCount} ${isTr ? "görsel" : "image(s)"}` : (isTr ? "Yüklenmedi" : "None uploaded") },
   ];
 
   const rowsHtml = rows
@@ -644,40 +654,34 @@ function renderStepProfessionalSummary(data) {
   `;
 }
 
-const PROFESSIONAL_STEP_RENDERERS = [
-  renderStepCompanyInfo,
-  renderStepServiceArea,
-  renderStepSpecialties,
-  renderStepPricing,
-  renderStepPortfolio,
-  renderStepProfessionalContact,
-  renderStepProfessionalUploads,
-  renderStepProfessionalSummary,
-];
-
 /* ── Main Wizard HTML ──────────────────────────── */
 
 export function createMarketplaceSubmissionPage(pageContent, submissionType) {
+  const isTr = getWizardLocale(pageContent) === "tr";
   const isProfessional = submissionType === "professional";
-  const steps = isProfessional ? PROFESSIONAL_WIZARD_STEPS : CLIENT_WIZARD_STEPS;
-  const renderers = isProfessional ? PROFESSIONAL_STEP_RENDERERS : CLIENT_STEP_RENDERERS;
+  const steps = isProfessional ? professionalWizardSteps(isTr) : clientWizardSteps(isTr);
   const step = steps[0];
   return `
-    <section class="wizard-container section-shell" data-wizard-root data-wizard-type="${isProfessional ? "professional" : "client"}">
+    <section class="wizard-container section-shell" data-wizard-root data-wizard-type="${isProfessional ? "professional" : "client"}" data-wizard-locale="${isTr ? "tr" : "en"}">
+      <div class="wizard-icon" data-wizard-icon>
+        <div class="wizard-icon__graphic" data-wizard-icon-graphic>
+          ${getStepIcon(step.id)}
+        </div>
+      </div>
       ${createProgressDots(steps.length, 0)}
       <div class="wizard-card" data-wizard-card>
         <h2 class="wizard-card__title" data-wizard-title>${step.title}</h2>
         <p class="wizard-card__subtitle" data-wizard-subtitle>${step.subtitle}</p>
         <div class="wizard-card__body" data-wizard-body>
-          ${renderers[0]({})}
+          ${isProfessional ? renderStepCompanyInfo({}, isTr) : renderStepProjectTitle({}, isTr)}
         </div>
         <div class="wizard-card__error" data-wizard-error hidden style="display:none;">
           <p data-wizard-error-text></p>
         </div>
       </div>
       <div class="wizard-actions" data-wizard-actions>
-        <button class="wizard-btn wizard-btn--back" data-wizard-back type="button" hidden>Geri</button>
-        <button class="wizard-btn wizard-btn--next" data-wizard-next type="button">Devam Et</button>
+        <button class="wizard-btn wizard-btn--back" data-wizard-back type="button" hidden>${isTr ? "Geri" : "Back"}</button>
+        <button class="wizard-btn wizard-btn--next" data-wizard-next type="button">${isTr ? "Devam Et" : "Continue"}</button>
       </div>
     </section>
   `;
@@ -690,8 +694,33 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
   if (!root) return;
 
   const wizardType = root.dataset.wizardType || "client";
+  const isTr = (root.dataset.wizardLocale || "tr") === "tr";
   const isProfessional = wizardType === "professional";
-  const WIZARD_STEPS = isProfessional ? PROFESSIONAL_WIZARD_STEPS : CLIENT_WIZARD_STEPS;
+  const WIZARD_STEPS = isProfessional ? professionalWizardSteps(isTr) : clientWizardSteps(isTr);
+
+  const CLIENT_STEP_RENDERERS = [
+    (d) => renderStepProjectTitle(d, isTr),
+    (d) => renderStepProjectType(d, isTr),
+    (d) => renderStepProjectBrief(d, isTr),
+    (d) => renderStepContact(d, isTr),
+    (d) => renderStepBudget(d, isTr),
+    (d) => renderStepConstructionStarted(d, isTr),
+    (d) => renderStepProjectSize(d, isTr),
+    (d) => renderStepPhotos(d, isTr),
+    (d) => renderStepSummary(d, isTr),
+  ];
+
+  const PROFESSIONAL_STEP_RENDERERS = [
+    (d) => renderStepCompanyInfo(d, isTr),
+    (d) => renderStepServiceArea(d, isTr),
+    (d) => renderStepSpecialties(d, isTr),
+    (d) => renderStepPricing(d, isTr),
+    (d) => renderStepPortfolio(d, isTr),
+    (d) => renderStepProfessionalContact(d, isTr),
+    (d) => renderStepProfessionalUploads(d, isTr),
+    (d) => renderStepProfessionalSummary(d, isTr),
+  ];
+
   const STEP_RENDERERS = isProfessional ? PROFESSIONAL_STEP_RENDERERS : CLIENT_STEP_RENDERERS;
 
   let currentStep = 0;
@@ -722,7 +751,7 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
       /* ── Client steps ── */
       case "projectTitle": {
         const input = bodyEl.querySelector('input[name="projectTitle"]');
-        if (input) data.projectTitle = input.value.trim();
+        if (input) data.projectTitle = input.value.replace(/[0-9]/g, "").trim();
         break;
       }
       case "projectType": {
@@ -732,7 +761,7 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
       }
       case "projectBrief": {
         const ta = bodyEl.querySelector('textarea[name="projectBrief"]');
-        if (ta) data.projectBrief = ta.value.trim();
+        if (ta) data.projectBrief = ta.value.replace(/[0-9]/g, "").trim();
         break;
       }
       case "contact": {
@@ -758,7 +787,6 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
         break;
       }
       case "photos": {
-        // Files are tracked in uploadFiles array via change listener
         break;
       }
       /* ── Professional steps ── */
@@ -803,7 +831,6 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
         break;
       }
       case "professionalUploads": {
-        // Files are tracked in uploadFiles array via change listener
         break;
       }
     }
@@ -813,59 +840,55 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
     const step = WIZARD_STEPS[currentStep];
 
     switch (step.id) {
-      /* ── Client validations ── */
       case "projectTitle":
-        if (!data.projectTitle) return "Lütfen bir proje başlığı girin.";
+        if (!data.projectTitle) return isTr ? "Lütfen bir proje başlığı girin." : "Please enter a project title.";
         break;
       case "projectType":
-        if (!data.projectType) return "Lütfen bir kategori seçin.";
+        if (!data.projectType) return isTr ? "Lütfen bir kategori seçin." : "Please select a category.";
         break;
       case "projectBrief":
-        if (!data.projectBrief) return "Lütfen proje açıklaması girin.";
+        if (!data.projectBrief) return isTr ? "Lütfen proje açıklaması girin." : "Please enter a project description.";
         break;
       case "contact":
-        if (!data.phone) return "Lütfen telefon numaranızı girin.";
-        if (!data.preferredLocation) return "Lütfen proje konumunu girin.";
+        if (!data.phone) return isTr ? "Lütfen telefon numaranızı girin." : "Please enter your phone number.";
+        if (!data.preferredLocation) return isTr ? "Lütfen proje konumunu girin." : "Please enter the project location.";
         break;
       case "budget":
-        if (!data.estimatedBudget) return "Lütfen bir bütçe aralığı seçin.";
+        if (!data.estimatedBudget) return isTr ? "Lütfen bir bütçe aralığı seçin." : "Please select a budget range.";
         break;
       case "constructionStarted":
-        if (!data.constructionStarted) return "Lütfen inşaat durumunu seçin.";
+        if (!data.constructionStarted) return isTr ? "Lütfen inşaat durumunu seçin." : "Please select the construction status.";
         break;
       case "photos":
-        if (uploadFiles.length === 0) return "Lütfen en az bir fotoğraf yükleyin.";
-        // Check all images have loaded
+        if (uploadFiles.length === 0) return isTr ? "Lütfen en az bir fotoğraf yükleyin." : "Please upload at least one photo.";
         const imgs = bodyEl.querySelectorAll("[data-wizard-upload-preview] img");
         for (const img of imgs) {
-          if (!img.complete || img.naturalWidth === 0) return "Fotoğraflar yükleniyor, lütfen bekleyin.";
+          if (!img.complete || img.naturalWidth === 0) return isTr ? "Fotoğraflar yükleniyor, lütfen bekleyin." : "Photos are loading, please wait.";
         }
         break;
-      /* ── Professional validations ── */
       case "companyInfo":
-        if (!data.companyName) return "Lütfen şirket adınızı girin.";
-        if (!data.professionType) return "Lütfen meslek türünüzü seçin.";
+        if (!data.companyName) return isTr ? "Lütfen şirket adınızı girin." : "Please enter your company name.";
+        if (!data.professionType) return isTr ? "Lütfen meslek türünüzü seçin." : "Please select your profession type.";
         break;
       case "serviceArea":
-        if (!data.serviceArea) return "Lütfen hizmet alanınızı girin.";
-        if (!data.experience) return "Lütfen deneyim sürenizi girin.";
+        if (!data.serviceArea) return isTr ? "Lütfen hizmet alanınızı girin." : "Please enter your service area.";
+        if (!data.experience) return isTr ? "Lütfen deneyim sürenizi girin." : "Please enter your years of experience.";
         break;
       case "specialties":
-        if (!data.specialties) return "Lütfen uzmanlık alanlarınızı girin.";
+        if (!data.specialties) return isTr ? "Lütfen uzmanlık alanlarınızı girin." : "Please enter your specialties.";
         break;
       case "pricing":
-        if (!data.pricingModel) return "Lütfen fiyatlama bilginizi girin.";
+        if (!data.pricingModel) return isTr ? "Lütfen fiyatlama bilginizi girin." : "Please enter your pricing info.";
         break;
       case "portfolio":
-        if (!data.portfolioSummary) return "Lütfen portfolyo özetinizi girin.";
-        if (!data.companyDescription) return "Lütfen şirket tanımınızı girin.";
+        if (!data.portfolioSummary) return isTr ? "Lütfen portfolyo özetinizi girin." : "Please enter your portfolio summary.";
+        if (!data.companyDescription) return isTr ? "Lütfen şirket tanımınızı girin." : "Please enter your company description.";
         break;
       case "professionalContact":
-        if (!data.contactEmail) return "Lütfen e-posta adresinizi girin.";
-        if (!data.phone) return "Lütfen telefon numaranızı girin.";
+        if (!data.contactEmail) return isTr ? "Lütfen e-posta adresinizi girin." : "Please enter your email address.";
+        if (!data.phone) return isTr ? "Lütfen telefon numaranızı girin." : "Please enter your phone number.";
         break;
       case "professionalUploads":
-        // Uploads are optional for professionals
         break;
     }
 
@@ -891,41 +914,93 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
     titleEl.textContent = step.title;
     subtitleEl.textContent = step.subtitle;
 
-    // Update summary photo count
     data._photoCount = uploadFiles.length;
 
-    // Animate card transition
     const card = root.querySelector("[data-wizard-card]");
     if (card) {
       card.style.animation = "none";
-      card.offsetHeight; // force reflow
+      card.offsetHeight;
       card.style.animation = "";
     }
 
     bodyEl.innerHTML = STEP_RENDERERS[currentStep](data);
 
-    // Update progress dots
     const dotsContainer = root.querySelector(".wizard-progress");
     if (dotsContainer) {
       dotsContainer.outerHTML = createProgressDots(WIZARD_STEPS.length, currentStep);
     }
 
-    // Button states
+    /* ── Step icon transition ── */
+    const iconEl = root.querySelector("[data-wizard-icon-graphic]");
+    if (iconEl) {
+      iconEl.classList.remove("wizard-icon__graphic--enter", "wizard-icon__graphic--fly");
+      iconEl.classList.add("wizard-icon__graphic--exit");
+      setTimeout(() => {
+        iconEl.innerHTML = getStepIcon(step.id);
+        iconEl.classList.remove("wizard-icon__graphic--exit");
+        iconEl.classList.add("wizard-icon__graphic--enter");
+        setTimeout(() => {
+          iconEl.classList.remove("wizard-icon__graphic--enter");
+        }, 380);
+      }, 160);
+    }
+
     backBtn.hidden = currentStep === 0;
-    const publishLabel = isProfessional ? "Profesyonel İlanı Gönder" : "Proje İlanımı Yayınla";
-    nextBtn.textContent = isLast ? publishLabel : "Devam Et";
+    backBtn.textContent = isTr ? "Geri" : "Back";
+    const publishLabel = isProfessional
+      ? (isTr ? "Profesyonel İlanı Gönder" : "Submit Professional Listing")
+      : (isTr ? "Proje İlanımı Yayınla" : "Publish My Listing");
+    nextBtn.textContent = isLast ? publishLabel : (isTr ? "Devam Et" : "Continue");
     nextBtn.classList.toggle("wizard-btn--publish", isLast);
     nextBtn.disabled = false;
 
     showError(null);
 
-    // Re-attach photo upload handler if on photos or professionalUploads step
     if (step.id === "photos" || step.id === "professionalUploads") {
       setupPhotoUploadHandlers();
       renderUploadPreviews();
     }
 
-    // Scroll to top of wizard
+    if (step.id === "projectTitle") {
+      const titleInput = bodyEl.querySelector('input[name="projectTitle"]');
+      if (titleInput) {
+        titleInput.addEventListener("input", () => {
+          const cleaned = titleInput.value.replace(/[0-9]/g, "");
+          if (cleaned !== titleInput.value) {
+            const pos = titleInput.selectionStart - (titleInput.value.length - cleaned.length);
+            titleInput.value = cleaned;
+            titleInput.setSelectionRange(pos, pos);
+          }
+        });
+        titleInput.addEventListener("paste", (e) => {
+          e.preventDefault();
+          const text = (e.clipboardData || window.clipboardData).getData("text") || "";
+          const cleaned = text.replace(/[0-9]/g, "");
+          document.execCommand("insertText", false, cleaned);
+        });
+      }
+    }
+
+    if (step.id === "projectBrief") {
+      const briefTa = bodyEl.querySelector('textarea[name="projectBrief"]');
+      if (briefTa) {
+        briefTa.addEventListener("input", () => {
+          const cleaned = briefTa.value.replace(/[0-9]/g, "");
+          if (cleaned !== briefTa.value) {
+            const pos = briefTa.selectionStart - (briefTa.value.length - cleaned.length);
+            briefTa.value = cleaned;
+            briefTa.setSelectionRange(pos, pos);
+          }
+        });
+        briefTa.addEventListener("paste", (e) => {
+          e.preventDefault();
+          const text = (e.clipboardData || window.clipboardData).getData("text") || "";
+          const cleaned = text.replace(/[0-9]/g, "");
+          document.execCommand("insertText", false, cleaned);
+        });
+      }
+    }
+
     root.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -943,7 +1018,6 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
         (f) => f instanceof File && !f.type.startsWith("image/")
       );
 
-      // Merge with existing, max 3
       const existingKeys = new Set(uploadFiles.map((f) => `${f.name}:${f.lastModified}`));
       for (const file of incoming) {
         const key = `${file.name}:${file.lastModified}`;
@@ -955,10 +1029,10 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
 
       if (nonImages.length > 0 && msgEl) {
         msgEl.hidden = false;
-        msgEl.textContent = "Yalnızca görsel dosyaları yükleyebilirsiniz.";
+        msgEl.textContent = isTr ? "Yalnızca görsel dosyaları yükleyebilirsiniz." : "Only image files can be uploaded.";
       } else if (uploadFiles.length >= 3 && incoming.length > 0 && msgEl) {
         msgEl.hidden = false;
-        msgEl.textContent = "En fazla 3 görsel yükleyebilirsiniz.";
+        msgEl.textContent = isTr ? "En fazla 3 görsel yükleyebilirsiniz." : "You can upload a maximum of 3 images.";
       } else if (msgEl) {
         msgEl.hidden = true;
         msgEl.textContent = "";
@@ -994,7 +1068,7 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
         return `
           <figure class="wizard-upload-thumb">
             <img src="${url}" alt="${escapeAttr(file.name)}" />
-            <button type="button" class="wizard-upload-remove" data-remove-index="${i}" aria-label="Kaldır">×</button>
+            <button type="button" class="wizard-upload-remove" data-remove-index="${i}" aria-label="${isTr ? "Kaldır" : "Remove"}">×</button>
           </figure>
         `;
       })
@@ -1012,7 +1086,15 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
 
   async function handleSubmit() {
     nextBtn.disabled = true;
-    nextBtn.textContent = "Gönderiliyor...";
+    nextBtn.textContent = isTr ? "Gönderiliyor..." : "Submitting...";
+
+    // Envelope icon flies off to the right on submit
+    const flyIcon = root.querySelector("[data-wizard-icon-graphic]");
+    if (flyIcon) {
+      flyIcon.innerHTML = getSubmitIcon();
+      flyIcon.classList.remove("wizard-icon__graphic--enter", "wizard-icon__graphic--exit");
+      flyIcon.classList.add("wizard-icon__graphic--fly");
+    }
 
     try {
       const formData = new FormData();
@@ -1040,11 +1122,10 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
         formData.set("projectBrief", data.projectBrief || "");
         formData.set("phone", data.phone || "");
         formData.set("preferredLocation", data.preferredLocation || "");
-        formData.set("estimatedBudget", getBudgetLabel(data.estimatedBudget));
-        formData.set("constructionStarted", getConstructionLabel(data.constructionStarted));
+        formData.set("estimatedBudget", getBudgetLabel(data.estimatedBudget, isTr));
+        formData.set("constructionStarted", getConstructionLabel(data.constructionStarted, isTr));
         formData.set("projectSize", data.projectSize || "");
 
-        // Provide defaults for fields the wizard omits but the backend requires
         formData.set("plotStatus", "Not Started");
         formData.set("fullName", "");
         formData.set("email", "");
@@ -1058,14 +1139,16 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
       const listing = await saveMarketplaceSubmission(role, formData);
       onSuccess(listing);
     } catch (error) {
-      showError(error?.message || "Gönderiminiz kaydedilemedi. Lütfen tekrar deneyin.");
+      showError(error?.message || (isTr ? "Gönderiminiz kaydedilemedi. Lütfen tekrar deneyin." : "Your submission could not be saved. Please try again."));
       nextBtn.disabled = false;
-      nextBtn.textContent = isProfessional ? "Profesyonel İlanı Gönder" : "Proje İlanımı Yayınla";
+      const publishLabel = isProfessional
+        ? (isTr ? "Profesyonel İlanı Gönder" : "Submit Professional Listing")
+        : (isTr ? "Proje İlanımı Yayınla" : "Publish My Listing");
+      nextBtn.textContent = publishLabel;
       if (onError) onError(error);
     }
   }
 
-  // Event listeners
   nextBtn.addEventListener("click", async () => {
     animateButton(nextBtn);
     collectStepData();
@@ -1093,9 +1176,7 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
     }
   });
 
-  // Cleanup on unload
   window.addEventListener("beforeunload", clearPreviewUrls, { once: true });
 
-  // Render initial step
   renderStep();
 }

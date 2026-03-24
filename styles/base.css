@@ -34,6 +34,13 @@ body {
   overflow-x: clip;
 }
 
+/* Prevent native browser pull-to-refresh / rubber-band in native app context.
+   The custom PTR handler in main.js only activates at scrollTop === 0. */
+html.has-tab-bar,
+html.has-tab-bar body {
+  overscroll-behavior-y: none;
+}
+
 /* In native app: repurpose body pseudo-elements as overscroll color covers
    instead of ambient blobs. This prevents black bars when bouncing. */
 html.has-tab-bar body::before,

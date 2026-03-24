@@ -191,39 +191,28 @@ export function createLoginPage(content) {
     return `
       <section class="section-shell auth-login-shell auth-login-native" id="login-form">
         <div class="auth-native-card panel">
-          <div class="auth-login-bird" data-auth-login-bird>
-            <svg class="auth-login-bird__svg auth-login-bird__svg--dev" viewBox="0 0 100 100" fill="none" data-auth-bird-dev>
-              <ellipse cx="50" cy="83" rx="16" ry="4" fill="var(--accent)" opacity="0.13"/>
-              <g>
-                <path d="M28 56 L20 52 L27 62 L33 59Z" fill="var(--accent)"/>
-                <ellipse cx="45" cy="55" rx="19" ry="15" fill="var(--accent)"/>
-                <circle cx="63" cy="44" r="11" fill="var(--accent)"/>
-                <ellipse cx="43" cy="56" rx="9" ry="12" transform="rotate(-22 43 56)" fill="var(--accent)" opacity="0.7"/>
-                <circle cx="67" cy="41" r="2" fill="var(--bg)"/>
-                <circle cx="67.7" cy="40.3" r="0.6" fill="var(--accent)"/>
-                <path d="M73 44 L81 41 L77 49Z" fill="#c9a84c"/>
-                <line x1="42" y1="69" x2="40" y2="78" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-                <line x1="50" y1="69" x2="52" y2="78" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-                <path d="M52 33 L73 33 L73 28 L52 28Z" fill="#e8b731" rx="2"/>
-                <path d="M55 28 L55 22 L70 22 L70 28Z" fill="#f0c040" rx="1"/>
-                <line x1="62" y1="22" x2="62" y2="28" stroke="#e8b731" stroke-width="1"/>
-              </g>
-            </svg>
-            <svg class="auth-login-bird__svg auth-login-bird__svg--client" viewBox="0 0 100 100" fill="none" data-auth-bird-client hidden>
-              <ellipse cx="50" cy="83" rx="16" ry="4" fill="var(--accent)" opacity="0.13"/>
-              <g>
-                <path d="M28 56 L20 52 L27 62 L33 59Z" fill="var(--accent)"/>
-                <ellipse cx="45" cy="55" rx="19" ry="15" fill="var(--accent)"/>
-                <circle cx="63" cy="44" r="11" fill="var(--accent)"/>
-                <ellipse cx="43" cy="56" rx="9" ry="12" transform="rotate(-22 43 56)" fill="var(--accent)" opacity="0.7"/>
-                <circle cx="67" cy="41" r="2" fill="var(--bg)"/>
-                <circle cx="67.7" cy="40.3" r="0.6" fill="var(--accent)"/>
-                <path d="M73 44 L81 41 L77 49Z" fill="#c9a84c"/>
-                <line x1="42" y1="69" x2="40" y2="78" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-                <line x1="50" y1="69" x2="52" y2="78" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-                <rect x="34" y="60" width="14" height="11" rx="2" fill="#8b6914" opacity="0.85"/>
-                <rect x="39" y="60" width="4" height="5" rx="1" fill="#a07d1c"/>
-                <line x1="41" y1="65" x2="41" y2="67" stroke="#a07d1c" stroke-width="1.5" stroke-linecap="round"/>
+          <div class="marketplace-toggle-mascot auth-login-mascot" data-auth-login-bird data-mode="developer" aria-hidden="true">
+            <svg class="marketplace-toggle-bird" viewBox="0 0 120 120" fill="none">
+              <ellipse class="marketplace-toggle-bird__shadow" cx="60" cy="97" rx="18" ry="5"></ellipse>
+              <g class="marketplace-toggle-bird__character">
+                <path class="marketplace-toggle-bird__tail" d="M31 65 20 60 29 73 38 69Z"></path>
+                <ellipse class="marketplace-toggle-bird__body" cx="52" cy="64" rx="23" ry="18"></ellipse>
+                <circle class="marketplace-toggle-bird__head" cx="74" cy="50" r="13"></circle>
+                <ellipse class="marketplace-toggle-bird__wing" cx="49" cy="65" rx="11" ry="15" transform="rotate(-24 49 65)"></ellipse>
+                <circle class="marketplace-toggle-bird__eye" cx="78" cy="47" r="2.2"></circle>
+                <path class="marketplace-toggle-bird__beak" d="M85 50 95 46 88 55Z"></path>
+                <path class="marketplace-toggle-bird__leg" d="M49 81V89"></path>
+                <path class="marketplace-toggle-bird__leg" d="M58 81V89"></path>
+                <g class="marketplace-toggle-bird__pen">
+                  <rect class="marketplace-toggle-bird__pen-body" x="67" y="73" width="30" height="5" rx="2.5" transform="rotate(-22 67 73)"></rect>
+                  <rect class="marketplace-toggle-bird__pen-cap" x="67" y="73" width="6" height="5" rx="1.2" transform="rotate(-22 67 73)"></rect>
+                  <path class="marketplace-toggle-bird__pen-tip" d="M97 61 104 58 101 66Z"></path>
+                </g>
+                <g class="marketplace-toggle-bird__helmet">
+                  <path class="marketplace-toggle-bird__helmet-shell" d="M60 42c0-7.4 6-13.4 13.4-13.4 7 0 12.8 5.4 13.4 12.2v2.2H60V42Z"></path>
+                  <path class="marketplace-toggle-bird__helmet-rim" d="M58 43h31c1.8 0 3.2 1.4 3.2 3.2 0 1.1-.5 2-1.4 2.7H58.4c-.9-.7-1.4-1.6-1.4-2.7 0-1.8 1.4-3.2 3.2-3.2Z"></path>
+                  <path class="marketplace-toggle-bird__helmet-stripe" d="M72 29h4v14h-4z"></path>
+                </g>
               </g>
             </svg>
           </div>

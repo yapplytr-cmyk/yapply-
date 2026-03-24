@@ -1,5 +1,4 @@
 import { getAuthSession } from "./state.js";
-import { deleteAdminMarketplaceListing, getAuthOrigin } from "./auth.js";
 import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
 import {
   createDeveloperProfileReference,
@@ -72,13 +71,11 @@ function writeJson(key, value) {
   return writeJsonTo(getStorage(), key, value);
 }
 
+const _escHtmlMap = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const _escHtmlRe = /[&<>"']/g;
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+  const s = String(value ?? "");
+  return _escHtmlRe.test(s) ? s.replace(_escHtmlRe, (c) => _escHtmlMap[c]) : s;
 }
 
 function buildPublicListingsCacheKey({
@@ -135,12 +132,19 @@ function splitList(value) {
 }
 
 function createId(prefix, seed) {
-  const slug = slugify(seed) || prefix;
-  return `${prefix}-${Date.now()}-${slug}`.slice(0, 96);
-}
-
-function createApiUrl(path) {
-  return `${getAuthOrigin()}${path}`;
+  // Generate a proper UUID so PG never rejects the ID format.
+  // PG will generate its own UUID on INSERT, but if the listing
+  // is only saved locally (PG creation fails), at least the ID
+  // won't cause "invalid uuid syntax" errors on bid attempts.
+  try {
+    return crypto.randomUUID();
+  } catch (_) {
+    // Fallback UUID v4 for older WebViews
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
 }
 
 async function readJsonResponse(response) {
@@ -544,6 +548,111 @@ async function createAttachments(fileValue) {
   return attachments;
 }
 
+/**
+ * Upload base64 data URL images to Supabase Storage and replace with public URLs.
+ * Falls back to stripping if upload fails.
+ */
+async function uploadImagesToStorage(obj, listingId) {
+  if (!obj || typeof obj !== "object") return obj;
+
+  const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+  const AUTH_STORAGE_KEY = "sb-sgoicvqgfydwfpttzgqu-auth-token";
+
+  // Get JWT for authenticated upload
+  let accessToken = null;
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.access_token) accessToken = parsed.access_token;
+    }
+  } catch (_) {}
+
+  /**
+   * Upload a single base64 data URL to Supabase Storage.
+   * Returns the public URL on success, or "[base64-stripped]" on failure.
+   */
+  async function uploadDataUrl(dataUrl, index) {
+    try {
+      // Parse data URL: data:image/jpeg;base64,/9j/4AAQ...
+      const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (!match) return "[base64-stripped]";
+
+      const mimeType = match[1];
+      const ext = mimeType.split("/")[1] || "jpg";
+      const base64Data = match[2];
+      const binaryStr = atob(base64Data);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+      const fileName = `${listingId || "unknown"}/${Date.now()}-${index}.${ext}`;
+      const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/listing-images/${fileName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": mimeType,
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${accessToken || SUPABASE_ANON_KEY}`,
+          "x-upsert": "true",
+        },
+        body: bytes,
+      });
+
+      if (resp.ok) {
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/listing-images/${fileName}`;
+        console.log("[yapply] Image uploaded:", publicUrl);
+        return publicUrl;
+      }
+      console.warn("[yapply] Image upload failed:", resp.status);
+      return "[base64-stripped]";
+    } catch (e) {
+      console.warn("[yapply] Image upload error:", e?.message);
+      return "[base64-stripped]";
+    }
+  }
+
+  // Deep clone and replace base64 data URLs with Storage URLs
+  try {
+    const clone = JSON.parse(JSON.stringify(obj));
+    let uploadIndex = 0;
+
+    // Process attachments array
+    if (Array.isArray(clone.attachments)) {
+      for (const att of clone.attachments) {
+        if (att?.dataUrl && typeof att.dataUrl === "string" && att.dataUrl.startsWith("data:") && att.dataUrl.length > 200) {
+          att.dataUrl = await uploadDataUrl(att.dataUrl, uploadIndex++);
+        }
+      }
+    }
+
+    // Process imageSrc
+    if (typeof clone.imageSrc === "string" && clone.imageSrc.startsWith("data:") && clone.imageSrc.length > 200) {
+      clone.imageSrc = await uploadDataUrl(clone.imageSrc, uploadIndex++);
+    }
+
+    // If imageSrc is empty/missing, set it from the first valid uploaded attachment
+    if (!clone.imageSrc || clone.imageSrc === "[base64-stripped]") {
+      const firstValidUrl = Array.isArray(clone.attachments)
+        && clone.attachments.find((a) => a?.dataUrl && typeof a.dataUrl === "string" && a.dataUrl.startsWith("http"));
+      if (firstValidUrl) {
+        clone.imageSrc = firstValidUrl.dataUrl;
+        console.log("[yapply] Set imageSrc from first uploaded attachment:", clone.imageSrc);
+      }
+    }
+
+    // Strip any OTHER remaining base64 strings in nested fields (safety net)
+    const safeJson = JSON.stringify(clone, (key, value) => {
+      if (typeof value === "string" && value.startsWith("data:") && value.length > 200) {
+        return "[base64-stripped]";
+      }
+      return value;
+    });
+    return JSON.parse(safeJson);
+  } catch (_) {
+    return { type: obj.type || "", title: obj.title || obj.name || "", status: obj.status || "", createdAt: obj.createdAt || "" };
+  }
+}
+
 function getStore() {
   const stored = readJson(STORAGE_KEY, { client: [], professional: [] });
 
@@ -551,6 +660,57 @@ function getStore() {
     client: Array.isArray(stored.client) ? stored.client : [],
     professional: Array.isArray(stored.professional) ? stored.professional : [],
   };
+}
+
+/**
+ * One-time cleanup: remove stale local marketplace data on app load.
+ * v20260321v2: Aggressive cleanup — wipe ALL local listings and SWR caches
+ * so the app only shows data from Supabase PG.
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const CLEANUP_VERSION_KEY = "yapply-local-cleanup-v";
+const CURRENT_CLEANUP_VERSION = "20260321v2";
+let _storeCleanedUp = false;
+function cleanupStaleLocalListings() {
+  if (_storeCleanedUp) return;
+  _storeCleanedUp = true;
+  try {
+    const lastVersion = localStorage.getItem(CLEANUP_VERSION_KEY) || "";
+    if (lastVersion === CURRENT_CLEANUP_VERSION) return;
+
+    console.log("[yapply] Running marketplace cleanup v" + CURRENT_CLEANUP_VERSION);
+
+    // 1. Clear ALL local listings (they should come from PG now)
+    const store = getStore();
+    let removedCount = 0;
+    for (const section of ["client", "professional"]) {
+      if (Array.isArray(store[section])) {
+        removedCount += store[section].length;
+        store[section] = [];
+      }
+    }
+    if (removedCount > 0) {
+      setStore(store);
+      console.log("[yapply] Removed", removedCount, "stale local listings");
+    }
+
+    // 2. Clear SWR caches so pages fetch fresh from PG
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("yapply-swr-") || key === "yapply-last-submission" || key === "yapply-last-submission-detail")) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+      console.log("[yapply] Cleared cache:", key);
+    });
+
+    localStorage.setItem(CLEANUP_VERSION_KEY, CURRENT_CLEANUP_VERSION);
+  } catch (e) {
+    console.warn("[yapply] Cleanup failed:", e?.message);
+  }
 }
 
 function setStore(store) {
@@ -952,9 +1112,6 @@ async function createProfessionalListing(formData) {
 
 async function createBackendMarketplaceListing(listing) {
   const session = getAuthSession();
-  const accessToken = await getCurrentAccessToken().catch(() => null);
-  const headers = { "Content-Type": "application/json" };
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
   const owner = session?.user
     ? {
@@ -968,69 +1125,45 @@ async function createBackendMarketplaceListing(listing) {
   console.log("[Yapply] createBackendMarketplaceListing:", {
     listingType: listing?.type,
     listingName: listing?.name || listing?.title,
-    hasAccessToken: !!accessToken,
     hasOwner: !!owner,
     ownerRole: owner?.role || "none",
-    apiUrl: createApiUrl("/api/marketplace/listings/create"),
   });
 
-  const response = await fetch(createApiUrl("/api/marketplace/listings/create"), {
-    method: "POST",
-    credentials: "include",
-    headers,
-    body: JSON.stringify({ listing, owner }),
+  // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
+  // Pass listing payload as-is — PG JSONB handles base64 images fine.
+  // Do NOT strip or re-upload images; inline data URLs render correctly.
+  const pgPayload = listing;
+
+  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v6");
+  const result = await pgCreateListing({
+    id: listing?.id || undefined,
+    ownerUserId: owner?.id || null,
+    ownerEmail: owner?.email || "",
+    ownerRole: owner?.role || "client",
+    listingType: listing?.type || "client",
+    title: listing?.title || listing?.name || "",
+    description: listing?.brief || listing?.description || "",
+    location: listing?.location || "",
+    budget: listing?.budget || "",
+    timeframe: listing?.timeline || listing?.timeframe || "",
+    projectType: listing?.projectType || "",
+    category: listing?.marketplaceCategory || listing?.category || "",
+    payload: pgPayload,
   });
+  console.log("[Yapply] Listing created via Supabase PG:", result.id);
 
-  let data = {};
-
+  // Fire-and-forget email notification
   try {
-    data = await response.json();
-  } catch (error) {
-    data = {};
-  }
+    const { notifyListingCreated } = await import("./emailNotifier.js");
+    notifyListingCreated({ ...result, ownerName: owner?.fullName || "", contact: { fullName: owner?.fullName, email: owner?.email } }, listing?.type || "client");
+  } catch (_) {}
 
-  if (!response.ok) {
-    console.error("[Yapply] Backend listing create REJECTED:", {
-      status: response.status,
-      code: data.code,
-      message: data.message,
-    });
-    throw Object.assign(new Error(data.message || "The listing could not be created."), {
-      code: data.code || "LISTING_CREATE_FAILED",
-    });
-  }
-
-  console.log("[Yapply] Backend listing create SUCCESS:", { id: data.listing?.id, type: data.listing?.type });
-  return data.listing;
+  return result;
 }
 
 async function updateBackendListingStatus(listingId, status, { bidId, bidStatus } = {}) {
-  const session = getAuthSession();
-  try {
-    const body = {
-      listingId,
-      status,
-      owner: session?.user
-        ? { id: session.user.id, role: session.user.role, fullName: session.user.fullName, email: session.user.email }
-        : null,
-    };
-    if (bidId) body.bidId = bidId;
-    if (bidStatus) body.bidStatus = bidStatus;
-    const accessToken = await getCurrentAccessToken().catch(() => null);
-    const headers = { "Content-Type": "application/json" };
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-    const response = await fetch(createApiUrl("/api/marketplace/listings/update-status"), {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      console.error("[Yapply] Backend listing status update failed:", response.status);
-    }
-  } catch (error) {
-    console.error("[Yapply] Backend listing status update error:", error);
-  }
+  // Legacy function — Vercel API fallback removed. Status is managed purely via Supabase PG.
+  console.log("[Yapply] updateBackendListingStatus called (no-op):", { listingId, status });
 }
 
 export async function submitMarketplaceBid(formData) {
@@ -1042,6 +1175,16 @@ export async function submitMarketplaceBid(formData) {
 
   if (session.user.role !== "developer") {
     throw createSubmissionError("BIDDER_ROLE_INVALID", "Only developer accounts can submit bids.");
+  }
+
+  // ── Bid limit enforcement ──
+  const { consumeDeveloperBid } = await import("./supabaseMarketplace.js?v=20260321v6");
+  const bidResult = await consumeDeveloperBid(session.user.id);
+  if (!bidResult.success) {
+    const err = createSubmissionError("BID_LIMIT_REACHED", "You have reached your bid limit for this cycle.");
+    err.bidsRemaining = bidResult.bidsRemaining;
+    err.bidLimit = bidResult.bidLimit;
+    throw err;
   }
 
   const bid = validateMarketplaceBidDraft({
@@ -1079,51 +1222,69 @@ export async function submitMarketplaceBid(formData) {
       }
     : null;
 
-  // ── ALWAYS save bid to standalone developer store immediately ──
-  // This ensures the bid appears in Tekliflerim regardless of what the backend does.
-  const earlyBidEntry = createDeveloperDashboardBidEntry(bid, { id: bid.listingId, type: "client" });
-  saveDeveloperBidEntry(earlyBidEntry, session.user.id);
-
+  // ─── 100% Supabase PostgreSQL direct — no Vercel API ───
   let data = {};
-  try {
-    const accessToken = await getCurrentAccessToken().catch(() => null);
-    const headers = { "Content-Type": "application/json" };
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-    const response = await fetch(createApiUrl("/api/marketplace/bids/create"), {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: JSON.stringify({
-        bid,
-        bidder,
-      }),
-    });
-    data = await readJsonResponse(response);
+  const {
+    createBid: pgCreateBid,
+    fetchListing: pgFetchListing,
+    ensureListingInPg,
+  } = await import("./supabaseMarketplace.js?v=20260321v6");
 
-    if (!response.ok) {
-      throw Object.assign(new Error(data.message || "The bid could not be submitted."), {
-        code: data.code || "BID_CREATE_FAILED",
-      });
+  // ── Step 1: Ensure the listing exists in PG before bidding ──
+  // The listing might only exist in Cloud Storage or localStorage.
+  // We need it in PG so the bid's listing_id reference is valid.
+  try {
+    // Try to get listing data from any available source
+    let listingData = null;
+
+    // Source 1: PG
+    try { listingData = await pgFetchListing(bid.listingId); } catch (_) {}
+
+    // Source 2: localStorage (same-device listings)
+    if (!listingData) {
+      listingData = getSubmittedListing("client", bid.listingId)
+                 || getSubmittedListing("professional", bid.listingId);
     }
-  } catch (error) {
-    // Only fall back to local storage if the listing wasn't found on the backend
-    if (error?.code === "LISTING_NOT_FOUND") {
-      const localListing = getSubmittedListing("client", bid.listingId) || getLastSubmissionDetail("client", bid.listingId);
-      if (localListing) {
-        const storedResult = saveBidIntoStoredClientListing(bid.listingId, bid, session.user);
-        if (storedResult) {
-          // Update standalone entry with richer listing data
-          const localBidEntry = createDeveloperDashboardBidEntry(storedResult.bid, localListing);
-          saveDeveloperBidEntry(localBidEntry, session.user.id);
-          invalidateMarketplaceRequestCache(bid.listingId);
-          return storedResult;
-        }
-      }
-      // Bid is already in standalone store from early save — return it
-      return { bid, listing: null };
+
+    // Source 3: Vercel API / Cloud Storage fallback
+    if (!listingData) {
+      try { listingData = await fetchPublicMarketplaceListing(bid.listingId); } catch (_) {}
     }
-    throw error;
+
+    if (listingData) {
+      await ensureListingInPg(listingData);
+    } else {
+      console.warn("[yapply] Could not find listing data to sync:", bid.listingId);
+    }
+  } catch (syncErr) {
+    console.warn("[yapply] ensureListingInPg failed (will try bid anyway):", syncErr?.message);
   }
+
+  // ── Step 2: Create the bid ──
+  const pgBid = await pgCreateBid({
+    listingId: bid.listingId,
+    bidderUserId: session.user.id,
+    companyName: bidder?.companyName || "",
+    bidAmount: bid.bidAmount?.label || "",
+    estimatedTimeframe: bid.estimatedCompletionTimeframe?.label || "",
+    proposalMessage: bid.proposalMessage || "",
+    payload: bid,
+  });
+
+  // Fetch the listing to return with the bid
+  let pgListing = null;
+  try {
+    pgListing = await pgFetchListing(bid.listingId);
+  } catch (_) {}
+
+  data = { bid: pgBid, listing: pgListing };
+  console.log("[yapply] Bid submitted via Supabase PG:", pgBid.id);
+
+  // Fire-and-forget email notification
+  try {
+    const { notifyBidReceived } = await import("./emailNotifier.js");
+    notifyBidReceived(pgListing, { ...pgBid, developerProfileReference: bid.developerProfileReference });
+  } catch (_) {}
 
   invalidateMarketplaceRequestCache(bid.listingId);
 
@@ -1185,37 +1346,17 @@ export async function fetchPublicMarketplaceListings({
     publicListingsRequestCache.delete(cacheKey);
   }
 
-  const params = new URLSearchParams();
-
-  if (type) {
-    params.set("type", type);
-  }
-
-  if (status) {
-    params.set("status", status);
-  }
-
-  if (category) {
-    params.set("category", category);
-  }
-
-  params.set("limit", String(limit));
-  params.set("fields", "card"); // Request only card-level fields to reduce payload
-
   const request = (async () => {
-    const response = await fetch(createApiUrl(`/api/marketplace/listings?${params.toString()}`), {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await readJsonResponse(response);
-
-    if (!response.ok) {
-      throw Object.assign(new Error(data.message || "Marketplace listings could not be loaded."), {
-        code: data.code || "LISTINGS_LOAD_FAILED",
-      });
+    // ─── Try Supabase PostgreSQL first (fast, direct) ───
+    try {
+      const { fetchListings } = await import("./supabaseMarketplace.js?v=20260321v6");
+      const results = await fetchListings({ type, status, category, limit });
+      console.log("[yapply] Kesfet: loaded", results.length, "listings from Supabase PG");
+      return results;
+    } catch (supaErr) {
+      console.warn("[yapply] Kesfet: Supabase PG query failed:", supaErr?.message);
+      throw supaErr;
     }
-
-    return Array.isArray(data.listings) ? data.listings.map((listing) => normalizeMarketplaceListing(listing)) : [];
   })();
 
   // Store promise in cache for in-flight deduplication
@@ -1251,25 +1392,17 @@ export async function fetchPublicMarketplaceListing(listingId) {
     publicListingDetailCache.delete(cacheKey);
   }
 
-  const params = new URLSearchParams({ id: listingId });
   const request = (async () => {
-    const response = await fetch(createApiUrl(`/api/marketplace/listings/detail?${params.toString()}`), {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await readJsonResponse(response);
-
-    if (response.status === 404) {
-      return null;
+    // ─── Try Supabase PostgreSQL first ───
+    try {
+      const { fetchListing } = await import("./supabaseMarketplace.js?v=20260321v6");
+      const result = await fetchListing(listingId);
+      console.log("[yapply] Detail: loaded listing", listingId, "from Supabase PG");
+      return result;
+    } catch (supaErr) {
+      console.warn("[yapply] Detail: Supabase PG query failed:", supaErr?.message);
+      throw supaErr;
     }
-
-    if (!response.ok) {
-      throw Object.assign(new Error(data.message || "Marketplace listing could not be loaded."), {
-        code: data.code || "LISTING_LOAD_FAILED",
-      });
-    }
-
-    return data.listing ? normalizeMarketplaceListing(data.listing) : null;
   })();
 
   publicListingDetailCache.set(cacheKey, { promise: request, timestamp: Date.now() });
@@ -1328,48 +1461,32 @@ async function _fetchDeveloperDashboardDataImpl() {
     return {
       listings: localListings,
       bids: localBids,
+      reviews: [],
       localListings,
       localBids,
     };
   }
 
-  // If we can't get an access token, still return local data
-  let accessToken = "";
+  // ─── Try Supabase PostgreSQL first ───
   try {
-    accessToken = await getCurrentAccessToken();
-  } catch (_) {
+    const { fetchBidsForDeveloper, fetchMyListings, fetchReviewsForDeveloper } = await import("./supabaseMarketplace.js?v=20260321v6");
+    const [pgListings, pgBidEntries, pgReviews] = await Promise.all([
+      fetchMyListings(ownerUserId),
+      fetchBidsForDeveloper(ownerUserId),
+      fetchReviewsForDeveloper(ownerUserId).catch(() => []),
+    ]);
+    console.log("[yapply] DevDashboard: loaded", pgListings.length, "listings,", pgBidEntries.length, "bids,", pgReviews.length, "reviews from Supabase PG");
     return {
-      listings: localListings,
-      bids: localBids,
+      listings: pgListings,
+      bids: pgBidEntries,
+      reviews: pgReviews,
       localListings,
       localBids,
     };
+  } catch (supaErr) {
+    console.warn("[yapply] DevDashboard: Supabase PG query failed:", supaErr?.message);
+    throw supaErr;
   }
-  const response = await fetch(createApiUrl("/api/account/developer-dashboard"), {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  const data = await readJsonResponse(response);
-
-  if (!response.ok) {
-    throw Object.assign(new Error(data.message || "Developer dashboard data could not be loaded."), {
-      code: data.code || "DEVELOPER_DASHBOARD_LOAD_FAILED",
-    });
-  }
-
-  const remoteListings = Array.isArray(data.listings) ? data.listings.map((listing) => normalizeMarketplaceListing(listing)) : [];
-  const remoteBids = Array.isArray(data.bids) ? data.bids : [];
-
-  return {
-    listings: remoteListings,
-    bids: remoteBids,
-    localListings,
-    localBids,
-  };
 }
 
 export async function updateClientDashboardListing(listingId, ownerUserId, formData) {
@@ -1525,16 +1642,69 @@ export function syncClientDashboardListingBids(listingId, ownerUserId, sourceLis
   return normalizeMarketplaceListing(storedListing || currentListing);
 }
 
-export async function acceptClientDashboardBid(listingId, bidId, ownerUserId) {
-  // Try localStorage first; if not found, fetch from backend API.
+/**
+ * Accept a bid — LOCAL only (instant, no network).
+ * Updates localStorage so the UI can re-render immediately.
+ */
+export function acceptClientDashboardBidLocal(listingId, bidId, ownerUserId) {
   let currentListing = getSubmittedListing("client", listingId);
 
+  // Also check ALL SWR caches in case the listing was fetched from backend
+  if (!currentListing) {
+    const swrKeys = ["yapply-swr-client-bids", "yapply-swr-client-dashboard"];
+    for (const swrKey of swrKeys) {
+      if (currentListing) break;
+      try {
+        const cacheRaw = localStorage.getItem(swrKey);
+        if (!cacheRaw) continue;
+        const cacheData = JSON.parse(cacheRaw);
+        const listings = Array.isArray(cacheData?.data) ? cacheData.data : [];
+        currentListing = listings.find((l) => l?.id === listingId) || null;
+      } catch (_) {}
+    }
+  }
+
+  // Last resort: check per-listing detail SWR cache
   if (!currentListing) {
     try {
-      currentListing = await fetchPublicMarketplaceListing(listingId);
-    } catch (_) {
-      currentListing = null;
-    }
+      const detailRaw = localStorage.getItem("yapply-swr-marketplace:detail-" + listingId);
+      if (detailRaw) {
+        const detailData = JSON.parse(detailRaw);
+        if (detailData?.data?.id === listingId) {
+          currentListing = detailData.data;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Nuclear scan: check EVERY localStorage key for any array containing this listing
+  if (!currentListing) {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        if (currentListing) break;
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith("yapply-")) continue;
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw || raw.length < 10) continue;
+          const parsed = JSON.parse(raw);
+          // Check { data: [...listings...] } shape (SWR caches)
+          const arr = Array.isArray(parsed?.data) ? parsed.data : (Array.isArray(parsed) ? parsed : null);
+          if (arr) {
+            const found = arr.find((item) => item && item.id === listingId);
+            if (found) {
+              currentListing = found;
+              console.log("[yapply] Found listing via nuclear scan in key:", key);
+            }
+          }
+          // Check { data: { id: ... } } shape (detail caches)
+          if (!currentListing && parsed?.data?.id === listingId) {
+            currentListing = parsed.data;
+            console.log("[yapply] Found listing via nuclear scan (detail) in key:", key);
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
   }
 
   if (!currentListing) {
@@ -1586,8 +1756,7 @@ export async function acceptClientDashboardBid(listingId, bidId, ownerUserId) {
     marketplaceMeta: acceptedMeta,
   }));
 
-  // If not in localStorage yet (listing created via backend only), add it now
-  // so the dashboard re-render picks up the accepted state immediately.
+  // If not in localStorage yet, add it so the dashboard re-render picks up the accepted state.
   if (!storedListing) {
     const updatedListing = {
       ...currentListing,
@@ -1602,11 +1771,78 @@ export async function acceptClientDashboardBid(listingId, bidId, ownerUserId) {
     storedListing = updatedListing;
   }
 
-  // Always update the backend — this is the real persistence.
-  await updateBackendListingStatus(listingId, "bid-accepted", { bidId, bidStatus: "accepted" });
-  invalidateMarketplaceRequestCache(listingId);
+  // Update ALL SWR caches: dashboard caches (update listing) + kesfet caches (remove listing)
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
 
+      // Dashboard SWR caches — update the listing status
+      if (key === "yapply-swr-client-bids" || key === "yapply-swr-client-dashboard") {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key));
+          if (Array.isArray(parsed?.data)) {
+            parsed.data = parsed.data.map((l) =>
+              l?.id === listingId ? { ...l, status: "bid-accepted", bids: nextBids, marketplaceMeta: acceptedMeta } : l
+            );
+            localStorage.setItem(key, JSON.stringify(parsed));
+          }
+        } catch (_) {}
+      }
+
+      // Kesfet SWR caches — remove the accepted listing so it disappears from marketplace
+      if (key.startsWith("yapply-swr-marketplace:client-")) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key));
+          if (Array.isArray(parsed?.data)) {
+            parsed.data = parsed.data.filter((l) => l?.id !== listingId);
+            localStorage.setItem(key, JSON.stringify(parsed));
+          }
+        } catch (_) {}
+      }
+    }
+  } catch (_) {}
+
+  invalidateMarketplaceRequestCache(listingId);
   return normalizeMarketplaceListing(storedListing);
+}
+
+/**
+ * Accept a bid — REMOTE (fire-and-forget, runs in background).
+ * Syncs the acceptance to Supabase PG + triggers email + push notification.
+ */
+export async function acceptClientDashboardBidRemote(listingId, bidId) {
+  const session = getAuthSession();
+  const ownerUserId = session?.user?.id || "";
+
+  // Try Supabase PG accept first
+  let updatedListing = null;
+  try {
+    const { acceptBid: pgAcceptBid } = await import("./supabaseMarketplace.js?v=20260321v6");
+    updatedListing = await pgAcceptBid(listingId, bidId, ownerUserId);
+    console.log("[yapply] Bid accepted via Supabase PG:", bidId);
+  } catch (supaErr) {
+    console.warn("[yapply] Supabase PG accept failed:", supaErr?.message);
+  }
+
+  // Fire-and-forget email + push notification for bid acceptance
+  try {
+    const acceptedBid = updatedListing?.bids?.find(b => b.id === bidId || b.status === "accepted") || null;
+    if (updatedListing && acceptedBid) {
+      const { notifyBidAccepted } = await import("./emailNotifier.js");
+      notifyBidAccepted(
+        { ...updatedListing, ownerName: session?.user?.fullName || "", contact: { fullName: session?.user?.fullName, email: session?.user?.email } },
+        acceptedBid
+      );
+    }
+  } catch (_) {}
+}
+
+/** @deprecated Use acceptClientDashboardBidLocal + acceptClientDashboardBidRemote instead */
+export async function acceptClientDashboardBid(listingId, bidId, ownerUserId) {
+  const result = acceptClientDashboardBidLocal(listingId, bidId, ownerUserId);
+  await acceptClientDashboardBidRemote(listingId, bidId);
+  return result;
 }
 
 export async function closeClientDashboardListing(listingId, ownerUserId) {
@@ -1627,9 +1863,29 @@ export async function closeClientDashboardListing(listingId, ownerUserId) {
     throw createSubmissionError("LISTING_CLOSE_FAILED", "The listing could not be closed.");
   }
 
-  await updateBackendListingStatus(listingId, "closed");
+  try {
+    const { updateListingStatus, updateBidStatusesForListing } = await import("./supabaseMarketplace.js");
+    await updateListingStatus(listingId, "closed");
+    // Close all open/pending bids when listing is deactivated
+    await updateBidStatusesForListing(listingId, "pending", "closed").catch((e) =>
+      console.warn("[Yapply] Bid status close failed:", e));
+  } catch (err) {
+    console.error("[Yapply] Supabase close failed, local store updated:", err);
+  }
   invalidateMarketplaceRequestCache(listingId);
+  _invalidateDashboardSwrCache();
   return normalizeMarketplaceListing(storedListing);
+}
+
+/**
+ * Purge the localStorage SWR caches for client dashboard & bids pages
+ * so that the next renderPage() fetch hits Supabase for fresh data.
+ */
+function _invalidateDashboardSwrCache() {
+  const keys = ["yapply-swr-client-dashboard", "yapply-swr-client-bids"];
+  for (const key of keys) {
+    try { localStorage.removeItem(key); } catch (_) {}
+  }
 }
 
 function requireListingOwner(type) {
@@ -1743,6 +1999,7 @@ export function getSubmissionSuccessHref(type, id) {
 }
 
 export function getSubmittedListings(type) {
+  cleanupStaleLocalListings();
   const store = getStore();
   const items = store[type] || [];
   return [...items]
@@ -1761,6 +2018,7 @@ export function getSubmittedListing(type, id) {
 export async function saveMarketplaceSubmission(type, formData) {
   requireListingOwner(type);
   const draftListing = type === "professional" ? await createProfessionalListing(formData) : await createClientListing(formData);
+  const draftId = draftListing?.id;
 
   // Always persist the draft locally first so the listing is never lost,
   // even if the backend call fails (network error, auth issue, etc).
@@ -1769,23 +2027,43 @@ export async function saveMarketplaceSubmission(type, formData) {
   let listing;
   try {
     listing = await createBackendMarketplaceListing(draftListing);
-    // Backend succeeded — update local store with the canonical backend version
-    // (it has the real UUID and server timestamps).
+    // Backend succeeded — update the local store with the canonical PG version.
     persistSubmissionArtifacts(type, listing);
+    console.log("[Yapply] Listing saved to PG:", listing.id, "(draft was:", draftId, ")");
   } catch (error) {
-    // Backend failed — the draft is already persisted locally above,
-    // so the user can still see it. On browser-managed environments
-    // this is expected; on production, log the error but don't crash.
-    console.error("[Yapply] Backend listing create failed — using local draft", {
-      code: error?.code || "",
-      message: error?.message || "",
+    // Backend failed — show the error to the user so they know what happened.
+    const errMsg = error?.message || "Unknown error";
+    const errCode = error?.code || "";
+    console.error("[Yapply] Backend listing create FAILED:", errCode, errMsg, {
       type,
-      draftId: draftListing?.id,
+      draftId,
+      details: error?.details || "",
     });
-    listing = draftListing;
+
+    // CRITICAL: Remove the local-only draft — it can never be bid on
+    // because it doesn't exist in PG. Keeping it misleads the user.
+    removeDraftFromStore(type, draftId);
+
+    // Re-throw so the UI shows the error instead of a fake "success"
+    throw error;
   }
 
   return listing;
+}
+
+/**
+ * Remove a specific listing from the local store by ID.
+ * Used when PG returns a different UUID than the draft.
+ */
+function removeDraftFromStore(type, draftId) {
+  if (!draftId) return;
+  try {
+    const store = getStore();
+    if (Array.isArray(store[type])) {
+      store[type] = store[type].filter((item) => item.id !== draftId);
+      setStore(store);
+    }
+  } catch (_) {}
 }
 
 export function getLastSubmission() {
@@ -1823,45 +2101,15 @@ async function _fetchClientDashboardDataImpl() {
     return { listings: localListings };
   }
 
+  // ─── Try Supabase PostgreSQL first ───
   try {
-    const accessToken = await getCurrentAccessToken();
-    const response = await fetch(createApiUrl("/api/account/client-dashboard"), {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    const data = await readJsonResponse(response);
-
-    if (!response.ok) {
-      return { listings: localListings };
-    }
-
-    const remoteListings = Array.isArray(data.listings)
-      ? data.listings.map((listing) => normalizeMarketplaceListing(listing))
-      : [];
-
-    // Merge: remote listings take priority, but local accepted/closed state
-    // wins over stale remote data (eventual consistency workaround).
-    const localById = new Map(localListings.map((l) => [l.id, l]));
-    const mergedRemote = remoteListings.map((remote) => {
-      const local = localById.get(remote.id);
-      if (local && local.marketplaceMeta?.acceptedBidId && !remote.marketplaceMeta?.acceptedBidId) {
-        return local;
-      }
-      return remote;
-    });
-    const remoteIds = new Set(remoteListings.map((l) => l.id));
-    const localOnly = localListings.filter((l) => !remoteIds.has(l.id));
-    const merged = [...mergedRemote, ...localOnly].sort(
-      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
-
-    return { listings: merged };
-  } catch (_) {
-    return { listings: localListings };
+    const { fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v6");
+    const pgListings = await fetchMyListings(ownerUserId);
+    console.log("[yapply] ClientDashboard: loaded", pgListings.length, "listings from Supabase PG");
+    return { listings: pgListings };
+  } catch (supaErr) {
+    console.warn("[yapply] ClientDashboard: Supabase PG query failed:", supaErr?.message);
+    throw supaErr;
   }
 }
 
@@ -1895,14 +2143,18 @@ export async function deleteBackendMarketplaceListing(listingId) {
     return false;
   }
 
+  // Delete from Supabase PG (the source of truth for the app)
   try {
-    await deleteAdminMarketplaceListing(listingId);
-    invalidateMarketplaceRequestCache(listingId);
-    return true;
-  } catch (error) {
-    console.error("[Yapply] Backend listing delete failed:", error?.code || "", error?.message || error);
-    return false;
+    const { deleteListingFromPg } = await import("./supabaseMarketplace.js?v=20260321v6");
+    await deleteListingFromPg(listingId);
+    console.log("[Yapply] Listing deleted from PG:", listingId);
+  } catch (pgError) {
+    console.warn("[Yapply] PG delete failed:", pgError?.message || pgError);
+    throw pgError;
   }
+
+  invalidateMarketplaceRequestCache(listingId);
+  return true;
 }
 
 export function deleteOwnedMarketplaceListings(ownerUserId) {

@@ -195,9 +195,19 @@ function getClientListingCopy(locale) {
 /** No-op — kept as export so callers don't break */
 export function scheduleBackgroundThumbnails() {}
 
+function isValidImageUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  if (url === "[base64-stripped]") return false;
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("/")) return true;
+  return false;
+}
+
 function getClientPreviewImage(listing) {
   const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
-  return attachments[0]?.dataUrl || "";
+  const dataUrl = attachments[0]?.dataUrl;
+  if (isValidImageUrl(dataUrl)) return dataUrl;
+  if (isValidImageUrl(listing.imageSrc)) return listing.imageSrc;
+  return "";
 }
 
 function getCreatorRole(listing, fallbackRole = "client") {
@@ -473,6 +483,15 @@ function createClientListingCard(listing, labels, locale) {
       <div class="marketplace-card__bid-deadline">
         <span class="marketplace-card__published">${bidDeadlineInfo.publishedLabel}</span>
         <span class="marketplace-card__days-left">${bidDeadlineInfo.daysLeftLabel}</span>
+        ${(() => {
+          const bids = Array.isArray(listing.bids) ? listing.bids : (Array.isArray(marketplaceMeta.latestBids) ? marketplaceMeta.latestBids : []);
+          const bidCount = Number(marketplaceMeta.bidCount || 0) || bids.length;
+          if (bidCount > 0) {
+            const bidLabel = locale === "tr" ? `${bidCount} teklif` : `${bidCount} bid${bidCount > 1 ? "s" : ""}`;
+            return `<span class="marketplace-card__bid-count">${bidLabel}</span>`;
+          }
+          return "";
+        })()}
       </div>
       <div class="marketplace-card__footer">
         <div class="marketplace-card__timeline">
@@ -487,15 +506,16 @@ function createClientListingCard(listing, labels, locale) {
 
 function getDeveloperPreviewImage(listing) {
   // Check normalized images array first (from normalizeMarketplaceListing)
-  if (Array.isArray(listing.images) && listing.images[0]?.src) {
+  if (Array.isArray(listing.images) && isValidImageUrl(listing.images[0]?.src)) {
     return listing.images[0].src;
   }
   // Check attachments (same as client listings)
   const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
   const imageAttachment = attachments.find((item) => item?.kind === "image");
-  if (imageAttachment?.dataUrl) return imageAttachment.dataUrl;
+  if (isValidImageUrl(imageAttachment?.dataUrl)) return imageAttachment.dataUrl;
   // Fallback to imageSrc (seeded listings)
-  return listing.imageSrc || "";
+  if (isValidImageUrl(listing.imageSrc)) return listing.imageSrc;
+  return "";
 }
 
 function createDeveloperListingCard(listing, labels) {
@@ -634,6 +654,16 @@ function createMarketplaceListings(content) {
   // Skeleton placeholders for developer tab (shown while content loads)
   const developerSkeletonCards = createSkeletonCards(4);
 
+  const developerPanelBody = content.publicListingError
+    ? createClientEmptyState(content, "error")
+    : developerItems.length > 0
+      ? `
+        <div class="marketplace-grid" data-marketplace-developer-grid>${initialDeveloperCards}</div>
+        ${createDeferredCardsTemplate(deferredDeveloperCards, "developer")}
+        <div data-marketplace-developer-empty hidden>${createClientEmptyState(content)}</div>
+      `
+      : createClientEmptyState(content);
+
   return `
     <section class="section-shell" id="marketplace-listings">
       <div class="marketplace-toggle-row">
@@ -666,8 +696,7 @@ function createMarketplaceListings(content) {
       </div>
 
       <div class="marketplace-panel" data-marketplace-panel="developer" hidden>
-        ${initialDeveloperCards ? `<div class="marketplace-grid" data-marketplace-developer-grid>${initialDeveloperCards}</div>` : `<div class="marketplace-grid" data-marketplace-developer-grid>${developerSkeletonCards}</div>`}
-        ${createDeferredCardsTemplate(deferredDeveloperCards, "developer")}
+        ${developerPanelBody}
       </div>
     </section>
     <script>

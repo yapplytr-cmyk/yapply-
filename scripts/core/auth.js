@@ -2,8 +2,16 @@ import { clearAuthSession, getAuthSession, setAuthSession } from "./state.js";
 import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
 import { getDefaultAvatarOptions } from "./accountSettingsStore.js";
 
-const PROFILE_SELECT_FIELDS =
-  "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,avatar_url,created_at,updated_at";
+const PROFILE_BASE_FIELDS =
+  "id,email,username,role,status,full_name,phone_number,company_name,profession_type,service_area,years_experience,specialties,preferred_region,website,avatar_url,work_description,created_at,updated_at";
+
+const PROFILE_EXPANSION_FIELDS =
+  "developer_type,business_name,business_website,business_locations,business_description,business_photos,portfolio_links,selfie_url,current_plan,bid_limit,bids_used,bid_cycle_start";
+
+const PROFILE_SELECT_FIELDS = PROFILE_BASE_FIELDS + "," + PROFILE_EXPANSION_FIELDS;
+
+// If expansion columns don't exist yet (migration not run), fall back to base fields only
+let _useBaseFieldsOnly = false;
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -113,6 +121,19 @@ function mapProfileRecord(data) {
     preferredRegion: data.preferred_region,
     website: data.website,
     avatarUrl: data.avatar_url,
+    workDescription: data.work_description || null,
+    developerType: data.developer_type || null,
+    businessName: data.business_name || null,
+    businessWebsite: data.business_website || null,
+    businessLocations: data.business_locations || null,
+    businessDescription: data.business_description || null,
+    businessPhotos: data.business_photos || [],
+    portfolioLinks: data.portfolio_links || [],
+    selfieUrl: data.selfie_url || null,
+    currentPlan: data.current_plan || "free",
+    bidLimit: data.bid_limit ?? 15,
+    bidsUsed: data.bids_used ?? 0,
+    bidCycleStart: data.bid_cycle_start || null,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
@@ -142,6 +163,18 @@ function normalizeSessionUser(authUser, profile) {
     preferredRegion: profile.preferredRegion || normalizeText(metadata.preferred_region || metadata.preferredRegion) || null,
     website: profile.website || normalizeText(metadata.website) || null,
     workDescription: normalizeText(metadata.work_description || metadata.workDescription) || null,
+    developerType: profile.developerType || normalizeText(metadata.developer_type || metadata.developerType) || null,
+    businessName: profile.businessName || normalizeText(metadata.business_name || metadata.businessName) || null,
+    businessWebsite: profile.businessWebsite || normalizeText(metadata.business_website || metadata.businessWebsite) || null,
+    businessLocations: profile.businessLocations || normalizeText(metadata.business_locations || metadata.businessLocations) || null,
+    businessDescription: profile.businessDescription || normalizeText(metadata.business_description || metadata.businessDescription) || null,
+    businessPhotos: profile.businessPhotos || metadata.business_photos || metadata.businessPhotos || [],
+    portfolioLinks: profile.portfolioLinks || metadata.portfolio_links || metadata.portfolioLinks || [],
+    selfieUrl: profile.selfieUrl || normalizeText(metadata.selfie_url || metadata.selfieUrl) || null,
+    currentPlan: profile.currentPlan || "free",
+    bidLimit: profile.bidLimit ?? 15,
+    bidsUsed: profile.bidsUsed ?? 0,
+    bidCycleStart: profile.bidCycleStart || null,
     createdAt: profile.createdAt || authUser.created_at || null,
     profilePictureSrc: profilePicture.profilePictureSrc,
     profilePictureId: profilePicture.profilePictureId,
@@ -248,15 +281,41 @@ function mapProfileToUpsert(authUser, metadata, fallbackRole = "", existingProfi
     specialties: normalizeText(metadata.specialties || profile.specialties) || null,
     preferred_region: normalizeText(metadata.preferred_region || metadata.preferredRegion || profile.preferredRegion) || null,
     website: normalizeText(metadata.website || profile.website) || null,
+    avatar_url: normalizeText(
+      metadata.profile_picture_url || metadata.profilePictureUrl ||
+      metadata.avatar_url || metadata.avatarUrl ||
+      profile.avatarUrl
+    ) || resolveDefaultAvatarSrc(role, normalizeText(metadata.profile_picture_id || metadata.profilePictureId) || "") || null,
+    // Expansion columns — only include if migration has been applied
+    ...(_useBaseFieldsOnly ? {} : {
+      developer_type: normalizeText(metadata.developer_type || metadata.developerType || profile.developerType) || null,
+      business_name: normalizeText(metadata.business_name || metadata.businessName || profile.businessName) || null,
+      business_website: normalizeText(metadata.business_website || metadata.businessWebsite || profile.businessWebsite) || null,
+      business_locations: normalizeText(metadata.business_locations || metadata.businessLocations || profile.businessLocations) || null,
+      business_description: normalizeText(metadata.business_description || metadata.businessDescription || profile.businessDescription) || null,
+    }),
   };
 }
 
 async function fetchOwnProfile(supabase, userId) {
-  const { data, error } = await supabase
+  const fields = _useBaseFieldsOnly ? PROFILE_BASE_FIELDS : PROFILE_SELECT_FIELDS;
+  let { data, error } = await supabase
     .from("profiles")
-    .select(PROFILE_SELECT_FIELDS)
+    .select(fields)
     .eq("id", userId)
     .maybeSingle();
+
+  // If expansion columns don't exist yet, retry with base fields only
+  if (error && !_useBaseFieldsOnly && error.message && error.message.includes("does not exist")) {
+    _useBaseFieldsOnly = true;
+    const retry = await supabase
+      .from("profiles")
+      .select(PROFILE_BASE_FIELDS)
+      .eq("id", userId)
+      .maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     throw mapSupabaseError(error, "ACCOUNT_PROFILE_MISSING");
@@ -275,23 +334,31 @@ async function ensureOwnProfile(supabase, authUser, expectedRole = "") {
 
   const fallbackRole = resolveProfileRole(profile, metadata, expectedRole);
 
-  const currentRole = normalizeText(profile?.role);
-
-  if (profile && (isPublicRole(currentRole) || isPrivilegedRole(currentRole))) {
-    return profile;
-  }
-
   if (!isPublicRole(fallbackRole) && !isPrivilegedRole(fallbackRole)) {
     return profile || null;
   }
 
   const payload = mapProfileToUpsert(authUser, metadata, fallbackRole, profile);
+  const selectFields = _useBaseFieldsOnly ? PROFILE_BASE_FIELDS : PROFILE_SELECT_FIELDS;
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("profiles")
     .upsert(payload, { onConflict: "id" })
-    .select(PROFILE_SELECT_FIELDS)
+    .select(selectFields)
     .single();
+
+  // If expansion columns don't exist, strip them and retry with base fields
+  if (error && !_useBaseFieldsOnly && error.message && error.message.includes("does not exist")) {
+    _useBaseFieldsOnly = true;
+    const basePayload = mapProfileToUpsert(authUser, metadata, fallbackRole, profile);
+    const retry = await supabase
+      .from("profiles")
+      .upsert(basePayload, { onConflict: "id" })
+      .select(PROFILE_BASE_FIELDS)
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     throw mapSupabaseError(error, "ACCOUNT_PROFILE_MISSING");
@@ -433,12 +500,12 @@ function ensurePublicSignupPayload(payload) {
   const email = normalizeEmail(payload.email);
   const password = String(payload.password || "");
   const confirmPassword = String(payload.confirmPassword || "");
-  const phoneNumber = normalizeText(payload.phoneNumber);
+  const phoneNumber = normalizeText(payload.phoneNumber || payload.phone);
   const companyName = normalizeText(payload.companyName);
-  const professionType = normalizeText(payload.professionType);
-  const serviceArea = normalizeText(payload.serviceArea);
-  const specialties = normalizeText(payload.specialties);
-  const preferredRegion = normalizeText(payload.preferredRegion);
+  const professionType = normalizeText(payload.professionType || payload.specialty || payload.specialties);
+  const serviceArea = normalizeText(payload.serviceArea || payload.city || payload.preferredRegion);
+  const specialties = normalizeText(payload.specialties || payload.specialty);
+  const preferredRegion = normalizeText(payload.preferredRegion || payload.city);
   const website = normalizeText(payload.website);
   const yearsExperienceRaw = normalizeText(payload.yearsExperience || payload.experience);
   const yearsExperience = yearsExperienceRaw === "" ? null : Number(yearsExperienceRaw);
@@ -489,6 +556,16 @@ function ensurePublicSignupPayload(payload) {
     throw createAuthError("REGION_REQUIRED", "Preferred city or region is required for client accounts.");
   }
 
+  // Developer expansion fields (optional, pass-through)
+  const developerType = normalizeText(payload.developerType);
+  const businessName = normalizeText(payload.businessName);
+  const businessWebsite = normalizeText(payload.businessWebsite);
+  const businessLocations = normalizeText(payload.businessLocations);
+  const businessDescription = normalizeText(payload.businessDescription);
+  const businessPhotos = Array.isArray(payload.businessPhotos) ? payload.businessPhotos : [];
+  const portfolioLinks = Array.isArray(payload.portfolioLinks) ? payload.portfolioLinks : [];
+  const selfieUrl = normalizeText(payload.selfieUrl);
+
   return {
     role,
     fullName,
@@ -502,6 +579,14 @@ function ensurePublicSignupPayload(payload) {
     specialties: specialties || null,
     preferredRegion: preferredRegion || null,
     website: website || null,
+    developerType: developerType || null,
+    businessName: businessName || null,
+    businessWebsite: businessWebsite || null,
+    businessLocations: businessLocations || null,
+    businessDescription: businessDescription || null,
+    businessPhotos,
+    portfolioLinks,
+    selfieUrl: selfieUrl || null,
   };
 }
 

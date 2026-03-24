@@ -12,6 +12,11 @@ import {
   getSubmittedListing,
   getSubmittedListings,
 } from "./core/marketplaceStore.js";
+import {
+  fetchMyListings as supabaseFetchMyListings,
+  fetchListings as supabaseFetchListings,
+  fetchListing as supabaseFetchListing,
+} from "./core/supabaseMarketplace.js";
 import { getAuthSession } from "./core/state.js";
 
 const componentModuleCache = new Map();
@@ -80,12 +85,24 @@ function loadClientDashboardApi() {
   return loadComponentModule("client-dashboard-page", () => import("./components/clientDashboardPage.js"));
 }
 
+function loadClientBidsApi() {
+  return loadComponentModule("client-bids-page", () => import("./components/clientBidsPage.js"));
+}
+
 function loadDeveloperDashboardApi() {
   return loadComponentModule("developer-dashboard-page", () => import("./components/developerDashboardPage.js"));
 }
 
+function loadDeveloperMembershipApi() {
+  return loadComponentModule("developer-membership-page", () => import("./components/developerMembershipPage.js"));
+}
+
 function loadDeveloperProfileApi() {
   return loadComponentModule("developer-profile-page", () => import("./components/developerProfilePage.js"));
+}
+
+function loadDeveloperPublicProfileApi() {
+  return loadComponentModule("developer-public-profile-page", () => import("./components/developerPublicProfilePage.js"));
 }
 
 function loadProjectDetailApi() {
@@ -131,7 +148,7 @@ function getMarketplaceHeaderAction(content, role, isAuthenticated) {
 
   if (role === "developer") {
     return {
-      label: content.meta?.locale === "tr" ? "Geliştirici Teklifi Oluştur" : "Create Developer Proposal",
+      label: content.meta?.locale === "tr" ? "Profesyonel Teklifi Oluştur" : "Create Professional Proposal",
       href: "./professional-listing-submission.html",
     };
   }
@@ -174,6 +191,7 @@ function createMarketplaceHeaderNav(content, role, isAuthenticated) {
 
 function createHomePageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     nav: withAdminNav(content.nav, content.adminDashboardPage.navLabel),
@@ -191,6 +209,7 @@ function createHomePageContent(content) {
 
 function createProfessionalsPageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.professionalsPage,
@@ -204,6 +223,7 @@ function createProjectDetailPageContent(content, projectSlug) {
   const selectedProject = detailPage.projects[projectSlug] || projectEntries[0]?.[1];
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     nav: {
@@ -219,6 +239,7 @@ function createProjectDetailPageContent(content, projectSlug) {
 
 function createCreateAccountPageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.authPages.createAccount,
@@ -228,6 +249,7 @@ function createCreateAccountPageContent(content) {
 
 function createLoginPageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.authPages.login,
@@ -237,6 +259,7 @@ function createLoginPageContent(content) {
 
 function createModeratorLoginPageContent(content) {
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.authPages.moderatorLogin,
@@ -246,6 +269,8 @@ function createModeratorLoginPageContent(content) {
 
 function isClosedClientListing(listing) {
   const listingStatus = listing?.marketplaceMeta?.listingStatus || listing?.status || "";
+  // Status is the single source of truth — if explicitly active, never treat as closed
+  if (["open-for-bids", "active", "live"].includes(listingStatus)) return false;
   return Boolean(
     listing?.marketplaceMeta?.acceptedBidId
       || listing?.marketplaceMeta?.acceptedBid
@@ -257,25 +282,21 @@ function isClosedClientListing(listing) {
 const DASHBOARD_SWR_KEY = "yapply-swr-client-dashboard";
 const DEV_DASHBOARD_SWR_KEY = "yapply-swr-dev-dashboard";
 const DASHBOARD_SWR_MAX_AGE_MS = 3 * 60 * 1000; // 3 minutes
-const _dashboardSwrMemory = new Map(); // In-memory layer — avoids repeated JSON.parse
 
 function dashboardSwrRead(key) {
+  // Always read from localStorage directly — no in-memory layer.
+  // This avoids stale data bugs when other modules (marketplaceStore) write to localStorage.
   const cacheKey = key || DASHBOARD_SWR_KEY;
-  const mem = _dashboardSwrMemory.get(cacheKey);
-  if (mem) return mem;
   try {
     const raw = localStorage.getItem(cacheKey);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    _dashboardSwrMemory.set(cacheKey, parsed);
-    return parsed;
+    return JSON.parse(raw);
   } catch (_) { return null; }
 }
 
 function dashboardSwrWrite(data, key) {
   const cacheKey = key || DASHBOARD_SWR_KEY;
   const entry = { ts: Date.now(), data };
-  _dashboardSwrMemory.set(cacheKey, entry);
   try {
     localStorage.setItem(cacheKey, JSON.stringify(entry));
   } catch (_) {}
@@ -285,37 +306,52 @@ function dashboardSwrIsStale(cached) {
   return !cached || (Date.now() - (cached.ts || 0)) > DASHBOARD_SWR_MAX_AGE_MS;
 }
 
+function _listingsFingerprint(listings) {
+  if (!Array.isArray(listings)) return "";
+  return listings.map((l) => {
+    if (!l) return "";
+    const m = l.marketplaceMeta || {};
+    const bids = Array.isArray(l.bids) ? l.bids : (Array.isArray(m.latestBids) ? m.latestBids : []);
+    const bidStatuses = bids.map((b) => `${b?.id || ""}:${b?.status || ""}`).join("+");
+    return `${l.id}|${m.listingStatus || l.status || ""}|${m.bidCount || 0}|${m.acceptedBidId || ""}|${bidStatuses}`;
+  }).join(",");
+}
+
 async function createClientDashboardPageContent(content) {
   const session = getAuthSession();
   const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
 
-  // SWR: try to use cached dashboard data for instant render
-  const cached = dashboardSwrRead(DASHBOARD_SWR_KEY);
-  const hasFreshCache = cached && !dashboardSwrIsStale(cached) && Array.isArray(cached.data);
+  let ownedListings = [];
 
-  let ownedListings;
-
-  if (hasFreshCache) {
-    // Use cache immediately, revalidate in background
-    ownedListings = cached.data;
-    fetchClientDashboardData()
-      .then((data) => {
-        dashboardSwrWrite(data.listings || [], DASHBOARD_SWR_KEY);
-      })
-      .catch(() => {});
-  } else {
-    // No cache or stale — fetch fresh
+  // Try direct Supabase first (no Vercel API roundtrip)
+  try {
+    ownedListings = await supabaseFetchMyListings(ownerUserId);
+    console.log("[yapply] İlanlarım: loaded", ownedListings.length, "listings from Supabase");
+  } catch (supaErr) {
+    console.warn("[yapply] İlanlarım: Supabase query failed, falling back to API:", supaErr?.message);
+    // Fallback to old Vercel API if Supabase tables don't exist yet
     try {
       const data = await fetchClientDashboardData();
       ownedListings = data.listings || [];
-      dashboardSwrWrite(ownedListings, DASHBOARD_SWR_KEY);
     } catch (_) {
-      ownedListings = cached?.data || getOwnedSubmittedListings("client", ownerUserId);
+      ownedListings = getOwnedSubmittedListings("client", ownerUserId);
     }
   }
 
   const activeListings = ownedListings.filter((listing) => !isClosedClientListing(listing));
   const closedListings = ownedListings.filter((listing) => isClosedClientListing(listing));
+
+  // Tag closed listings that already have a review so the UI can hide the form
+  if (ownerUserId && closedListings.length > 0) {
+    try {
+      const { hasExistingReview } = await import("./core/supabaseMarketplace.js");
+      await Promise.all(closedListings.map(async (listing) => {
+        try {
+          listing._hasReview = await hasExistingReview(ownerUserId, listing.id);
+        } catch (_) { listing._hasReview = false; }
+      }));
+    } catch (_) {}
+  }
 
   return {
     meta: content.meta,
@@ -332,6 +368,43 @@ async function createClientDashboardPageContent(content) {
     footer: content.openMarketplacePage.footer,
     activeListings,
     closedListings,
+  };
+}
+
+async function createClientBidsPageContent(content, runtimeData) {
+  const session = getAuthSession();
+  const ownerUserId = session?.authenticated ? session.user?.id || "" : "";
+
+  // Use pre-fetched data from loadMarketplaceRuntimeData SWR cache if available
+  let allListings = runtimeData?.clientBidsListings || [];
+
+  if (allListings.length === 0 && !runtimeData?._clientBidsCacheHit) {
+    // No cached data — fetch now
+    try {
+      allListings = await supabaseFetchMyListings(ownerUserId);
+      console.log("[yapply] Tekliflerim: loaded", allListings.length, "listings from Supabase");
+    } catch (supaErr) {
+      console.warn("[yapply] Tekliflerim: Supabase query failed, falling back to API:", supaErr?.message);
+      try {
+        const data = await fetchClientDashboardData();
+        allListings = data.listings || [];
+      } catch (_) {
+        allListings = getOwnedSubmittedListings("client", ownerUserId);
+      }
+    }
+  }
+
+  return {
+    meta: content.meta,
+    brand: content.brand,
+    controls: content.controls,
+    ...content.clientBidsPage,
+    viewerSession: session,
+    nav: {
+      ...content.clientBidsPage.nav,
+    },
+    footer: content.openMarketplacePage.footer,
+    allListings,
   };
 }
 
@@ -396,25 +469,32 @@ function createDeveloperDashboardPageContent(content, runtimeData = {}) {
   const cached = dashboardSwrRead(DEV_DASHBOARD_SWR_KEY);
   const hasFreshCache = cached && !dashboardSwrIsStale(cached) && cached.data;
 
-  let remoteListings, remoteBids, localBids;
+  let remoteListings, remoteBids, remoteReviews, localBids;
 
   if (hasFreshCache && !runtimeData.developerOwnedListings) {
     // Use cache — runtimeData was empty (came from SWR path in loadMarketplaceRuntimeData)
     remoteListings = cached.data.listings || [];
     remoteBids = cached.data.bids || [];
+    remoteReviews = cached.data.reviews || [];
     localBids = Array.isArray(runtimeData.developerLocalBidEntries) ? runtimeData.developerLocalBidEntries : [];
   } else {
     remoteListings = Array.isArray(runtimeData.developerOwnedListings) ? runtimeData.developerOwnedListings : [];
     remoteBids = Array.isArray(runtimeData.developerBidEntries) ? runtimeData.developerBidEntries : [];
+    remoteReviews = Array.isArray(runtimeData.developerReviews) ? runtimeData.developerReviews : [];
     localBids = Array.isArray(runtimeData.developerLocalBidEntries) ? runtimeData.developerLocalBidEntries : [];
     // Write fresh data to cache
     if (remoteListings.length > 0 || remoteBids.length > 0) {
-      dashboardSwrWrite({ listings: remoteListings, bids: remoteBids }, DEV_DASHBOARD_SWR_KEY);
+      dashboardSwrWrite({ listings: remoteListings, bids: remoteBids, reviews: remoteReviews }, DEV_DASHBOARD_SWR_KEY);
     }
   }
 
   const ownedListings = mergeDashboardItems(localListings, remoteListings);
-  const bidEntries = mergeDashboardItems(localBids, remoteBids);
+  // 100% Supabase: PG is the source of truth for bids.
+  // Only fall back to local if PG returned nothing (offline).
+  const bidEntries = remoteBids.length > 0 ? remoteBids : localBids;
+  const reviews = remoteReviews;
+  const ratingSum = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+  const ratingAverage = reviews.length > 0 ? ratingSum / reviews.length : 0;
 
   return {
     meta: content.meta,
@@ -431,6 +511,27 @@ function createDeveloperDashboardPageContent(content, runtimeData = {}) {
     footer: content.openMarketplacePage.footer,
     ownedListings,
     bidEntries,
+    reviews,
+    ratingAverage,
+    ratingCount: reviews.length,
+  };
+}
+
+function createDeveloperPublicProfilePageContent(content, developerUserId, profileData, completedListings) {
+  const session = getAuthSession();
+  return {
+    meta: content.meta,
+    brand: content.brand,
+    controls: content.controls,
+    ...content.developerPublicProfilePage,
+    viewerSession: session,
+    nav: withAdminNav(
+      content.developerPublicProfilePage.nav,
+      content.adminDashboardPage.navLabel
+    ),
+    footer: content.openMarketplacePage.footer,
+    developerProfileData: profileData || {},
+    completedListings: completedListings || [],
   };
 }
 
@@ -595,6 +696,7 @@ function createMarketplaceSubmissionPageContent(content, submissionType) {
   const isAuthenticated = Boolean(session?.authenticated && session?.user);
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...submissionPage,
@@ -614,6 +716,7 @@ function createMarketplaceSubmissionSuccessContent(content, submissionType, list
   const listing = getSubmittedListing(submissionType, resolvedId) || getLastSubmissionDetail(submissionType, resolvedId);
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.marketplaceSubmissionPages[submissionType],
@@ -654,6 +757,7 @@ function createDeveloperProfilePageContent(content, developerSlug) {
   const selectedProfile = developerPage.profiles[developerSlug] || profileEntries[0]?.[1];
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     nav: {
@@ -670,12 +774,18 @@ function createDeveloperProfilePageContent(content, developerSlug) {
 function createAdminDashboardPageContent(content, runtimeData = {}) {
   const remoteClientListings = Array.isArray(runtimeData.adminClientListings) ? runtimeData.adminClientListings : [];
   const remoteProfessionalListings = Array.isArray(runtimeData.adminProfessionalListings) ? runtimeData.adminProfessionalListings : [];
+  // Admin dashboard: show ONLY real PG listings, NO seed/demo items.
+  // Seed items are only shown on the public marketplace when PG is unreachable.
+  const backendReachable = runtimeData.adminBackendReachable === true;
+  const clientSeedItems = backendReachable ? [] : content.openMarketplacePage.tabs.client.items;
+  const professionalSeedItems = backendReachable ? [] : content.openMarketplacePage.tabs.developer.items;
   const managedCollections = getManagedMarketplaceCollections(
-    mergeAdminListingSeeds(remoteClientListings, content.openMarketplacePage.tabs.client.items),
-    mergeAdminListingSeeds(remoteProfessionalListings, content.openMarketplacePage.tabs.developer.items)
+    mergeAdminListingSeeds(remoteClientListings, clientSeedItems),
+    mergeAdminListingSeeds(remoteProfessionalListings, professionalSeedItems)
   );
 
   return {
+    meta: content.meta,
     brand: content.brand,
     controls: content.controls,
     ...content.adminDashboardPage,
@@ -839,6 +949,21 @@ async function createMarketplaceSubmissionSuccess(content, locale, submissionTyp
 
 async function createMarketplaceListingDetail(content, locale, listingType, listingId, runtimeData) {
   const pageContent = createMarketplaceListingDetailContent(content, listingType, listingId, runtimeData);
+
+  // Check if the owner already reviewed the accepted developer for this listing
+  const session = getAuthSession();
+  const listing = pageContent.listing;
+  if (session?.authenticated && session.user?.role === "client" && listing?.id) {
+    const ownerId = session.user.id;
+    const listingOwnerId = listing.ownerUserId || listing.owner_user_id || listing.marketplaceMeta?.ownerUserId || "";
+    if (ownerId && ownerId === listingOwnerId) {
+      try {
+        const { hasExistingReview } = await import("./core/supabaseMarketplace.js");
+        listing._hasReview = await hasExistingReview(ownerId, listing.id);
+      } catch (_) { listing._hasReview = false; }
+    }
+  }
+
   const [{ createNavbar }, { createMarketplaceListingDetailPage }, { createFooter }] = await Promise.all([
     loadNavbarApi(),
     loadMarketplaceListingDetailApi(),
@@ -990,6 +1115,26 @@ async function createAccountSettings(content, locale) {
   `;
 }
 
+async function createClientBids(content, locale, runtimeData) {
+  // Parallelize data fetch and component module loading for speed
+  const [pageContent, { createNavbar }, { createClientBidsPage }, { createFooter }] = await Promise.all([
+    createClientBidsPageContent(content, runtimeData),
+    loadNavbarApi(),
+    loadClientBidsApi(),
+    loadFooterApi(),
+  ]);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createClientBidsPage(pageContent)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
 async function createDeveloperDashboard(content, locale, runtimeData) {
   const pageContent = createDeveloperDashboardPageContent(content, runtimeData);
   const [{ createNavbar }, { createDeveloperDashboardPage }, { createFooter }] = await Promise.all([
@@ -1003,6 +1148,47 @@ async function createDeveloperDashboard(content, locale, runtimeData) {
       ${createNavbar(pageContent, locale)}
       <main>
         ${createDeveloperDashboardPage(pageContent)}
+      </main>
+      ${createFooter(pageContent)}
+    </div>
+  `;
+}
+
+async function createDeveloperMembership(content, locale) {
+  const session = getAuthSession();
+  const [{ createNavbar }, { createDeveloperMembershipPage }, { createFooter }] = await Promise.all([
+    loadNavbarApi(),
+    loadDeveloperMembershipApi(),
+    loadFooterApi(),
+  ]);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(content, locale)}
+      <main>
+        ${createDeveloperMembershipPage(content, session)}
+      </main>
+      ${createFooter(content)}
+    </div>
+  `;
+}
+
+async function createDeveloperPublicProfile(content, locale, runtimeData) {
+  const developerUserId = runtimeData.developerUserId || "";
+  const profileData = runtimeData.developerProfileData || {};
+  const completedListings = runtimeData.completedListings || [];
+  const pageContent = createDeveloperPublicProfilePageContent(content, developerUserId, profileData, completedListings);
+  const [{ createNavbar }, { createDeveloperPublicProfilePage }, { createFooter }] = await Promise.all([
+    loadNavbarApi(),
+    loadDeveloperPublicProfileApi(),
+    loadFooterApi(),
+  ]);
+
+  return `
+    <div class="page-shell">
+      ${createNavbar(pageContent, locale)}
+      <main>
+        ${createDeveloperPublicProfilePage(pageContent)}
       </main>
       ${createFooter(pageContent)}
     </div>
@@ -1040,8 +1226,20 @@ export async function createApp(
     return createClientDashboard(content, locale);
   }
 
+  if (page === "client-bids") {
+    return createClientBids(content, locale, runtimeData);
+  }
+
   if (page === "developer-dashboard") {
     return createDeveloperDashboard(content, locale, runtimeData);
+  }
+
+  if (page === "developer-membership") {
+    return createDeveloperMembership(content, locale);
+  }
+
+  if (page === "developer-public-profile") {
+    return createDeveloperPublicProfile(content, locale, runtimeData);
   }
 
   if (page === "account-settings") {

@@ -37,16 +37,16 @@ function getDetailCopy(locale) {
       constructionStarted: "İnşaat Başladı mı?",
       listingStatus: "İlan Durumu",
       bidForm: {
-        eyebrow: "Geliştirici Teklifi",
+        eyebrow: "Profesyonel Teklifi",
         title: "Bu proje için teklif verin.",
-        description: "Yalnızca giriş yapmış geliştirici hesapları açık müşteri ilanlarına teklif verebilir.",
+        description: "Yalnızca giriş yapmış profesyonel hesapları açık müşteri ilanlarına teklif verebilir.",
         noteTitle: "Güçlü bir teklif için",
         noteBody: "Net fiyat aralığı, gerçekçi tamamlanma süresi ve kısa ama güven veren bir teklif notu paylaşın.",
         closedTitle: "Teklif verme kapalı",
-        closedDescription: "Bu ilan şu anda yeni geliştirici tekliflerine açık değil.",
-        guestTitle: "Teklif vermek için geliştirici hesabıyla giriş yapın.",
-        guestDescription: "İlanı inceleyebilirsiniz, ancak teklif göndermek için aktif bir geliştirici hesabı gerekir.",
-        roleTitle: "Yalnızca geliştirici hesapları teklif verebilir.",
+        closedDescription: "Bu ilan şu anda yeni profesyonel tekliflerine açık değil.",
+        guestTitle: "Teklif vermek için profesyonel hesabıyla giriş yapın.",
+        guestDescription: "İlanı inceleyebilirsiniz, ancak teklif göndermek için aktif bir profesyonel hesabı gerekir.",
+        roleTitle: "Yalnızca profesyonel hesapları teklif verebilir.",
         roleDescription: "Müşteri hesapları bu ilanı görüntüleyebilir fakat teklif gönderemez.",
         amount: "Teklif Tutarı",
         timeframe: "Tamamlanma Süresi",
@@ -68,7 +68,7 @@ function getDetailCopy(locale) {
         amount: "Teklif Tutarı",
         timeframe: "Tamamlanma Süresi",
         proposal: "Teklif Notu",
-        bidder: "Geliştirici",
+        bidder: "Profesyonel",
         rating: "Puan",
         submitted: "Gönderildi",
         noRating: "Henüz puan yok",
@@ -268,21 +268,21 @@ function createBidSubmissionSection(content, listing) {
               <span>${bidForm.timeframe}</span>
               <select name="estimatedCompletionTimeframe" required>
                 <option value="" disabled selected>${bidForm.timeframePlaceholder}</option>
-                <option value="1 hafta">1 hafta</option>
-                <option value="2 hafta">2 hafta</option>
-                <option value="3 hafta">3 hafta</option>
-                <option value="1 ay">1 ay</option>
-                <option value="2 ay">2 ay</option>
-                <option value="3 ay">3 ay</option>
-                <option value="4 ay">4 ay</option>
-                <option value="5 ay">5 ay</option>
-                <option value="6 ay">6 ay</option>
-                <option value="7 ay">7 ay</option>
-                <option value="8 ay">8 ay</option>
-                <option value="9 ay">9 ay</option>
-                <option value="10 ay">10 ay</option>
-                <option value="11 ay">11 ay</option>
-                <option value="12 ay">12 ay</option>
+                <option value="${locale === "tr" ? "1 hafta" : "1 week"}">${locale === "tr" ? "1 hafta" : "1 week"}</option>
+                <option value="${locale === "tr" ? "2 hafta" : "2 weeks"}">${locale === "tr" ? "2 hafta" : "2 weeks"}</option>
+                <option value="${locale === "tr" ? "3 hafta" : "3 weeks"}">${locale === "tr" ? "3 hafta" : "3 weeks"}</option>
+                <option value="${locale === "tr" ? "1 ay" : "1 month"}">${locale === "tr" ? "1 ay" : "1 month"}</option>
+                <option value="${locale === "tr" ? "2 ay" : "2 months"}">${locale === "tr" ? "2 ay" : "2 months"}</option>
+                <option value="${locale === "tr" ? "3 ay" : "3 months"}">${locale === "tr" ? "3 ay" : "3 months"}</option>
+                <option value="${locale === "tr" ? "4 ay" : "4 months"}">${locale === "tr" ? "4 ay" : "4 months"}</option>
+                <option value="${locale === "tr" ? "5 ay" : "5 months"}">${locale === "tr" ? "5 ay" : "5 months"}</option>
+                <option value="${locale === "tr" ? "6 ay" : "6 months"}">${locale === "tr" ? "6 ay" : "6 months"}</option>
+                <option value="${locale === "tr" ? "7 ay" : "7 months"}">${locale === "tr" ? "7 ay" : "7 months"}</option>
+                <option value="${locale === "tr" ? "8 ay" : "8 months"}">${locale === "tr" ? "8 ay" : "8 months"}</option>
+                <option value="${locale === "tr" ? "9 ay" : "9 months"}">${locale === "tr" ? "9 ay" : "9 months"}</option>
+                <option value="${locale === "tr" ? "10 ay" : "10 months"}">${locale === "tr" ? "10 ay" : "10 months"}</option>
+                <option value="${locale === "tr" ? "11 ay" : "11 months"}">${locale === "tr" ? "11 ay" : "11 months"}</option>
+                <option value="${locale === "tr" ? "12 ay" : "12 months"}">${locale === "tr" ? "12 ay" : "12 months"}</option>
               </select>
             </label>
             <label class="form-field form-field--full">
@@ -327,8 +327,15 @@ function createSummaryGrid(items) {
     .join("");
 }
 
+function isValidImageUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  if (url === "[base64-stripped]") return false;
+  if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("/")) return true;
+  return false;
+}
+
 function normalizeListingImageItem(item, index) {
-  if (typeof item === "string" && item.trim()) {
+  if (typeof item === "string" && isValidImageUrl(item.trim())) {
     return {
       id: `listing-image-${index + 1}`,
       name: `Project image ${index + 1}`,
@@ -341,7 +348,7 @@ function normalizeListingImageItem(item, index) {
   }
 
   const srcCandidates = [item.dataUrl, item.url, item.src, item.href];
-  const src = srcCandidates.find((value) => typeof value === "string" && value.trim());
+  const src = srcCandidates.find((value) => isValidImageUrl(value));
   if (!src) {
     return null;
   }
@@ -356,7 +363,7 @@ function normalizeListingImageItem(item, index) {
 function getListingImageItems(listing) {
   const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
   const attachmentImages = attachments
-    .filter((item) => item?.kind === "image" && item?.dataUrl)
+    .filter((item) => item?.dataUrl && (item.kind === "image" || isValidImageUrl(item.dataUrl)))
     .map((item, index) => normalizeListingImageItem(item, index))
     .filter(Boolean);
 
@@ -380,8 +387,22 @@ function getListingImageItems(listing) {
     }
   }
 
+  const combined = [...photoImages, ...fallbackImages];
+
+  // Last-resort fallback: grab first attachment with any valid dataUrl
+  // (mirrors the simple logic used by listing cards on kesfet page)
+  if (combined.length === 0 && attachments.length > 0) {
+    for (const att of attachments) {
+      const src = att?.dataUrl || att?.url || att?.src;
+      if (isValidImageUrl(src)) {
+        combined.push({ id: "listing-image-1", name: "Project image", src });
+        break;
+      }
+    }
+  }
+
   const seenSources = new Set();
-  return [...photoImages, ...fallbackImages].filter((item) => {
+  return combined.filter((item) => {
     if (seenSources.has(item.src)) {
       return false;
     }
@@ -503,6 +524,8 @@ function createClientDetail(content, listing) {
   const detailContent = content.marketplaceFlow.detail.client;
   const locale = getDetailLocale(content);
   const copy = getDetailCopy(locale);
+  const viewerSession = content.viewerSession || { authenticated: false, user: null };
+  const viewerRole = viewerSession.user?.role || "";
   const marketplaceMeta = listing.marketplaceMeta || {};
   const categoryLabel = listing.projectType || copy.fallback;
   const locationLabel = listing.location || marketplaceMeta.location || copy.fallback;
@@ -572,6 +595,61 @@ function createClientDetail(content, listing) {
       `
       : `<div class="marketplace-empty panel"><p>${copy.latestBids.empty}</p></div>`;
 
+  const isOwner = viewerSession.authenticated && viewerSession.user?.id && (viewerSession.user.id === listing.ownerUserId || viewerSession.user.id === listing.owner_user_id);
+  const rawListingStatus = (marketplaceMeta.listingStatus || listing.status || "").toLowerCase();
+  const isListingOpen = rawListingStatus === "open-for-bids" || rawListingStatus === "active" || rawListingStatus === "live";
+  // If listing is open, it's NOT closed — status is the single source of truth
+  const isListingClosed = !isListingOpen && (rawListingStatus === "closed" || rawListingStatus === "completed" || rawListingStatus === "awarded" || rawListingStatus === "bid-accepted" || !!marketplaceMeta.acceptedBidId);
+
+  const ownerActionsMarkup = isOwner ? `
+    <section class="section-shell" style="padding-top:0;padding-bottom:0">
+      <div class="hero-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;padding:0.75rem 0">
+        ${isListingOpen
+          ? `<button class="button button--danger" type="button" data-detail-close-listing="${listing.id}">${locale === "tr" ? "İlanı Kapat" : "Deactivate Listing"}</button>`
+          : ""}
+      </div>
+    </section>
+  ` : "";
+
+  // ── Inline review form on detail page when bid accepted & owner viewing ──
+  const detailAcceptedBidId = marketplaceMeta.acceptedBidId || "";
+  const allBids = Array.isArray(listing.bids) ? listing.bids : latestBids;
+  const detailAcceptedBid = allBids.find((b) => b.id === detailAcceptedBidId) || null;
+  const detailAcceptedDevId = detailAcceptedBid?.bidderUserId || detailAcceptedBid?.bidder_user_id || detailAcceptedBid?.developerProfileReference?.userId || "";
+  const isTR = locale === "tr";
+  const reviewLabels = {
+    title: isTR ? "Geliştiriciyi Değerlendir" : "Rate this Developer",
+    ratingLabel: isTR ? "Puanınız" : "Your Rating",
+    commentLabel: isTR ? "Yorum (isteğe bağlı)" : "Comment (optional)",
+    commentPlaceholder: isTR ? "Bu geliştirici ile çalışma deneyiminizi paylaşın..." : "Share your experience working with this developer...",
+    submitLabel: isTR ? "Değerlendirmeyi Gönder" : "Submit Review",
+  };
+  const detailAlreadyReviewed = Boolean(listing._hasReview);
+  const detailReviewMarkup = isOwner && detailAcceptedBidId && detailAcceptedDevId && !detailAlreadyReviewed ? `
+    <section class="section-shell" style="padding-top:0">
+      <div class="panel" style="padding:1.25rem">
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">${reviewLabels.title}</h3>
+        <form data-inline-review-form data-review-dev="${detailAcceptedDevId}" data-review-listing="${listing.id}" data-review-bid="${detailAcceptedBidId}">
+          <div data-star-input-group>
+            <label style="display:block;margin-bottom:0.35rem;font-size:0.85rem;color:var(--text-muted)">${reviewLabels.ratingLabel}</label>
+            <div style="display:flex;gap:4px;align-items:center">
+              ${[1,2,3,4,5].map((n) => `<button type="button" data-star-value="${n}" aria-label="${n} star${n>1?"s":""}" style="background:none;border:none;padding:2px;cursor:pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>`).join("")}
+              <input type="hidden" name="rating" value="0" data-star-rating-value />
+            </div>
+          </div>
+          <label style="display:block;margin-top:0.75rem">
+            <span style="font-size:0.85rem;color:var(--text-muted)">${reviewLabels.commentLabel}</span>
+            <textarea name="comment" rows="3" placeholder="${reviewLabels.commentPlaceholder}" style="width:100%;resize:vertical;margin-top:0.25rem;padding:0.5rem;border-radius:8px;border:1px solid var(--border-200, #333);background:var(--surface-100, #1a1a1a);color:var(--text-100, #fff);font-size:0.9rem"></textarea>
+          </label>
+          <div data-inline-review-feedback hidden style="padding:0.4rem 0;font-size:0.85rem"></div>
+          <div style="margin-top:0.75rem">
+            <button class="button button--primary" type="submit" style="font-size:0.9rem">${reviewLabels.submitLabel}</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  ` : "";
+
   return `
     <section class="marketplace-detail-hero marketplace-detail-hero--client section-shell">
       <div class="marketplace-detail-hero__layout">
@@ -589,9 +667,12 @@ function createClientDetail(content, listing) {
       </div>
     </section>
 
+    ${ownerActionsMarkup}
+    ${detailReviewMarkup}
+
     <section class="section-shell marketplace-client-detail-layout">
       <div class="marketplace-client-detail-layout__left">
-        ${createBidSubmissionSection(content, listing)}
+        ${viewerRole !== "client" ? createBidSubmissionSection(content, listing) : ""}
         <div class="marketplace-detail-stack" id="listing-bids">
           ${createSectionHeading(copy.latestBids)}
           ${latestBidsMarkup}
@@ -698,7 +779,6 @@ function createProfessionalDetail(content, listing) {
         </article>
       </div>
     </section>
-    ${createMediaSection(detailContent, listing)}
 
     <section class="section-shell" id="listing-services">
       ${createSectionHeading(detailContent.services)}
@@ -706,42 +786,32 @@ function createProfessionalDetail(content, listing) {
     </section>
 
     <section class="section-shell" id="listing-contact">
-      ${createSectionHeading(detailContent.contact)}
-      <div class="project-inquiry-layout">
-        <article class="panel project-inquiry-summary developer-inquiry-summary">
-          <span class="project-inquiry-summary__eyebrow">${detailContent.contactSummary}</span>
-          <h3>${listing.name}</h3>
-          <div class="project-inquiry-summary__grid">
-            ${createSummaryGrid(summaryItems)}
+      <div class="panel application-panel project-inquiry-panel">
+        <div class="project-inquiry-panel__intro">
+          <h3>${detailContent.contact.formTitle}</h3>
+        </div>
+        <form class="application-form project-inquiry-form" data-marketplace-listing-inquiry-form novalidate>
+          <input type="hidden" name="professionalName" value="${listing.name}" data-marketplace-listing-name-field />
+          <input type="hidden" name="listingOwnerUserId" value="${listing.ownerUserId || ""}" data-marketplace-listing-owner-id />
+          <label class="form-field">
+            <span>${detailContent.contact.fields.fullName}</span>
+            <input type="text" name="fullName" placeholder="${detailContent.contact.placeholders.fullName}" required />
+          </label>
+          <label class="form-field">
+            <span>${detailContent.contact.fields.email}</span>
+            <input type="email" name="email" placeholder="${detailContent.contact.placeholders.email}" required />
+          </label>
+          <label class="form-field">
+            <span>${detailContent.contact.fields.message}</span>
+            <textarea name="message" rows="5" placeholder="${detailContent.contact.placeholders.message}" required></textarea>
+          </label>
+          <div class="form-actions form-field--full">
+            <button class="button button--primary" type="submit">${detailContent.contact.submitLabel}</button>
           </div>
-        </article>
-        <div class="panel application-panel project-inquiry-panel">
-          <div class="project-inquiry-panel__intro">
-            <h3>${detailContent.contact.formTitle}</h3>
-            <p>${detailContent.contact.formIntro}</p>
-          </div>
-          <form class="application-form project-inquiry-form" data-marketplace-listing-inquiry-form novalidate>
-            <input type="hidden" name="professionalName" value="${listing.name}" data-marketplace-listing-name-field />
-            <label class="form-field">
-              <span>${detailContent.contact.fields.fullName}</span>
-              <input type="text" name="fullName" placeholder="${detailContent.contact.placeholders.fullName}" required />
-            </label>
-            <label class="form-field">
-              <span>${detailContent.contact.fields.email}</span>
-              <input type="email" name="email" placeholder="${detailContent.contact.placeholders.email}" required />
-            </label>
-            <label class="form-field">
-              <span>${detailContent.contact.fields.message}</span>
-              <textarea name="message" rows="5" placeholder="${detailContent.contact.placeholders.message}" required></textarea>
-            </label>
-            <div class="form-actions form-field--full">
-              <button class="button button--primary" type="submit">${detailContent.contact.submitLabel}</button>
-            </div>
-          </form>
-          <div class="form-success project-inquiry-success" data-marketplace-listing-inquiry-success hidden>
-            <h3>${detailContent.contact.successTitle}</h3>
-            <p>${detailContent.contact.successText} <strong data-marketplace-listing-success-name>${listing.name}</strong>.</p>
-          </div>
+        </form>
+        <div class="form-success project-inquiry-success" data-marketplace-listing-inquiry-success hidden style="display: none;">
+          <h3>${detailContent.contact.successTitle}</h3>
+          <p>${detailContent.contact.successText} <strong data-marketplace-listing-success-name>${listing.name}</strong>.</p>
         </div>
       </div>
     </section>

@@ -176,6 +176,28 @@ export function createAccountSettingsPage(content) {
               <button class="button button--primary" type="submit">${content.saveLabel}</button>
             </div>
           </form>
+          <div class="account-settings-theme-section">
+            <span class="account-settings-theme-label">${locale === "tr" ? "Dil" : "Language"}</span>
+            <div class="account-settings-theme-switch" data-account-lang-switch>
+              <button class="account-settings-theme-option" type="button" data-account-lang="tr">
+                <span>&#127481;&#127479;</span> Türkçe
+              </button>
+              <button class="account-settings-theme-option" type="button" data-account-lang="en">
+                <span>&#127468;&#127463;</span> English
+              </button>
+            </div>
+          </div>
+          <div class="account-settings-theme-section">
+            <span class="account-settings-theme-label">${locale === "tr" ? "Tema" : "Theme"}</span>
+            <div class="account-settings-theme-switch" data-account-theme-switch>
+              <button class="account-settings-theme-option" type="button" data-account-theme="light">
+                <span>&#9728;&#65039;</span> ${locale === "tr" ? "Açık" : "Light"}
+              </button>
+              <button class="account-settings-theme-option" type="button" data-account-theme="dark">
+                <span>&#127769;</span> ${locale === "tr" ? "Koyu" : "Dark"}
+              </button>
+            </div>
+          </div>
           <div class="account-settings-logout">
             <button class="button button--danger account-settings-logout-btn" type="button" data-account-settings-logout>
               ${locale === "tr" ? "Çıkış Yap" : "Log Out"}
