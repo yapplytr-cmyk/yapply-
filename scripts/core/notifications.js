@@ -1,51 +1,274 @@
-const STORAGE_KEY = "yapply-notifications-v1";
+/**
+ * notifications.js
+ * Server-side notification system using Supabase.
+ * Stores notifications in the public.notifications table.
+ * Supports realtime subscriptions for live badge updates.
+ */
 
-function readStore() {
+import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+
+// In-memory cache for quick access (avoids repeated DB hits)
+let _cache = {};
+let _realtimeChannel = null;
+let _onChangeCallbacks = [];
+
+/**
+ * Add a notification for a target user (server-side insert).
+ * Can be called by any authenticated user to notify another user.
+ */
+export async function addNotification(targetUserId, { type, message, title, href, listingId, bidId, senderUserId }) {
+  if (!targetUserId) return null;
+
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-  } catch (_) {
-    return {};
+    const supabase = await getSupabaseClient();
+    const { data, error } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: targetUserId,
+        type: type || "general",
+        title: title || "",
+        message: message || "",
+        href: href || "",
+        listing_id: listingId || null,
+        bid_id: bidId || null,
+        sender_user_id: senderUserId || null,
+        read: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.warn("[yapply-notif] Failed to add notification:", error.message);
+      return null;
+    }
+
+    // Update local cache
+    if (_cache[targetUserId]) {
+      _cache[targetUserId].unshift(data);
+      _cache[targetUserId] = _cache[targetUserId].slice(0, 50);
+    }
+
+    _fireOnChange(targetUserId);
+    return data;
+  } catch (err) {
+    console.warn("[yapply-notif] addNotification error:", err?.message);
+    return null;
   }
 }
 
-function writeStore(store) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  } catch (_) {}
-}
-
-export function addNotification(targetUserId, { type, message, href, listingId }) {
-  if (!targetUserId) return;
-  const store = readStore();
-  const list = Array.isArray(store[targetUserId]) ? store[targetUserId] : [];
-  list.unshift({
-    id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    type,
-    message,
-    href: href || "",
-    listingId: listingId || "",
-    createdAt: new Date().toISOString(),
-    read: false,
-  });
-  store[targetUserId] = list.slice(0, 20);
-  writeStore(store);
-}
-
-export function getNotifications(userId) {
+/**
+ * Fetch notifications for a user from Supabase (most recent 50).
+ */
+export async function getNotifications(userId) {
   if (!userId) return [];
-  const store = readStore();
-  return Array.isArray(store[userId]) ? store[userId] : [];
+
+  try {
+    const supabase = await getSupabaseClient();
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.warn("[yapply-notif] Failed to fetch notifications:", error.message);
+      return _cache[userId] || [];
+    }
+
+    _cache[userId] = data || [];
+    return _cache[userId];
+  } catch (err) {
+    console.warn("[yapply-notif] getNotifications error:", err?.message);
+    return _cache[userId] || [];
+  }
 }
 
-export function getUnreadNotifications(userId) {
-  return getNotifications(userId).filter((n) => !n.read);
+/**
+ * Get unread notifications for a user.
+ */
+export async function getUnreadNotifications(userId) {
+  if (!userId) return [];
+
+  try {
+    const supabase = await getSupabaseClient();
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("read", false)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.warn("[yapply-notif] Failed to fetch unread:", error.message);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.warn("[yapply-notif] getUnreadNotifications error:", err?.message);
+    return [];
+  }
 }
 
-export function markAllRead(userId) {
+/**
+ * Get the count of unread notifications (lightweight query).
+ */
+export async function getUnreadCount(userId) {
+  if (!userId) return 0;
+
+  try {
+    const supabase = await getSupabaseClient();
+    const { count, error } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("read", false);
+
+    if (error) {
+      console.warn("[yapply-notif] Failed to get unread count:", error.message);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (err) {
+    console.warn("[yapply-notif] getUnreadCount error:", err?.message);
+    return 0;
+  }
+}
+
+/**
+ * Mark all notifications as read for a user.
+ */
+export async function markAllRead(userId) {
   if (!userId) return;
-  const store = readStore();
-  const list = Array.isArray(store[userId]) ? store[userId] : [];
-  list.forEach((n) => { n.read = true; });
-  store[userId] = list;
-  writeStore(store);
+
+  try {
+    const supabase = await getSupabaseClient();
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", userId)
+      .eq("read", false);
+
+    if (error) {
+      console.warn("[yapply-notif] Failed to mark all read:", error.message);
+      return;
+    }
+
+    // Update cache
+    if (_cache[userId]) {
+      _cache[userId].forEach((n) => { n.read = true; });
+    }
+
+    _fireOnChange(userId);
+  } catch (err) {
+    console.warn("[yapply-notif] markAllRead error:", err?.message);
+  }
+}
+
+/**
+ * Mark a single notification as read.
+ */
+export async function markRead(notificationId, userId) {
+  if (!notificationId) return;
+
+  try {
+    const supabase = await getSupabaseClient();
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", notificationId);
+
+    if (error) {
+      console.warn("[yapply-notif] Failed to mark read:", error.message);
+      return;
+    }
+
+    // Update cache
+    if (_cache[userId]) {
+      const notif = _cache[userId].find((n) => n.id === notificationId);
+      if (notif) notif.read = true;
+    }
+
+    _fireOnChange(userId);
+  } catch (err) {
+    console.warn("[yapply-notif] markRead error:", err?.message);
+  }
+}
+
+/**
+ * Subscribe to realtime notification changes for a user.
+ * Calls the callback whenever a new notification arrives or changes.
+ */
+export async function subscribeToNotifications(userId, callback) {
+  if (!userId) return;
+
+  if (typeof callback === "function") {
+    _onChangeCallbacks.push({ userId, callback });
+  }
+
+  // Only set up one realtime channel
+  if (_realtimeChannel) return;
+
+  try {
+    const supabase = await getSupabaseClient();
+    _realtimeChannel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newNotif = payload.new;
+          if (_cache[userId]) {
+            _cache[userId].unshift(newNotif);
+            _cache[userId] = _cache[userId].slice(0, 50);
+          }
+          _fireOnChange(userId);
+        }
+      )
+      .subscribe();
+
+    console.log("[yapply-notif] Realtime subscription active for user:", userId);
+  } catch (err) {
+    console.warn("[yapply-notif] Realtime subscription error:", err?.message);
+  }
+}
+
+/**
+ * Unsubscribe from realtime notifications (e.g. on logout).
+ */
+export async function unsubscribeFromNotifications() {
+  if (_realtimeChannel) {
+    try {
+      const supabase = await getSupabaseClient();
+      await supabase.removeChannel(_realtimeChannel);
+    } catch (_) {}
+    _realtimeChannel = null;
+  }
+  _onChangeCallbacks = [];
+  _cache = {};
+}
+
+/**
+ * Register a callback for notification changes.
+ */
+export function onNotificationChange(userId, callback) {
+  if (typeof callback === "function") {
+    _onChangeCallbacks.push({ userId, callback });
+  }
+}
+
+function _fireOnChange(userId) {
+  _onChangeCallbacks.forEach((entry) => {
+    if (entry.userId === userId && typeof entry.callback === "function") {
+      try { entry.callback(); } catch (_) {}
+    }
+  });
 }

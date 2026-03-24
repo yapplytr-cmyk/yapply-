@@ -638,6 +638,11 @@ function setupAuthNavigation() {
             .catch(() => {});
         }
 
+        // Clean up notification bell
+        import("./components/notificationBell.js")
+          .then(({ destroyNotificationBell }) => destroyNotificationBell())
+          .catch(() => {});
+
         const authApi = await loadAuthApi();
         await authApi?.logoutAccount?.();
       } catch (error) {
@@ -2040,13 +2045,17 @@ function setupMarketplaceBidForm(content) {
         const listingOwner = result?.listing?.ownerUserId;
         const listingTitle = result?.listing?.title || result?.listing?.name || "";
         const listingId = result?.listing?.id || formData.get("listingId") || "";
+        const currentUserId = getAuthSession()?.user?.id || "";
+        const isTR = document.documentElement.lang === "tr";
         if (listingOwner) {
           const { addNotification } = await import("./core/notifications.js");
           addNotification(listingOwner, {
             type: "new-bid",
-            message: `A developer placed a bid on "${listingTitle}"`,
+            title: isTR ? "Yeni Teklif" : "New Bid",
+            message: isTR ? `Bir geliştirici "${listingTitle}" ilanınıza teklif verdi` : `A developer placed a bid on "${listingTitle}"`,
             href: "./client-dashboard.html#client-dashboard-active",
             listingId,
+            senderUserId: currentUserId,
           });
         }
       } catch (_) {}
@@ -2282,13 +2291,16 @@ function setupClientDashboard(content) {
           const acceptedBid = updatedListing?.marketplaceMeta?.acceptedBid;
           const developerId = acceptedBid?.developerProfileReference?.userId || acceptedBid?.developerId || "";
           const listingTitle = updatedListing?.title || updatedListing?.name || "";
+          const isTR_bid = document.documentElement.lang === "tr";
           if (developerId) {
             const { addNotification } = await import("./core/notifications.js");
             addNotification(developerId, {
               type: "bid-accepted",
-              message: `Your bid on "${listingTitle}" was accepted!`,
+              title: isTR_bid ? "Teklif Kabul Edildi" : "Bid Accepted",
+              message: isTR_bid ? `"${listingTitle}" ilanındaki teklifiniz kabul edildi!` : `Your bid on "${listingTitle}" was accepted!`,
               href: "./developer-dashboard.html#developer-dashboard-bids",
               listingId,
+              senderUserId: session?.user?.id || "",
             });
           }
         } catch (_) {}
@@ -2522,11 +2534,14 @@ function setupClientBidsPage(content) {
           const developerUserId = acceptedBid?.developerProfileReference?.userId || acceptedBid?.developerId || "";
           if (developerUserId) {
             const { addNotification } = await import("./core/notifications.js");
+            const isTR_cb = document.documentElement.lang === "tr";
             addNotification(developerUserId, {
               type: "bid-accepted",
-              message: document.documentElement.lang === "tr" ? "Teklifiniz kabul edildi!" : "Your bid was accepted!",
+              title: isTR_cb ? "Teklif Kabul Edildi" : "Bid Accepted",
+              message: isTR_cb ? "Teklifiniz kabul edildi!" : "Your bid was accepted!",
               href: "./developer-dashboard.html",
               listingId,
+              senderUserId: session?.user?.id || "",
             });
           }
         } catch (_) {}
@@ -2667,6 +2682,22 @@ function setupInlineReviewForms(session, content) {
           photoFiles,
         });
 
+        // Notify the developer about the new review
+        try {
+          const devUserId = form.getAttribute("data-review-dev") || "";
+          if (devUserId) {
+            const { addNotification } = await import("./core/notifications.js");
+            addNotification(devUserId, {
+              type: "new-review",
+              title: isTR ? "Yeni Değerlendirme" : "New Review",
+              message: isTR ? `Bir müşteri size ${rating} yıldız değerlendirme bıraktı!` : `A client left you a ${rating}-star review!`,
+              href: "./developer-public-profile.html",
+              listingId: form.getAttribute("data-review-listing") || "",
+              senderUserId: session?.user?.id || "",
+            });
+          }
+        } catch (_) {}
+
         const wrapper = form.closest(".panel") || form.parentElement;
         if (wrapper) {
           const filledStars = Array.from({ length: 5 }, (_, i) =>
@@ -2804,6 +2835,23 @@ function setupDeveloperPublicProfile(content) {
           comment: form.querySelector('[name="comment"]')?.value || "",
           photoFiles,
         });
+
+        // Notify the developer about the new review
+        try {
+          const devUserId2 = form.querySelector('[name="developerUserId"]')?.value || "";
+          const isTR_rv = document.documentElement.lang === "tr";
+          if (devUserId2) {
+            const { addNotification } = await import("./core/notifications.js");
+            addNotification(devUserId2, {
+              type: "new-review",
+              title: isTR_rv ? "Yeni Değerlendirme" : "New Review",
+              message: isTR_rv ? `Bir müşteri size ${rating} yıldız değerlendirme bıraktı!` : `A client left you a ${rating}-star review!`,
+              href: "./developer-public-profile.html",
+              listingId: form.querySelector('[name="listingId"]')?.value || "",
+              senderUserId: session?.user?.id || "",
+            });
+          }
+        } catch (_) {}
 
         if (feedback) {
           feedback.textContent = formLabels.successMessage || "Review submitted!";
@@ -3257,6 +3305,15 @@ async function syncAuthState() {
           });
         })
         .catch((err) => console.warn("[yapply] Push init error:", err?.message));
+    }
+
+    // Initialize notification bell for all authenticated users (native + web)
+    if (session?.authenticated && session?.user?.id) {
+      import("./components/notificationBell.js")
+        .then(({ initNotificationBell }) => {
+          initNotificationBell(session.user.id);
+        })
+        .catch((err) => console.warn("[yapply] Notification bell init error:", err?.message));
     }
 
     return session;

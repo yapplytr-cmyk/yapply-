@@ -169,15 +169,12 @@ export async function initPushNotifications(userId, onNotificationTap) {
   PushNotifications.addListener("pushNotificationReceived", (notification) => {
     console.log("[yapply-push] Notification received in foreground:", notification?.title);
 
-    // Add to in-app notification system
+    // Refresh notification bell badge (notifications are already in Supabase DB)
     try {
-      import("./notifications.js").then(({ addNotification }) => {
-        addNotification(userId, {
-          type: notification?.data?.type || "push",
-          message: notification?.body || notification?.title || "",
-          href: notification?.data?.href || "",
-          listingId: notification?.data?.listingId || "",
-        });
+      import("../components/notificationBell.js").then(async ({ updateBadge }) => {
+        const { getUnreadCount } = await import("./notifications.js");
+        const count = await getUnreadCount(userId);
+        updateBadge(count);
       });
     } catch (_) {}
   });
