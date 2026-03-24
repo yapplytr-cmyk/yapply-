@@ -3377,6 +3377,8 @@ function setupAccountSettings(content) {
 
       setAuthSession(updatedSession);
       setDocumentAuthState(updatedSession);
+      invalidateMarketplaceRequestCache();
+      invalidateAllMarketplaceSwrCaches();
       setStatus("success");
       window.setTimeout(() => {
         renderPage(content.meta.locale);

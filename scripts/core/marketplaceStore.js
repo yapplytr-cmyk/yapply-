@@ -94,6 +94,7 @@ function buildPublicListingsCacheKey({
 
 export function invalidateMarketplaceRequestCache(listingId = "") {
   publicListingsRequestCache.clear();
+  creatorAvatarCache.clear();
 
   if (listingId) {
     publicListingDetailCache.delete(String(listingId).trim());
