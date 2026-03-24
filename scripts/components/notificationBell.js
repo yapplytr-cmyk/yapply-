@@ -315,9 +315,9 @@ function _setupScrollFade(container) {
   _scrollHandler();
 }
 
-function _isKesfetPage() {
+function _isAyarlarPage() {
   const page = document.body?.dataset?.page || "";
-  return page === "marketplace" || page === "kesfet" || page === "explore";
+  return page === "account-settings";
 }
 
 function _setupPageVisibility(container) {
@@ -332,10 +332,10 @@ function _setupPageVisibility(container) {
 }
 
 function _updateBellVisibilityForPage(container) {
-  if (_isKesfetPage()) {
-    container.style.display = "none";
-  } else {
+  if (_isAyarlarPage()) {
     container.style.display = "";
+  } else {
+    container.style.display = "none";
   }
 }
 
