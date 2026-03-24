@@ -959,7 +959,6 @@ export async function fetchAuthSession(options = {}) {
     const audience = options.audience || "any";
     return await loadConfirmedSession({ strict: false, audience, expectedRole: options.expectedRole || "" });
   } catch (error) {
-    console.warn("[yapply-auth] fetchAuthSession failed:", error?.code, error?.message);
     clearAuthSession();
     return { authenticated: false, user: null };
   }
