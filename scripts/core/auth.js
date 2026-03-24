@@ -256,7 +256,8 @@ function resolveProfileRole(profile, metadata, expectedRole = "") {
     return "client";
   }
 
-  return "";
+  // Default to "client" for new accounts with no role signals — prevents profile creation from being skipped
+  return "client";
 }
 
 function mapProfileToUpsert(authUser, metadata, fallbackRole = "", existingProfile = null) {
@@ -305,8 +306,8 @@ async function fetchOwnProfile(supabase, userId) {
     .eq("id", userId)
     .maybeSingle();
 
-  // If expansion columns don't exist yet, retry with base fields only
-  if (error && !_useBaseFieldsOnly && error.message && error.message.includes("does not exist")) {
+  // If expansion columns don't exist yet or select fails, retry with base fields only
+  if (error && !_useBaseFieldsOnly) {
     _useBaseFieldsOnly = true;
     const retry = await supabase
       .from("profiles")
@@ -347,8 +348,8 @@ async function ensureOwnProfile(supabase, authUser, expectedRole = "") {
     .select(selectFields)
     .single();
 
-  // If expansion columns don't exist, strip them and retry with base fields
-  if (error && !_useBaseFieldsOnly && error.message && error.message.includes("does not exist")) {
+  // If expansion columns don't exist or upsert fails, strip them and retry with base fields
+  if (error && !_useBaseFieldsOnly) {
     _useBaseFieldsOnly = true;
     const basePayload = mapProfileToUpsert(authUser, metadata, fallbackRole, profile);
     const retry = await supabase
@@ -958,6 +959,7 @@ export async function fetchAuthSession(options = {}) {
     const audience = options.audience || "any";
     return await loadConfirmedSession({ strict: false, audience, expectedRole: options.expectedRole || "" });
   } catch (error) {
+    console.warn("[yapply-auth] fetchAuthSession failed:", error?.code, error?.message);
     clearAuthSession();
     return { authenticated: false, user: null };
   }
