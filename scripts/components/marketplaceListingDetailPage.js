@@ -1,775 +1,774 @@
 import { getDefaultAvatarOptions } from "../core/accountSettingsStore.js";
 import { createButton, createSectionHeading } from "./primitives.js";
+
+/** No-op — images are already compressed at upload time (1024px / 400KB max) */
 export function compressDetailImages() {}
+
 const LISTING_STATUS_LABELS = {
-"open-for-bids": { en: "Open for Bids", tr: "Tekliflere Açık" },
-closed: { en: "Closed", tr: "Kapalı" },
-awarded: { en: "Awarded", tr: "Verildi" },
-"in-progress": { en: "In Progress", tr: "Sürüyor" },
-completed: { en: "Completed", tr: "Tamamlandı" },
+  "open-for-bids": { en: "Open for Bids", tr: "Tekliflere Açık" },
+  closed: { en: "Closed", tr: "Kapalı" },
+  awarded: { en: "Awarded", tr: "Verildi" },
+  "in-progress": { en: "In Progress", tr: "Sürüyor" },
+  completed: { en: "Completed", tr: "Tamamlandı" },
 };
+
 const PROJECT_STATUS_LABELS = {
-"not-started": { en: "Not Started", tr: "Başlanmadı" },
-"planning-stage": { en: "Planning Stage", tr: "Planlama Aşaması" },
-"in-construction": { en: "In Construction", tr: "İnşaat Halinde" },
-"renovation-needed": { en: "Renovation Needed", tr: "Renovasyon Gerekli" },
-"shell-structure-complete": { en: "Shell Structure Complete", tr: "Kaba Yapı Tamam" },
-"interior-work-needed": { en: "Interior Work Needed", tr: "İç Mekan İşleri Gerekli" },
-"exterior-work-needed": { en: "Exterior Work Needed", tr: "Dış Mekan İşleri Gerekli" },
-"landscape-needed": { en: "Landscape Needed", tr: "Peyzaj Gerekli" },
-other: { en: "Other", tr: "Diğer" },
+  "not-started": { en: "Not Started", tr: "Başlanmadı" },
+  "planning-stage": { en: "Planning Stage", tr: "Planlama Aşaması" },
+  "in-construction": { en: "In Construction", tr: "İnşaat Halinde" },
+  "renovation-needed": { en: "Renovation Needed", tr: "Renovasyon Gerekli" },
+  "shell-structure-complete": { en: "Shell Structure Complete", tr: "Kaba Yapı Tamam" },
+  "interior-work-needed": { en: "Interior Work Needed", tr: "İç Mekan İşleri Gerekli" },
+  "exterior-work-needed": { en: "Exterior Work Needed", tr: "Dış Mekan İşleri Gerekli" },
+  "landscape-needed": { en: "Landscape Needed", tr: "Peyzaj Gerekli" },
+  other: { en: "Other", tr: "Diğer" },
 };
+
 function getDetailLocale(content) {
-return content.meta?.locale === "tr" ? "tr" : "en";
+  return content.meta?.locale === "tr" ? "tr" : "en";
 }
+
 function getDetailCopy(locale) {
-if (locale === "tr") {
-return {
-fallback: "Belirtilmedi",
-subcategory: "Alt Kategori",
-permitsStatus: "İzin / Plan Durumu",
-constructionStarted: "İnşaat Başladı mı?",
-listingStatus: "İlan Durumu",
-bidForm: {
-eyebrow: "Profesyonel Teklifi",
-title: "Bu proje için teklif verin.",
-description: "Yalnızca giriş yapmış profesyonel hesapları açık müşteri ilanlarına teklif verebilir.",
-noteTitle: "Güçlü bir teklif için",
-noteBody: "Net fiyat aralığı, gerçekçi tamamlanma süresi ve kısa ama güven veren bir teklif notu paylaşın.",
-closedTitle: "Teklif verme kapalı",
-closedDescription: "Bu ilan şu anda yeni profesyonel tekliflerine açık değil.",
-guestTitle: "Teklif vermek için profesyonel hesabıyla giriş yapın.",
-guestDescription: "İlanı inceleyebilirsiniz, ancak teklif göndermek için aktif bir profesyonel hesabı gerekir.",
-roleTitle: "Yalnızca profesyonel hesapları teklif verebilir.",
-roleDescription: "Müşteri hesapları bu ilanı görüntüleyebilir fakat teklif gönderemez.",
-amount: "Teklif Tutarı",
-timeframe: "Tamamlanma Süresi",
-proposal: "Teklif Mesajı",
-amountPlaceholder: "Örn. 150.000",
-timeframePlaceholder: "Süre seçin",
-proposalPlaceholder: "Kısa yaklaşımınızı, kapsamı nasıl ele alacağınızı ve neden uygun olduğunuzu yazın.",
-submit: "Teklif Gönder",
-successTitle: "Teklifiniz gönderildi.",
-successText: "Teklif şimdi bu ilanın son teklifler alanında görünecek.",
-errorTitle: "Teklif gönderilemedi",
-errorFallback: "Teklifiniz şu anda kaydedilemedi. Lütfen tekrar deneyin.",
-},
-latestBids: {
-eyebrow: "Son Teklifler",
-title: "Son Teklifler",
-description: "",
-empty: "Henüz teklif yok.",
-amount: "Teklif Tutarı",
-timeframe: "Tamamlanma Süresi",
-proposal: "Teklif Notu",
-bidder: "Profesyonel",
-rating: "Puan",
-submitted: "Gönderildi",
-noRating: "Henüz puan yok",
-},
-};
+  if (locale === "tr") {
+    return {
+      fallback: "Belirtilmedi",
+      subcategory: "Alt Kategori",
+      permitsStatus: "İzin / Plan Durumu",
+      constructionStarted: "İnşaat Başladı mı?",
+      listingStatus: "İlan Durumu",
+      bidForm: {
+        eyebrow: "Geliştirici Teklifi",
+        title: "Bu proje için teklif verin.",
+        description: "Yalnızca giriş yapmış geliştirici hesapları açık müşteri ilanlarına teklif verebilir.",
+        noteTitle: "Güçlü bir teklif için",
+        noteBody: "Net fiyat aralığı, gerçekçi tamamlanma süresi ve kısa ama güven veren bir teklif notu paylaşın.",
+        closedTitle: "Teklif verme kapalı",
+        closedDescription: "Bu ilan şu anda yeni geliştirici tekliflerine açık değil.",
+        guestTitle: "Teklif vermek için geliştirici hesabıyla giriş yapın.",
+        guestDescription: "İlanı inceleyebilirsiniz, ancak teklif göndermek için aktif bir geliştirici hesabı gerekir.",
+        roleTitle: "Yalnızca geliştirici hesapları teklif verebilir.",
+        roleDescription: "Müşteri hesapları bu ilanı görüntüleyebilir fakat teklif gönderemez.",
+        amount: "Teklif Tutarı",
+        timeframe: "Tamamlanma Süresi",
+        proposal: "Teklif Mesajı",
+        amountPlaceholder: "Örn. 150.000",
+        timeframePlaceholder: "Süre seçin",
+        proposalPlaceholder: "Kısa yaklaşımınızı, kapsamı nasıl ele alacağınızı ve neden uygun olduğunuzu yazın.",
+        submit: "Teklif Gönder",
+        successTitle: "Teklifiniz gönderildi.",
+        successText: "Teklif şimdi bu ilanın son teklifler alanında görünecek.",
+        errorTitle: "Teklif gönderilemedi",
+        errorFallback: "Teklifiniz şu anda kaydedilemedi. Lütfen tekrar deneyin.",
+      },
+      latestBids: {
+        eyebrow: "Son Teklifler",
+        title: "Son Teklifler",
+        description: "",
+        empty: "Henüz teklif yok.",
+        amount: "Teklif Tutarı",
+        timeframe: "Tamamlanma Süresi",
+        proposal: "Teklif Notu",
+        bidder: "Geliştirici",
+        rating: "Puan",
+        submitted: "Gönderildi",
+        noRating: "Henüz puan yok",
+      },
+    };
+  }
+
+  return {
+    fallback: "Not provided",
+    subcategory: "Subcategory",
+    permitsStatus: "Permits / Plans",
+    constructionStarted: "Construction Started",
+    listingStatus: "Listing Status",
+    bidForm: {
+      eyebrow: "Developer Bid",
+      title: "Submit a bid for this project.",
+      description: "Only signed-in developer accounts can bid on open client project listings.",
+      noteTitle: "For a stronger bid",
+      noteBody: "Share a clear amount range, a realistic delivery window, and a short proposal that builds confidence quickly.",
+      closedTitle: "Bidding is closed",
+      closedDescription: "This listing is not currently accepting new developer bids.",
+      guestTitle: "Sign in with a developer account to place a bid.",
+      guestDescription: "You can review the listing publicly, but bidding requires an active developer account.",
+      roleTitle: "Only developer accounts can submit bids.",
+      roleDescription: "Client accounts can view this listing but cannot place bids.",
+      amount: "Bid Amount",
+      timeframe: "Completion Timeframe",
+      proposal: "Proposal",
+      amountPlaceholder: "e.g. 150.000",
+      timeframePlaceholder: "Select timeframe",
+      proposalPlaceholder: "Share your approach, delivery confidence, and why your team is a fit for the project.",
+      submit: "Submit Bid",
+      successTitle: "Your bid was submitted.",
+      successText: "The bid will now appear in the latest bids area for this listing.",
+      errorTitle: "Bid could not be submitted",
+      errorFallback: "Your bid could not be saved right now. Please try again.",
+    },
+    latestBids: {
+      eyebrow: "Latest bids",
+      title: "Latest Bids",
+      description: "",
+      empty: "No bids yet.",
+      amount: "Bid Amount",
+      timeframe: "Completion Timeframe",
+      proposal: "Proposal",
+      bidder: "Developer",
+      rating: "Rating",
+      submitted: "Submitted",
+      noRating: "No rating yet",
+    },
+  };
 }
-return {
-fallback: "Not provided",
-subcategory: "Subcategory",
-permitsStatus: "Permits / Plans",
-constructionStarted: "Construction Started",
-listingStatus: "Listing Status",
-bidForm: {
-eyebrow: "Developer Bid",
-title: "Submit a bid for this project.",
-description: "Only signed-in developer accounts can bid on open client project listings.",
-noteTitle: "For a stronger bid",
-noteBody: "Share a clear amount range, a realistic delivery window, and a short proposal that builds confidence quickly.",
-closedTitle: "Bidding is closed",
-closedDescription: "This listing is not currently accepting new developer bids.",
-guestTitle: "Sign in with a developer account to place a bid.",
-guestDescription: "You can review the listing publicly, but bidding requires an active developer account.",
-roleTitle: "Only developer accounts can submit bids.",
-roleDescription: "Client accounts can view this listing but cannot place bids.",
-amount: "Bid Amount",
-timeframe: "Completion Timeframe",
-proposal: "Proposal",
-amountPlaceholder: "e.g. 150.000",
-timeframePlaceholder: "Select timeframe",
-proposalPlaceholder: "Share your approach, delivery confidence, and why your team is a fit for the project.",
-submit: "Submit Bid",
-successTitle: "Your bid was submitted.",
-successText: "The bid will now appear in the latest bids area for this listing.",
-errorTitle: "Bid could not be submitted",
-errorFallback: "Your bid could not be saved right now. Please try again.",
-},
-latestBids: {
-eyebrow: "Latest bids",
-title: "Latest Bids",
-description: "",
-empty: "No bids yet.",
-amount: "Bid Amount",
-timeframe: "Completion Timeframe",
-proposal: "Proposal",
-bidder: "Developer",
-rating: "Rating",
-submitted: "Submitted",
-noRating: "No rating yet",
-},
-};
-}
+
 function getCreatorRole(listing, fallbackRole = "client") {
-return (
-listing?.creatorRole
-|| listing?.ownerRole
-|| listing?.marketplaceMeta?.creatorRole
-|| (listing?.type === "professional" ? "developer" : "")
-|| fallbackRole
-);
+  return (
+    listing?.creatorRole
+    || listing?.ownerRole
+    || listing?.marketplaceMeta?.creatorRole
+    || (listing?.type === "professional" ? "developer" : "")
+    || fallbackRole
+  );
 }
+
 function getCreatorAvatarSrc(listing, fallbackRole = "client") {
-const resolvedRole = getCreatorRole(listing, fallbackRole);
-const defaultAvatar = getDefaultAvatarOptions(resolvedRole)[0]?.src || getDefaultAvatarOptions(fallbackRole)[0]?.src || "";
-return (
-listing?.creatorAvatarSrc
-|| listing?.creatorAvatarUrl
-|| listing?.profilePictureSrc
-|| listing?.avatarUrl
-|| listing?.marketplaceMeta?.creatorAvatarSrc
-|| listing?.marketplaceMeta?.developerProfileReference?.avatarUrl
-|| defaultAvatar
-);
+  const resolvedRole = getCreatorRole(listing, fallbackRole);
+  const defaultAvatar = getDefaultAvatarOptions(resolvedRole)[0]?.src || getDefaultAvatarOptions(fallbackRole)[0]?.src || "";
+
+  return (
+    listing?.creatorAvatarSrc
+    || listing?.creatorAvatarUrl
+    || listing?.profilePictureSrc
+    || listing?.avatarUrl
+    || listing?.marketplaceMeta?.creatorAvatarSrc
+    || listing?.marketplaceMeta?.developerProfileReference?.avatarUrl
+    || defaultAvatar
+  );
 }
+
 function getListingStatusLabel(value, locale, fallback) {
-const labels = LISTING_STATUS_LABELS[value];
-if (labels) {
-return locale === "tr" ? labels.tr : labels.en;
+  const labels = LISTING_STATUS_LABELS[value];
+  if (labels) {
+    return locale === "tr" ? labels.tr : labels.en;
+  }
+
+  return fallback;
 }
-return fallback;
-}
+
 function getProjectStatusLabel(value, locale, fallback) {
-const labels = PROJECT_STATUS_LABELS[value];
-if (labels) {
-return locale === "tr" ? labels.tr : labels.en;
+  const labels = PROJECT_STATUS_LABELS[value];
+  if (labels) {
+    return locale === "tr" ? labels.tr : labels.en;
+  }
+
+  return fallback;
 }
-return fallback;
-}
+
 function formatRelativeTime(value, locale, fallback) {
-const date = new Date(value || "");
-if (Number.isNaN(date.getTime())) {
-return fallback;
+  const date = new Date(value || "");
+  if (Number.isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  const diffMs = date.getTime() - Date.now();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const rtf = new Intl.RelativeTimeFormat(locale === "tr" ? "tr-TR" : "en-US", { numeric: "auto" });
+
+  if (Math.abs(diffMs) < hour) {
+    return rtf.format(Math.round(diffMs / minute), "minute");
+  }
+
+  if (Math.abs(diffMs) < day) {
+    return rtf.format(Math.round(diffMs / hour), "hour");
+  }
+
+  if (Math.abs(diffMs) < week) {
+    return rtf.format(Math.round(diffMs / day), "day");
+  }
+
+  return new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }
-const diffMs = date.getTime() - Date.now();
-const minute = 60 * 1000;
-const hour = 60 * minute;
-const day = 24 * hour;
-const week = 7 * day;
-const rtf = new Intl.RelativeTimeFormat(locale === "tr" ? "tr-TR" : "en-US", { numeric: "auto" });
-if (Math.abs(diffMs) < hour) {
-return rtf.format(Math.round(diffMs / minute), "minute");
-}
-if (Math.abs(diffMs) < day) {
-return rtf.format(Math.round(diffMs / hour), "hour");
-}
-if (Math.abs(diffMs) < week) {
-return rtf.format(Math.round(diffMs / day), "day");
-}
-return new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", {
-day: "numeric",
-month: "short",
-year: "numeric",
-}).format(date);
-}
+
 function formatBidRating(reference, locale, fallback) {
-const ratingAverage = Number(reference?.ratingAverage);
-const ratingCount = Number(reference?.ratingCount || 0);
-if (!Number.isFinite(ratingAverage) || ratingAverage <= 0) {
-return fallback;
+  const ratingAverage = Number(reference?.ratingAverage);
+  const ratingCount = Number(reference?.ratingCount || 0);
+
+  if (!Number.isFinite(ratingAverage) || ratingAverage <= 0) {
+    return fallback;
+  }
+
+  if (locale === "tr") {
+    return `${ratingAverage.toFixed(1)} / 5${ratingCount > 0 ? ` · ${ratingCount} değerlendirme` : ""}`;
+  }
+
+  return `${ratingAverage.toFixed(1)} / 5${ratingCount > 0 ? ` · ${ratingCount} reviews` : ""}`;
 }
-if (locale === "tr") {
-return `${ratingAverage.toFixed(1)} / 5${ratingCount > 0 ? ` · ${ratingCount} değerlendirme` : ""}`;
-}
-return `${ratingAverage.toFixed(1)} / 5${ratingCount > 0 ? ` · ${ratingCount} reviews` : ""}`;
-}
+
 function createBidSubmissionSection(content, listing) {
-const locale = getDetailLocale(content);
-const copy = getDetailCopy(locale);
-const bidForm = copy.bidForm;
-const viewerSession = content.viewerSession || { authenticated: false, user: null };
-const viewerRole = viewerSession.user?.role || "";
-const listingStatus = (listing.marketplaceMeta || {}).listingStatus || listing.status;
-let bodyMarkup = "";
-if (listingStatus !== "open-for-bids") {
-bodyMarkup = `
-<div class="marketplace-empty panel">
-<h3>${bidForm.closedTitle}</h3>
-<p>${bidForm.closedDescription}</p>
-</div>
-`;
-} else if (!viewerSession.authenticated) {
-bodyMarkup = `
-<div class="marketplace-empty panel">
-<h3>${bidForm.guestTitle}</h3>
-<p>${bidForm.guestDescription}</p>
-</div>
-`;
-} else if (viewerRole !== "developer") {
-bodyMarkup = `
-<div class="marketplace-empty panel">
-<h3>${bidForm.roleTitle}</h3>
-<p>${bidForm.roleDescription}</p>
-</div>
-`;
-} else {
-bodyMarkup = `
-<div class="project-overview-grid">
-<article class="project-note panel">
-<h3>${bidForm.noteTitle}</h3>
-<p>${bidForm.noteBody}</p>
-</article>
-<div class="panel application-panel">
-<form class="application-form" data-marketplace-bid-form novalidate>
-<input type="hidden" name="listingId" value="${listing.id}" />
-<div class="auth-form-error form-field--full" data-marketplace-bid-error hidden style="display: none;">
-<strong data-marketplace-bid-error-title>${bidForm.errorTitle}</strong>
-<p data-marketplace-bid-error-text>${bidForm.errorFallback}</p>
-</div>
-<label class="form-field">
-<span>${bidForm.amount}</span>
-<div class="bid-amount-wrap">
-<input type="text" name="bidAmount" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" placeholder="${bidForm.amountPlaceholder}" required data-bid-amount-input />
-<span class="bid-amount-currency">TL</span>
-</div>
-</label>
-<label class="form-field">
-<span>${bidForm.timeframe}</span>
-<select name="estimatedCompletionTimeframe" required>
-<option value="" disabled selected>${bidForm.timeframePlaceholder}</option>
-<option value="${locale === "tr" ? "1 hafta" : "1 week"}">${locale === "tr" ? "1 hafta" : "1 week"}</option>
-<option value="${locale === "tr" ? "2 hafta" : "2 weeks"}">${locale === "tr" ? "2 hafta" : "2 weeks"}</option>
-<option value="${locale === "tr" ? "3 hafta" : "3 weeks"}">${locale === "tr" ? "3 hafta" : "3 weeks"}</option>
-<option value="${locale === "tr" ? "1 ay" : "1 month"}">${locale === "tr" ? "1 ay" : "1 month"}</option>
-<option value="${locale === "tr" ? "2 ay" : "2 months"}">${locale === "tr" ? "2 ay" : "2 months"}</option>
-<option value="${locale === "tr" ? "3 ay" : "3 months"}">${locale === "tr" ? "3 ay" : "3 months"}</option>
-<option value="${locale === "tr" ? "4 ay" : "4 months"}">${locale === "tr" ? "4 ay" : "4 months"}</option>
-<option value="${locale === "tr" ? "5 ay" : "5 months"}">${locale === "tr" ? "5 ay" : "5 months"}</option>
-<option value="${locale === "tr" ? "6 ay" : "6 months"}">${locale === "tr" ? "6 ay" : "6 months"}</option>
-<option value="${locale === "tr" ? "7 ay" : "7 months"}">${locale === "tr" ? "7 ay" : "7 months"}</option>
-<option value="${locale === "tr" ? "8 ay" : "8 months"}">${locale === "tr" ? "8 ay" : "8 months"}</option>
-<option value="${locale === "tr" ? "9 ay" : "9 months"}">${locale === "tr" ? "9 ay" : "9 months"}</option>
-<option value="${locale === "tr" ? "10 ay" : "10 months"}">${locale === "tr" ? "10 ay" : "10 months"}</option>
-<option value="${locale === "tr" ? "11 ay" : "11 months"}">${locale === "tr" ? "11 ay" : "11 months"}</option>
-<option value="${locale === "tr" ? "12 ay" : "12 months"}">${locale === "tr" ? "12 ay" : "12 months"}</option>
-</select>
-</label>
-<label class="form-field form-field--full">
-<span>${bidForm.proposal}</span>
-<textarea name="proposalMessage" rows="5" placeholder="${bidForm.proposalPlaceholder}" required></textarea>
-</label>
-<div class="form-actions form-field--full">
-<button class="button button--primary" type="submit">${bidForm.submit}</button>
-</div>
-</form>
-<div class="form-success" data-marketplace-bid-success hidden style="display: none;">
-<h3>${bidForm.successTitle}</h3>
-<p>${bidForm.successText}</p>
-</div>
-</div>
-</div>
-`;
+  const locale = getDetailLocale(content);
+  const copy = getDetailCopy(locale);
+  const bidForm = copy.bidForm;
+  const viewerSession = content.viewerSession || { authenticated: false, user: null };
+  const viewerRole = viewerSession.user?.role || "";
+  const listingStatus = (listing.marketplaceMeta || {}).listingStatus || listing.status;
+
+  let bodyMarkup = "";
+
+  if (listingStatus !== "open-for-bids") {
+    bodyMarkup = `
+      <div class="marketplace-empty panel">
+        <h3>${bidForm.closedTitle}</h3>
+        <p>${bidForm.closedDescription}</p>
+      </div>
+    `;
+  } else if (!viewerSession.authenticated) {
+    bodyMarkup = `
+      <div class="marketplace-empty panel">
+        <h3>${bidForm.guestTitle}</h3>
+        <p>${bidForm.guestDescription}</p>
+      </div>
+    `;
+  } else if (viewerRole !== "developer") {
+    bodyMarkup = `
+      <div class="marketplace-empty panel">
+        <h3>${bidForm.roleTitle}</h3>
+        <p>${bidForm.roleDescription}</p>
+      </div>
+    `;
+  } else {
+    bodyMarkup = `
+      <div class="project-overview-grid">
+        <article class="project-note panel">
+          <h3>${bidForm.noteTitle}</h3>
+          <p>${bidForm.noteBody}</p>
+        </article>
+        <div class="panel application-panel">
+          <form class="application-form" data-marketplace-bid-form novalidate>
+            <input type="hidden" name="listingId" value="${listing.id}" />
+            <div class="auth-form-error form-field--full" data-marketplace-bid-error hidden style="display: none;">
+              <strong data-marketplace-bid-error-title>${bidForm.errorTitle}</strong>
+              <p data-marketplace-bid-error-text>${bidForm.errorFallback}</p>
+            </div>
+            <label class="form-field">
+              <span>${bidForm.amount}</span>
+              <div class="bid-amount-wrap">
+                <input type="text" name="bidAmount" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" placeholder="${bidForm.amountPlaceholder}" required data-bid-amount-input />
+                <span class="bid-amount-currency">TL</span>
+              </div>
+            </label>
+            <label class="form-field">
+              <span>${bidForm.timeframe}</span>
+              <select name="estimatedCompletionTimeframe" required>
+                <option value="" disabled selected>${bidForm.timeframePlaceholder}</option>
+                <option value="1 hafta">1 hafta</option>
+                <option value="2 hafta">2 hafta</option>
+                <option value="3 hafta">3 hafta</option>
+                <option value="1 ay">1 ay</option>
+                <option value="2 ay">2 ay</option>
+                <option value="3 ay">3 ay</option>
+                <option value="4 ay">4 ay</option>
+                <option value="5 ay">5 ay</option>
+                <option value="6 ay">6 ay</option>
+                <option value="7 ay">7 ay</option>
+                <option value="8 ay">8 ay</option>
+                <option value="9 ay">9 ay</option>
+                <option value="10 ay">10 ay</option>
+                <option value="11 ay">11 ay</option>
+                <option value="12 ay">12 ay</option>
+              </select>
+            </label>
+            <label class="form-field form-field--full">
+              <span>${bidForm.proposal}</span>
+              <textarea name="proposalMessage" rows="5" placeholder="${bidForm.proposalPlaceholder}" required></textarea>
+            </label>
+            <div class="form-actions form-field--full">
+              <button class="button button--primary" type="submit">${bidForm.submit}</button>
+            </div>
+          </form>
+          <div class="form-success" data-marketplace-bid-success hidden style="display: none;">
+            <h3>${bidForm.successTitle}</h3>
+            <p>${bidForm.successText}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="marketplace-detail-stack marketplace-bid-submit" id="listing-bid-submit">
+      ${createSectionHeading({
+        eyebrow: bidForm.eyebrow,
+        title: bidForm.title,
+        description: bidForm.description,
+      })}
+      ${bodyMarkup}
+    </div>
+  `;
 }
-return `
-<div class="marketplace-detail-stack marketplace-bid-submit" id="listing-bid-submit">
-${createSectionHeading({
-eyebrow: bidForm.eyebrow,
-title: bidForm.title,
-description: bidForm.description,
-})}
-${bodyMarkup}
-</div>
-`;
-}
+
 function createSummaryGrid(items) {
-return items
-.map(
-(item) => `
-<div>
-<span>${item.label}</span>
-<strong>${item.value}</strong>
-</div>
-`
-)
-.join("");
+  return items
+    .map(
+      (item) => `
+        <div>
+          <span>${item.label}</span>
+          <strong>${item.value}</strong>
+        </div>
+      `
+    )
+    .join("");
 }
-function isValidImageUrl(url) {
-if (!url || typeof url !== "string") return false;
-if (url === "[base64-stripped]") return false;
-if (url.startsWith("data:") || url.startsWith("http") || url.startsWith("/")) return true;
-return false;
-}
+
 function normalizeListingImageItem(item, index) {
-if (typeof item === "string" && isValidImageUrl(item.trim())) {
-return {
-id: `listing-image-${index + 1}`,
-name: `Project image ${index + 1}`,
-src: item.trim(),
-};
+  if (typeof item === "string" && item.trim()) {
+    return {
+      id: `listing-image-${index + 1}`,
+      name: `Project image ${index + 1}`,
+      src: item.trim(),
+    };
+  }
+
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const srcCandidates = [item.dataUrl, item.url, item.src, item.href];
+  const src = srcCandidates.find((value) => typeof value === "string" && value.trim());
+  if (!src) {
+    return null;
+  }
+
+  return {
+    id: item.id || `listing-image-${index + 1}`,
+    name: item.name || `Project image ${index + 1}`,
+    src,
+  };
 }
-if (!item || typeof item !== "object") {
-return null;
-}
-const srcCandidates = [item.dataUrl, item.url, item.src, item.href];
-const src = srcCandidates.find((value) => isValidImageUrl(value));
-if (!src) {
-return null;
-}
-return {
-id: item.id || `listing-image-${index + 1}`,
-name: item.name || `Project image ${index + 1}`,
-src,
-};
-}
+
 function getListingImageItems(listing) {
-const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
-const attachmentImages = attachments
-.filter((item) => item?.dataUrl && (item.kind === "image" || isValidImageUrl(item.dataUrl)))
-.map((item, index) => normalizeListingImageItem(item, index))
-.filter(Boolean);
-if (attachmentImages.length > 0) {
-return attachmentImages;
+  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
+  const attachmentImages = attachments
+    .filter((item) => item?.kind === "image" && item?.dataUrl)
+    .map((item, index) => normalizeListingImageItem(item, index))
+    .filter(Boolean);
+
+  if (attachmentImages.length > 0) {
+    return attachmentImages;
+  }
+
+  const marketplaceMeta = listing.marketplaceMeta && typeof listing.marketplaceMeta === "object"
+    ? listing.marketplaceMeta
+    : {};
+  const photoReferences = Array.isArray(marketplaceMeta.photoReferences) ? marketplaceMeta.photoReferences : [];
+  const photoImages = photoReferences
+    .map((item, index) => normalizeListingImageItem(item, index))
+    .filter(Boolean);
+
+  const fallbackImages = [];
+  if (typeof listing.imageSrc === "string" && listing.imageSrc.trim() && !listing.imageSrc.includes("submitted-professional")) {
+    const fallbackImage = normalizeListingImageItem(listing.imageSrc, photoImages.length);
+    if (fallbackImage) {
+      fallbackImages.push(fallbackImage);
+    }
+  }
+
+  const seenSources = new Set();
+  return [...photoImages, ...fallbackImages].filter((item) => {
+    if (seenSources.has(item.src)) {
+      return false;
+    }
+    seenSources.add(item.src);
+    return true;
+  });
 }
-const marketplaceMeta = listing.marketplaceMeta && typeof listing.marketplaceMeta === "object"
-? listing.marketplaceMeta
-: {};
-const photoReferences = Array.isArray(marketplaceMeta.photoReferences) ? marketplaceMeta.photoReferences : [];
-const photoImages = photoReferences
-.map((item, index) => normalizeListingImageItem(item, index))
-.filter(Boolean);
-const fallbackImages = [];
-if (typeof listing.imageSrc === "string" && listing.imageSrc.trim() && !listing.imageSrc.includes("submitted-professional")) {
-const fallbackImage = normalizeListingImageItem(listing.imageSrc, photoImages.length);
-if (fallbackImage) {
-fallbackImages.push(fallbackImage);
-}
-}
-const combined = [...photoImages, ...fallbackImages];
-if (combined.length === 0 && attachments.length > 0) {
-for (const att of attachments) {
-const src = att?.dataUrl || att?.url || att?.src;
-if (isValidImageUrl(src)) {
-combined.push({ id: "listing-image-1", name: "Project image", src });
-break;
-}
-}
-}
-const seenSources = new Set();
-return combined.filter((item) => {
-if (seenSources.has(item.src)) {
-return false;
-}
-seenSources.add(item.src);
-return true;
-});
-}
+
 function createClientVisual(detailContent, listing) {
-const imageItems = getListingImageItems(listing);
-if (imageItems.length === 0) {
-return `
-<div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact panel">
-<div class="project-hero-visual__grid"></div>
-<div class="project-hero-board">
-<span>${detailContent.boardTitle}</span>
-<strong>${listing.projectType}</strong>
-<p>${listing.location}</p>
-</div>
-</div>
-`;
+  const imageItems = getListingImageItems(listing);
+
+  if (imageItems.length === 0) {
+    return `
+      <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact panel">
+        <div class="project-hero-visual__grid"></div>
+        <div class="project-hero-board">
+          <span>${detailContent.boardTitle}</span>
+          <strong>${listing.projectType}</strong>
+          <p>${listing.location}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  const hasMultiple = imageItems.length > 1;
+
+  return `
+    <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact marketplace-detail-visual--media panel">
+      <div class="marketplace-detail-visual-gallery marketplace-detail-visual-gallery--single" data-gallery-container>
+        ${imageItems
+          .map(
+            (item, index) => `
+              <div class="marketplace-detail-visual-slide${index === 0 ? " marketplace-detail-visual-slide--active" : ""}" data-gallery-slide="${index}">
+                <img src="${item.src}" alt="${item.name}" decoding="async" loading="${index === 0 ? "eager" : "lazy"}" />
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+      ${hasMultiple ? `
+        <button class="gallery-arrow gallery-arrow--prev" data-gallery-prev aria-label="Previous image">&#8249;</button>
+        <button class="gallery-arrow gallery-arrow--next" data-gallery-next aria-label="Next image">&#8250;</button>
+        <div class="gallery-dots">
+          ${imageItems.map((_, i) => `<span class="gallery-dot${i === 0 ? " gallery-dot--active" : ""}" data-gallery-dot="${i}"></span>`).join("")}
+        </div>
+      ` : ""}
+    </div>
+  `;
 }
-const hasMultiple = imageItems.length > 1;
-return `
-<div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact marketplace-detail-visual--media panel">
-<div class="marketplace-detail-visual-gallery marketplace-detail-visual-gallery--single" data-gallery-container>
-${imageItems
-.map(
-(item, index) => `
-<div class="marketplace-detail-visual-slide${index === 0 ? " marketplace-detail-visual-slide--active" : ""}" data-gallery-slide="${index}">
-<img src="${item.src}" alt="${item.name}" decoding="async" loading="${index === 0 ? "eager" : "lazy"}" />
-</div>
-`
-)
-.join("")}
-</div>
-${hasMultiple ? `
-<button class="gallery-arrow gallery-arrow--prev" data-gallery-prev aria-label="Previous image">&#8249;</button>
-<button class="gallery-arrow gallery-arrow--next" data-gallery-next aria-label="Next image">&#8250;</button>
-<div class="gallery-dots">
-${imageItems.map((_, i) => `<span class="gallery-dot${i === 0 ? " gallery-dot--active" : ""}" data-gallery-dot="${i}"></span>`).join("")}
-</div>
-` : ""}
-</div>
-`;
-}
+
 function createMediaSection(detailContent, listing) {
-const imageItems = getListingImageItems(listing);
-const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
-const fileItems = attachments.filter((item) => item.kind !== "image" && item.dataUrl);
-if (imageItems.length === 0 && fileItems.length === 0) {
-return "";
+  const imageItems = getListingImageItems(listing);
+  const attachments = Array.isArray(listing.attachments) ? listing.attachments : [];
+  const fileItems = attachments.filter((item) => item.kind !== "image" && item.dataUrl);
+
+  if (imageItems.length === 0 && fileItems.length === 0) {
+    return "";
+  }
+
+  const galleryMarkup =
+    imageItems.length === 1
+      ? `
+        <div class="marketplace-media-gallery marketplace-media-gallery--single">
+          <a class="marketplace-media-feature panel" href="${imageItems[0].src}" target="_blank" rel="noreferrer">
+            <img src="${imageItems[0].src}" alt="${imageItems[0].name}" loading="lazy" decoding="async" fetchpriority="low" />
+            <span>${imageItems[0].name}</span>
+          </a>
+        </div>
+      `
+      : imageItems.length > 1
+        ? `
+          <div class="marketplace-media-gallery" data-marketplace-media-gallery>
+            <div class="marketplace-media-track">
+              ${imageItems
+                .map(
+                  (item) => `
+                    <a class="marketplace-media-slide panel" href="${item.src}" target="_blank" rel="noreferrer">
+                      <img src="${item.src}" alt="${item.name}" loading="lazy" decoding="async" fetchpriority="low" />
+                      <span>${item.name}</span>
+                    </a>
+                  `
+                )
+                .join("")}
+            </div>
+          </div>
+        `
+        : "";
+  const fileMarkup =
+    fileItems.length > 0
+      ? `
+        <div class="marketplace-file-list">
+          ${fileItems
+            .map(
+              (item) => `
+                <a class="marketplace-file-card panel" href="${item.dataUrl}" download="${item.name}">
+                  <div>
+                    <span>${detailContent.filesLabel}</span>
+                    <strong>${item.name}</strong>
+                  </div>
+                  <span class="marketplace-file-card__action">${detailContent.downloadLabel}</span>
+                </a>
+              `
+            )
+            .join("")}
+        </div>
+      `
+      : "";
+
+  return `
+    <section class="section-shell" id="listing-media">
+      ${createSectionHeading(detailContent.media)}
+      ${galleryMarkup}
+      ${fileMarkup}
+    </section>
+  `;
 }
-const galleryMarkup =
-imageItems.length === 1
-? `
-<div class="marketplace-media-gallery marketplace-media-gallery--single">
-<a class="marketplace-media-feature panel" href="${imageItems[0].src}" target="_blank" rel="noreferrer">
-<img src="${imageItems[0].src}" alt="${imageItems[0].name}" loading="lazy" decoding="async" fetchpriority="low" />
-<span>${imageItems[0].name}</span>
-</a>
-</div>
-`
-: imageItems.length > 1
-? `
-<div class="marketplace-media-gallery" data-marketplace-media-gallery>
-<div class="marketplace-media-track">
-${imageItems
-.map(
-(item) => `
-<a class="marketplace-media-slide panel" href="${item.src}" target="_blank" rel="noreferrer">
-<img src="${item.src}" alt="${item.name}" loading="lazy" decoding="async" fetchpriority="low" />
-<span>${item.name}</span>
-</a>
-`
-)
-.join("")}
-</div>
-</div>
-`
-: "";
-const fileMarkup =
-fileItems.length > 0
-? `
-<div class="marketplace-file-list">
-${fileItems
-.map(
-(item) => `
-<a class="marketplace-file-card panel" href="${item.dataUrl}" download="${item.name}">
-<div>
-<span>${detailContent.filesLabel}</span>
-<strong>${item.name}</strong>
-</div>
-<span class="marketplace-file-card__action">${detailContent.downloadLabel}</span>
-</a>
-`
-)
-.join("")}
-</div>
-`
-: "";
-return `
-<section class="section-shell" id="listing-media">
-${createSectionHeading(detailContent.media)}
-${galleryMarkup}
-${fileMarkup}
-</section>
-`;
-}
+
 function createClientDetail(content, listing) {
-const detailContent = content.marketplaceFlow.detail.client;
-const locale = getDetailLocale(content);
-const copy = getDetailCopy(locale);
-const viewerSession = content.viewerSession || { authenticated: false, user: null };
-const viewerRole = viewerSession.user?.role || "";
-const marketplaceMeta = listing.marketplaceMeta || {};
-const categoryLabel = listing.projectType || copy.fallback;
-const locationLabel = listing.location || marketplaceMeta.location || copy.fallback;
-const budgetLabel = listing.budget || marketplaceMeta.budgetRange?.label || copy.fallback;
-const timeframeLabel = listing.timeline || marketplaceMeta.desiredTimeframe?.label || listing.startDate || copy.fallback;
-const projectStatusLabel = listing.plotStatus
-|| getProjectStatusLabel(marketplaceMeta.projectStatus, locale, copy.fallback);
-const listingStatus = getListingStatusLabel(
-marketplaceMeta.listingStatus || listing.status,
-locale,
-listing.status || copy.fallback
-);
-const summaryItems = [
-{ label: detailContent.summary.type, value: categoryLabel },
-{ label: copy.subcategory, value: marketplaceMeta.subcategory || copy.fallback },
-{ label: detailContent.summary.location, value: locationLabel },
-{ label: detailContent.summary.budget, value: budgetLabel },
-{ label: detailContent.summary.timeline, value: timeframeLabel },
-{ label: detailContent.summary.plotStatus, value: projectStatusLabel },
-{ label: detailContent.summary.size, value: listing.projectSize || detailContent.fallback },
-{ label: copy.permitsStatus, value: marketplaceMeta.permitsStatus || listing.permitsStatus || copy.fallback },
-{ label: copy.constructionStarted, value: marketplaceMeta.constructionStarted || listing.constructionStarted || copy.fallback },
-{ label: copy.listingStatus, value: listingStatus },
-];
-const latestBids = Array.isArray(listing.bids)
-? listing.bids.slice(0, 4)
-: Array.isArray(marketplaceMeta.latestBids)
-? marketplaceMeta.latestBids.slice(0, 4)
-: [];
-const creatorAvatarSrc = getCreatorAvatarSrc(listing, "client");
-const latestBidsMarkup =
-latestBids.length > 0
-? `
-<div class="detail-list-grid marketplace-bids-grid">
-${latestBids
-.map((bid) => {
-const developerReference = bid.developerProfileReference || {};
-const developerName =
-developerReference.companyName ||
-developerReference.userId ||
-copy.fallback;
-const ratingLabel = formatBidRating(developerReference, locale, copy.latestBids.noRating);
-const submittedLabel = formatRelativeTime(bid.createdAt, locale, copy.fallback);
-return `
-<article class="detail-list-card marketplace-bid-card marketplace-bid-accordion" data-bid-item>
-<button class="marketplace-bid-row" type="button" data-bid-trigger aria-expanded="false">
-<span class="marketplace-bid-row__amount"><strong>${bid.bidAmount?.label || copy.fallback}</strong></span>
-<span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
-</button>
-<div class="marketplace-bid-detail" data-bid-panel hidden>
-<div class="project-detail-card__facts">
-${createSummaryGrid([
-{ label: copy.latestBids.bidder, value: developerName },
-{ label: copy.latestBids.timeframe, value: bid.estimatedCompletionTimeframe?.label || copy.fallback },
-{ label: copy.latestBids.rating, value: ratingLabel },
-{ label: copy.latestBids.submitted, value: submittedLabel },
-])}
-</div>
-<p><strong>${copy.latestBids.proposal}</strong></p>
-<p>${bid.proposalMessage || copy.fallback}</p>
-</div>
-</article>
-`;
-})
-.join("")}
-</div>
-`
-: `<div class="marketplace-empty panel"><p>${copy.latestBids.empty}</p></div>`;
-const isOwner = viewerSession.authenticated && viewerSession.user?.id && (viewerSession.user.id === listing.ownerUserId || viewerSession.user.id === listing.owner_user_id);
-const rawListingStatus = (marketplaceMeta.listingStatus || listing.status || "").toLowerCase();
-const isListingOpen = rawListingStatus === "open-for-bids" || rawListingStatus === "active" || rawListingStatus === "live";
-const isListingClosed = !isListingOpen && (rawListingStatus === "closed" || rawListingStatus === "completed" || rawListingStatus === "awarded" || rawListingStatus === "bid-accepted" || !!marketplaceMeta.acceptedBidId);
-const ownerActionsMarkup = isOwner ? `
-<section class="section-shell" style="padding-top:0;padding-bottom:0">
-<div class="hero-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;padding:0.75rem 0">
-${isListingOpen
-? `<button class="button button--danger" type="button" data-detail-close-listing="${listing.id}">${locale === "tr" ? "İlanı Kapat" : "Deactivate Listing"}</button>`
-: ""}
-</div>
-</section>
-` : "";
-const detailAcceptedBidId = marketplaceMeta.acceptedBidId || "";
-const allBids = Array.isArray(listing.bids) ? listing.bids : latestBids;
-const detailAcceptedBid = allBids.find((b) => b.id === detailAcceptedBidId) || null;
-const detailAcceptedDevId = detailAcceptedBid?.bidderUserId || detailAcceptedBid?.bidder_user_id || detailAcceptedBid?.developerProfileReference?.userId || "";
-const isTR = locale === "tr";
-const reviewLabels = {
-title: isTR ? "Geliştiriciyi Değerlendir" : "Rate this Developer",
-ratingLabel: isTR ? "Puanınız" : "Your Rating",
-commentLabel: isTR ? "Yorum (isteğe bağlı)" : "Comment (optional)",
-commentPlaceholder: isTR ? "Bu geliştirici ile çalışma deneyiminizi paylaşın..." : "Share your experience working with this developer...",
-submitLabel: isTR ? "Değerlendirmeyi Gönder" : "Submit Review",
-};
-const detailAlreadyReviewed = Boolean(listing._hasReview);
-const detailReviewMarkup = isOwner && detailAcceptedBidId && detailAcceptedDevId && !detailAlreadyReviewed ? `
-<section class="section-shell" style="padding-top:0">
-<div class="panel" style="padding:1.25rem">
-<h3 style="margin:0 0 0.75rem;font-size:1rem">${reviewLabels.title}</h3>
-<form data-inline-review-form data-review-dev="${detailAcceptedDevId}" data-review-listing="${listing.id}" data-review-bid="${detailAcceptedBidId}">
-<div data-star-input-group>
-<label style="display:block;margin-bottom:0.35rem;font-size:0.85rem;color:var(--text-muted)">${reviewLabels.ratingLabel}</label>
-<div style="display:flex;gap:4px;align-items:center">
-${[1,2,3,4,5].map((n) => `<button type="button" data-star-value="${n}" aria-label="${n} star${n>1?"s":""}" style="background:none;border:none;padding:2px;cursor:pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>`).join("")}
-<input type="hidden" name="rating" value="0" data-star-rating-value />
-</div>
-</div>
-<label style="display:block;margin-top:0.75rem">
-<span style="font-size:0.85rem;color:var(--text-muted)">${reviewLabels.commentLabel}</span>
-<textarea name="comment" rows="3" placeholder="${reviewLabels.commentPlaceholder}" style="width:100%;resize:vertical;margin-top:0.25rem;padding:0.5rem;border-radius:8px;border:1px solid var(--border-200, #333);background:var(--surface-100, #1a1a1a);color:var(--text-100, #fff);font-size:0.9rem"></textarea>
-</label>
-<div data-inline-review-feedback hidden style="padding:0.4rem 0;font-size:0.85rem"></div>
-<div style="margin-top:0.75rem">
-<button class="button button--primary" type="submit" style="font-size:0.9rem">${reviewLabels.submitLabel}</button>
-</div>
-</form>
-</div>
-</section>
-` : "";
-return `
-<section class="marketplace-detail-hero marketplace-detail-hero--client section-shell">
-<div class="marketplace-detail-hero__layout">
-<div class="marketplace-detail-hero__copy">
-<p class="eyebrow">${detailContent.eyebrow}</p>
-<div class="marketplace-detail-title-row">
-<span class="marketplace-detail-title-avatar" aria-hidden="true">
-<img src="${creatorAvatarSrc}" alt="" />
-</span>
-<h1 class="hero-title marketplace-detail-hero__title marketplace-detail-hero__title--compact">${listing.title}</h1>
-</div>
-<p class="hero-lead marketplace-detail-hero__lead">${listing.brief}</p>
-</div>
-${createClientVisual(detailContent, listing)}
-</div>
-</section>
-${ownerActionsMarkup}
-${detailReviewMarkup}
-<section class="section-shell marketplace-client-detail-layout">
-<div class="marketplace-client-detail-layout__left">
-${viewerRole !== "client" ? createBidSubmissionSection(content, listing) : ""}
-<div class="marketplace-detail-stack" id="listing-bids">
-${createSectionHeading(copy.latestBids)}
-${latestBidsMarkup}
-</div>
-</div>
-<div class="marketplace-client-detail-layout__right">
-<div class="marketplace-detail-stack marketplace-detail-stack--overview">
-<div class="section-heading marketplace-detail-section-heading">
-<p class="eyebrow">${detailContent.overview.eyebrow}</p>
-</div>
-<article class="project-detail-card panel">
-<div class="project-detail-card__facts">
-${createSummaryGrid(summaryItems)}
-</div>
-</article>
-</div>
-<article class="project-note panel marketplace-detail-notes">
-<h3>${detailContent.styleTitle}</h3>
-<p>${listing.stylePreference || detailContent.fallback}</p>
-<h3>${detailContent.notesTitle}</h3>
-<p>${listing.additionalNotes || detailContent.noNotes}</p>
-</article>
-</div>
-</section>
-`;
+  const detailContent = content.marketplaceFlow.detail.client;
+  const locale = getDetailLocale(content);
+  const copy = getDetailCopy(locale);
+  const marketplaceMeta = listing.marketplaceMeta || {};
+  const categoryLabel = listing.projectType || copy.fallback;
+  const locationLabel = listing.location || marketplaceMeta.location || copy.fallback;
+  const budgetLabel = listing.budget || marketplaceMeta.budgetRange?.label || copy.fallback;
+  const timeframeLabel = listing.timeline || marketplaceMeta.desiredTimeframe?.label || listing.startDate || copy.fallback;
+  const projectStatusLabel = listing.plotStatus
+    || getProjectStatusLabel(marketplaceMeta.projectStatus, locale, copy.fallback);
+  const listingStatus = getListingStatusLabel(
+    marketplaceMeta.listingStatus || listing.status,
+    locale,
+    listing.status || copy.fallback
+  );
+  const summaryItems = [
+    { label: detailContent.summary.type, value: categoryLabel },
+    { label: copy.subcategory, value: marketplaceMeta.subcategory || copy.fallback },
+    { label: detailContent.summary.location, value: locationLabel },
+    { label: detailContent.summary.budget, value: budgetLabel },
+    { label: detailContent.summary.timeline, value: timeframeLabel },
+    { label: detailContent.summary.plotStatus, value: projectStatusLabel },
+    { label: detailContent.summary.size, value: listing.projectSize || detailContent.fallback },
+    { label: copy.permitsStatus, value: marketplaceMeta.permitsStatus || listing.permitsStatus || copy.fallback },
+    { label: copy.constructionStarted, value: marketplaceMeta.constructionStarted || listing.constructionStarted || copy.fallback },
+    { label: copy.listingStatus, value: listingStatus },
+  ];
+  const latestBids = Array.isArray(listing.bids)
+    ? listing.bids.slice(0, 4)
+    : Array.isArray(marketplaceMeta.latestBids)
+      ? marketplaceMeta.latestBids.slice(0, 4)
+      : [];
+  const creatorAvatarSrc = getCreatorAvatarSrc(listing, "client");
+  const latestBidsMarkup =
+    latestBids.length > 0
+      ? `
+        <div class="detail-list-grid marketplace-bids-grid">
+          ${latestBids
+            .map((bid) => {
+              const developerReference = bid.developerProfileReference || {};
+              const developerName =
+                developerReference.companyName ||
+                developerReference.userId ||
+                copy.fallback;
+              const ratingLabel = formatBidRating(developerReference, locale, copy.latestBids.noRating);
+              const submittedLabel = formatRelativeTime(bid.createdAt, locale, copy.fallback);
+              return `
+                <article class="detail-list-card marketplace-bid-card marketplace-bid-accordion" data-bid-item>
+                  <button class="marketplace-bid-row" type="button" data-bid-trigger aria-expanded="false">
+                    <span class="marketplace-bid-row__amount"><strong>${bid.bidAmount?.label || copy.fallback}</strong></span>
+                    <span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
+                  </button>
+                  <div class="marketplace-bid-detail" data-bid-panel hidden>
+                    <div class="project-detail-card__facts">
+                      ${createSummaryGrid([
+                        { label: copy.latestBids.bidder, value: developerName },
+                        { label: copy.latestBids.timeframe, value: bid.estimatedCompletionTimeframe?.label || copy.fallback },
+                        { label: copy.latestBids.rating, value: ratingLabel },
+                        { label: copy.latestBids.submitted, value: submittedLabel },
+                      ])}
+                    </div>
+                    <p><strong>${copy.latestBids.proposal}</strong></p>
+                    <p>${bid.proposalMessage || copy.fallback}</p>
+                  </div>
+                </article>
+              `;
+            })
+            .join("")}
+        </div>
+      `
+      : `<div class="marketplace-empty panel"><p>${copy.latestBids.empty}</p></div>`;
+
+  return `
+    <section class="marketplace-detail-hero marketplace-detail-hero--client section-shell">
+      <div class="marketplace-detail-hero__layout">
+        <div class="marketplace-detail-hero__copy">
+          <p class="eyebrow">${detailContent.eyebrow}</p>
+          <div class="marketplace-detail-title-row">
+            <span class="marketplace-detail-title-avatar" aria-hidden="true">
+              <img src="${creatorAvatarSrc}" alt="" />
+            </span>
+            <h1 class="hero-title marketplace-detail-hero__title marketplace-detail-hero__title--compact">${listing.title}</h1>
+          </div>
+          <p class="hero-lead marketplace-detail-hero__lead">${listing.brief}</p>
+        </div>
+        ${createClientVisual(detailContent, listing)}
+      </div>
+    </section>
+
+    <section class="section-shell marketplace-client-detail-layout">
+      <div class="marketplace-client-detail-layout__left">
+        ${createBidSubmissionSection(content, listing)}
+        <div class="marketplace-detail-stack" id="listing-bids">
+          ${createSectionHeading(copy.latestBids)}
+          ${latestBidsMarkup}
+        </div>
+      </div>
+
+      <div class="marketplace-client-detail-layout__right">
+        <div class="marketplace-detail-stack marketplace-detail-stack--overview">
+          <div class="section-heading marketplace-detail-section-heading">
+            <p class="eyebrow">${detailContent.overview.eyebrow}</p>
+          </div>
+          <article class="project-detail-card panel">
+            <div class="project-detail-card__facts">
+              ${createSummaryGrid(summaryItems)}
+            </div>
+          </article>
+        </div>
+        <article class="project-note panel marketplace-detail-notes">
+          <h3>${detailContent.styleTitle}</h3>
+          <p>${listing.stylePreference || detailContent.fallback}</p>
+          <h3>${detailContent.notesTitle}</h3>
+          <p>${listing.additionalNotes || detailContent.noNotes}</p>
+        </article>
+      </div>
+    </section>
+  `;
 }
+
 function createProfessionalDetail(content, listing) {
-const detailContent = content.marketplaceFlow.detail.professional;
-const summaryItems = [
-{ label: detailContent.summary.specialty, value: listing.specialty },
-{ label: detailContent.summary.location, value: listing.location },
-{ label: detailContent.summary.experience, value: listing.yearsExperience ? `${listing.yearsExperience} ${detailContent.yearsSuffix}` : detailContent.fallback },
-{ label: detailContent.summary.price, value: listing.startingPrice || detailContent.fallback },
-];
-const services = (listing.services || [])
-.map(
-(service) => `
-<article class="detail-list-card developer-service-card">
-<h3>${service}</h3>
-<p>${detailContent.serviceDescription}</p>
-</article>
-`
-)
-.join("");
-const websiteBlock = listing.websiteUrl
-? `
-<h3>${detailContent.websiteTitle}</h3>
-<p>${listing.websiteUrl}</p>
-`
-: "";
-const creatorAvatarSrc = getCreatorAvatarSrc(listing, "developer");
-const heroImageItems = getListingImageItems(listing);
-const heroImageSrc = heroImageItems.length > 0 ? heroImageItems[0].src : (listing.imageSrc || "");
-const listingName = listing.name || listing.title || listing.companyName || "";
-return `
-<section class="marketplace-detail-hero section-shell">
-<div class="marketplace-detail-hero__layout">
-<div class="marketplace-detail-hero__copy">
-<p class="eyebrow">${detailContent.eyebrow}</p>
-<div class="marketplace-detail-title-row">
-<span class="marketplace-detail-title-avatar" aria-hidden="true">
-<img src="${creatorAvatarSrc}" alt="" />
-</span>
-<h1 class="hero-title">${listingName}</h1>
-</div>
-<p class="hero-lead marketplace-detail-hero__lead">${listing.summary || detailContent.fallback}</p>
-<div class="chip-row">
-${(listing.tags || []).map((tag) => `<span class="chip">${tag}</span>`).join("")}
-</div>
-<div class="hero-actions">
-${createButton({ href: "#listing-contact", label: detailContent.primaryCta, variant: "primary" })}
-${createButton({ href: "./open-marketplace.html?tab=developer", label: detailContent.secondaryCta, variant: "secondary" })}
-</div>
-</div>
-<div class="developer-profile-visual panel">
-<div class="developer-profile-visual__grid"></div>
-${heroImageSrc
-? `<img class="developer-profile-visual__image" src="${heroImageSrc}" alt="${listingName}" />`
-: `<div class="developer-profile-visual__image developer-profile-visual__placeholder"></div>`
+  const detailContent = content.marketplaceFlow.detail.professional;
+  const summaryItems = [
+    { label: detailContent.summary.specialty, value: listing.specialty },
+    { label: detailContent.summary.location, value: listing.location },
+    { label: detailContent.summary.experience, value: listing.yearsExperience ? `${listing.yearsExperience} ${detailContent.yearsSuffix}` : detailContent.fallback },
+    { label: detailContent.summary.price, value: listing.startingPrice || detailContent.fallback },
+  ];
+  const services = (listing.services || [])
+    .map(
+      (service) => `
+        <article class="detail-list-card developer-service-card">
+          <h3>${service}</h3>
+          <p>${detailContent.serviceDescription}</p>
+        </article>
+      `
+    )
+    .join("");
+  const websiteBlock = listing.websiteUrl
+    ? `
+      <h3>${detailContent.websiteTitle}</h3>
+      <p>${listing.websiteUrl}</p>
+    `
+    : "";
+  const creatorAvatarSrc = getCreatorAvatarSrc(listing, "developer");
+  const heroImageItems = getListingImageItems(listing);
+  const heroImageSrc = heroImageItems.length > 0 ? heroImageItems[0].src : (listing.imageSrc || "");
+  const listingName = listing.name || listing.title || listing.companyName || "";
+
+  return `
+    <section class="marketplace-detail-hero section-shell">
+      <div class="marketplace-detail-hero__layout">
+        <div class="marketplace-detail-hero__copy">
+          <p class="eyebrow">${detailContent.eyebrow}</p>
+          <div class="marketplace-detail-title-row">
+            <span class="marketplace-detail-title-avatar" aria-hidden="true">
+              <img src="${creatorAvatarSrc}" alt="" />
+            </span>
+            <h1 class="hero-title">${listingName}</h1>
+          </div>
+          <p class="hero-lead marketplace-detail-hero__lead">${listing.summary || detailContent.fallback}</p>
+          <div class="chip-row">
+            ${(listing.tags || []).map((tag) => `<span class="chip">${tag}</span>`).join("")}
+          </div>
+          <div class="hero-actions">
+            ${createButton({ href: "#listing-contact", label: detailContent.primaryCta, variant: "primary" })}
+            ${createButton({ href: "./open-marketplace.html?tab=developer", label: detailContent.secondaryCta, variant: "secondary" })}
+          </div>
+        </div>
+        <div class="developer-profile-visual panel">
+          <div class="developer-profile-visual__grid"></div>
+          ${heroImageSrc
+            ? `<img class="developer-profile-visual__image" src="${heroImageSrc}" alt="${listingName}" />`
+            : `<div class="developer-profile-visual__image developer-profile-visual__placeholder"></div>`
+          }
+          <div class="developer-profile-visual__caption">
+            <span>${detailContent.boardTitle}</span>
+            <strong>${listing.specialty || ""}</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell">
+      ${createSectionHeading(detailContent.overview)}
+      <div class="project-overview-grid">
+        <article class="project-detail-card panel">
+          <div class="project-detail-card__facts">
+            ${createSummaryGrid(summaryItems)}
+          </div>
+        </article>
+        <article class="project-note panel">
+          <h3>${detailContent.portfolioTitle}</h3>
+          <p>${listing.portfolioSummary || listing.summary || detailContent.fallback}</p>
+          ${websiteBlock}
+        </article>
+      </div>
+    </section>
+    ${createMediaSection(detailContent, listing)}
+
+    <section class="section-shell" id="listing-services">
+      ${createSectionHeading(detailContent.services)}
+      <div class="detail-list-grid">${services}</div>
+    </section>
+
+    <section class="section-shell" id="listing-contact">
+      ${createSectionHeading(detailContent.contact)}
+      <div class="project-inquiry-layout">
+        <article class="panel project-inquiry-summary developer-inquiry-summary">
+          <span class="project-inquiry-summary__eyebrow">${detailContent.contactSummary}</span>
+          <h3>${listing.name}</h3>
+          <div class="project-inquiry-summary__grid">
+            ${createSummaryGrid(summaryItems)}
+          </div>
+        </article>
+        <div class="panel application-panel project-inquiry-panel">
+          <div class="project-inquiry-panel__intro">
+            <h3>${detailContent.contact.formTitle}</h3>
+            <p>${detailContent.contact.formIntro}</p>
+          </div>
+          <form class="application-form project-inquiry-form" data-marketplace-listing-inquiry-form novalidate>
+            <input type="hidden" name="professionalName" value="${listing.name}" data-marketplace-listing-name-field />
+            <label class="form-field">
+              <span>${detailContent.contact.fields.fullName}</span>
+              <input type="text" name="fullName" placeholder="${detailContent.contact.placeholders.fullName}" required />
+            </label>
+            <label class="form-field">
+              <span>${detailContent.contact.fields.email}</span>
+              <input type="email" name="email" placeholder="${detailContent.contact.placeholders.email}" required />
+            </label>
+            <label class="form-field">
+              <span>${detailContent.contact.fields.message}</span>
+              <textarea name="message" rows="5" placeholder="${detailContent.contact.placeholders.message}" required></textarea>
+            </label>
+            <div class="form-actions form-field--full">
+              <button class="button button--primary" type="submit">${detailContent.contact.submitLabel}</button>
+            </div>
+          </form>
+          <div class="form-success project-inquiry-success" data-marketplace-listing-inquiry-success hidden>
+            <h3>${detailContent.contact.successTitle}</h3>
+            <p>${detailContent.contact.successText} <strong data-marketplace-listing-success-name>${listing.name}</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
 }
-<div class="developer-profile-visual__caption">
-<span>${detailContent.boardTitle}</span>
-<strong>${listing.specialty || ""}</strong>
-</div>
-</div>
-</div>
-</section>
-<section class="section-shell">
-${createSectionHeading(detailContent.overview)}
-<div class="project-overview-grid">
-<article class="project-detail-card panel">
-<div class="project-detail-card__facts">
-${createSummaryGrid(summaryItems)}
-</div>
-</article>
-<article class="project-note panel">
-<h3>${detailContent.portfolioTitle}</h3>
-<p>${listing.portfolioSummary || listing.summary || detailContent.fallback}</p>
-${websiteBlock}
-</article>
-</div>
-</section>
-<section class="section-shell" id="listing-services">
-${createSectionHeading(detailContent.services)}
-<div class="detail-list-grid">${services}</div>
-</section>
-<section class="section-shell" id="listing-contact">
-<div class="panel application-panel project-inquiry-panel">
-<div class="project-inquiry-panel__intro">
-<h3>${detailContent.contact.formTitle}</h3>
-</div>
-<form class="application-form project-inquiry-form" data-marketplace-listing-inquiry-form novalidate>
-<input type="hidden" name="professionalName" value="${listing.name}" data-marketplace-listing-name-field />
-<input type="hidden" name="listingOwnerUserId" value="${listing.ownerUserId || ""}" data-marketplace-listing-owner-id />
-<label class="form-field">
-<span>${detailContent.contact.fields.fullName}</span>
-<input type="text" name="fullName" placeholder="${detailContent.contact.placeholders.fullName}" required />
-</label>
-<label class="form-field">
-<span>${detailContent.contact.fields.email}</span>
-<input type="email" name="email" placeholder="${detailContent.contact.placeholders.email}" required />
-</label>
-<label class="form-field">
-<span>${detailContent.contact.fields.message}</span>
-<textarea name="message" rows="5" placeholder="${detailContent.contact.placeholders.message}" required></textarea>
-</label>
-<div class="form-actions form-field--full">
-<button class="button button--primary" type="submit">${detailContent.contact.submitLabel}</button>
-</div>
-</form>
-<div class="form-success project-inquiry-success" data-marketplace-listing-inquiry-success hidden style="display: none;">
-<h3>${detailContent.contact.successTitle}</h3>
-<p>${detailContent.contact.successText} <strong data-marketplace-listing-success-name>${listing.name}</strong>.</p>
-</div>
-</div>
-</section>
-`;
-}
+
 export function createMarketplaceListingDetailPage(content, listingType, listing) {
-if (!listing) {
-return `
-<section class="section-shell marketplace-success">
-<div class="project-cta-panel panel marketplace-success-panel">
-<div>
-<p class="eyebrow">${content.marketplaceFlow.detail.missingEyebrow}</p>
-<h1 class="hero-title marketplace-success__title">${content.marketplaceFlow.detail.missingTitle}</h1>
-<p class="hero-lead">${content.marketplaceFlow.detail.missingDescription}</p>
-</div>
-<div class="hero-actions">
-${createButton({ href: "./open-marketplace.html", label: content.marketplaceFlow.detail.backToMarketplace, variant: "primary" })}
-</div>
-</div>
-</section>
-`;
-}
-if (listingType === "professional") {
-return createProfessionalDetail(content, listing);
-}
-return createClientDetail(content, listing);
+  if (!listing) {
+    return `
+      <section class="section-shell marketplace-success">
+        <div class="project-cta-panel panel marketplace-success-panel">
+          <div>
+            <p class="eyebrow">${content.marketplaceFlow.detail.missingEyebrow}</p>
+            <h1 class="hero-title marketplace-success__title">${content.marketplaceFlow.detail.missingTitle}</h1>
+            <p class="hero-lead">${content.marketplaceFlow.detail.missingDescription}</p>
+          </div>
+          <div class="hero-actions">
+            ${createButton({ href: "./open-marketplace.html", label: content.marketplaceFlow.detail.backToMarketplace, variant: "primary" })}
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  if (listingType === "professional") {
+    return createProfessionalDetail(content, listing);
+  }
+
+  return createClientDetail(content, listing);
 }
