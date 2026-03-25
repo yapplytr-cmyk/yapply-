@@ -4629,7 +4629,7 @@ async function renderPage(localeOverride) {
     // Eagerly preload page-specific component modules so they're cached by the time
     // data loading finishes. This runs in parallel with auth sync and data fetches.
     const _preloadMap = {
-      "open-marketplace": () => import("./components/openMarketplacePage.js"),
+      "open-marketplace": () => import("./components/openMarketplacePage.js?v=20260325"),
       "developer-dashboard": () => import("./components/developerDashboardPage.js"),
       "developer-membership": () => import("./components/developerMembershipPage.js"),
       "client-dashboard": () => import("./components/clientDashboardPage.js"),
@@ -4704,7 +4704,7 @@ async function renderPage(localeOverride) {
 
       // Schedule background thumbnail generation for marketplace card images
       if (page === "open-marketplace" && runtimeData?.publicClientListings) {
-        import("./components/openMarketplacePage.js").then((mod) => {
+        import("./components/openMarketplacePage.js?v=20260325").then((mod) => {
           if (mod.scheduleBackgroundThumbnails) {
             mod.scheduleBackgroundThumbnails(runtimeData.publicClientListings);
           }
