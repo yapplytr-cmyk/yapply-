@@ -1548,9 +1548,9 @@ function setupMarketplacePublicFilters(locale) {
 
     cards.forEach((card) => {
       const cardCategory = card.getAttribute("data-marketplace-category") || "";
-      const cardLocation = (card.querySelector(".marketplace-card__location")?.textContent || "").trim().toLowerCase();
+      const cardCity = card.getAttribute("data-marketplace-city") || "";
       const matchesCategory = !category || cardCategory === category;
-      const matchesCity = !city || cardLocation.includes(city.toLowerCase());
+      const matchesCity = !city || cardCity === city;
       const visible = matchesCategory && matchesCity;
 
       card.hidden = !visible;

@@ -431,7 +431,8 @@ function createClientListingCard(listing, labels, locale) {
   const categoryLabel =
     listing.projectType ||
     getLocalizedLabel(CLIENT_CATEGORY_OPTIONS, marketplaceMeta.category, locale, copy.fallback);
-  const locationLabel = listing.location || marketplaceMeta.location || copy.fallback;
+  const locationRaw = listing.location || marketplaceMeta.location || "";
+  const locationLabel = locationRaw || copy.fallback;
   const budgetLabel = listing.budget || marketplaceMeta.budgetRange?.label || copy.fallback;
   const timeframeLabel = listing.timeline || listing.startDate || marketplaceMeta.desiredTimeframe?.label || copy.fallback;
   const createdAtRaw = listing.createdAt || listing.created_at || "";
@@ -453,6 +454,7 @@ function createClientListingCard(listing, labels, locale) {
       class="marketplace-card panel"
       data-marketplace-client-card
       data-marketplace-category="${categoryValue}"
+      data-marketplace-city="${locationRaw}"
       data-marketplace-status="${marketplaceMeta.listingStatus || listing.status || ""}"
     >
       <a class="marketplace-card__media marketplace-card__media--client" href="${ctaHref}" aria-label="${listing.title}">
