@@ -1528,27 +1528,22 @@ function setupMarketplacePublicFilters(locale) {
   }
 
   const categoryField = form.querySelector('[name="category"]');
-  const statusField = form.querySelector('[name="status"]');
   const cityField = form.querySelector('[name="city"]');
   const grid = document.querySelector("[data-marketplace-client-grid]");
-  const emptyState = document.querySelector("[data-marketplace-client-empty]");
 
   const applyFilters = () => {
     const cards = Array.from(document.querySelectorAll("[data-marketplace-client-card]"));
     const category = categoryField?.value || "";
-    const status = statusField?.value || "open-for-bids";
     const city = cityField?.value || "";
     const nextUrl = new URL(window.location.href);
     let visibleCount = 0;
 
     cards.forEach((card) => {
       const cardCategory = card.getAttribute("data-marketplace-category") || "";
-      const cardStatus = card.getAttribute("data-marketplace-status") || "";
       const cardLocation = (card.querySelector(".marketplace-card__location")?.textContent || "").trim().toLowerCase();
       const matchesCategory = !category || cardCategory === category;
-      const matchesStatus = status === "all" || !status || cardStatus === status;
       const matchesCity = !city || cardLocation.includes(city.toLowerCase());
-      const visible = matchesCategory && matchesStatus && matchesCity;
+      const visible = matchesCategory && matchesCity;
 
       card.hidden = !visible;
       if (visible) {
@@ -1564,12 +1559,6 @@ function setupMarketplacePublicFilters(locale) {
       nextUrl.searchParams.delete("category");
     }
 
-    if (status && status !== "open-for-bids") {
-      nextUrl.searchParams.set("status", status);
-    } else {
-      nextUrl.searchParams.delete("status");
-    }
-
     if (city) {
       nextUrl.searchParams.set("city", city);
     } else {
@@ -1580,10 +1569,6 @@ function setupMarketplacePublicFilters(locale) {
       grid.hidden = visibleCount === 0;
     }
 
-    if (emptyState) {
-      emptyState.hidden = visibleCount !== 0;
-    }
-
     window.history.replaceState({}, "", nextUrl.toString());
   };
 
@@ -1592,7 +1577,6 @@ function setupMarketplacePublicFilters(locale) {
 
   applyFilters();
   categoryField?.addEventListener("change", applyFilters);
-  statusField?.addEventListener("change", applyFilters);
   cityField?.addEventListener("change", applyFilters);
   document.addEventListener("marketplace:cards-updated", (event) => {
     if (event?.detail?.kind && event.detail.kind !== "client") {

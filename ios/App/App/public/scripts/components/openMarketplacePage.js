@@ -252,7 +252,6 @@ function createClientFilters(content) {
   const locale = getMarketplaceLocale(content);
   const copy = getClientListingCopy(locale);
   const filters = content.publicListingFilters || {};
-  const statusValue = filters.status || "open-for-bids";
   const categoryValue = filters.category || "";
   const cityValue = filters.city || "";
 
@@ -266,20 +265,6 @@ function createClientFilters(content) {
             .map(
               (option) =>
                 `<option value="${option.value}" ${option.value === categoryValue ? "selected" : ""}>${
-                  locale === "tr" ? option.tr : option.en
-                }</option>`
-            )
-            .join("")}
-        </select>
-      </label>
-      <label class="form-field">
-        <span>${copy.filters.status}</span>
-        <select name="status">
-          <option value="all" ${statusValue === "all" ? "selected" : ""}>${copy.filters.allStatuses}</option>
-          ${LISTING_STATUS_OPTIONS
-            .map(
-              (option) =>
-                `<option value="${option.value}" ${option.value === statusValue ? "selected" : ""}>${
                   locale === "tr" ? option.tr : option.en
                 }</option>`
             )
@@ -673,9 +658,8 @@ function createMarketplaceListings(content) {
       ? `
         <div class="marketplace-grid" data-marketplace-client-grid>${initialClientCards}</div>
         ${createDeferredCardsTemplate(deferredClientCards, "client")}
-        <div data-marketplace-client-empty hidden>${createClientEmptyState(content)}</div>
       `
-      : createClientEmptyState(content);
+      : "";
 
   // Skeleton placeholders for developer tab (shown while content loads)
   const developerSkeletonCards = createSkeletonCards(4);
