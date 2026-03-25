@@ -1489,8 +1489,13 @@ def complete_signup_verification(email: str, token: str, password: str) -> dict[
   """Verify OTP then sign in to produce session tokens."""
   verify_data = verify_signup_otp(email, token)
 
-  # After verification, sign in to get session tokens.
-  session = sign_in_with_password(email, password)
+  # The verify endpoint may already return session tokens (Supabase GoTrue v2).
+  # Use those first; fall back to sign_in_with_password if not present.
+  session = None
+  if isinstance(verify_data, dict) and verify_data.get("access_token") and verify_data.get("refresh_token"):
+    session = verify_data
+  else:
+    session = sign_in_with_password(email, password)
 
   # Fetch the profile.
   user_id = ""
