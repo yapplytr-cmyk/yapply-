@@ -698,6 +698,8 @@ function createClientDetail(content, listing) {
         </article>
       </div>
     </section>
+
+    ${createReportButton(locale, listing.id)}
   `;
 }
 
@@ -815,6 +817,34 @@ function createProfessionalDetail(content, listing) {
         </div>
       </div>
     </section>
+
+    ${createReportButton(getDetailLocale(content), listing.id)}
+  `;
+}
+
+function createReportButton(locale, listingId) {
+  const isTr = locale === "tr";
+  return `
+    <div class="listing-report-section">
+      <button class="listing-report-btn" type="button" data-listing-report-toggle data-listing-id="${listingId}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+          <line x1="4" y1="22" x2="4" y2="15"></line>
+        </svg>
+        ${isTr ? "Bu ilanı bildir" : "Report this listing"}
+      </button>
+    </div>
+    <div class="listing-report-popup panel" data-listing-report-popup hidden style="display: none;">
+      <h3>${isTr ? "İlanı Bildir" : "Report Listing"}</h3>
+      <textarea data-listing-report-reason rows="4" placeholder="${isTr ? "Bu ilanı neden bildirmek istediğinizi açıklayın..." : "Describe why you want to report this listing..."}" required></textarea>
+      <div class="listing-report-actions">
+        <button class="button button--primary" type="button" data-listing-report-submit style="font-size: 0.9rem;">${isTr ? "Gönder" : "Submit Report"}</button>
+        <button class="button button--secondary" type="button" data-listing-report-cancel style="font-size: 0.9rem;">${isTr ? "İptal" : "Cancel"}</button>
+      </div>
+      <div class="listing-report-success" data-listing-report-success hidden style="display: none;">
+        ${isTr ? "Bildiriminiz alındı. Teşekkür ederiz." : "Your report has been received. Thank you."}
+      </div>
+    </div>
   `;
 }
 

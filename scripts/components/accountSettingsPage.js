@@ -203,6 +203,27 @@ export function createAccountSettingsPage(content) {
               ${locale === "tr" ? "Çıkış Yap" : "Log Out"}
             </button>
           </div>
+          <div class="account-settings-delete-account">
+            <button class="account-settings-delete-btn" type="button" data-account-settings-delete>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+              </svg>
+              ${locale === "tr" ? "Hesabımı Sil" : "Delete My Account"}
+            </button>
+          </div>
+          <div class="account-settings-delete-confirm panel" data-account-settings-delete-confirm hidden style="display: none;">
+            <h3>${locale === "tr" ? "Hesabınızı silmek istediğinizden emin misiniz?" : "Are you sure you want to delete your account?"}</h3>
+            <p>${locale === "tr" ? "Bu işlem geri alınamaz. Tüm ilanlarınız, teklifleriniz ve profil bilgileriniz kalıcı olarak silinecektir." : "This action cannot be undone. All your listings, bids, and profile information will be permanently deleted."}</p>
+            <div class="account-settings-delete-actions">
+              <button class="button button--danger" type="button" data-account-settings-delete-yes>
+                ${locale === "tr" ? "Evet, Hesabımı Sil" : "Yes, Delete My Account"}
+              </button>
+              <button class="button button--secondary" type="button" data-account-settings-delete-cancel>
+                ${locale === "tr" ? "İptal" : "Cancel"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>

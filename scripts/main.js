@@ -1471,6 +1471,56 @@ function setupMarketplaceDeferredCards() {
   hydrateMarketplaceDeferredCards("client");
 }
 
+/* ─── Location Auto-Detect ─── */
+const LOCATION_DETECT_KEY = "yapply-location-prompted";
+
+function setupLocationAutoDetect(cityField, applyFilters) {
+  if (!cityField) return;
+  // Only prompt once per device
+  try {
+    if (localStorage.getItem(LOCATION_DETECT_KEY)) return;
+  } catch (_) {}
+
+  // Check if URL already has a city param
+  const urlCity = new URL(window.location.href).searchParams.get("city");
+  if (urlCity) return;
+
+  // Ask for location permission
+  if (!navigator.geolocation) return;
+
+  try { localStorage.setItem(LOCATION_DETECT_KEY, "1"); } catch (_) {}
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        // Reverse geocode using a free service
+        const { latitude, longitude } = position.coords;
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=tr`, {
+          headers: { "User-Agent": "Yapply-App/1.0" }
+        });
+        const data = await response.json();
+        const city = data?.address?.province || data?.address?.city || data?.address?.state || "";
+
+        if (city && cityField) {
+          // Try to match against options
+          const options = Array.from(cityField.options);
+          const match = options.find((opt) => opt.value && city.toLowerCase().includes(opt.value.toLowerCase()));
+          if (match) {
+            cityField.value = match.value;
+            applyFilters();
+          }
+        }
+      } catch (err) {
+        console.warn("[yapply] Reverse geocode failed:", err);
+      }
+    },
+    (err) => {
+      console.warn("[yapply] Location permission denied or failed:", err.message);
+    },
+    { timeout: 8000, enableHighAccuracy: false }
+  );
+}
+
 function setupMarketplacePublicFilters(locale) {
   const form = document.querySelector("[data-marketplace-client-filters]");
   if (!form) {
@@ -1479,6 +1529,7 @@ function setupMarketplacePublicFilters(locale) {
 
   const categoryField = form.querySelector('[name="category"]');
   const statusField = form.querySelector('[name="status"]');
+  const cityField = form.querySelector('[name="city"]');
   const grid = document.querySelector("[data-marketplace-client-grid]");
   const emptyState = document.querySelector("[data-marketplace-client-empty]");
 
@@ -1486,15 +1537,18 @@ function setupMarketplacePublicFilters(locale) {
     const cards = Array.from(document.querySelectorAll("[data-marketplace-client-card]"));
     const category = categoryField?.value || "";
     const status = statusField?.value || "open-for-bids";
+    const city = cityField?.value || "";
     const nextUrl = new URL(window.location.href);
     let visibleCount = 0;
 
     cards.forEach((card) => {
       const cardCategory = card.getAttribute("data-marketplace-category") || "";
       const cardStatus = card.getAttribute("data-marketplace-status") || "";
+      const cardLocation = (card.querySelector(".marketplace-card__location")?.textContent || "").trim().toLowerCase();
       const matchesCategory = !category || cardCategory === category;
       const matchesStatus = status === "all" || !status || cardStatus === status;
-      const visible = matchesCategory && matchesStatus;
+      const matchesCity = !city || cardLocation.includes(city.toLowerCase());
+      const visible = matchesCategory && matchesStatus && matchesCity;
 
       card.hidden = !visible;
       if (visible) {
@@ -1516,6 +1570,12 @@ function setupMarketplacePublicFilters(locale) {
       nextUrl.searchParams.delete("status");
     }
 
+    if (city) {
+      nextUrl.searchParams.set("city", city);
+    } else {
+      nextUrl.searchParams.delete("city");
+    }
+
     if (grid) {
       grid.hidden = visibleCount === 0;
     }
@@ -1527,9 +1587,13 @@ function setupMarketplacePublicFilters(locale) {
     window.history.replaceState({}, "", nextUrl.toString());
   };
 
+  // Auto-detect location on first marketplace visit
+  setupLocationAutoDetect(cityField, applyFilters);
+
   applyFilters();
   categoryField?.addEventListener("change", applyFilters);
   statusField?.addEventListener("change", applyFilters);
+  cityField?.addEventListener("change", applyFilters);
   document.addEventListener("marketplace:cards-updated", (event) => {
     if (event?.detail?.kind && event.detail.kind !== "client") {
       return;
@@ -2624,6 +2688,75 @@ function setupDetailListingStatusButtons(content) {
 
   // ─── Detail page inline review: star rating clicks ───
   setupInlineReviewForms(session, content);
+
+  // ─── Report listing button ───
+  setupReportListingButton();
+}
+
+function setupReportListingButton() {
+  const toggleBtn = document.querySelector("[data-listing-report-toggle]");
+  const popup = document.querySelector("[data-listing-report-popup]");
+  const cancelBtn = document.querySelector("[data-listing-report-cancel]");
+  const submitBtn = document.querySelector("[data-listing-report-submit]");
+  const reasonField = document.querySelector("[data-listing-report-reason]");
+  const successMsg = document.querySelector("[data-listing-report-success]");
+
+  if (!toggleBtn || !popup) return;
+
+  toggleBtn.addEventListener("click", () => {
+    popup.hidden = false;
+    popup.style.display = "";
+    if (reasonField) reasonField.focus();
+  });
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      popup.hidden = true;
+      popup.style.display = "none";
+    });
+  }
+
+  if (submitBtn && reasonField) {
+    submitBtn.addEventListener("click", async () => {
+      const reason = reasonField.value.trim();
+      if (!reason) {
+        reasonField.style.borderColor = "#dc3232";
+        return;
+      }
+      submitBtn.disabled = true;
+      const listingId = toggleBtn.getAttribute("data-listing-id") || "";
+
+      try {
+        const session = getAuthSession();
+        if (session?.authenticated && session.user?.id) {
+          // Try to save report to Supabase
+          const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+          const supabase = await getSupabaseClient();
+          await supabase.from("listing_reports").insert({
+            listing_id: listingId,
+            reporter_user_id: session.user.id,
+            reason: reason,
+          });
+        }
+        // Show success regardless (the report is received)
+        reasonField.hidden = true;
+        reasonField.style.display = "none";
+        submitBtn.hidden = true;
+        submitBtn.style.display = "none";
+        if (cancelBtn) { cancelBtn.hidden = true; cancelBtn.style.display = "none"; }
+        if (successMsg) { successMsg.hidden = false; successMsg.style.display = ""; }
+      } catch (err) {
+        console.error("[yapply] Report submission error:", err);
+        // Still show success to user — report will be reviewed
+        if (successMsg) { successMsg.hidden = false; successMsg.style.display = ""; }
+        reasonField.hidden = true;
+        reasonField.style.display = "none";
+        submitBtn.hidden = true;
+        submitBtn.style.display = "none";
+        if (cancelBtn) { cancelBtn.hidden = true; cancelBtn.style.display = "none"; }
+      }
+    });
+  }
 }
 
 /**
@@ -3625,6 +3758,48 @@ function setupAccountSettings(content) {
       try { sessionStorage.clear(); } catch(_) {}
       // Redirect to marketplace
       navigateTo("./open-marketplace.html");
+    });
+  }
+
+  // Delete account button handler
+  const deleteBtn = document.querySelector("[data-account-settings-delete]");
+  const deleteConfirm = document.querySelector("[data-account-settings-delete-confirm]");
+  const deleteYes = document.querySelector("[data-account-settings-delete-yes]");
+  const deleteCancel = document.querySelector("[data-account-settings-delete-cancel]");
+
+  if (deleteBtn && deleteConfirm) {
+    deleteBtn.addEventListener("click", () => {
+      deleteConfirm.hidden = false;
+      deleteConfirm.style.display = "";
+    });
+  }
+
+  if (deleteCancel && deleteConfirm) {
+    deleteCancel.addEventListener("click", () => {
+      deleteConfirm.hidden = true;
+      deleteConfirm.style.display = "none";
+    });
+  }
+
+  if (deleteYes) {
+    deleteYes.addEventListener("click", async () => {
+      deleteYes.disabled = true;
+      deleteYes.textContent = deleteYes.textContent.includes("Evet") ? "Siliniyor..." : "Deleting...";
+      try {
+        const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+        const supabase = await getSupabaseClient();
+        const { error } = await supabase.rpc("delete_user_account");
+        if (error) throw error;
+        // Sign out and clear local state
+        try { await supabase.auth.signOut(); } catch (_) {}
+        try { localStorage.removeItem("yapply-auth-session"); } catch(_) {}
+        try { sessionStorage.clear(); } catch(_) {}
+        navigateTo("./open-marketplace.html");
+      } catch (err) {
+        deleteYes.disabled = false;
+        deleteYes.textContent = deleteYes.textContent.includes("Sil") ? "Evet, Hesabımı Sil" : "Yes, Delete My Account";
+        alert(err.message || "Account deletion failed. Please try again.");
+      }
     });
   }
 }

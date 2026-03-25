@@ -4290,6 +4290,114 @@ html[data-theme="dark"] .marketplace-bid-accordion {
   background: rgba(220, 50, 50, 0.2) !important;
 }
 
+/* ── Delete Account Button ────────────────────── */
+.account-settings-delete-account {
+  padding: 1rem 0 0.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.account-settings-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-300, #9ca3af);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  transition: color 200ms ease;
+}
+
+.account-settings-delete-btn:hover {
+  color: #dc3232;
+}
+
+.account-settings-delete-confirm {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(220, 50, 50, 0.3);
+  border-radius: var(--radius-sm, 1rem);
+  text-align: center;
+}
+
+.account-settings-delete-confirm h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: #dc3232;
+}
+
+.account-settings-delete-confirm p {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--text-200, #ccc);
+}
+
+.account-settings-delete-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Report Listing Button ────────────────────── */
+.listing-report-section {
+  padding: 1rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.listing-report-btn {
+  background: none;
+  border: none;
+  color: var(--text-300, #9ca3af);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  transition: color 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.listing-report-btn:hover {
+  color: #dc3232;
+}
+
+.listing-report-popup {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-radius: var(--radius-sm, 1rem);
+}
+
+.listing-report-popup h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.listing-report-popup textarea {
+  width: 100%;
+  resize: vertical;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-200, #333);
+  background: var(--surface-100, #1a1a1a);
+  color: var(--text-100, #fff);
+  font-size: 0.9rem;
+}
+
+.listing-report-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.listing-report-success {
+  text-align: center;
+  padding: 1rem;
+  color: var(--success, #22c55e);
+  font-size: 0.9rem;
+}
+
 .project-detail-hero {
   padding-top: 2rem;
 }

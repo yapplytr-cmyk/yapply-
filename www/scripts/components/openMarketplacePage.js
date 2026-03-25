@@ -27,6 +27,19 @@ const CLIENT_CATEGORY_OPTIONS = [
   { value: "custom-project", en: "Custom Project", tr: "Özel Proje" },
 ];
 
+export const TURKEY_CITY_OPTIONS = [
+  "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin",
+  "Aydın", "Balıkesir", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa",
+  "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Edirne", "Elazığ", "Erzincan",
+  "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Isparta",
+  "Mersin", "İstanbul", "İzmir", "Kars", "Kastamonu", "Kayseri", "Kırklareli", "Kırşehir",
+  "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Kahramanmaraş", "Mardin", "Muğla",
+  "Muş", "Nevşehir", "Niğde", "Ordu", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop",
+  "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Şanlıurfa", "Uşak", "Van",
+  "Yozgat", "Zonguldak", "Aksaray", "Bayburt", "Karaman", "Kırıkkale", "Batman", "Şırnak",
+  "Bartın", "Ardahan", "Iğdır", "Yalova", "Karabük", "Kilis", "Osmaniye", "Düzce",
+];
+
 const LISTING_STATUS_OPTIONS = [
   { value: "open-for-bids", en: "Open for Bids", tr: "Tekliflere Açık" },
   { value: "closed", en: "Closed", tr: "Kapalı" },
@@ -241,6 +254,7 @@ function createClientFilters(content) {
   const filters = content.publicListingFilters || {};
   const statusValue = filters.status || "open-for-bids";
   const categoryValue = filters.category || "";
+  const cityValue = filters.city || "";
 
   return `
     <form class="marketplace-filters panel" data-marketplace-client-filters>
@@ -268,6 +282,18 @@ function createClientFilters(content) {
                 `<option value="${option.value}" ${option.value === statusValue ? "selected" : ""}>${
                   locale === "tr" ? option.tr : option.en
                 }</option>`
+            )
+            .join("")}
+        </select>
+      </label>
+      <label class="form-field">
+        <span>${locale === "tr" ? "Şehir / Konum" : "City / Location"}</span>
+        <select name="city" data-marketplace-city-filter>
+          <option value="">${locale === "tr" ? "Tüm şehirler" : "All cities"}</option>
+          ${TURKEY_CITY_OPTIONS
+            .map(
+              (city) =>
+                `<option value="${city}" ${city === cityValue ? "selected" : ""}>${city}</option>`
             )
             .join("")}
         </select>
