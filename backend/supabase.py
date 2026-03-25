@@ -1381,6 +1381,15 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
 
   if has_session and user_id:
     # Email confirmation is disabled — behave like before (instant signup).
+    # Remove any orphaned profile with this email first.
+    try:
+      _supabase_request(
+        f"/rest/v1/profiles?{urlencode({'email': f'eq.{email}', 'id': f'neq.{user_id}'})}",
+        method="DELETE",
+        use_service_role=True,
+      )
+    except SupabaseError:
+      pass
     profile = upsert_profile(
       user_id=user_id,
       email=email,
@@ -1431,6 +1440,18 @@ def register_public_user(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
   # Email confirmation IS enabled — OTP email sent by Supabase/Resend.
+  # Remove any orphaned profile with this email (e.g. from a previous deleted account)
+  # to prevent unique constraint violations on re-registration.
+  if user_id:
+    try:
+      _supabase_request(
+        f"/rest/v1/profiles?{urlencode({'email': f'eq.{email}', 'id': f'neq.{user_id}'})}",
+        method="DELETE",
+        use_service_role=True,
+      )
+    except SupabaseError:
+      pass  # Non-critical — proceed with upsert
+
   # Store profile data now so it is ready when user verifies.
   if user_id:
     upsert_profile(
