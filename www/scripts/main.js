@@ -1531,11 +1531,19 @@ function setupMarketplacePublicFilters(locale) {
   const cityField = form.querySelector('[name="city"]');
   const grid = document.querySelector("[data-marketplace-client-grid]");
 
+  // Restore filter selections from URL params on page load
+  const currentParams = new URL(window.location.href).searchParams;
+  if (currentParams.get("category") && categoryField) {
+    categoryField.value = currentParams.get("category");
+  }
+  if (currentParams.get("city") && cityField) {
+    cityField.value = currentParams.get("city");
+  }
+
   const applyFilters = () => {
     const cards = Array.from(document.querySelectorAll("[data-marketplace-client-card]"));
     const category = categoryField?.value || "";
     const city = cityField?.value || "";
-    const nextUrl = new URL(window.location.href);
     let visibleCount = 0;
 
     cards.forEach((card) => {
@@ -1551,6 +1559,17 @@ function setupMarketplacePublicFilters(locale) {
       }
     });
 
+    if (grid) {
+      grid.hidden = visibleCount === 0;
+    }
+  };
+
+  // When a filter changes, update URL and reload to reflect the change cleanly
+  const onFilterChange = () => {
+    const nextUrl = new URL(window.location.href);
+    const category = categoryField?.value || "";
+    const city = cityField?.value || "";
+
     nextUrl.searchParams.set("tab", "client");
 
     if (category) {
@@ -1565,19 +1584,18 @@ function setupMarketplacePublicFilters(locale) {
       nextUrl.searchParams.delete("city");
     }
 
-    if (grid) {
-      grid.hidden = visibleCount === 0;
-    }
-
-    window.history.replaceState({}, "", nextUrl.toString());
+    // Navigate to the updated URL — page reloads with filters preserved
+    window.location.href = nextUrl.toString();
   };
 
   // Auto-detect location on first marketplace visit
-  setupLocationAutoDetect(cityField, applyFilters);
+  setupLocationAutoDetect(cityField, onFilterChange);
 
+  // Apply filters on initial load (for restored params)
   applyFilters();
-  categoryField?.addEventListener("change", applyFilters);
-  cityField?.addEventListener("change", applyFilters);
+
+  categoryField?.addEventListener("change", onFilterChange);
+  cityField?.addEventListener("change", onFilterChange);
   document.addEventListener("marketplace:cards-updated", (event) => {
     if (event?.detail?.kind && event.detail.kind !== "client") {
       return;

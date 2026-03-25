@@ -256,7 +256,7 @@ function createClientFilters(content) {
   const cityValue = filters.city || "";
 
   return `
-    <form class="marketplace-filters panel" data-marketplace-client-filters>
+    <form class="marketplace-filters" data-marketplace-client-filters>
       <label class="form-field">
         <span>${copy.filters.category}</span>
         <select name="category">

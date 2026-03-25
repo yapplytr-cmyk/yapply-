@@ -2048,25 +2048,61 @@ html[data-loading-locale="en"] .app-loader__text-tr {
 }
 
 .marketplace-filters {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
-  padding: 0.75rem;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
 }
 
 .marketplace-filters .form-field {
   margin: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .marketplace-filters .form-field span {
-  font-size: 0.75rem;
-  margin-bottom: 0.2rem;
+  display: none;
 }
 
 .marketplace-filters select {
-  font-size: 0.85rem;
-  padding: 0.4rem 0.5rem;
+  width: 100%;
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  padding: 0.55rem 2rem 0.55rem 0.75rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--line);
+  background: var(--bg-panel);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238f8a7d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 12px;
+}
+
+.marketplace-filters select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--gold-soft);
+}
+
+.marketplace-filters select:hover {
+  border-color: var(--line-strong);
+}
+
+/* Smooth card transition on filter */
+[data-marketplace-client-card] {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+[data-marketplace-client-card][hidden] {
+  display: none !important;
 }
 
 .marketplace-empty {
@@ -5703,7 +5739,7 @@ html[data-theme="dark"] .marketplace-bid-accordion {
   }
 
   .marketplace-filters {
-    grid-template-columns: 1fr 1fr;
+    flex-direction: row;
   }
 
   .marketplace-detail-hero--client .marketplace-detail-hero__layout {
