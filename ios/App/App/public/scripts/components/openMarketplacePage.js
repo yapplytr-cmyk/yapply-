@@ -285,7 +285,7 @@ function createClientFilters(content) {
     <form class="marketplace-filters" data-marketplace-client-filters>
       <label class="form-field">
         <span>${copy.filters.category}</span>
-        <select name="category">
+        <select name="category" onchange="window.__yapplyApplyFilters && window.__yapplyApplyFilters()">
           <option value="">${copy.filters.allCategories}</option>
           ${CLIENT_CATEGORY_OPTIONS
             .map(
@@ -299,7 +299,7 @@ function createClientFilters(content) {
       </label>
       <label class="form-field">
         <span>${locale === "tr" ? "Şehir / Konum" : "City / Location"}</span>
-        <select name="city" data-marketplace-city-filter>
+        <select name="city" data-marketplace-city-filter onchange="window.__yapplyApplyFilters && window.__yapplyApplyFilters()">
           <option value="">${locale === "tr" ? "Tüm şehirler" : "All cities"}</option>
           ${TURKEY_CITY_OPTIONS
             .map(

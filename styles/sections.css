@@ -1883,7 +1883,6 @@ html[data-loading-locale="en"] .app-loader__text-tr {
   color: var(--text-dim);
   font-size: 0.8rem;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .marketplace-card__status {

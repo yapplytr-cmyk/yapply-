@@ -1546,12 +1546,16 @@ function setupMarketplacePublicFilters(locale) {
     const city = cityField?.value || "";
     let visibleCount = 0;
 
-    cards.forEach((card) => {
+    console.log("[FILTER DEBUG] applyFilters called. category='" + category + "', city='" + city + "', cards=" + cards.length);
+
+    cards.forEach((card, i) => {
       const cardCategory = card.getAttribute("data-marketplace-category") || "";
       const cardCity = card.getAttribute("data-marketplace-city") || "";
       const matchesCategory = !category || cardCategory === category;
       const matchesCity = !city || cardCity === city;
       const visible = matchesCategory && matchesCity;
+
+      console.log("[FILTER DEBUG] card[" + i + "] cat='" + cardCategory + "' city='" + cardCity + "' matchCat=" + matchesCategory + " matchCity=" + matchesCity + " visible=" + visible);
 
       card.hidden = !visible;
       if (visible) {
@@ -1559,6 +1563,7 @@ function setupMarketplacePublicFilters(locale) {
       }
     });
 
+    console.log("[FILTER DEBUG] visibleCount=" + visibleCount);
     if (grid) {
       grid.hidden = visibleCount === 0;
     }
@@ -1566,6 +1571,11 @@ function setupMarketplacePublicFilters(locale) {
 
   // When a filter changes, apply client-side filtering and update URL (no reload)
   const onFilterChange = () => {
+    const _dbgCat = categoryField?.value || "";
+    const _dbgCity = cityField?.value || "";
+    const _dbgCards = document.querySelectorAll("[data-marketplace-client-card]").length;
+    document.title = "F:" + _dbgCat + "|" + _dbgCity + "|cards:" + _dbgCards;
+    console.log("[FILTER DEBUG] onFilterChange fired! category='" + _dbgCat + "' city='" + _dbgCity + "' cards=" + _dbgCards);
     applyFilters();
 
     // Update URL params so bookmarks / back-button preserve filter state
@@ -1598,8 +1608,12 @@ function setupMarketplacePublicFilters(locale) {
   // Apply filters on initial load (for restored params)
   applyFilters();
 
+  // Expose globally for inline onchange handlers (iOS WKWebView reliability)
+  window.__yapplyApplyFilters = onFilterChange;
+
   categoryField?.addEventListener("change", onFilterChange);
   cityField?.addEventListener("change", onFilterChange);
+  form.addEventListener("change", onFilterChange);
   document.addEventListener("marketplace:cards-updated", (event) => {
     if (event?.detail?.kind && event.detail.kind !== "client") {
       return;
