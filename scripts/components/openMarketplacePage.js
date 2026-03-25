@@ -718,6 +718,7 @@ function createMarketplaceListings(content) {
       </div>
 
       <div class="marketplace-panel is-active" data-marketplace-panel="client">
+        ${createClientFilters(content)}
         ${clientPanelBody}
       </div>
 
