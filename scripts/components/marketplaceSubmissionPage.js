@@ -1,5 +1,6 @@
 import { createButton } from "./primitives.js";
 import { getStepIcon, getSubmitIcon } from "./wizardIcons.js";
+import { TURKEY_CITY_OPTIONS } from "./openMarketplacePage.js";
 
 /* ─────────────────────────────────────────────────
    Marketplace Listing Submission — Step-by-Step Wizard
@@ -257,15 +258,10 @@ function renderStepContact(data, isTr) {
     </div>
     <div class="wizard-field">
       <label class="wizard-label" for="wiz-location">${isTr ? "Proje Konumu" : "Project Location"}</label>
-      <input
-        class="wizard-input"
-        type="text"
-        id="wiz-location"
-        name="preferredLocation"
-        placeholder="${isTr ? "İstanbul, İzmir, Bodrum..." : "Istanbul, Izmir, Bodrum..."}"
-        value="${escapeAttr(data.preferredLocation || "")}"
-        required
-      />
+      <select class="wizard-input" id="wiz-location" name="preferredLocation" required>
+        <option value="" disabled ${!data.preferredLocation ? "selected" : ""}>${isTr ? "Şehir seçin" : "Select a city"}</option>
+        ${TURKEY_CITY_OPTIONS.map((city) => `<option value="${city}" ${data.preferredLocation === city ? "selected" : ""}>${city}</option>`).join("")}
+      </select>
     </div>
   `;
 }
@@ -766,7 +762,7 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
       }
       case "contact": {
         const phone = bodyEl.querySelector('input[name="phone"]');
-        const loc = bodyEl.querySelector('input[name="preferredLocation"]');
+        const loc = bodyEl.querySelector('select[name="preferredLocation"]');
         if (phone) data.phone = phone.value.trim();
         if (loc) data.preferredLocation = loc.value.trim();
         break;

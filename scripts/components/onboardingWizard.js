@@ -551,17 +551,114 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       wizard.querySelectorAll("[data-onboarding-lang]").forEach((b) => {
         b.classList.toggle("onboarding-theme-btn--active", b === btn);
       });
-      // Update theme step labels to match chosen language
+      // Update ALL wizard labels to match chosen language
+      const t = (tr, en) => isTr ? tr : en;
+      // Step 2: Theme
       const themeTitle = wizard.querySelector("[data-onboarding-theme-title]");
       const themeDesc = wizard.querySelector("[data-onboarding-theme-desc]");
       const themeLightLabel = wizard.querySelector("[data-onboarding-theme-light-label]");
       const themeDarkLabel = wizard.querySelector("[data-onboarding-theme-dark-label]");
       const themeContinue = wizard.querySelector("[data-onboarding-theme-continue]");
-      if (themeTitle) themeTitle.textContent = isTr ? "Temayı Seçin" : "Choose Your Theme";
-      if (themeDesc) themeDesc.textContent = isTr ? "Uygulamayı açık veya koyu modda kullanmak ister misiniz?" : "Would you like to use the app in Light or Dark mode?";
-      if (themeLightLabel) themeLightLabel.textContent = isTr ? "Açık Mod" : "Light Mode";
-      if (themeDarkLabel) themeDarkLabel.textContent = isTr ? "Koyu Mod" : "Dark Mode";
-      if (themeContinue) themeContinue.textContent = isTr ? "Devam Et" : "Continue";
+      if (themeTitle) themeTitle.textContent = t("Temayı Seçin", "Choose Your Theme");
+      if (themeDesc) themeDesc.textContent = t("Uygulamayı açık veya koyu modda kullanmak ister misiniz?", "Would you like to use the app in Light or Dark mode?");
+      if (themeLightLabel) themeLightLabel.textContent = t("Açık Mod", "Light Mode");
+      if (themeDarkLabel) themeDarkLabel.textContent = t("Koyu Mod", "Dark Mode");
+      if (themeContinue) themeContinue.textContent = t("Devam Et", "Continue");
+      // Step 3: Role
+      const step3 = wizard.querySelector('[data-onboarding-step="3"]');
+      if (step3) {
+        const s3title = step3.querySelector(".onboarding-step__title");
+        const s3desc = step3.querySelector(".onboarding-step__desc");
+        if (s3title) s3title.textContent = t("Siz Kimsiniz?", "Who Are You?");
+        if (s3desc) s3desc.textContent = t("Müşteri misiniz yoksa Profesyonel mi?", "Are you a Client or a Builder?");
+        const clientCard = step3.querySelector('[data-onboarding-role="client"]');
+        const devCard = step3.querySelector('[data-onboarding-role="developer"]');
+        if (clientCard) {
+          clientCard.querySelector(".onboarding-role-card__label").textContent = t("Müşteri", "Client");
+          clientCard.querySelector(".onboarding-role-card__desc").textContent = t("Projeniz için teklif alın", "Get bids for your project");
+        }
+        if (devCard) {
+          devCard.querySelector(".onboarding-role-card__label").textContent = t("Profesyonel", "Professional");
+          devCard.querySelector(".onboarding-role-card__desc").textContent = t("İş bulun ve teklifler verin", "Find work and place bids");
+        }
+      }
+      // Step 4: Dev type
+      const devtypeTitle = wizard.querySelector("[data-onboarding-devtype-title]");
+      const devtypeDesc = wizard.querySelector("[data-onboarding-devtype-desc]");
+      if (devtypeTitle) devtypeTitle.textContent = t("Hesap Türü", "Account Type");
+      if (devtypeDesc) devtypeDesc.textContent = t("Bireysel mi yoksa işletme olarak mı kayıt oluyorsunuz?", "Are you registering as an individual or a business?");
+      const step4 = wizard.querySelector('[data-onboarding-step="4"]');
+      if (step4) {
+        const indivCard = step4.querySelector('[data-onboarding-devtype="individual"]');
+        const bizCard = step4.querySelector('[data-onboarding-devtype="business"]');
+        if (indivCard) {
+          indivCard.querySelector(".onboarding-role-card__label").textContent = t("Bireysel", "Individual");
+          indivCard.querySelector(".onboarding-role-card__desc").textContent = t("Kendi adınıza iş yapın", "Work under your own name");
+        }
+        if (bizCard) {
+          bizCard.querySelector(".onboarding-role-card__label").textContent = t("İşletme", "Business");
+          bizCard.querySelector(".onboarding-role-card__desc").textContent = t("Şirketiniz adına kayıt olun", "Register as a company");
+        }
+      }
+      // Step 5: Form
+      const step5 = wizard.querySelector('[data-onboarding-step="5"]');
+      if (step5) {
+        const s5title = step5.querySelector(".onboarding-step__title");
+        if (s5title) s5title.textContent = t("Hesap Bilgileri", "Account Details");
+        // Update form labels and placeholders
+        const labelMap = {
+          username: [t("Kullanıcı Adı", "Username"), t("kullanıcı adınız", "your username")],
+          fullName: [t("Ad Soyad", "Full Name"), t("Adınız Soyadınız", "Your full name")],
+          email: [t("E-posta", "Email"), t("ornek@mail.com", "you@email.com")],
+          password: [t("Şifre", "Password"), "••••••••"],
+          confirmPassword: [t("Şifre Tekrar", "Confirm Password"), "••••••••"],
+          phoneNumber: [t("Telefon", "Phone"), "+90 5XX XXX XX XX"],
+          preferredRegion: [t("Şehir", "City"), t("İstanbul, Bodrum...", "Istanbul, Bodrum...")],
+          companyName: [t("Şirket / Profesyonel Adı", "Company / Professional Name"), t("Firma veya profesyonel adınız", "Your company or professional name")],
+          serviceArea: [t("Hizmet Bölgesi", "Service Area"), t("İstanbul, Bodrum...", "Istanbul, Bodrum...")],
+          yearsExperience: [t("Deneyim (Yıl)", "Years of Experience"), "5"],
+          specialties: [t("Uzmanlık Alanı", "Specialty"), t("Villa yapımı, renovasyon...", "Villa construction, renovation...")],
+          businessName: [t("İşletme Adı", "Business Name"), t("Şirket adınız", "Your business name")],
+          businessWebsite: [t("İşletme Web Sitesi", "Business Website"), "https://example.com"],
+          businessLocations: [t("İşletme Konumu", "Business Location(s)"), t("İstanbul, Bodrum...", "Istanbul, Bodrum...")],
+          businessDescription: [t("İşletme Açıklaması", "Business Description"), t("Şirketiniz hakkında kısa bilgi...", "Brief description of your business...")],
+          portfolioLink: [t("Portföy Linki (İsteğe Bağlı)", "Portfolio Link (Optional)"), "https://portfolio.com"],
+          individualPortfolioLink: [t("Portföy Linki (İsteğe Bağlı)", "Portfolio Link (Optional)"), "https://portfolio.com"],
+        };
+        Object.entries(labelMap).forEach(([name, [label, placeholder]]) => {
+          const field = step5.querySelector(`[name="${name}"]`);
+          if (field) {
+            const labelEl = field.closest(".onboarding-field")?.querySelector("span");
+            if (labelEl) labelEl.textContent = label;
+            if (placeholder) field.placeholder = placeholder;
+          }
+        });
+        // Submit button
+        const submitBtn = step5.querySelector(".onboarding-submit-btn");
+        if (submitBtn && !submitBtn.dataset.loading) submitBtn.textContent = t("Hesap Oluştur", "Create Account");
+        // Selfie / photo labels
+        const selfieSection = step5.querySelector("[data-onboarding-selfie-section]");
+        if (selfieSection) {
+          const selfieLabel = selfieSection.querySelector(":scope > span");
+          if (selfieLabel) selfieLabel.textContent = t("Selfie (Zorunlu)", "Selfie (Required)");
+          const camP = step5.querySelector("[data-onboarding-selfie-camera-ui] p");
+          if (camP) camP.textContent = t("Ön kamerayla bir selfie çekin", "Take a selfie with the front camera");
+          const startBtn = step5.querySelector("[data-onboarding-selfie-start]");
+          if (startBtn) startBtn.textContent = t("Kamerayı Aç", "Open Camera");
+          const captureBtn = step5.querySelector("[data-onboarding-selfie-capture]");
+          if (captureBtn) captureBtn.textContent = t("Fotoğraf Çek", "Take Photo");
+          const retakeBtn = step5.querySelector("[data-onboarding-selfie-retake]");
+          if (retakeBtn) retakeBtn.textContent = t("Tekrar Çek", "Retake");
+        }
+        const bizPhotosLabel = step5.querySelector("[data-onboarding-business-photos]")?.closest(".onboarding-field")?.querySelector("span");
+        if (bizPhotosLabel) bizPhotosLabel.textContent = t("İşletme Fotoğrafları (En fazla 3)", "Business Photos (Up to 3)");
+      }
+      // Step 6: Email verify
+      const step6 = wizard.querySelector('[data-onboarding-step="6"]');
+      if (step6) {
+        const s6title = step6.querySelector(".onboarding-step__title");
+        if (s6title) s6title.textContent = t("E-postanızı Doğrulayın", "Verify Your Email");
+      }
     });
   });
 
