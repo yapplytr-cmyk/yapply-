@@ -1027,6 +1027,11 @@ html.has-tab-bar .marketplace-card {
   transition: background 150ms;
 }
 
+/* Filter-hidden cards must stay hidden even with has-tab-bar grid override */
+html.has-tab-bar .marketplace-card[hidden] {
+  display: none !important;
+}
+
 html.has-tab-bar .marketplace-card:active {
   background: rgba(201, 168, 76, 0.06);
 }
