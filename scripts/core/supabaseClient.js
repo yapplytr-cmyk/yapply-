@@ -2,9 +2,9 @@ let configPromise = null;
 let modulePromise = null;
 let clientPromise = null;
 
-/* ── Native app: connect directly to Supabase (no Vercel roundtrip) ── */
-const NATIVE_SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
-const NATIVE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+/* ── Supabase direct connection (no Vercel roundtrip for auth) ── */
+const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
 
 function _isNativeApp() {
   const { origin, hostname, port } = window.location;
@@ -189,34 +189,11 @@ export function getRuntimeApiOrigin() {
 
 export async function getSupabaseRuntimeConfig() {
   if (!configPromise) {
-    // In native app, use hardcoded config — no API call needed
-    if (_isNativeApp()) {
-      configPromise = Promise.resolve({
-        supabaseUrl: NATIVE_SUPABASE_URL,
-        supabaseAnonKey: NATIVE_SUPABASE_ANON_KEY,
-      });
-    } else {
-      configPromise = (async () => {
-        const response = await fetch(new URL("/api/auth/config", `${getBackendOrigin()}/`).toString(), {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-          cache: "no-store",
-        });
-        const data = await readJson(response, "Supabase configuration could not be loaded.");
-
-        if (!response.ok) {
-          const error = new Error(data.message || "Supabase configuration could not be loaded.");
-          error.code = data.code || "SUPABASE_NOT_CONFIGURED";
-          error.debug = data.debug || null;
-          error.reason = data.reason || null;
-          throw error;
-        }
-
-        return data;
-      })();
-    }
+    // Always use hardcoded Supabase credentials — no Vercel roundtrip needed.
+    configPromise = Promise.resolve({
+      supabaseUrl: SUPABASE_URL,
+      supabaseAnonKey: SUPABASE_ANON_KEY,
+    });
   }
 
   return configPromise;
@@ -264,8 +241,7 @@ export function preWarmSupabaseClient() {
   // Add preconnect hints for all external origins the app needs
   const origins = [
     "https://cdn.jsdelivr.net",
-    NATIVE_SUPABASE_URL,
-    "https://yapplytr.com",
+    SUPABASE_URL,
   ];
   origins.forEach((href) => {
     if (!document.querySelector(`link[rel="preconnect"][href="${href}"]`)) {

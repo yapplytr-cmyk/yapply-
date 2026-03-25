@@ -737,34 +737,47 @@ export async function signupAccount(payload) {
   const signupPayload = ensurePublicSignupPayload(payload);
   const supabase = await getSupabaseClient();
 
-  const data = await requestPublicSignup(signupPayload);
+  // Sign up directly with Supabase — no Vercel roundtrip.
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    email: signupPayload.email,
+    password: signupPayload.password,
+    options: {
+      data: {
+        role: signupPayload.role,
+        full_name: signupPayload.fullName,
+        phone_number: signupPayload.phoneNumber,
+        company_name: signupPayload.companyName || null,
+        profession_type: signupPayload.professionType || null,
+        service_area: signupPayload.serviceArea || null,
+        years_experience: signupPayload.yearsExperience,
+        specialties: signupPayload.specialties || null,
+        preferred_region: signupPayload.preferredRegion || null,
+        website: signupPayload.website || null,
+        username: signupPayload.email.split("@")[0],
+        developer_type: signupPayload.developerType || null,
+        business_name: signupPayload.businessName || null,
+        business_website: signupPayload.businessWebsite || null,
+        business_locations: signupPayload.businessLocations || null,
+        business_description: signupPayload.businessDescription || null,
+      },
+    },
+  });
 
-  // Check if email verification is required (OTP flow).
-  if (data?.pendingVerification) {
+  if (signUpError) {
+    throw mapSupabaseError(signUpError, "SIGNUP_FAILED");
+  }
+
+  // If Supabase email confirmation is enabled → user exists but no session yet.
+  if (!signUpData?.session) {
     const pending = new Error("Email verification required.");
     pending.code = "PENDING_EMAIL_VERIFICATION";
-    pending.email = data.email;
-    pending.role = data.role;
-    pending.password = data.password;
+    pending.email = signupPayload.email;
+    pending.role = signupPayload.role;
+    pending.password = signupPayload.password;
     throw pending;
   }
 
-  if (!data?.session?.access_token || !data?.session?.refresh_token) {
-    throw createAuthError(
-      "EMAIL_CONFIRMATION_REQUIRED",
-      "Supabase email confirmation is enabled. Disable it to preserve the current instant signup flow."
-    );
-  }
-
-  const { error: setSessionError } = await supabase.auth.setSession({
-    access_token: data.session.access_token,
-    refresh_token: data.session.refresh_token,
-  });
-
-  if (setSessionError) {
-    throw mapSupabaseError(setSessionError, "ACCOUNT_SESSION_INVALID");
-  }
-
+  // Instant signup (email confirmation disabled) — session returned directly.
   const session = await loadConfirmedSession({
     expectedRole: signupPayload.role,
     audience: "public",
@@ -779,33 +792,26 @@ export async function signupAccount(payload) {
 }
 
 export async function verifySignupOtp(email, token, password) {
-  const response = await fetch(createApiUrl("/api/auth/verify"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ email, token, password }),
+  const supabase = await getSupabaseClient();
+
+  // Verify OTP directly with Supabase — no Vercel roundtrip.
+  const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "signup",
   });
 
-  const data = await readResponsePayload(response, "Verification failed.");
-  if (!response.ok) {
-    throw createAuthError(data.code || "OTP_INVALID", data.message || "Invalid or expired verification code.");
+  if (verifyError) {
+    throw mapSupabaseError(verifyError, "OTP_INVALID");
   }
 
-  if (!data?.session?.access_token || !data?.session?.refresh_token) {
+  if (!verifyData?.session) {
     throw createAuthError("SESSION_INVALID", "Verification succeeded but no session was returned.");
   }
 
-  const supabase = await getSupabaseClient();
-  const { error: setSessionError } = await supabase.auth.setSession({
-    access_token: data.session.access_token,
-    refresh_token: data.session.refresh_token,
-  });
-
-  if (setSessionError) {
-    throw mapSupabaseError(setSessionError, "ACCOUNT_SESSION_INVALID");
-  }
-
+  // Session is now set in the Supabase client automatically.
   const session = await loadConfirmedSession({
-    expectedRole: data.user?.role,
+    expectedRole: "",
     audience: "public",
     strict: true,
   });
@@ -818,15 +824,16 @@ export async function verifySignupOtp(email, token, password) {
 }
 
 export async function resendSignupOtp(email) {
-  const response = await fetch(createApiUrl("/api/auth/resend-otp"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ email }),
+  const supabase = await getSupabaseClient();
+
+  // Resend OTP directly with Supabase — no Vercel roundtrip.
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
   });
 
-  const data = await readResponsePayload(response, "Could not resend code.");
-  if (!response.ok) {
-    throw createAuthError(data.code || "OTP_RESEND_FAILED", data.message || "Could not resend the verification code.");
+  if (error) {
+    throw mapSupabaseError(error, "OTP_RESEND_FAILED");
   }
 
   return true;
@@ -897,37 +904,18 @@ export async function loginAccount(payload, audience = "public") {
     return session.user;
   }
 
-  // In Capacitor, sign in directly with Supabase (no backend roundtrip needed)
-  const isNativeApp = window.location.origin === "capacitor://localhost" || (window.location.hostname === "localhost" && !window.location.port);
+  // Sign in directly with Supabase — no Vercel roundtrip for any platform.
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-  if (isNativeApp) {
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  if (signInError) {
+    throw mapSupabaseError(signInError, "INVALID_CREDENTIALS");
+  }
 
-    if (signInError) {
-      throw mapSupabaseError(signInError, "INVALID_CREDENTIALS");
-    }
-
-    if (!signInData?.session) {
-      throw createAuthError("SESSION_INVALID", "Supabase did not return a usable authenticated session.");
-    }
-  } else {
-    const result = await requestPublicLogin(email, password, requestedRole);
-
-    if (!result?.session?.access_token || !result?.session?.refresh_token) {
-      throw createAuthError("SESSION_INVALID", "Supabase did not return a usable authenticated session.");
-    }
-
-    const { error: setSessionError } = await supabase.auth.setSession({
-      access_token: result.session.access_token,
-      refresh_token: result.session.refresh_token,
-    });
-
-    if (setSessionError) {
-      throw mapSupabaseError(setSessionError, "SESSION_INVALID");
-    }
+  if (!signInData?.session) {
+    throw createAuthError("SESSION_INVALID", "Supabase did not return a usable authenticated session.");
   }
 
   const session = await loadConfirmedSession({
