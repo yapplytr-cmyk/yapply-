@@ -2,26 +2,44 @@ import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { getDefaultAvatarOptions } from "../core/accountSettingsStore.js";
 import { createButton, createSectionHeading } from "./primitives.js";
 
-const CLIENT_CATEGORY_OPTIONS = [
-  { value: "pool-renovation", en: "Pool Renovation", tr: "Havuz Renovasyonu" },
+export const CLIENT_CATEGORY_OPTIONS = [
   { value: "pool-construction", en: "Pool Construction", tr: "Havuz Yapımı" },
-  { value: "wall-construction", en: "Wall Construction", tr: "Duvar Yapımı" },
+  { value: "pool-renovation", en: "Pool Renovation", tr: "Havuz Renovasyonu" },
+  { value: "sauna-construction", en: "Sauna Construction", tr: "Sauna Yapımı" },
+  { value: "jacuzzi-installation", en: "Jacuzzi Installation", tr: "Jakuzi Kurulumu" },
+  { value: "full-villa-construction", en: "Full Villa Construction", tr: "Komple Villa Yapımı" },
   { value: "interior-renovation", en: "Interior Renovation", tr: "İç Mekan Renovasyonu" },
   { value: "kitchen-renovation", en: "Kitchen Renovation", tr: "Mutfak Renovasyonu" },
   { value: "bathroom-renovation", en: "Bathroom Renovation", tr: "Banyo Renovasyonu" },
-  { value: "full-villa-construction", en: "Full Villa Construction", tr: "Komple Villa Yapımı" },
-  { value: "landscaping", en: "Landscaping", tr: "Peyzaj" },
   { value: "exterior-renovation", en: "Exterior Renovation", tr: "Dış Cephe Renovasyonu" },
   { value: "roofing", en: "Roofing", tr: "Çatı" },
   { value: "flooring", en: "Flooring", tr: "Zemin Kaplama" },
   { value: "painting", en: "Painting", tr: "Boya" },
-  { value: "tiling", en: "Tiling", tr: "Seramik / Fayans" },
+  { value: "tiling", en: "Tile / Ceramics", tr: "Seramik / Fayans" },
+  { value: "wall-construction", en: "Wall Construction", tr: "Duvar Yapımı" },
   { value: "plumbing", en: "Plumbing", tr: "Sıhhi Tesisat" },
   { value: "electrical", en: "Electrical", tr: "Elektrik" },
-  { value: "facade-work", en: "Facade Work", tr: "Cephe Uygulaması" },
+  { value: "lighting-design", en: "Lighting Design", tr: "Aydınlatma Tasarımı" },
+  { value: "facade-work", en: "Facade Application", tr: "Cephe Uygulaması" },
+  { value: "landscaping", en: "Landscaping", tr: "Peyzaj" },
   { value: "garden-design", en: "Garden Design", tr: "Bahçe Tasarımı" },
   { value: "pergola-outdoor-structures", en: "Pergola / Outdoor Structures", tr: "Pergola / Dış Mekan Yapıları" },
-  { value: "demolition-site-prep", en: "Demolition / Site Prep", tr: "Yıkım / Saha Hazırlığı" },
+  { value: "terrace-design", en: "Terrace Design", tr: "Teras Düzenlemesi" },
+  { value: "fence-railing", en: "Fence / Railing Construction", tr: "Çit / Korkuluk Yapımı" },
+  { value: "garage", en: "Garage Construction / Renovation", tr: "Garaj Yapımı / Renovasyonu" },
+  { value: "home-office", en: "Home Office Build", tr: "Ev Ofis Yapımı" },
+  { value: "gym-fitness", en: "Gym / Fitness Area", tr: "Spor Salonu / Fitness Alanı" },
+  { value: "smart-home", en: "Smart Home Systems", tr: "Akıllı Ev Sistemleri" },
+  { value: "security-systems", en: "Security Systems", tr: "Güvenlik Sistemleri" },
+  { value: "solar-panel", en: "Solar Panel Installation", tr: "Güneş Paneli Kurulumu" },
+  { value: "wine-cellar", en: "Wine Cellar", tr: "Şarap Mahzeni" },
+  { value: "hvac", en: "Heating / Cooling Systems", tr: "Isıtma / Soğutma Sistemleri" },
+  { value: "insulation", en: "Insulation", tr: "Yalıtım" },
+  { value: "doors-windows", en: "Door / Window Installation", tr: "Kapı / Pencere Montajı" },
+  { value: "staircase-railing", en: "Staircase / Railing", tr: "Merdiven / Korkuluk" },
+  { value: "elevator", en: "Elevator Installation", tr: "Asansör Kurulumu" },
+  { value: "storage-cabinets", en: "Storage / Cabinet Systems", tr: "Depolama / Dolap Sistemleri" },
+  { value: "demolition-site-prep", en: "Demolition / Site Preparation", tr: "Yıkım / Saha Hazırlığı" },
   { value: "general-construction", en: "General Construction", tr: "Genel İnşaat" },
   { value: "architecture-design", en: "Architecture / Design", tr: "Mimarlık / Tasarım" },
   { value: "custom-project", en: "Custom Project", tr: "Özel Proje" },
@@ -131,6 +149,14 @@ function normalizeFilterValue(value) {
 function resolveClientCategoryValue(listing) {
   const marketplaceMeta = listing?.marketplaceMeta || {};
   const projectType = listing?.projectType || "";
+
+  // Direct slug match (new listings store slug values like "pool-construction")
+  const directMatch = CLIENT_CATEGORY_OPTIONS.find((option) => option.value === projectType);
+  if (directMatch) {
+    return directMatch.value;
+  }
+
+  // Normalized match for old listings that stored display text (e.g., "Pool Construction", "Havuz Yapımı")
   const normalizedProjectType = normalizeFilterValue(projectType);
   const matchedOption = CLIENT_CATEGORY_OPTIONS.find(
     (option) =>
@@ -429,6 +455,7 @@ function createClientListingCard(listing, labels, locale) {
   const copy = getClientListingCopy(locale);
   const categoryValue = resolveClientCategoryValue(listing);
   const categoryLabel =
+    getLocalizedLabel(CLIENT_CATEGORY_OPTIONS, categoryValue, locale, "") ||
     listing.projectType ||
     getLocalizedLabel(CLIENT_CATEGORY_OPTIONS, marketplaceMeta.category, locale, copy.fallback);
   const locationRaw = listing.location || marketplaceMeta.location || "";

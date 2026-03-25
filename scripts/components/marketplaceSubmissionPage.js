@@ -1,6 +1,6 @@
 import { createButton } from "./primitives.js";
 import { getStepIcon, getSubmitIcon } from "./wizardIcons.js";
-import { TURKEY_CITY_OPTIONS } from "./openMarketplacePage.js";
+import { TURKEY_CITY_OPTIONS, CLIENT_CATEGORY_OPTIONS } from "./openMarketplacePage.js";
 
 /* ─────────────────────────────────────────────────
    Marketplace Listing Submission — Step-by-Step Wizard
@@ -112,36 +112,10 @@ function professionTypeOptions(isTr) {
 }
 
 function categoryOptions(isTr) {
-  if (isTr) {
-    return [
-      "Havuz Yapımı", "Havuz Renovasyonu", "Sauna Yapımı", "Jakuzi Kurulumu",
-      "Komple Villa Yapımı", "İç Mekan Renovasyonu", "Mutfak Renovasyonu",
-      "Banyo Renovasyonu", "Dış Cephe Renovasyonu", "Çatı", "Zemin Kaplama",
-      "Boya", "Seramik / Fayans", "Duvar Yapımı", "Sıhhi Tesisat", "Elektrik",
-      "Aydınlatma Tasarımı", "Cephe Uygulaması", "Peyzaj", "Bahçe Tasarımı",
-      "Pergola / Dış Mekan Yapıları", "Teras Düzenlemesi", "Çit / Korkuluk Yapımı",
-      "Garaj Yapımı / Renovasyonu", "Ev Ofis Yapımı", "Spor Salonu / Fitness Alanı",
-      "Akıllı Ev Sistemleri", "Güvenlik Sistemleri", "Güneş Paneli Kurulumu",
-      "Şarap Mahzeni", "Isıtma / Soğutma Sistemleri", "Yalıtım",
-      "Kapı / Pencere Montajı", "Merdiven / Korkuluk", "Asansör Kurulumu",
-      "Depolama / Dolap Sistemleri", "Yıkım / Saha Hazırlığı", "Genel İnşaat",
-      "Mimarlık / Tasarım", "Özel Proje",
-    ];
-  }
-  return [
-    "Pool Construction", "Pool Renovation", "Sauna Construction", "Jacuzzi Installation",
-    "Full Villa Construction", "Interior Renovation", "Kitchen Renovation",
-    "Bathroom Renovation", "Exterior Renovation", "Roofing", "Flooring",
-    "Painting", "Tile / Ceramics", "Wall Construction", "Plumbing", "Electrical",
-    "Lighting Design", "Facade Application", "Landscaping", "Garden Design",
-    "Pergola / Outdoor Structures", "Terrace Design", "Fence / Railing Construction",
-    "Garage Construction / Renovation", "Home Office Build", "Gym / Fitness Area",
-    "Smart Home Systems", "Security Systems", "Solar Panel Installation",
-    "Wine Cellar", "Heating / Cooling Systems", "Insulation",
-    "Door / Window Installation", "Staircase / Railing", "Elevator Installation",
-    "Storage / Cabinet Systems", "Demolition / Site Preparation", "General Construction",
-    "Architecture / Design", "Custom Project",
-  ];
+  return CLIENT_CATEGORY_OPTIONS.map((opt) => ({
+    label: isTr ? opt.tr : opt.en,
+    value: opt.value,
+  }));
 }
 
 function budgetOptions(isTr) {
@@ -204,8 +178,8 @@ function renderStepProjectTitle(data, isTr) {
 function renderStepProjectType(data, isTr) {
   const cats = categoryOptions(isTr);
   const options = cats.map((cat) => {
-    const selected = data.projectType === cat ? "selected" : "";
-    return `<option value="${escapeAttr(cat)}" ${selected}>${cat}</option>`;
+    const selected = data.projectType === cat.value ? "selected" : "";
+    return `<option value="${escapeAttr(cat.value)}" ${selected}>${cat.label}</option>`;
   }).join("");
 
   return `
@@ -357,10 +331,16 @@ function renderStepPhotos(data, isTr) {
   `;
 }
 
+function getCategoryDisplayLabel(slug, isTr) {
+  const match = CLIENT_CATEGORY_OPTIONS.find((opt) => opt.value === slug);
+  if (match) return isTr ? match.tr : match.en;
+  return slug || "";
+}
+
 function renderStepSummary(data, isTr) {
   const rows = [
     { label: isTr ? "Proje Başlığı" : "Project Title", value: data.projectTitle },
-    { label: isTr ? "Kategori" : "Category", value: data.projectType },
+    { label: isTr ? "Kategori" : "Category", value: getCategoryDisplayLabel(data.projectType, isTr) },
     { label: isTr ? "Açıklama" : "Description", value: data.projectBrief ? truncateText(data.projectBrief, 120) : "" },
     { label: isTr ? "Telefon" : "Phone", value: data.phone },
     { label: isTr ? "Konum" : "Location", value: data.preferredLocation },

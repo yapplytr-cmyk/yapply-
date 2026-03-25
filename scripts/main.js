@@ -1564,28 +1564,32 @@ function setupMarketplacePublicFilters(locale) {
     }
   };
 
-  // When a filter changes, update URL and reload to reflect the change cleanly
+  // When a filter changes, apply client-side filtering and update URL (no reload)
   const onFilterChange = () => {
-    const nextUrl = new URL(window.location.href);
-    const category = categoryField?.value || "";
-    const city = cityField?.value || "";
+    applyFilters();
 
-    nextUrl.searchParams.set("tab", "client");
+    // Update URL params so bookmarks / back-button preserve filter state
+    try {
+      const nextUrl = new URL(window.location.href);
+      const category = categoryField?.value || "";
+      const city = cityField?.value || "";
 
-    if (category) {
-      nextUrl.searchParams.set("category", category);
-    } else {
-      nextUrl.searchParams.delete("category");
-    }
+      nextUrl.searchParams.set("tab", "client");
 
-    if (city) {
-      nextUrl.searchParams.set("city", city);
-    } else {
-      nextUrl.searchParams.delete("city");
-    }
+      if (category) {
+        nextUrl.searchParams.set("category", category);
+      } else {
+        nextUrl.searchParams.delete("category");
+      }
 
-    // Navigate to the updated URL — page reloads with filters preserved
-    window.location.href = nextUrl.toString();
+      if (city) {
+        nextUrl.searchParams.set("city", city);
+      } else {
+        nextUrl.searchParams.delete("city");
+      }
+
+      window.history.replaceState(window.history.state, "", nextUrl.toString());
+    } catch (_) {}
   };
 
   // Auto-detect location on first marketplace visit
