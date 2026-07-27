@@ -165,13 +165,21 @@ export function createAccountSettingsPage(content) {
               <input type="text" value="${profileTypeLabel}" disabled />
             </label>
             ${workDescriptionField}
-            <fieldset class="form-field form-field--full account-settings-avatar-group">
+            ${user.role === "developer"
+              ? `<fieldset class="form-field form-field--full account-settings-avatar-group">
+              <span>${locale === "tr" ? "Profil Fotoğrafı" : "Profile Picture"}</span>
+              <small>${locale === "tr" ? "Profesyonel hesaplarda profil fotoğrafı, kayıt sırasında çekilen doğrulama selfie'nizdir ve değiştirilemez." : "For professional accounts your profile picture is the verification selfie taken at sign-up and cannot be changed."}</small>
+              <div class="account-settings-avatar" style="margin-top:10px">
+                <img src="${currentAvatar}" alt="${content.fields.profilePicture}" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:2px solid var(--accent,#c9a84c)" />
+              </div>
+            </fieldset>`
+              : `<fieldset class="form-field form-field--full account-settings-avatar-group">
               <span>${content.fields.defaultAvatars}</span>
               <small>${content.defaultAvatarHint.replace("{choice}", avatarChoiceLabel)}</small>
               <div class="account-settings-avatar-grid">
                 ${createAvatarOptions(user, content)}
               </div>
-            </fieldset>
+            </fieldset>`}
             <div class="form-actions form-field--full">
               <button class="button button--primary" type="submit">${content.saveLabel}</button>
             </div>

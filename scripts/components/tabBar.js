@@ -281,6 +281,7 @@ export function createTabBar(locale) {
        (ported from the NAUTICO liquid tab bar). Additive: purely visual,
        does not touch navigation. ─── */
 const LIQUID_W = 50;
+let _liquidLastX = null; // remembered pill X across tab re-renders → smooth glide on click
 
 function _liquidEls() {
   const bar = document.querySelector(".tab-bar");
@@ -308,11 +309,39 @@ function liquidSnap(retries = 0) {
     return;
   }
   const x = itemRect.left - barRect.left + (itemRect.width - LIQUID_W) / 2;
+
+  // If we have a remembered position (e.g. we just navigated by tapping a tab
+  // and the bar re-rendered), glide from there so the motion stays liquid.
+  if (_liquidLastX != null && Math.abs(_liquidLastX - x) > 2) {
+    const startX = _liquidLastX;
+    const dist = Math.abs(x - startX);
+    ind.style.opacity = "1";
+    ind.style.transition = "none";
+    ind.style.width = LIQUID_W + "px";
+    ind.style.transform = "translateX(" + startX + "px)";
+    ind.dataset.x = startX;
+    // stretch out, then settle — same two-phase feel as a swipe
+    requestAnimationFrame(() => {
+      ind.style.transition = "transform .42s cubic-bezier(.4,0,.2,1), width .22s cubic-bezier(.4,0,.2,1)";
+      ind.style.width = (LIQUID_W + dist * 0.25) + "px";
+      ind.style.transform = "translateX(" + ((x + startX) / 2) + "px)";
+      setTimeout(() => {
+        ind.style.transition = "transform .26s cubic-bezier(0,0,.2,1), width .3s cubic-bezier(0,0,.2,1)";
+        ind.style.width = LIQUID_W + "px";
+        ind.style.transform = "translateX(" + x + "px)";
+        ind.dataset.x = x;
+        _liquidLastX = x;
+      }, 190);
+    });
+    return;
+  }
+
   ind.style.transition = "none";
   ind.style.opacity = "1";
   ind.style.width = LIQUID_W + "px";
   ind.style.transform = "translateX(" + x + "px)";
   ind.dataset.x = x;
+  _liquidLastX = x;
 }
 
 function liquidGlideTo(targetItem) {
@@ -340,6 +369,7 @@ function liquidGlideTo(targetItem) {
     ind.style.width = LIQUID_W + "px";
     ind.style.transform = "translateX(" + targetX + "px)";
     ind.dataset.x = targetX;
+    _liquidLastX = targetX;
   }, 180);
 }
 
