@@ -196,6 +196,10 @@ function getClientListingCopy(locale) {
         title: "Henüz yayında tekliflere açık müşteri ilanı yok.",
         description: "İlk müşteri proje talebi yayınlandığında burada görünecek.",
       },
+      emptyDeveloper: {
+        title: "Henüz yayında profesyonel ilanı yok.",
+        description: "İlk profesyonel ilanı yayınlandığında burada görünecek.",
+      },
       error: {
         title: "İlanlar şu anda yüklenemiyor.",
         description: "Lütfen biraz sonra tekrar deneyin.",
@@ -217,6 +221,10 @@ function getClientListingCopy(locale) {
     empty: {
       title: "No open client listings are live yet.",
       description: "The first published client project request will appear here.",
+    },
+    emptyDeveloper: {
+      title: "No professional listings are live yet.",
+      description: "The first published professional listing will appear here.",
     },
     error: {
       title: "Listings could not be loaded right now.",
@@ -313,10 +321,12 @@ function createClientFilters(content) {
   `;
 }
 
-function createClientEmptyState(content, tone = "empty") {
+function createClientEmptyState(content, tone = "empty", kind = "client") {
   const locale = getMarketplaceLocale(content);
   const copy = getClientListingCopy(locale);
-  const stateCopy = tone === "error" ? copy.error : copy.empty;
+  const stateCopy = tone === "error"
+    ? copy.error
+    : (kind === "developer" && copy.emptyDeveloper) ? copy.emptyDeveloper : copy.empty;
 
   return `
     <div class="marketplace-empty panel">
@@ -694,14 +704,14 @@ function createMarketplaceListings(content) {
   const developerSkeletonCards = createSkeletonCards(4);
 
   const developerPanelBody = content.publicListingError
-    ? createClientEmptyState(content, "error")
+    ? createClientEmptyState(content, "error", "developer")
     : developerItems.length > 0
       ? `
         <div class="marketplace-grid" data-marketplace-developer-grid>${initialDeveloperCards}</div>
         ${createDeferredCardsTemplate(deferredDeveloperCards, "developer")}
-        <div data-marketplace-developer-empty hidden>${createClientEmptyState(content)}</div>
+        <div data-marketplace-developer-empty hidden>${createClientEmptyState(content, "empty", "developer")}</div>
       `
-      : createClientEmptyState(content);
+      : createClientEmptyState(content, "empty", "developer");
 
   return `
     <section class="section-shell" id="marketplace-listings">
