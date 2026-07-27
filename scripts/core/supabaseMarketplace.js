@@ -88,9 +88,33 @@ async function getBestAccessToken(supabase) {
  * Fetch all open marketplace listings (for Kesfet page).
  */
 export async function fetchListings({ type = "client", status = "open-for-bids", category = "", limit = 24 } = {}) {
-  const supabase = await getSupabaseClient();
+  // ── Attempt 1: Raw REST API (no SDK download — fastest cold path) ──
+  // Returns identical data to the JS client but skips the ~150KB Supabase SDK
+  // download from the CDN, which was the main cause of slow marketplace loads.
+  try {
+    const params = new URLSearchParams({
+      select: "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
+      order: "created_at.desc",
+      limit: String(limit),
+    });
+    if (type) params.append("listing_type", `eq.${type}`);
+    if (status && status !== "all") params.append("status", `eq.${status}`);
+    if (category) params.append("category", `eq.${category}`);
 
-  // ── Attempt 1: Supabase JS client ──
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?${params}`, {
+      headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (resp.ok) {
+      const rows = await resp.json();
+      return (rows || []).map(normalizeListing);
+    }
+    console.warn("[yapply] fetchListings REST non-OK:", resp.status);
+  } catch (e) {
+    console.warn("[yapply] fetchListings REST threw:", e?.message);
+  }
+
+  // ── Attempt 2: Supabase JS client (fallback — downloads SDK) ──
+  const supabase = await getSupabaseClient();
   try {
     let query = supabase
       .from("marketplace_listings")
@@ -112,22 +136,7 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
     console.warn("[yapply] fetchListings JS threw:", e?.message);
   }
 
-  // ── Attempt 2: Raw REST API ──
-  const params = new URLSearchParams({
-    select: "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
-    order: "created_at.desc",
-    limit: String(limit),
-  });
-  if (type) params.append("listing_type", `eq.${type}`);
-  if (status && status !== "all") params.append("status", `eq.${status}`);
-  if (category) params.append("category", `eq.${category}`);
-
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?${params}`, {
-    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
-  });
-  if (!resp.ok) throw new Error(`fetchListings failed (HTTP ${resp.status})`);
-  const rows = await resp.json();
-  return (rows || []).map(normalizeListing);
+  throw new Error("fetchListings failed (REST and JS client both errored)");
 }
 
 /**
@@ -136,9 +145,23 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
 export async function fetchListing(listingId) {
   if (!listingId) return null;
 
-  const supabase = await getSupabaseClient();
+  // ── Attempt 1: Raw REST API (no SDK download — fastest cold path) ──
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&limit=1`, {
+      headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (resp.ok) {
+      const rows = await resp.json();
+      if (!rows || rows.length === 0) return null;
+      return normalizeListing(rows[0]);
+    }
+    console.warn("[yapply] fetchListing REST non-OK:", resp.status);
+  } catch (e) {
+    console.warn("[yapply] fetchListing REST threw:", e?.message);
+  }
 
-  // ── Attempt 1: Supabase JS client ──
+  // ── Attempt 2: Supabase JS client (fallback — downloads SDK) ──
+  const supabase = await getSupabaseClient();
   try {
     const { data, error } = await supabase
       .from("marketplace_listings")
@@ -156,14 +179,7 @@ export async function fetchListing(listingId) {
     console.warn("[yapply] fetchListing JS threw:", e?.message);
   }
 
-  // ── Attempt 2: Raw REST API ──
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&limit=1`, {
-    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
-  });
-  if (!resp.ok) throw new Error(`fetchListing failed (HTTP ${resp.status})`);
-  const rows = await resp.json();
-  if (!rows || rows.length === 0) return null;
-  return normalizeListing(rows[0]);
+  throw new Error("fetchListing failed (REST and JS client both errored)");
 }
 
 /**
