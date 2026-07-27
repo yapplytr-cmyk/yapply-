@@ -108,6 +108,14 @@
     {
       "source": "/api/notify",
       "destination": "/api/router?route=notify"
+    },
+    {
+      "source": "/api/billing/checkout",
+      "destination": "/api/router?route=billing/checkout"
+    },
+    {
+      "source": "/api/billing/webhook",
+      "destination": "/api/router?route=billing/webhook"
     }
   ]
 }

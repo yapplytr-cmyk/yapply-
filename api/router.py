@@ -13,6 +13,10 @@ from api._utils import (
   json_response,
   run_api_action,
 )
+from api.billing import (
+  handle_billing_checkout,
+  handle_billing_webhook,
+)
 from api.supabase_utils import (
   handle_admin_account_delete,
   handle_admin_login,
@@ -165,6 +169,14 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "marketplace/inquiry/create":
       run_api_action(self, handle_marketplace_inquiry_create)
+      return
+
+    if route == "billing/checkout":
+      handle_billing_checkout(self)
+      return
+
+    if route == "billing/webhook":
+      handle_billing_webhook(self)
       return
 
     if route == "notify":

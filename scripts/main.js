@@ -2168,9 +2168,9 @@ function setupMarketplaceBidForm(content) {
     } catch (error) {
       setButtonLoading(submitButton, false);
 
-      // ── Bid limit reached — show modal and redirect ──
-      if (error?.code === "BID_LIMIT_REACHED") {
-        showBidLimitModal();
+      // ── Bid limit reached / not enough tokens — show modal and redirect ──
+      if (error?.code === "BID_LIMIT_REACHED" || error?.code === "INSUFFICIENT_TOKENS") {
+        showBidLimitModal(error);
         return;
       }
 
@@ -2191,8 +2191,11 @@ function setupMarketplaceBidForm(content) {
  * Show a popup/modal when developer has reached their bid limit.
  * Offers to redirect them to the membership/upgrade page.
  */
-function showBidLimitModal() {
+function showBidLimitModal(error = null) {
   const isTr = document.documentElement.lang === "tr";
+  const isTokens = error?.code === "INSUFFICIENT_TOKENS";
+  const tokenCost = Number(error?.tokenCost || 0);
+  const tokenBalance = Number(error?.tokenBalance ?? -1);
 
   // Remove any existing modal
   document.querySelector("[data-bid-limit-modal]")?.remove();
@@ -2205,12 +2208,16 @@ function showBidLimitModal() {
     <div style="background:var(--bg-panel-strong,#1a1c22);border:1px solid var(--line,rgba(255,255,255,0.08));border-radius:var(--radius-lg,1.5rem);padding:2rem;max-width:420px;width:100%;text-align:center;box-shadow:var(--shadow-strong)">
       <div style="font-size:2.5rem;margin-bottom:0.75rem">&#9888;&#65039;</div>
       <h3 style="color:var(--text,#f4f0e8);font-size:1.2rem;margin-bottom:0.5rem">
-        ${isTr ? "Teklif Limitine Ulaştınız" : "Bid Limit Reached"}
+        ${isTokens ? (isTr ? "Yetersiz Jeton" : "Not Enough Tokens") : (isTr ? "Teklif Limitine Ulaştınız" : "Bid Limit Reached")}
       </h3>
       <p style="color:var(--text-muted,#b3ada0);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem">
-        ${isTr
-          ? "Bu döngüdeki ücretsiz teklif hakkınızı kullandınız. Daha fazla teklif vermek için planınızı yükseltin."
-          : "You have used all your free bids for this cycle. Upgrade your plan to place more bids."}
+        ${isTokens
+          ? (isTr
+              ? `Bu teklif ${tokenCost} jeton gerektiriyor${tokenBalance >= 0 ? ` (bakiyeniz: ${tokenBalance})` : ""}. Daha fazla jeton için üyelik planınızı yükseltin.`
+              : `This bid costs ${tokenCost} token${tokenCost === 1 ? "" : "s"}${tokenBalance >= 0 ? ` (your balance: ${tokenBalance})` : ""}. Upgrade your membership to get more tokens.`)
+          : (isTr
+              ? "Bu döngüdeki ücretsiz teklif hakkınızı kullandınız. Daha fazla teklif vermek için planınızı yükseltin."
+              : "You have used all your free bids for this cycle. Upgrade your plan to place more bids.")}
       </p>
       <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
         <button class="button button--primary" data-bid-limit-upgrade style="font-size:0.9rem;padding:10px 24px">
@@ -3465,6 +3472,10 @@ function bindInteractions(content) {
     setupDeveloperPublicProfile(content);
   } else if (page === "account-settings") {
     setupAccountSettings(content);
+  } else if (page === "developer-membership") {
+    import("./components/developerMembershipPage.js").then((m) => {
+      if (m.initDeveloperMembershipPage) m.initDeveloperMembershipPage(content);
+    }).catch(() => {});
   } else if (page === "marketplace-submission") {
     setupApplicationForm();
     setupProjectInquiryForm();

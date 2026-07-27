@@ -1178,10 +1178,27 @@ export async function submitMarketplaceBid(formData) {
     throw createSubmissionError("BIDDER_ROLE_INVALID", "Only developer accounts can submit bids.");
   }
 
-  // ── Bid limit enforcement ──
-  const { consumeDeveloperBid } = await import("./supabaseMarketplace.js?v=20260727-rest-first");
-  const bidResult = await consumeDeveloperBid(session.user.id);
+  // ── Token / bid-limit enforcement ──
+  // Tokens are the primary system; if token RPCs are not deployed the
+  // tokenStore falls back to the legacy 15-bids-per-cycle automatically.
+  const { spendTokensForBid } = await import("./tokenStore.js?v=20260727");
+  const spendListingId = escapeHtml(formData.get("listingId") || "");
+  let spendListing = { id: spendListingId };
+  try {
+    spendListing = (await fetchPublicMarketplaceListing(spendListingId)) || spendListing;
+  } catch (_) {}
+
+  const bidResult = await spendTokensForBid(session.user.id, spendListing);
   if (!bidResult.success) {
+    if (bidResult.code === "INSUFFICIENT_TOKENS") {
+      const err = createSubmissionError(
+        "INSUFFICIENT_TOKENS",
+        `This bid costs ${bidResult.cost} token${bidResult.cost === 1 ? "" : "s"} and your balance is ${bidResult.balance}. Upgrade your membership to get more tokens.`
+      );
+      err.tokenCost = bidResult.cost;
+      err.tokenBalance = bidResult.balance;
+      throw err;
+    }
     const err = createSubmissionError("BID_LIMIT_REACHED", "You have reached your bid limit for this cycle.");
     err.bidsRemaining = bidResult.bidsRemaining;
     err.bidLimit = bidResult.bidLimit;
