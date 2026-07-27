@@ -267,6 +267,7 @@ export function createTabBar(locale) {
   const devClass = (role === "developer" || role === "client") ? " tab-bar--dev" : "";
   return `
     <nav class="tab-bar${devClass}" aria-label="App navigation">
+      <div class="tab-bar__liquid" data-tab-liquid data-x="0"></div>
       ${tabItems}
     </nav>
   `;
@@ -276,6 +277,86 @@ export function createTabBar(locale) {
  * Initializes tab bar interactive behaviors (popup menu, animations).
  * Call this after injecting the tab bar HTML into the DOM.
  */
+/* ─── Liquid glass pill indicator — "stretch + glide" motion
+       (ported from the NAUTICO liquid tab bar). Additive: purely visual,
+       does not touch navigation. ─── */
+const LIQUID_W = 50;
+
+function _liquidEls() {
+  const bar = document.querySelector(".tab-bar");
+  return {
+    bar,
+    ind: bar?.querySelector("[data-tab-liquid]") || null,
+    items: bar ? Array.from(bar.querySelectorAll(".tab-bar__item:not(.tab-bar__item--center)")) : [],
+  };
+}
+
+function _liquidActiveItem(items) {
+  return items.find((it) => it.classList.contains("tab-bar__item--active")) || null;
+}
+
+function liquidSnap(retries = 0) {
+  const { bar, ind, items } = _liquidEls();
+  if (!bar || !ind || items.length === 0) return;
+  const active = _liquidActiveItem(items);
+  if (!active) { ind.style.opacity = "0"; return; }
+
+  const barRect = bar.getBoundingClientRect();
+  const itemRect = active.getBoundingClientRect();
+  if (barRect.width === 0) {
+    if (retries < 40) setTimeout(() => liquidSnap(retries + 1), 150);
+    return;
+  }
+  const x = itemRect.left - barRect.left + (itemRect.width - LIQUID_W) / 2;
+  ind.style.transition = "none";
+  ind.style.opacity = "1";
+  ind.style.width = LIQUID_W + "px";
+  ind.style.transform = "translateX(" + x + "px)";
+  ind.dataset.x = x;
+}
+
+function liquidGlideTo(targetItem) {
+  const { bar, ind } = _liquidEls();
+  if (!bar || !ind || !targetItem) return;
+  const barRect = bar.getBoundingClientRect();
+  const itemRect = targetItem.getBoundingClientRect();
+  if (barRect.width === 0) return;
+
+  const targetX = itemRect.left - barRect.left + (itemRect.width - LIQUID_W) / 2;
+  const currentX = parseFloat(ind.dataset.x || 0);
+  const dist = Math.abs(targetX - currentX);
+
+  ind.style.opacity = "1";
+  ind.style.transition = "none";
+  void ind.offsetHeight; // reflow
+  // Stretch wide while travelling…
+  ind.style.transition = "transform .4s cubic-bezier(.4,0,.2,1), width .2s cubic-bezier(.4,0,.2,1)";
+  ind.style.width = (LIQUID_W + dist * 0.25) + "px";
+  ind.style.transform = "translateX(" + ((targetX + currentX) / 2) + "px)";
+
+  setTimeout(() => {
+    // …then snap + shrink into place.
+    ind.style.transition = "transform .25s cubic-bezier(0,0,.2,1), width .3s cubic-bezier(0,0,.2,1)";
+    ind.style.width = LIQUID_W + "px";
+    ind.style.transform = "translateX(" + targetX + "px)";
+    ind.dataset.x = targetX;
+  }, 180);
+}
+
+export function initTabBarLiquid() {
+  const { items } = _liquidEls();
+  items.forEach((it) => {
+    if (it.dataset.liquidWired) return;
+    it.dataset.liquidWired = "1";
+    it.addEventListener("click", () => liquidGlideTo(it));
+  });
+  liquidSnap(0);
+  if (!window.__yapplyLiquidResizeWired) {
+    window.__yapplyLiquidResizeWired = true;
+    window.addEventListener("resize", () => liquidSnap(0));
+  }
+}
+
 export function initTabBarInteractions() {
   // ── Hesabım popup toggle ──
   const dashboardToggle = document.querySelector("[data-tab-dashboard-toggle]");
@@ -306,6 +387,9 @@ export function initTabBarInteractions() {
       });
     });
   }
+
+  // ── Liquid pill indicator ──
+  initTabBarLiquid();
 
   // ── İlan Ver plus spin animation ──
   const createBtn = document.querySelector("#tab-create");

@@ -3868,8 +3868,9 @@ if (IS_NATIVE_APP && document.getElementById("app-splash")) {
       if (key && key.startsWith(SWR_CACHE_KEY + ":")) {
         try {
           const entry = JSON.parse(localStorage.getItem(key));
-          // Clear anything older than 1 minute on cold boot
-          if (!entry || (Date.now() - (entry.ts || 0)) > 60000) {
+          // Keep marketplace cache up to 24h — it renders instantly and
+          // background revalidation replaces stale data within a second.
+          if (!entry || (Date.now() - (entry.ts || 0)) > 86400000) {
             keysToRemove.push(key);
           }
         } catch (_) {
@@ -3994,7 +3995,9 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     // Try to return cached data instantly
     const cached = swrRead(cacheId);
     const proCached = swrRead(proCacheId);
-    const hasFreshCache = cached && !swrIsStale(cached);
+    // Instant render whenever we have real cached data (even if stale) —
+    // the background fetch below re-renders automatically if data changed.
+    const hasFreshCache = !!(cached && Array.isArray(cached.data) && cached.data.length > 0);
 
     // Start the network fetch (will run regardless for revalidation)
     const fetchPromise = (async () => {
@@ -4616,10 +4619,11 @@ async function renderPage(localeOverride) {
   cleanupBirdScroll();
   cleanupHeroScene();
 
-  // Show bird loader only if the page takes >300ms to load (skip on background re-renders)
+  // Show bird loader only if the page genuinely takes a while (>600ms) —
+  // instant/cached renders never flash a loading screen.
   let _birdLoaderTimeout = null;
   if (IS_NATIVE_APP && !isBackgroundRefresh) {
-    _birdLoaderTimeout = setTimeout(() => { showBirdLoader(); }, 300);
+    _birdLoaderTimeout = setTimeout(() => { showBirdLoader(); }, 600);
   }
 
   try {

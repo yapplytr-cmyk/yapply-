@@ -3506,9 +3506,17 @@ html[data-theme="light"] .auth-role-card.is-active {
 }
 
 .marketplace-detail-visual-gallery {
-  position: absolute;
-  inset: 0;
+  position: relative;
   overflow: hidden;
+}
+
+/* The media hero sizes itself to the photo's ORIGINAL aspect ratio —
+   no letterboxing / black bars. */
+.marketplace-detail-visual--media {
+  min-height: 0;
+}
+.marketplace-detail-visual--media.marketplace-detail-visual--compact {
+  min-height: 0;
 }
 
 .marketplace-detail-visual-slide {
@@ -3519,7 +3527,11 @@ html[data-theme="light"] .auth-role-card.is-active {
   pointer-events: none;
 }
 
+/* Active slide sits in normal flow so the gallery's height follows
+   the image's natural aspect ratio. */
 .marketplace-detail-visual-slide--active {
+  position: relative;
+  inset: auto;
   opacity: 1;
   pointer-events: auto;
 }
@@ -3527,8 +3539,15 @@ html[data-theme="light"] .auth-role-card.is-active {
 .marketplace-detail-visual-slide img {
   display: block;
   width: 100%;
+  height: auto;
+  max-height: 80vh;
+  object-fit: cover;
+}
+
+/* Inactive slides fill the active slide's box during the crossfade */
+.marketplace-detail-visual-slide:not(.marketplace-detail-visual-slide--active) img {
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .gallery-arrow {

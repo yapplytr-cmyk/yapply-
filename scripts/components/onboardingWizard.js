@@ -486,6 +486,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       bar.setAttribute("data-onboarding-pager", "");
       bar.style.cssText = "display:grid;gap:10px;margin-top:6px";
       bar.innerHTML = `
+        <div class="yapply-step-progress"><div class="yapply-step-progress__fill" data-onboarding-pager-fill style="width:0%"></div></div>
         <div data-onboarding-pager-progress style="font-size:0.78rem;color:var(--text-dim);text-align:center;letter-spacing:0.06em"></div>
         <div style="display:flex;gap:10px;justify-content:center">
           <button type="button" class="button button--secondary" data-onboarding-pager-back style="min-width:96px">${isTr ? "Geri" : "Back"}</button>
@@ -523,15 +524,38 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
           }
         }
         if (_pagerIndex < _pagerGroups.length - 1) {
-          _pagerIndex += 1;
-          _showPagerGroup();
+          const formEl = wizard.querySelector("[data-onboarding-form]");
+          _playStepCheck(formEl, () => {
+            _pagerIndex += 1;
+            _showPagerGroup(true);
+          });
         }
       });
     }
     return bar;
   }
 
-  function _showPagerGroup() {
+  function _playStepCheck(host, done) {
+    try {
+      const overlay = document.createElement("div");
+      overlay.className = "yapply-step-check";
+      overlay.innerHTML = `<div class="yapply-step-check__badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg></div>`;
+      const target = host || wizard;
+      const prevPos = target.style.position;
+      if (getComputedStyle(target).position === "static") target.style.position = "relative";
+      target.appendChild(overlay);
+      setTimeout(() => overlay.classList.add("yapply-step-check--leaving"), 340);
+      setTimeout(() => {
+        overlay.remove();
+        if (prevPos !== undefined) target.style.position = prevPos;
+        if (typeof done === "function") done();
+      }, 560);
+    } catch (_) {
+      if (typeof done === "function") done();
+    }
+  }
+
+  function _showPagerGroup(animated = false) {
     const form = wizard.querySelector("[data-onboarding-form]");
     if (!form || _pagerGroups.length === 0) return;
     const bar = _renderPagerControls(form);
@@ -542,7 +566,14 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
     const allFields = form.querySelectorAll(".onboarding-field");
     allFields.forEach((f) => { f.style.display = "none"; });
     const group = _pagerGroups[_pagerIndex] || [];
-    group.forEach((f) => { f.style.display = ""; });
+    group.forEach((f) => {
+      f.style.display = "";
+      if (animated) {
+        f.classList.remove("yapply-step-anim-in");
+        void f.offsetWidth;
+        f.classList.add("yapply-step-anim-in");
+      }
+    });
 
     const isLast = _pagerIndex >= _pagerGroups.length - 1;
     const backBtn = bar.querySelector("[data-onboarding-pager-back]");
@@ -554,6 +585,8 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
 
     const progress = bar.querySelector("[data-onboarding-pager-progress]");
     if (progress) progress.textContent = `${_pagerIndex + 1} / ${_pagerGroups.length}`;
+    const fill = bar.querySelector("[data-onboarding-pager-fill]");
+    if (fill) fill.style.width = `${Math.round(((_pagerIndex + 1) / _pagerGroups.length) * 100)}%`;
 
     // Focus the first input of the group for fast typing
     const firstInput = group[0]?.querySelector("input, textarea, select");

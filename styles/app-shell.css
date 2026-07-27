@@ -2571,3 +2571,108 @@ html:not(.has-tab-bar) .notification-panel {
 html.keyboard-open .notification-bell-container {
   display: none;
 }
+
+/* ═══ Wizard step-complete animation (account + listing wizards) ═══ */
+@keyframes yapplyStepCheckPop {
+  0% { transform: scale(0) rotate(-24deg); opacity: 0; }
+  55% { transform: scale(1.18) rotate(4deg); opacity: 1; }
+  75% { transform: scale(0.96) rotate(0deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes yapplyStepCheckFly {
+  0% { transform: scale(1) translateY(0); opacity: 1; }
+  100% { transform: scale(0.55) translateY(-42px); opacity: 0; }
+}
+@keyframes yapplyStepSlideIn {
+  0% { transform: translateX(26px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes yapplyStepSlideOut {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(-26px); opacity: 0; }
+}
+
+.yapply-step-check {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  pointer-events: none;
+}
+.yapply-step-check__badge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent, #c9a84c);
+  color: #14161b;
+  box-shadow:
+    0 6px 24px rgba(201, 168, 76, 0.45),
+    0 0 0 6px rgba(201, 168, 76, 0.16);
+  animation: yapplyStepCheckPop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.yapply-step-check--leaving .yapply-step-check__badge {
+  animation: yapplyStepCheckFly 0.24s ease-in both;
+}
+.yapply-step-check__badge svg {
+  width: 30px;
+  height: 30px;
+}
+
+.yapply-step-anim-in { animation: yapplyStepSlideIn 0.28s cubic-bezier(0, 0, 0.2, 1) both; }
+.yapply-step-anim-out { animation: yapplyStepSlideOut 0.2s ease-in both; }
+
+/* Filling progress bar — "getting closer to done" */
+.yapply-step-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+[data-theme="light"] .yapply-step-progress { background: rgba(0, 0, 0, 0.1); }
+.yapply-step-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent, #c9a84c), #e6cd7e);
+  box-shadow: 0 0 10px rgba(201, 168, 76, 0.55);
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ═══ Liquid glass tab pill (NAUTICO-style stretch + glide) ═══ */
+.tab-bar { overflow: visible; }
+
+.tab-bar__liquid {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 50px;
+  height: 38px;
+  border-radius: 19px;
+  background: rgba(201, 168, 76, 0.14);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(201, 168, 76, 0.22);
+  box-shadow:
+    0 0 18px rgba(201, 168, 76, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  will-change: transform, width;
+}
+
+[data-theme="light"] .tab-bar__liquid {
+  background: rgba(201, 168, 76, 0.16);
+  border-color: rgba(160, 128, 40, 0.25);
+  box-shadow:
+    0 0 16px rgba(201, 168, 76, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+/* Tabs render above the pill */
+.tab-bar__item { position: relative; z-index: 1; }

@@ -712,6 +712,22 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
   const nextBtn = root.querySelector("[data-wizard-next]");
   const backBtn = root.querySelector("[data-wizard-back]");
 
+  /* ── Step-complete check animation ───────────── */
+  function playStepCheck(done) {
+    try {
+      const host = bodyEl?.parentElement || root;
+      const overlay = document.createElement("div");
+      overlay.className = "yapply-step-check";
+      overlay.innerHTML = `<div class="yapply-step-check__badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg></div>`;
+      if (getComputedStyle(host).position === "static") host.style.position = "relative";
+      host.appendChild(overlay);
+      setTimeout(() => overlay.classList.add("yapply-step-check--leaving"), 340);
+      setTimeout(() => { overlay.remove(); if (typeof done === "function") done(); }, 560);
+    } catch (_) {
+      if (typeof done === "function") done();
+    }
+  }
+
   /* ── Button press animation ──────────────────── */
   function animateButton(btn) {
     btn.classList.add("wizard-btn--pressed");
@@ -1138,8 +1154,15 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
     if (isLast) {
       await handleSubmit();
     } else {
-      currentStep++;
-      renderStep();
+      playStepCheck(() => {
+        currentStep++;
+        renderStep();
+        if (bodyEl) {
+          bodyEl.classList.remove("yapply-step-anim-in");
+          void bodyEl.offsetWidth;
+          bodyEl.classList.add("yapply-step-anim-in");
+        }
+      });
     }
   });
 
