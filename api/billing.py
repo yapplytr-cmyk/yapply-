@@ -103,16 +103,47 @@ def _get_plan(plan_id: str) -> dict:
   return rows[0]
 
 
+def _get_pack(pack_id: str) -> dict:
+  rows = _supabase_request(f"/rest/v1/token_packs?id=eq.{pack_id}&active=eq.true&select=*")
+  if not rows:
+    raise BillingError("PACK_NOT_FOUND", "Unknown token pack.", 404)
+  return rows[0]
+
+
 def handle_billing_checkout(handler) -> None:
   """Create a Stripe Checkout Session for a membership plan."""
   try:
     payload = json.loads(_read_body(handler) or b"{}")
     plan_id = str(payload.get("planId") or "").strip()
+    pack_id = str(payload.get("packId") or "").strip()
     user_id = str(payload.get("userId") or "").strip()
     user_email = str(payload.get("userEmail") or "").strip()
 
-    if not plan_id or not user_id:
-      raise BillingError("INVALID_REQUEST", "planId and userId are required.")
+    if (not plan_id and not pack_id) or not user_id:
+      raise BillingError("INVALID_REQUEST", "planId or packId, and userId are required.")
+
+    # ── One-time token pack purchase ──
+    if pack_id:
+      pack = _get_pack(pack_id)
+      pack_form = {
+        "mode": "payment",
+        "success_url": f"{SITE_ORIGIN}/developer-membership.html?checkout=success",
+        "cancel_url": f"{SITE_ORIGIN}/developer-membership.html?checkout=cancel",
+        "client_reference_id": user_id,
+        "metadata[user_id]": user_id,
+        "metadata[pack_id]": pack_id,
+        "payment_intent_data[metadata][user_id]": user_id,
+        "payment_intent_data[metadata][pack_id]": pack_id,
+        "line_items[0][quantity]": "1",
+        "line_items[0][price_data][currency]": "try",
+        "line_items[0][price_data][unit_amount]": str(int(float(pack["price_try"]) * 100)),
+        "line_items[0][price_data][product_data][name]": f"Yapply {pack['name']} — {pack['tokens']} tokens",
+      }
+      if user_email:
+        pack_form["customer_email"] = user_email
+      session = _stripe_request("/checkout/sessions", pack_form)
+      _json_response(handler, HTTPStatus.OK, {"ok": True, "url": session.get("url")})
+      return
 
     plan = _get_plan(plan_id)
 
@@ -230,6 +261,15 @@ def handle_billing_webhook(handler) -> None:
     if event_type == "checkout.session.completed":
       meta = obj.get("metadata") or {}
       user_id = str(meta.get("user_id") or obj.get("client_reference_id") or "")
+      pack_id = str(meta.get("pack_id") or "")
+      if pack_id and user_id:
+        # One-time token pack — grant and stop (no membership involved).
+        pack = _get_pack(pack_id)
+        tokens = int(pack.get("tokens") or 0)
+        if tokens > 0:
+          _grant_tokens(user_id, tokens, "purchase", event_id or obj.get("id"))
+        _json_response(handler, HTTPStatus.OK, {"ok": True, "granted": tokens, "pack": pack_id})
+        return
       plan_id = str(meta.get("plan_id") or "")
       provider_ref = obj.get("subscription") or obj.get("id")
     elif event_type in ("invoice.paid", "invoice.payment_succeeded"):

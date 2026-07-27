@@ -188,10 +188,11 @@ export async function initDeveloperMembershipPage(content) {
   if (!user?.id) return;
 
   const tokenStore = await import("../core/tokenStore.js?v=20260727");
-  const [status, plans, membership] = await Promise.all([
+  const [status, plans, membership, packs] = await Promise.all([
     tokenStore.getTokenStatus(user.id),
     tokenStore.fetchMembershipPlans(),
     tokenStore.fetchMyMembership(user.id),
+    tokenStore.fetchTokenPacks(),
   ]);
 
   // ── 1. Token balance card (replaces the bids counters when tokens active) ──
@@ -263,16 +264,38 @@ export async function initDeveloperMembershipPage(content) {
     }).join("");
   }
 
+  // ── 2b. One-time token packs ("Buy Tokens") section ──
+  if (planContainer && Array.isArray(packs) && packs.length > 0 && !document.querySelector("[data-token-packs]")) {
+    const packsSection = document.createElement("div");
+    packsSection.setAttribute("data-token-packs", "");
+    packsSection.innerHTML = `
+      <h3 style="text-align:center;font-size:1.05rem;margin:2.2rem 0 0.4rem">${isTr ? "Jeton Satın Al" : "Buy Tokens"}</h3>
+      <p style="text-align:center;font-size:0.82rem;color:var(--text-dim);margin-bottom:1.1rem">${isTr ? "Üyelik olmadan tek seferlik jeton paketleri" : "One-time token packs — no membership needed"}</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
+        ${packs.map((pack) => `
+          <article class="panel" style="padding:1.4rem;display:grid;gap:0.7rem;text-align:center">
+            <strong style="font-size:1rem">${pack.name}</strong>
+            <span style="font-size:1.8rem;font-weight:800">🪙 ${pack.tokens}</span>
+            <span style="font-size:1.05rem;color:var(--text-muted)">${Number(pack.price_try).toLocaleString(isTr ? "tr-TR" : "en-US")} TL</span>
+            <button class="button button--primary" data-token-pack-select="${pack.id}">${isTr ? "Satın Al" : "Buy"}</button>
+          </article>
+        `).join("")}
+      </div>
+    `;
+    planContainer.parentElement.insertBefore(packsSection, planContainer.nextSibling);
+  }
+
   // ── 3. Bind buy buttons ──
   const bindButtons = () => {
-    document.querySelectorAll("[data-token-plan-select], [data-membership-select]").forEach((btn) => {
+    document.querySelectorAll("[data-token-plan-select], [data-membership-select], [data-token-pack-select]").forEach((btn) => {
       btn.addEventListener("click", async () => {
+        const packId = btn.getAttribute("data-token-pack-select") || "";
         const planId = btn.getAttribute("data-token-plan-select") || btn.getAttribute("data-membership-select") || "";
-        if (!planId || planId === "free") return;
+        if (!packId && (!planId || planId === "free")) return;
         btn.disabled = true;
         const prevLabel = btn.textContent;
         btn.textContent = isTr ? "Yönlendiriliyor…" : "Redirecting…";
-        const result = await tokenStore.startStripeCheckout(planId, user.id, user.email || "");
+        const result = await tokenStore.startStripeCheckout(planId, user.id, user.email || "", packId);
         if (!result.ok) {
           btn.disabled = false;
           btn.textContent = prevLabel;

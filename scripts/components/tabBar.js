@@ -355,6 +355,46 @@ export function initTabBarLiquid() {
     window.__yapplyLiquidResizeWired = true;
     window.addEventListener("resize", () => liquidSnap(0));
   }
+  initTabSwipe();
+}
+
+/* ─── Side-swipe between tabs (NAUTICO pattern: horizontal swipe on the
+       page switches to the adjacent tab; galleries, inputs and horizontal
+       scrollers are excluded). ─── */
+export function initTabSwipe() {
+  if (window.__yapplyTabSwipeWired) return;
+  window.__yapplyTabSwipeWired = true;
+
+  let sx = 0, sy = 0, tracking = false;
+
+  document.addEventListener("touchstart", (e) => {
+    const t = e.touches[0] && e.target;
+    if (t && t.closest && t.closest("[data-gallery-container], [data-noswipe], input, textarea, select, .y-dial, .onboarding-form, .wizard-body, [data-marketplace-media-gallery]")) {
+      tracking = false;
+      return;
+    }
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+
+  document.addEventListener("touchend", (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+
+    const { items } = _liquidEls();
+    if (items.length === 0) return;
+    const activeIdx = items.findIndex((it) => it.classList.contains("tab-bar__item--active"));
+    if (activeIdx < 0) return;
+    const dir = dx < 0 ? 1 : -1;
+    const next = items[activeIdx + dir];
+    if (!next) return;
+    liquidGlideTo(next);
+    next.click();
+  }, { passive: true });
 }
 
 export function initTabBarInteractions() {

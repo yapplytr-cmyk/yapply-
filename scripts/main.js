@@ -294,6 +294,16 @@ if (IS_NATIVE_APP) {
 /* ── Pre-warm Supabase CDN client immediately on boot ─── */
 preWarmSupabaseClient();
 
+// ── Boot prefetch: start fetching marketplace listings the instant the app
+//    opens (native), so data is already in-flight while the page renders.
+//    The request cache dedupes this with the page's own fetch.
+if (IS_NATIVE_APP) {
+  try {
+    fetchPublicMarketplaceListings({ type: "client", status: "open-for-bids", limit: 24 }).catch(() => {});
+    fetchPublicMarketplaceListings({ type: "professional", status: "open-for-bids", limit: 24 }).catch(() => {});
+  } catch (_) {}
+}
+
 let cleanupRevealAnimations = () => {};
 let cleanupParallax = () => {};
 let cleanupHeroScene = () => {};
@@ -470,7 +480,7 @@ function dismissSplashScreen() {
   if (!splash) return;
   // Wait for fly animation to finish (~2s) then fade out
   const elapsed = performance.now() - _splashStartTime;
-  const remaining = Math.max(0, 900 - elapsed); // shortened splash — snappier startup
+  const remaining = Math.max(0, 500 - elapsed); // minimal splash — buttery startup
   setTimeout(() => {
     splash.classList.add("app-splash--hidden");
     // Reveal the tab bar and app content underneath
@@ -3437,6 +3447,10 @@ function bindInteractions(content) {
     window.scrollTo(0, 0);
     setupBidAccordions();
     setupMarketplaceBidForm(content);
+    // NAUTICO-style rotary dials for bid amount + completion timeframe
+    import("./components/bidDial.js?v=20260727").then((m) => {
+      if (m.mountBidDials) m.mountBidDials(content.meta.locale);
+    }).catch(() => {});
     setupListingImageGallery();
     setupMarketplaceListingInquiryForm();
     setupMarketplaceDeleteActions(content.meta.locale);

@@ -2,6 +2,7 @@
  * Onboarding Wizard — Step-by-step account creation flow for native app.
  * Steps: 1) Theme pick  2) Role pick  3) Form fields  4) Email verification  5) Success redirect
  */
+import { getAuthSession } from "../core/state.js";
 
 /* ── Inline SVG: bird with cool sunglasses (used in "Harika seçim" feedback) ── */
 const BIRD_SUNGLASSES_SVG = `<svg viewBox="0 0 24 24" width="1.1em" height="1.1em" style="vertical-align:-0.15em;display:inline-block"><circle cx="12" cy="12" r="11" fill="#e8823a"/><circle cx="12" cy="10" r="6" fill="#f0a040"/><rect x="5" y="8" width="14" height="5" rx="2.5" fill="#222" opacity="0.85"/><circle cx="8.5" cy="10.5" r="2.8" fill="#111" stroke="#333" stroke-width="0.5"/><circle cx="15.5" cy="10.5" r="2.8" fill="#111" stroke="#333" stroke-width="0.5"/><rect x="11.2" y="9.8" width="1.6" height="1.4" rx="0.5" fill="#333"/><circle cx="9" cy="10.5" r="1" fill="rgba(255,255,255,0.15)"/><circle cx="16" cy="10.5" r="1" fill="rgba(255,255,255,0.15)"/><path d="M5.5 9.5l-2-1" stroke="#333" stroke-width="0.6" stroke-linecap="round"/><path d="M18.5 9.5l2-1" stroke="#333" stroke-width="0.6" stroke-linecap="round"/><path d="M15 15l3-1.5-2.5 2.5z" fill="#f0a030"/><circle cx="14" cy="8" r="0.8" fill="#222"/></svg>`;
@@ -274,6 +275,37 @@ export function createOnboardingWizard(content, locale) {
                 <span>${isTr ? "Uzmanlık Alanı" : "Specialty"}</span>
                 <input type="text" name="specialties" placeholder="${isTr ? "Villa yapımı, renovasyon..." : "Villa construction, renovation..."}" />
               </label>
+              <!-- Selfie verification — REQUIRED for all professional accounts.
+                   This becomes the account's profile picture. -->
+              <div class="onboarding-field" data-onboarding-selfie-section>
+                <span>${isTr ? "Selfie Doğrulama (Zorunlu)" : "Selfie Verification (Required)"}</span>
+                <p style="font-size:0.78rem;color:var(--accent, #c9a84c);margin:2px 0 8px">${isTr ? "Bu fotoğraf profil resminiz olarak kullanılacaktır." : "This photo will be used as your profile picture."}</p>
+                <!-- Live camera capture (primary — must be taken now for verification) -->
+                <div data-onboarding-selfie-camera-ui>
+                  <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Doğrulama için şimdi ön kameradan bir selfie çekin" : "Take a live selfie with the front camera now to verify"}</p>
+                  <video data-onboarding-selfie-video autoplay playsinline muted style="width:100%;max-width:280px;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius-sm);display:none"></video>
+                  <canvas data-onboarding-selfie-canvas style="display:none"></canvas>
+                  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                    <button type="button" class="button button--secondary" data-onboarding-selfie-start style="font-size:0.85rem;padding:8px 16px">
+                      ${isTr ? "Kamerayı Aç" : "Open Camera"}
+                    </button>
+                    <button type="button" class="button button--primary" data-onboarding-selfie-capture style="font-size:0.85rem;padding:8px 16px;display:none">
+                      ${isTr ? "Fotoğraf Çek" : "Take Photo"}
+                    </button>
+                    <button type="button" class="button button--secondary" data-onboarding-selfie-retake style="font-size:0.85rem;padding:8px 16px;display:none">
+                      ${isTr ? "Tekrar Çek" : "Retake"}
+                    </button>
+                  </div>
+                </div>
+                <!-- Web fallback (only if the camera can't open) -->
+                <div data-onboarding-selfie-upload-ui style="display:none">
+                  <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Kamera açılamıyorsa bir selfie yükleyin" : "If the camera won't open, upload a selfie"}</p>
+                  <input type="file" accept="image/*" capture="user" data-onboarding-selfie-file style="margin-top:6px" />
+                </div>
+                <img data-onboarding-selfie-preview style="display:none;width:140px;height:140px;object-fit:cover;border-radius:50%;margin-top:10px;border:2px solid var(--accent,#c9a84c)" />
+                <input type="hidden" name="selfieData" data-onboarding-selfie-data />
+              </div>
+
 
               <!-- Business-specific extra fields -->
               <div data-onboarding-business-fields hidden>
@@ -310,33 +342,6 @@ export function createOnboardingWizard(content, locale) {
                   <span>${isTr ? "Portföy Linki (İsteğe Bağlı)" : "Portfolio Link (Optional)"}</span>
                   <input type="url" name="individualPortfolioLink" placeholder="https://portfolio.com" />
                 </label>
-                <div class="onboarding-field" data-onboarding-selfie-section>
-                  <span>${isTr ? "Selfie (Zorunlu)" : "Selfie (Required)"}</span>
-                  <!-- Native app: camera UI -->
-                  <div data-onboarding-selfie-camera-ui>
-                    <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Ön kamerayla bir selfie çekin" : "Take a selfie with the front camera"}</p>
-                    <video data-onboarding-selfie-video autoplay playsinline muted style="width:100%;max-width:280px;border-radius:var(--radius-sm);display:none"></video>
-                    <canvas data-onboarding-selfie-canvas style="display:none"></canvas>
-                    <div style="display:flex;gap:8px;margin-top:10px">
-                      <button type="button" class="button button--secondary" data-onboarding-selfie-start style="font-size:0.85rem;padding:8px 16px">
-                        ${isTr ? "Kamerayı Aç" : "Open Camera"}
-                      </button>
-                      <button type="button" class="button button--primary" data-onboarding-selfie-capture style="font-size:0.85rem;padding:8px 16px;display:none">
-                        ${isTr ? "Fotoğraf Çek" : "Take Photo"}
-                      </button>
-                      <button type="button" class="button button--secondary" data-onboarding-selfie-retake style="font-size:0.85rem;padding:8px 16px;display:none">
-                        ${isTr ? "Tekrar Çek" : "Retake"}
-                      </button>
-                    </div>
-                  </div>
-                  <!-- Website: file upload UI -->
-                  <div data-onboarding-selfie-upload-ui style="display:none">
-                    <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Bir selfie fotoğrafı yükleyin" : "Upload a selfie photo"}</p>
-                    <input type="file" accept="image/*" data-onboarding-selfie-file style="margin-top:6px" />
-                  </div>
-                  <img data-onboarding-selfie-preview style="display:none;width:100%;max-width:280px;border-radius:var(--radius-sm);margin-top:8px" />
-                  <input type="hidden" name="selfieData" data-onboarding-selfie-data />
-                </div>
               </div>
             </div>
 
@@ -427,13 +432,13 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   const _port = window.location.port;
   const isNativeApp = _origin === "capacitor://localhost" || (_hostname === "localhost" && !_port);
 
-  // Toggle selfie UI: camera for native, file upload for website
+  // Live camera is the PRIMARY selfie method for professional verification on
+  // both app and web. The upload input stays hidden and is only revealed if
+  // the camera can't be opened (permission denied / no camera).
   const selfieCameraUI = wizard.querySelector("[data-onboarding-selfie-camera-ui]");
   const selfieUploadUI = wizard.querySelector("[data-onboarding-selfie-upload-ui]");
-  if (!isNativeApp) {
-    if (selfieCameraUI) selfieCameraUI.style.display = "none";
-    if (selfieUploadUI) selfieUploadUI.style.display = "";
-  }
+  if (selfieCameraUI) selfieCameraUI.style.display = "";
+  if (selfieUploadUI) selfieUploadUI.style.display = "none";
 
   // Pending verification state (set when signup returns PENDING_EMAIL_VERIFICATION)
   let pendingEmail = "";
@@ -510,6 +515,18 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
             }
           }
         }
+        // Selfie is mandatory for professional (developer) accounts.
+        const onSelfieStep = group.some((f) => f.hasAttribute("data-onboarding-selfie-section") || f.querySelector("[data-onboarding-selfie-section]"));
+        if (onSelfieStep && selectedRole === "developer" && !selfieDataUrl) {
+          const errBox = wizard.querySelector("[data-onboarding-error]");
+          const errTxt = wizard.querySelector("[data-onboarding-error-text]");
+          if (errBox && errTxt) {
+            errTxt.textContent = isTr ? "Devam etmek için bir selfie çekin (doğrulama gerekli)." : "Please take a selfie to continue (verification required).";
+            errBox.hidden = false;
+          }
+          return;
+        }
+
         // Extra check: confirm password matches on the password screen
         const pw = group.some((f) => f.querySelector('[name="password"]'))
           ? wizard.querySelector('[data-onboarding-form] [name="password"]')
@@ -983,6 +1000,15 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         return;
       }
 
+      // Professional accounts must have a verification selfie.
+      if (selectedRole === "developer" && !selfieDataUrl) {
+        if (errorEl && errorText) {
+          errorText.textContent = isTr ? "Doğrulama için bir selfie gerekli." : "A verification selfie is required.";
+          errorEl.hidden = false;
+        }
+        return;
+      }
+
       const submitBtn = form.querySelector(".onboarding-submit-btn");
       const _submitOrigLabel = submitBtn?.textContent || "";
       if (submitBtn) {
@@ -1026,6 +1052,15 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         if (session?.authenticated && session?.user) {
           setAuthSession(session);
           setDocumentAuthState(session);
+        }
+
+        // ── Upload the verification selfie as the account avatar (professionals) ──
+        if (selectedRole === "developer" && selfieDataUrl) {
+          try {
+            await _uploadSelfieAvatar(session?.user?.id || user?.id, selfieDataUrl);
+          } catch (avatarErr) {
+            console.warn("[yapply] selfie avatar upload failed:", avatarErr?.message);
+          }
         }
 
         // No email verification needed — go straight to success
@@ -1188,6 +1223,53 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
     }
   }
 
+  // Uploads a base64 selfie to the Supabase `avatars` bucket and sets it as
+  // the account's profile picture (profiles.avatar_url). Runs after signup.
+  async function _uploadSelfieAvatar(userId, dataUrl) {
+    if (!userId || !dataUrl || !dataUrl.startsWith("data:")) return;
+    const SUPA = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+    const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+    let token = ANON;
+    try {
+      const raw = localStorage.getItem("sb-sgoicvqgfydwfpttzgqu-auth-token");
+      if (raw) { const p = JSON.parse(raw); if (p?.access_token) token = p.access_token; }
+    } catch (_) {}
+
+    // dataURL -> Blob
+    const [meta, b64] = dataUrl.split(",");
+    const mime = (meta.match(/data:(.*?);/) || [])[1] || "image/jpeg";
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const blob = new Blob([bytes], { type: mime });
+
+    const path = `${userId}/selfie-${Date.now()}.jpg`;
+    const up = await fetch(`${SUPA}/storage/v1/object/avatars/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": mime, apikey: ANON, Authorization: `Bearer ${token}`, "x-upsert": "true" },
+      body: blob,
+    });
+    if (!up.ok) throw new Error(`storage ${up.status}`);
+    const publicUrl = `${SUPA}/storage/v1/object/public/avatars/${path}`;
+
+    // Point the profile at the new avatar
+    await fetch(`${SUPA}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", apikey: ANON, Authorization: `Bearer ${token}`, Prefer: "return=minimal" },
+      body: JSON.stringify({ avatar_url: publicUrl }),
+    });
+
+    // Reflect immediately in the current session
+    try {
+      const sess = getAuthSession && getAuthSession();
+      if (sess?.user) {
+        sess.user.avatarUrl = publicUrl;
+        sess.user.profilePictureSrc = publicUrl;
+        setAuthSession(sess);
+      }
+    } catch (_) {}
+  }
+
   if (selfieStartBtn) {
     selfieStartBtn.addEventListener("click", async () => {
       try {
@@ -1203,10 +1285,12 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         if (selfieRetakeBtn) selfieRetakeBtn.style.display = "none";
       } catch (err) {
         console.warn("[yapply] Camera error:", err);
+        // Reveal the upload fallback so signup is never blocked.
+        if (selfieUploadUI) selfieUploadUI.style.display = "";
         const errorEl = wizard.querySelector("[data-onboarding-error]");
         const errorText = wizard.querySelector("[data-onboarding-error-text]");
         if (errorEl && errorText) {
-          errorText.textContent = isTr ? "Kamera erişimi reddedildi" : "Camera access denied";
+          errorText.textContent = isTr ? "Kamera açılamadı — lütfen bir selfie yükleyin" : "Camera unavailable — please upload a selfie";
           errorEl.hidden = false;
         }
       }
@@ -1216,11 +1300,19 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   if (selfieCaptureBtn) {
     selfieCaptureBtn.addEventListener("click", () => {
       if (!selfieVideo || !selfieCanvas) return;
-      selfieCanvas.width = selfieVideo.videoWidth;
-      selfieCanvas.height = selfieVideo.videoHeight;
+      // Center-square crop so the selfie is perfectly proportioned as a
+      // profile picture (no stretching, no letterboxing).
+      const vw = selfieVideo.videoWidth || 640;
+      const vh = selfieVideo.videoHeight || 640;
+      const side = Math.min(vw, vh);
+      const sx = (vw - side) / 2;
+      const sy = (vh - side) / 2;
+      const out = 512;
+      selfieCanvas.width = out;
+      selfieCanvas.height = out;
       const ctx = selfieCanvas.getContext("2d");
-      ctx.drawImage(selfieVideo, 0, 0);
-      selfieDataUrl = selfieCanvas.toDataURL("image/jpeg", 0.8);
+      ctx.drawImage(selfieVideo, sx, sy, side, side, 0, 0, out, out);
+      selfieDataUrl = selfieCanvas.toDataURL("image/jpeg", 0.85);
       if (selfieDataInput) selfieDataInput.value = selfieDataUrl;
       if (selfiePreview) {
         selfiePreview.src = selfieDataUrl;
@@ -1244,20 +1336,88 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
     });
   }
 
-  // ─── Selfie file upload for website ───
+  // ─── Selfie file upload for website (with face verification) ───
+  // On web the user may upload rather than shoot live, so we verify the image
+  // actually contains a face before accepting it as a selfie.
+  async function _verifyImageHasFace(imgEl) {
+    // Preferred: native FaceDetector (Chrome/Edge). Returns true/false.
+    try {
+      if ("FaceDetector" in window) {
+        const fd = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+        const faces = await fd.detect(imgEl);
+        return Array.isArray(faces) && faces.length > 0;
+      }
+    } catch (_) { /* fall through */ }
+    // Fallback: skin-tone heuristic — verifies a meaningful portion of the
+    // image looks like a face/skin (blocks screenshots, logos, documents).
+    try {
+      const c = document.createElement("canvas");
+      const w = 64, h = 64;
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d");
+      ctx.drawImage(imgEl, 0, 0, w, h);
+      const { data } = ctx.getImageData(0, 0, w, h);
+      let skin = 0, total = w * h;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        if (r > 95 && g > 40 && b > 20 && r > g && r > b &&
+            (Math.max(r, g, b) - Math.min(r, g, b)) > 15 && Math.abs(r - g) > 15) {
+          skin++;
+        }
+      }
+      const ratio = skin / total;
+      return ratio > 0.12 && ratio < 0.92; // face present, but not a solid skin-color block
+    } catch (_) {
+      return true; // can't verify — don't block signup
+    }
+  }
+
   const selfieFileInput = wizard.querySelector("[data-onboarding-selfie-file]");
   if (selfieFileInput) {
     selfieFileInput.addEventListener("change", () => {
       const file = selfieFileInput.files?.[0];
       if (!file) return;
+      const errBox = wizard.querySelector("[data-onboarding-error]");
+      const errTxt = wizard.querySelector("[data-onboarding-error-text]");
       const reader = new FileReader();
       reader.onload = (e) => {
-        selfieDataUrl = e.target.result;
-        if (selfieDataInput) selfieDataInput.value = selfieDataUrl;
-        if (selfiePreview) {
-          selfiePreview.src = selfieDataUrl;
-          selfiePreview.style.display = "block";
-        }
+        const url = e.target.result;
+        const probe = new Image();
+        probe.onload = async () => {
+          const hasFace = await _verifyImageHasFace(probe);
+          if (!hasFace) {
+            selfieDataUrl = "";
+            if (selfieDataInput) selfieDataInput.value = "";
+            if (selfiePreview) selfiePreview.style.display = "none";
+            selfieFileInput.value = "";
+            if (errBox && errTxt) {
+              errTxt.textContent = isTr
+                ? "Bu bir selfie gibi görünmüyor. Lütfen yüzünüzün net göründüğü bir fotoğraf yükleyin."
+                : "That doesn't look like a selfie. Please upload a photo where your face is clearly visible.";
+              errBox.hidden = false;
+            }
+            return;
+          }
+          if (errBox) errBox.hidden = true;
+          // Center-square crop for a proportional avatar
+          try {
+            const side = Math.min(probe.naturalWidth, probe.naturalHeight);
+            const sx = (probe.naturalWidth - side) / 2;
+            const sy = (probe.naturalHeight - side) / 2;
+            const cc = document.createElement("canvas");
+            cc.width = 512; cc.height = 512;
+            cc.getContext("2d").drawImage(probe, sx, sy, side, side, 0, 0, 512, 512);
+            selfieDataUrl = cc.toDataURL("image/jpeg", 0.85);
+          } catch (_) {
+            selfieDataUrl = url;
+          }
+          if (selfieDataInput) selfieDataInput.value = selfieDataUrl;
+          if (selfiePreview) {
+            selfiePreview.src = selfieDataUrl;
+            selfiePreview.style.display = "block";
+          }
+        };
+        probe.src = url;
       };
       reader.readAsDataURL(file);
     });

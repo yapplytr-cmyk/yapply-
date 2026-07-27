@@ -209,6 +209,24 @@ export async function fetchMembershipPlans() {
   ];
 }
 
+/** Fetch active one-time token packs. */
+export async function fetchTokenPacks() {
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/token_packs?active=eq.true&select=*&order=sort_order.asc`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (resp.ok) {
+      const rows = await resp.json();
+      if (Array.isArray(rows)) return rows;
+    }
+  } catch (_) {}
+  return [
+    { id: "pack-small", name: "Mini Pack", price_try: 349, tokens: 10 },
+    { id: "pack-medium", name: "Value Pack", price_try: 749, tokens: 25 },
+    { id: "pack-large", name: "Mega Pack", price_try: 1499, tokens: 60 },
+  ];
+}
+
 /** Fetch the signed-in user's membership (or null). */
 export async function fetchMyMembership(userId) {
   if (!userId) return null;
@@ -227,7 +245,7 @@ export async function fetchMyMembership(userId) {
 }
 
 /** Start a Stripe Checkout for a plan (web only — native app must use App Store IAP). */
-export async function startStripeCheckout(planId, userId, userEmail) {
+export async function startStripeCheckout(planId, userId, userEmail, packId = "") {
   const isNative = window.location.origin === "capacitor://localhost" ||
     (window.location.hostname === "localhost" && !window.location.port);
   if (isNative) {
@@ -238,7 +256,7 @@ export async function startStripeCheckout(planId, userId, userEmail) {
     const resp = await fetch("/api/billing/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId, userId, userEmail }),
+      body: JSON.stringify(packId ? { packId, userId, userEmail } : { planId, userId, userEmail }),
     });
     const data = await resp.json().catch(() => ({}));
     if (resp.ok && data?.url) {
