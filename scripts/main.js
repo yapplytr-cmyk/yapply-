@@ -470,7 +470,7 @@ function dismissSplashScreen() {
   if (!splash) return;
   // Wait for fly animation to finish (~2s) then fade out
   const elapsed = performance.now() - _splashStartTime;
-  const remaining = Math.max(0, 1900 - elapsed); // let the 2s animation nearly complete
+  const remaining = Math.max(0, 900 - elapsed); // shortened splash — snappier startup
   setTimeout(() => {
     splash.classList.add("app-splash--hidden");
     // Reveal the tab bar and app content underneath

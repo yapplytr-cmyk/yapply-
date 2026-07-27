@@ -10,3 +10,4 @@ backend/data/*.sqlite3
 node_modules/
 www/
 .fuse_hidden*
+_old_videos_to_delete/
