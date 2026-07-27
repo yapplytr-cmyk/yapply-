@@ -557,14 +557,12 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       const overlay = document.createElement("div");
       overlay.className = "yapply-step-check";
       overlay.innerHTML = `<div class="yapply-step-check__badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg></div>`;
-      const target = host || wizard;
-      const prevPos = target.style.position;
-      if (getComputedStyle(target).position === "static") target.style.position = "relative";
-      target.appendChild(overlay);
+      // Anchor to the viewport (fixed) so the tick lands in the blank space at the
+      // TOP of the screen and never overlaps the form fields/text.
+      document.body.appendChild(overlay);
       setTimeout(() => overlay.classList.add("yapply-step-check--leaving"), 340);
       setTimeout(() => {
         overlay.remove();
-        if (prevPos !== undefined) target.style.position = prevPos;
         if (typeof done === "function") done();
       }, 560);
     } catch (_) {
@@ -1185,6 +1183,17 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
           setDocumentAuthState(session);
         }
 
+        // ── Upload the verification selfie now that the account is authenticated ──
+        // (Real signups always take the email-verification path, so this — not the
+        //  direct-signup block above — is where a professional's selfie actually lands.)
+        if ((pendingRole === "developer" || selectedRole === "developer") && selfieDataUrl) {
+          try {
+            await _uploadSelfieAvatar(session?.user?.id || user?.id, selfieDataUrl);
+          } catch (avatarErr) {
+            console.warn("[yapply] selfie avatar upload (otp path) failed:", avatarErr?.message);
+          }
+        }
+
         // Verified — go to success
         showSuccessStep();
       } catch (err) {
@@ -1225,15 +1234,38 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
 
   // Uploads a base64 selfie to the Supabase `avatars` bucket and sets it as
   // the account's profile picture (profiles.avatar_url). Runs after signup.
+  // Reads the current authenticated access token from Supabase's stored session.
+  // Returns null (not the anon key) if there is no real user session yet.
+  function _readAuthToken() {
+    try {
+      const raw = localStorage.getItem("sb-sgoicvqgfydwfpttzgqu-auth-token");
+      if (raw) { const p = JSON.parse(raw); if (p?.access_token) return p.access_token; }
+    } catch (_) {}
+    return null;
+  }
+
+  // Waits briefly for the authenticated session token to be persisted after
+  // signup/verify (storage + profiles writes both require a real user JWT —
+  // the anon key is rejected by RLS, which is why earlier uploads silently died).
+  async function _waitForAuthToken(maxMs = 4000) {
+    const started = Date.now();
+    let t = _readAuthToken();
+    while (!t && Date.now() - started < maxMs) {
+      await new Promise((r) => setTimeout(r, 200));
+      t = _readAuthToken();
+    }
+    return t;
+  }
+
   async function _uploadSelfieAvatar(userId, dataUrl) {
     if (!userId || !dataUrl || !dataUrl.startsWith("data:")) return;
     const SUPA = "https://sgoicvqgfydwfpttzgqu.supabase.co";
     const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
-    let token = ANON;
-    try {
-      const raw = localStorage.getItem("sb-sgoicvqgfydwfpttzgqu-auth-token");
-      if (raw) { const p = JSON.parse(raw); if (p?.access_token) token = p.access_token; }
-    } catch (_) {}
+
+    // Storage insert + profile update are RLS-gated to the authenticated user,
+    // so we MUST have a real session token — never fall back to anon here.
+    const token = await _waitForAuthToken();
+    if (!token) throw new Error("no auth session for selfie upload");
 
     // dataURL -> Blob
     const [meta, b64] = dataUrl.split(",");
@@ -1249,15 +1281,22 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       headers: { "Content-Type": mime, apikey: ANON, Authorization: `Bearer ${token}`, "x-upsert": "true" },
       body: blob,
     });
-    if (!up.ok) throw new Error(`storage ${up.status}`);
+    if (!up.ok) {
+      const detail = await up.text().catch(() => "");
+      throw new Error(`storage ${up.status} ${detail.slice(0, 120)}`);
+    }
     const publicUrl = `${SUPA}/storage/v1/object/public/avatars/${path}`;
 
-    // Point the profile at the new avatar
-    await fetch(`${SUPA}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+    // Point the profile at the new avatar (fail loudly so we can see RLS issues)
+    const patch = await fetch(`${SUPA}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", apikey: ANON, Authorization: `Bearer ${token}`, Prefer: "return=minimal" },
       body: JSON.stringify({ avatar_url: publicUrl }),
     });
+    if (!patch.ok) {
+      const detail = await patch.text().catch(() => "");
+      throw new Error(`profiles patch ${patch.status} ${detail.slice(0, 120)}`);
+    }
 
     // Reflect immediately in the current session
     try {
@@ -1268,6 +1307,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         setAuthSession(sess);
       }
     } catch (_) {}
+    return publicUrl;
   }
 
   if (selfieStartBtn) {

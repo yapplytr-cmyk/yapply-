@@ -5,15 +5,50 @@
  * so the existing bid submission flow is completely untouched.
  */
 
+function _isNative() {
+  return window.location.origin === "capacitor://localhost" ||
+    (window.location.hostname === "localhost" && !window.location.port);
+}
+
 function haptic(kind) {
   try {
-    const isNative = window.location.origin === "capacitor://localhost" ||
-      (window.location.hostname === "localhost" && !window.location.port);
-    if (isNative && window.Capacitor?.Plugins?.Haptics) {
+    if (_isNative() && window.Capacitor?.Plugins?.Haptics) {
       if (kind === "success") window.Capacitor.Plugins.Haptics.notification({ type: "SUCCESS" });
       else window.Capacitor.Plugins.Haptics.impact({ style: kind === "medium" ? "MEDIUM" : "LIGHT" });
+    } else if (navigator.vibrate) {
+      // Web fallback so the wheel still "kicks" on Android / supported browsers.
+      navigator.vibrate(kind === "medium" ? 12 : 5);
     }
   } catch (_) {}
+}
+
+// Short WebAudio "tick" — the scroll-wheel click, no audio asset required.
+let _ac = null;
+function tickSound() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    _ac = _ac || new AC();
+    if (_ac.state === "suspended") _ac.resume();
+    const t = _ac.currentTime;
+    const o = _ac.createOscillator();
+    const g = _ac.createGain();
+    o.type = "square";
+    o.frequency.setValueAtTime(1500, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.028);
+    o.connect(g);
+    g.connect(_ac.destination);
+    o.start(t);
+    o.stop(t + 0.032);
+  } catch (_) {}
+}
+
+// One "detent" of feedback: haptic tick + audible click together.
+function detent() {
+  haptic("light");
+  tickSound();
 }
 
 /**
@@ -79,8 +114,10 @@ export function mountDial(mountEl, opts = {}, onChange) {
   function fitAmount(str) {
     const len = String(str).length;
     input.style.width = Math.max(2, len + 0.5) + "ch";
-    input.style.fontSize = len <= 4 ? "2.5rem" : len <= 6 ? "2rem" : len <= 8 ? "1.6rem" : "1.35rem";
+    input.style.fontSize = len <= 4 ? "1.85rem" : len <= 6 ? "1.5rem" : len <= 8 ? "1.2rem" : "1rem";
   }
+
+  let lastLit = -1;
 
   function render() {
     const frac = ((value - MIN) % PER_TURN) / PER_TURN;
@@ -104,10 +141,18 @@ export function mountDial(mountEl, opts = {}, onChange) {
   }
 
   function setValue(v, withHaptic) {
-    const before = Math.round(value);
     value = Math.min(MAX, Math.max(MIN, v));
     render();
-    if (withHaptic && Math.round(value) !== before) haptic("light");
+    // Fire one detent (haptic + click) each time the wheel crosses a graduation
+    // tick — this is what makes it feel like the NAUTICO scroll wheel.
+    if (withHaptic) {
+      const frac = ((value - MIN) % PER_TURN) / PER_TURN;
+      const lit = Math.round(frac * NTICKS);
+      if (lit !== lastLit) {
+        detent();
+        lastLit = lit;
+      }
+    }
     notify();
   }
 
