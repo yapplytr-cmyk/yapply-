@@ -440,6 +440,134 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
   let pendingPassword = "";
   let pendingRole = "";
 
+  /* ─── One-question-at-a-time pager for the account form (step 5) ───
+     Presentation-only: the underlying <form> and all its validation,
+     role toggles and camera logic stay untouched. We simply show one
+     field group per screen with Back / Continue controls. ─── */
+  let _pagerIndex = 0;
+  let _pagerGroups = [];
+
+  function _collectPagerGroups() {
+    const form = wizard.querySelector("[data-onboarding-form]");
+    if (!form) return [];
+    const groups = [];
+    const isVisible = (el) => {
+      for (let n = el; n && n !== form; n = n.parentElement) {
+        if (n.hidden) return false;
+      }
+      return true;
+    };
+    const fields = Array.from(form.querySelectorAll(".onboarding-field"));
+    const skip = new Set();
+    fields.forEach((field) => {
+      if (!isVisible(field) || skip.has(field)) return;
+      const input = field.querySelector("input, textarea, select");
+      const name = input?.getAttribute("name") || "";
+      if (input && input.disabled) return;
+      // Pair password + confirm on one screen
+      if (name === "password") {
+        const confirm = fields.find((f) => f.querySelector('[name="confirmPassword"]'));
+        if (confirm && isVisible(confirm)) {
+          skip.add(confirm);
+          groups.push([field, confirm]);
+          return;
+        }
+      }
+      if (name === "confirmPassword" && skip.has(field)) return;
+      groups.push([field]);
+    });
+    return groups;
+  }
+
+  function _renderPagerControls(form) {
+    let bar = form.querySelector("[data-onboarding-pager]");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.setAttribute("data-onboarding-pager", "");
+      bar.style.cssText = "display:grid;gap:10px;margin-top:6px";
+      bar.innerHTML = `
+        <div data-onboarding-pager-progress style="font-size:0.78rem;color:var(--text-dim);text-align:center;letter-spacing:0.06em"></div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button type="button" class="button button--secondary" data-onboarding-pager-back style="min-width:96px">${isTr ? "Geri" : "Back"}</button>
+          <button type="button" class="button button--primary" data-onboarding-pager-next style="min-width:140px">${isTr ? "Devam Et" : "Continue"}</button>
+        </div>
+      `;
+      const submitBtn = form.querySelector(".onboarding-submit-btn");
+      form.insertBefore(bar, submitBtn);
+      bar.querySelector("[data-onboarding-pager-back]").addEventListener("click", () => {
+        if (_pagerIndex > 0) { _pagerIndex -= 1; _showPagerGroup(); }
+      });
+      bar.querySelector("[data-onboarding-pager-next]").addEventListener("click", () => {
+        // Validate only the inputs on this screen before advancing
+        const group = _pagerGroups[_pagerIndex] || [];
+        for (const field of group) {
+          const inputs = field.querySelectorAll("input, textarea, select");
+          for (const input of inputs) {
+            if (input.willValidate && !input.checkValidity()) {
+              input.reportValidity();
+              return;
+            }
+          }
+        }
+        // Extra check: confirm password matches on the password screen
+        const pw = group.some((f) => f.querySelector('[name="password"]'))
+          ? wizard.querySelector('[data-onboarding-form] [name="password"]')
+          : null;
+        if (pw) {
+          const cpw = wizard.querySelector('[data-onboarding-form] [name="confirmPassword"]');
+          if (cpw && pw.value !== cpw.value) {
+            cpw.setCustomValidity(isTr ? "Şifreler eşleşmiyor" : "Passwords do not match");
+            cpw.reportValidity();
+            cpw.setCustomValidity("");
+            return;
+          }
+        }
+        if (_pagerIndex < _pagerGroups.length - 1) {
+          _pagerIndex += 1;
+          _showPagerGroup();
+        }
+      });
+    }
+    return bar;
+  }
+
+  function _showPagerGroup() {
+    const form = wizard.querySelector("[data-onboarding-form]");
+    if (!form || _pagerGroups.length === 0) return;
+    const bar = _renderPagerControls(form);
+    const submitBtn = form.querySelector(".onboarding-submit-btn");
+    const errorBox = form.querySelector("[data-onboarding-error]");
+
+    // Hide every field, show only the current group
+    const allFields = form.querySelectorAll(".onboarding-field");
+    allFields.forEach((f) => { f.style.display = "none"; });
+    const group = _pagerGroups[_pagerIndex] || [];
+    group.forEach((f) => { f.style.display = ""; });
+
+    const isLast = _pagerIndex >= _pagerGroups.length - 1;
+    const backBtn = bar.querySelector("[data-onboarding-pager-back]");
+    const nextBtn = bar.querySelector("[data-onboarding-pager-next]");
+    if (backBtn) backBtn.style.visibility = _pagerIndex === 0 ? "hidden" : "visible";
+    if (nextBtn) nextBtn.style.display = isLast ? "none" : "";
+    if (submitBtn) submitBtn.style.display = isLast ? "" : "none";
+    if (errorBox && !isLast) errorBox.hidden = true;
+
+    const progress = bar.querySelector("[data-onboarding-pager-progress]");
+    if (progress) progress.textContent = `${_pagerIndex + 1} / ${_pagerGroups.length}`;
+
+    // Focus the first input of the group for fast typing
+    const firstInput = group[0]?.querySelector("input, textarea, select");
+    if (firstInput && firstInput.type !== "file") {
+      setTimeout(() => { try { firstInput.focus({ preventScroll: true }); } catch (_) {} }, 250);
+    }
+  }
+
+  function _startFieldPager() {
+    _pagerGroups = _collectPagerGroups();
+    _pagerIndex = 0;
+    if (_pagerGroups.length > 0) _showPagerGroup();
+  }
+
   function goToStep(step) {
     // Hide all steps
     wizard.querySelectorAll("[data-onboarding-step]").forEach((el) => {
@@ -461,6 +589,11 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       dot.classList.toggle("onboarding-dot--done", dotStep < step);
     });
     currentStep = step;
+
+    // Account form presents its fields one at a time
+    if (step === 5) {
+      setTimeout(() => _startFieldPager(), 60);
+    }
   }
 
   // ─── Shared: show success step (step 7) ───
