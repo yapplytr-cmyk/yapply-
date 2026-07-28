@@ -5,6 +5,24 @@
 
 import { createButton, createSectionHeading } from "./primitives.js";
 
+/* ── Yapply token coin — small 3D orange spinning coin (replaces the 🪙 emoji) ── */
+function yapplyCoin(sizeEm = 1.15) {
+  return `<span class="yapply-coin" style="width:${sizeEm}em;height:${sizeEm}em" aria-hidden="true"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="yapplyCoinGrad" cx="37%" cy="30%" r="80%"><stop offset="0%" stop-color="#ffdca6"/><stop offset="45%" stop-color="#ff9d3c"/><stop offset="100%" stop-color="#df6a12"/></radialGradient></defs><circle cx="20" cy="20" r="18" fill="url(#yapplyCoinGrad)" stroke="#b8560f" stroke-width="2"/><circle cx="20" cy="20" r="13.5" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="1.3"/><text x="20" y="25.5" text-anchor="middle" font-size="15" font-weight="900" fill="#fff3e0" font-family="system-ui,-apple-system,sans-serif">₺</text></svg></span>`;
+}
+
+function _ensureCoinCss() {
+  if (document.getElementById("yapply-coin-css")) return;
+  const style = document.createElement("style");
+  style.id = "yapply-coin-css";
+  style.textContent = `
+    @keyframes yapplyCoinSpin { 0%{transform:rotateY(0deg)} 100%{transform:rotateY(360deg)} }
+    .yapply-coin { display:inline-block; vertical-align:-0.2em; perspective:80px; margin-right:2px; }
+    .yapply-coin svg { display:block; width:100%; height:100%; transform-style:preserve-3d; animation:yapplyCoinSpin 3.4s cubic-bezier(.55,.1,.45,.9) infinite; filter:drop-shadow(0 1px 2px rgba(180,80,10,0.45)); }
+    @media (prefers-reduced-motion: reduce) { .yapply-coin svg { animation:none; } }
+  `;
+  document.head.appendChild(style);
+}
+
 function getMembershipLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
 }
@@ -157,8 +175,6 @@ export function createDeveloperMembershipPage(content, session) {
         ${planCard("unlimited", false)}
       </div>
 
-      <p style="text-align:center;font-size:0.82rem;color:var(--text-dim);margin-bottom:2rem">${copy.contactSales}</p>
-
       <div style="text-align:center">
         ${createButton({ href: "./developer-dashboard.html", label: locale === "tr" ? "Dashboard'a Dön" : "Back to Dashboard", variant: "secondary" })}
       </div>
@@ -178,6 +194,7 @@ export function createDeveloperMembershipPage(content, session) {
 export async function initDeveloperMembershipPage(content) {
   const locale = getMembershipLocale(content);
   const isTr = locale === "tr";
+  _ensureCoinCss();
 
   let session = null;
   try {
@@ -215,7 +232,7 @@ export async function initDeveloperMembershipPage(content) {
       </div>
       <div>
         <span style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px">${isTr ? "Jeton Bakiyesi" : "Token Balance"}</span>
-        <strong style="font-size:1.4rem">🪙 ${status.balance}</strong>
+        <strong style="font-size:1.4rem">${yapplyCoin(1.3)} ${status.balance}</strong>
       </div>
       <div>
         <span style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px">${isTr ? "Aylık Ücretsiz Jeton" : "Free Tokens / Month"}</span>
@@ -245,7 +262,7 @@ export async function initDeveloperMembershipPage(content) {
           ${isPopular ? `<span style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent,#c9a84c);color:#111;font-size:0.72rem;font-weight:700;padding:4px 14px;border-radius:999px;white-space:nowrap">${isTr ? "En Popüler" : "Most Popular"}</span>` : ""}
           <div>
             <h3 style="font-size:1.15rem;margin:0 0 4px">${plan.name}</h3>
-            <p style="font-size:0.82rem;color:var(--text-muted)">🪙 ${plan.tokens_per_month} ${isTr ? "jeton / ay" : "tokens / month"}</p>
+            <p style="font-size:0.82rem;color:var(--text-muted)">${yapplyCoin()} ${plan.tokens_per_month} ${isTr ? "jeton / ay" : "tokens / month"}</p>
           </div>
           <div style="display:flex;align-items:baseline;gap:4px">
             <span style="font-size:2.2rem;font-weight:800;color:var(--text)">${Number(plan.price_try).toLocaleString(isTr ? "tr-TR" : "en-US")} TL</span>
@@ -275,7 +292,7 @@ export async function initDeveloperMembershipPage(content) {
         ${packs.map((pack) => `
           <article class="panel" style="padding:1.4rem;display:grid;gap:0.7rem;text-align:center">
             <strong style="font-size:1rem">${pack.name}</strong>
-            <span style="font-size:1.8rem;font-weight:800">🪙 ${pack.tokens}</span>
+            <span style="font-size:1.8rem;font-weight:800">${yapplyCoin(1.5)} ${pack.tokens}</span>
             <span style="font-size:1.05rem;color:var(--text-muted)">${Number(pack.price_try).toLocaleString(isTr ? "tr-TR" : "en-US")} TL</span>
             <button class="button button--primary" data-token-pack-select="${pack.id}">${isTr ? "Satın Al" : "Buy"}</button>
           </article>
@@ -318,7 +335,7 @@ export async function initDeveloperMembershipPage(content) {
             title: p.name || (isTr ? "Jeton Paketi" : "Token Pack"),
             priceLabel: `${nf(p.price_try || 0)} TL`,
             recurring: false,
-            lines: [`🪙 ${p.tokens || 0} ${isTr ? "jeton" : "tokens"}`, isTr ? "Tek seferlik ödeme" : "One-time payment"],
+            lines: [`${yapplyCoin()} ${p.tokens || 0} ${isTr ? "jeton" : "tokens"}`, isTr ? "Tek seferlik ödeme" : "One-time payment"],
           };
         } else {
           const p = (Array.isArray(plans) ? plans : []).find((x) => x.id === planId) || {};
@@ -327,7 +344,7 @@ export async function initDeveloperMembershipPage(content) {
             priceLabel: `${nf(p.price_try || 0)} TL${isTr ? " / ay" : " / mo"}`,
             recurring: true,
             lines: [
-              `🪙 ${p.tokens_per_month || 0} ${isTr ? "jeton / ay" : "tokens / month"}`,
+              `${yapplyCoin()} ${p.tokens_per_month || 0} ${isTr ? "jeton / ay" : "tokens / month"}`,
               isTr ? "Doğrulanmış rozet" : "Verified badge",
               isTr ? "Profesyonel ilan yayınlama" : "Publish professional listings",
               isTr ? "İstediğiniz zaman iptal" : "Cancel anytime",
@@ -431,7 +448,7 @@ async function renderCheckoutView(intent, details, isTr) {
       <div style="max-width:900px;margin:0 auto;padding-top:1rem">
         <button data-checkout-back class="button button--secondary" style="font-size:0.85rem;padding:0.45rem 0.9rem;margin-bottom:1.25rem">← ${isTr ? "Geri" : "Back"}</button>
         <h1 style="font-size:1.6rem;margin:0 0 0.35rem">${isTr ? "Ödeme" : "Checkout"}</h1>
-        <p style="margin:0 0 1.75rem;color:var(--text-dim,#8b8677);font-size:0.9rem">${isTr ? "Ödemeniz Yapply içinde güvenli şekilde tamamlanır." : "Complete your payment securely inside Yapply."}</p>
+        <p style="margin:0 0 1.75rem;color:var(--text-dim,#8b8677);font-size:0.9rem">${isTr ? "Siparişinizi tamamlayın." : "Complete your order."}</p>
         <div style="display:grid;grid-template-columns:1fr;gap:1.25rem" data-checkout-grid>
           <article class="panel" style="padding:1.5rem;display:grid;gap:0.9rem;align-content:start">
             <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim,#8b8677)">${isTr ? "Sipariş Özeti" : "Order Summary"}</span>
@@ -446,7 +463,7 @@ async function renderCheckoutView(intent, details, isTr) {
             <div data-payment-element style="min-height:44px"></div>
             <div data-pay-error style="display:none;color:#ff6b6b;font-size:0.82rem"></div>
             <button data-pay-submit class="button button--primary" style="width:100%;margin-top:6px">${isTr ? `Öde — ${details.priceLabel}` : `Pay ${details.priceLabel}`}</button>
-            <p style="margin:0;text-align:center;font-size:0.78rem;color:var(--text-dim,#8b8677)">🔒 ${isTr ? "Stripe ile şifrelenmiş ve güvenli" : "Encrypted & processed securely by Stripe"}</p>
+            <p style="margin:0;text-align:center;font-size:0.78rem;color:var(--text-dim,#8b8677)">🔒 ${isTr ? "Güvenli ödeme" : "Secure payment"}</p>
           </article>
         </div>
       </div>`;
