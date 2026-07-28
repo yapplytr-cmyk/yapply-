@@ -11,7 +11,9 @@ function yapplyCoin(sizeEm = 1.2) {
   return `<span class="yapply-coin" style="width:${sizeEm}em;height:${sizeEm}em" aria-hidden="true">${_yapplyCoinSvg()}</span>`;
 }
 function _yapplyCoinSvg() {
-  return `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="14.5" stroke-width="2.1"/><circle cx="20" cy="20" r="9.3" stroke-width="1.6" opacity="0.8"/><path d="M30.5 30.5 A14.5 14.5 0 0 1 9.5 30.5" stroke-width="3.6"/><path d="M11.6 15.2 A14.5 14.5 0 0 1 16 10.8" stroke-width="1.3" opacity="0.5"/></svg>`;
+  // Coin viewed at an angle: a tilted face ellipse sitting on a darker edge
+  // band (its thickness) → a 3D, drawn, yellow coin.
+  return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="21.5" rx="15" ry="7.4" fill="#c98a1c"/><ellipse cx="20" cy="17" rx="15" ry="7.4" fill="#ffd54a" stroke="#a9761a" stroke-width="1.2"/><ellipse cx="20" cy="17" rx="9.8" ry="4.4" fill="none" stroke="#e2a52a" stroke-width="1.1"/><ellipse cx="15.3" cy="14.7" rx="3.7" ry="1.6" fill="#fff4c6" opacity="0.75"/></svg>`;
 }
 
 function _ensureCoinCss() {

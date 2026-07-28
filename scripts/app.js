@@ -94,7 +94,7 @@ function loadDeveloperDashboardApi() {
 }
 
 function loadDeveloperMembershipApi() {
-  return loadComponentModule("developer-membership-page", () => import("./components/developerMembershipPage.js?v=20260728-coin4"));
+  return loadComponentModule("developer-membership-page", () => import("./components/developerMembershipPage.js?v=20260728-coin5"));
 }
 
 function loadDeveloperProfileApi() {

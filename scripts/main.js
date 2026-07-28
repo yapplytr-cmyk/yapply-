@@ -2129,7 +2129,7 @@ function setupMarketplaceBidForm(content) {
       try {
         const { getBidCostForListing } = await import("./core/tokenStore.js?v=20260727");
         const cost = await getBidCostForListing({ budget: costBadge.dataset.listingBudget || "" });
-        const coin = `<svg viewBox="0 0 40 40" width="1.15em" height="1.15em" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.2em;margin-right:5px"><circle cx="20" cy="20" r="14.5" stroke-width="2.1"/><circle cx="20" cy="20" r="9.3" stroke-width="1.6" opacity="0.8"/><path d="M30.5 30.5 A14.5 14.5 0 0 1 9.5 30.5" stroke-width="3.6"/><path d="M11.6 15.2 A14.5 14.5 0 0 1 16 10.8" stroke-width="1.3" opacity="0.5"/></svg>`;
+        const coin = `<svg viewBox="0 0 40 40" width="1.2em" height="1.2em" style="vertical-align:-0.22em;margin-right:5px"><ellipse cx="20" cy="21.5" rx="15" ry="7.4" fill="#c98a1c"/><ellipse cx="20" cy="17" rx="15" ry="7.4" fill="#ffd54a" stroke="#a9761a" stroke-width="1.2"/><ellipse cx="20" cy="17" rx="9.8" ry="4.4" fill="none" stroke="#e2a52a" stroke-width="1.1"/><ellipse cx="15.3" cy="14.7" rx="3.7" ry="1.6" fill="#fff4c6" opacity="0.75"/></svg>`;
         costBadge.innerHTML = isTurkish
           ? `${coin}Bu teklif <strong>${cost} jeton</strong> harcar`
           : `${coin}This bid costs <strong>${cost} token${cost === 1 ? "" : "s"}</strong>`;
@@ -3553,7 +3553,7 @@ function bindInteractions(content) {
     try { document.getElementById("yapply-notification-bell")?.remove(); } catch (_) {}
     setupAccountSettings(content);
   } else if (page === "developer-membership") {
-    import("./components/developerMembershipPage.js?v=20260728-coin4").then((m) => {
+    import("./components/developerMembershipPage.js?v=20260728-coin5").then((m) => {
       if (m.initDeveloperMembershipPage) m.initDeveloperMembershipPage(content);
     }).catch(() => {});
   } else if (page === "marketplace-submission") {
@@ -4727,7 +4727,7 @@ async function renderPage(localeOverride) {
     const _preloadMap = {
       "open-marketplace": () => import("./components/openMarketplacePage.js?v=20260325"),
       "developer-dashboard": () => import("./components/developerDashboardPage.js"),
-      "developer-membership": () => import("./components/developerMembershipPage.js?v=20260728-coin4"),
+      "developer-membership": () => import("./components/developerMembershipPage.js?v=20260728-coin5"),
       "client-dashboard": () => import("./components/clientDashboardPage.js"),
       "client-bids": () => import("./components/clientBidsPage.js"),
       "marketplace-listing-detail": () => import("./components/marketplaceListingDetailPage.js"),
