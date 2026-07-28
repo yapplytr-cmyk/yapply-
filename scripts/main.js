@@ -2096,7 +2096,7 @@ function setupMarketplaceBidForm(content) {
       try {
         const { getBidCostForListing } = await import("./core/tokenStore.js?v=20260727");
         const cost = await getBidCostForListing({ budget: costBadge.dataset.listingBudget || "" });
-        const coin = `<svg viewBox="0 0 24 24" width="1.05em" height="1.05em" style="vertical-align:-0.16em;margin-right:4px"><circle cx="12" cy="12" r="9.5" fill="#f2903a" stroke="#c96a18" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#ffd9a8" stroke-width="1.1"/><text x="12" y="15.7" text-anchor="middle" font-size="8.5" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">₺</text></svg>`;
+        const coin = `<svg viewBox="0 0 40 40" width="1.1em" height="1.1em" style="vertical-align:-0.18em;margin-right:5px"><defs><radialGradient id="ycFaceBid" cx="36%" cy="31%" r="78%"><stop offset="0%" stop-color="#f4e6c6"/><stop offset="52%" stop-color="#dcc283"/><stop offset="100%" stop-color="#b6924c"/></radialGradient></defs><circle cx="20" cy="20" r="18.5" fill="#9c7d3e"/><circle cx="20" cy="20" r="16.5" fill="url(#ycFaceBid)"/><circle cx="20" cy="20" r="12.8" fill="none" stroke="#fff" stroke-opacity="0.28" stroke-width="1"/><ellipse cx="14.5" cy="13" rx="6" ry="3.4" fill="#fff" opacity="0.30"/></svg>`;
         costBadge.innerHTML = isTurkish
           ? `${coin}Bu teklif <strong>${cost} jeton</strong> harcar`
           : `${coin}This bid costs <strong>${cost} token${cost === 1 ? "" : "s"}</strong>`;
@@ -3520,7 +3520,7 @@ function bindInteractions(content) {
     try { document.getElementById("yapply-notification-bell")?.remove(); } catch (_) {}
     setupAccountSettings(content);
   } else if (page === "developer-membership") {
-    import("./components/developerMembershipPage.js?v=20260728-coin2").then((m) => {
+    import("./components/developerMembershipPage.js?v=20260728-coin3").then((m) => {
       if (m.initDeveloperMembershipPage) m.initDeveloperMembershipPage(content);
     }).catch(() => {});
   } else if (page === "marketplace-submission") {
@@ -4694,7 +4694,7 @@ async function renderPage(localeOverride) {
     const _preloadMap = {
       "open-marketplace": () => import("./components/openMarketplacePage.js?v=20260325"),
       "developer-dashboard": () => import("./components/developerDashboardPage.js"),
-      "developer-membership": () => import("./components/developerMembershipPage.js?v=20260728-coin2"),
+      "developer-membership": () => import("./components/developerMembershipPage.js?v=20260728-coin3"),
       "client-dashboard": () => import("./components/clientDashboardPage.js"),
       "client-bids": () => import("./components/clientBidsPage.js"),
       "marketplace-listing-detail": () => import("./components/marketplaceListingDetailPage.js"),

@@ -5,9 +5,10 @@
 
 import { createButton, createSectionHeading } from "./primitives.js";
 
-/* ── Yapply token coin — one simple flat orange coin graphic, used everywhere ── */
-function yapplyCoin(sizeEm = 1.1) {
-  return `<span class="yapply-coin" style="width:${sizeEm}em;height:${sizeEm}em" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9.5" fill="#f2903a" stroke="#c96a18" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#ffd9a8" stroke-width="1.1"/><text x="12" y="15.7" text-anchor="middle" font-size="8.5" font-weight="800" fill="#fff" font-family="system-ui,-apple-system,sans-serif">₺</text></svg></span>`;
+/* ── Yapply token coin — one shaded 3D metallic coin, no symbol, gentle shine.
+      Used everywhere so every jeton looks identical. ── */
+function yapplyCoin(sizeEm = 1.15) {
+  return `<span class="yapply-coin" style="width:${sizeEm}em;height:${sizeEm}em" aria-hidden="true"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ycFace" cx="36%" cy="31%" r="78%"><stop offset="0%" stop-color="#f4e6c6"/><stop offset="52%" stop-color="#dcc283"/><stop offset="100%" stop-color="#b6924c"/></radialGradient></defs><circle cx="20" cy="20" r="18.5" fill="#9c7d3e"/><circle cx="20" cy="20" r="16.5" fill="url(#ycFace)"/><circle cx="20" cy="20" r="12.8" fill="none" stroke="#fff" stroke-opacity="0.28" stroke-width="1"/><ellipse cx="14.5" cy="13" rx="6" ry="3.4" fill="#fff" opacity="0.30"/></svg></span>`;
 }
 
 function _ensureCoinCss() {
@@ -15,8 +16,14 @@ function _ensureCoinCss() {
   const style = document.createElement("style");
   style.id = "yapply-coin-css";
   style.textContent = `
-    .yapply-coin { display:inline-block; vertical-align:-0.16em; margin-right:3px; }
+    .yapply-coin { position:relative; display:inline-block; vertical-align:-0.18em; margin-right:3px;
+      border-radius:50%; overflow:hidden; }
     .yapply-coin svg { display:block; width:100%; height:100%; }
+    .yapply-coin::after { content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none;
+      background:linear-gradient(115deg, transparent 42%, rgba(255,255,255,0.55) 50%, transparent 58%);
+      transform:translateX(-130%); animation: yapplyCoinShine 5s ease-in-out infinite; }
+    @keyframes yapplyCoinShine { 0%,72%{transform:translateX(-130%)} 88%,100%{transform:translateX(130%)} }
+    @media (prefers-reduced-motion: reduce) { .yapply-coin::after { animation:none; opacity:0; } }
   `;
   document.head.appendChild(style);
 }
