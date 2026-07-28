@@ -883,7 +883,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       // Show feedback
       const feedback = wizard.querySelector("[data-onboarding-feedback]");
       if (feedback) {
-        feedback.textContent = isTr ? "Harika seçim 😎" : "Good choice 😎";
+        feedback.textContent = isTr ? "Harika seçim" : "Good choice";
         feedback.hidden = false;
         feedback.classList.add("onboarding-feedback--show");
       }

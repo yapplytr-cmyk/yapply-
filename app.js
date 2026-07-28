@@ -1100,14 +1100,14 @@ const MARKET = {
 };
 
 const MAP_SPOTS = {
-  ilica: { emoji: "🌊", panX: "-5%", panY: "1%", zoom: 1.08, x: 76, y: 34, label: "Ilıca", labelEn: "Ilica" },
-  alacati: { emoji: "🌬️", panX: "1%", panY: "-2%", zoom: 1.1, x: 66, y: 46, label: "Alaçatı", labelEn: "Alacati" },
-  ovacik: { emoji: "🌿", panX: "4%", panY: "-2%", zoom: 1.08, x: 52, y: 57, label: "Ovacık", labelEn: "Ovacik" },
-  dalyan: { emoji: "⚓", panX: "-10%", panY: "-2%", zoom: 1.09, x: 26, y: 27, label: "Dalyan", labelEn: "Dalyan" },
-  reisdere: { emoji: "♨️", panX: "5%", panY: "-5%", zoom: 1.08, x: 82, y: 52, label: "Reisdere / Şifne", labelEn: "Reisdere / Sifne" },
-  ciftlik: { emoji: "🏖️", panX: "0%", panY: "-9%", zoom: 1.1, x: 36, y: 72, label: "Çiftlik", labelEn: "Ciftlik" },
-  "alacati-port": { emoji: "🏄", panX: "1%", panY: "0%", zoom: 1.14, x: 60, y: 56, label: "Alaçatı Port", labelEn: "Alacati Port" },
-  "cesme-marina": { emoji: "🛥️", panX: "-11%", panY: "2%", zoom: 1.12, x: 15, y: 39, label: "Çeşme Marina", labelEn: "Cesme Marina" }
+  ilica: { emoji: "", panX: "-5%", panY: "1%", zoom: 1.08, x: 76, y: 34, label: "Ilıca", labelEn: "Ilica" },
+  alacati: { emoji: "", panX: "1%", panY: "-2%", zoom: 1.1, x: 66, y: 46, label: "Alaçatı", labelEn: "Alacati" },
+  ovacik: { emoji: "", panX: "4%", panY: "-2%", zoom: 1.08, x: 52, y: 57, label: "Ovacık", labelEn: "Ovacik" },
+  dalyan: { emoji: "", panX: "-10%", panY: "-2%", zoom: 1.09, x: 26, y: 27, label: "Dalyan", labelEn: "Dalyan" },
+  reisdere: { emoji: "", panX: "5%", panY: "-5%", zoom: 1.08, x: 82, y: 52, label: "Reisdere / Şifne", labelEn: "Reisdere / Sifne" },
+  ciftlik: { emoji: "", panX: "0%", panY: "-9%", zoom: 1.1, x: 36, y: 72, label: "Çiftlik", labelEn: "Ciftlik" },
+  "alacati-port": { emoji: "", panX: "1%", panY: "0%", zoom: 1.14, x: 60, y: 56, label: "Alaçatı Port", labelEn: "Alacati Port" },
+  "cesme-marina": { emoji: "", panX: "-11%", panY: "2%", zoom: 1.12, x: 15, y: 39, label: "Çeşme Marina", labelEn: "Cesme Marina" }
 };
 
 function t(path, replacements = {}) {

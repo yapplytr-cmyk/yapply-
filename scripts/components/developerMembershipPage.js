@@ -447,12 +447,12 @@ async function renderCheckoutView(intent, details, isTr) {
     if (!shell) return { ok: false, message: "Page container not found" };
 
     const featureLines = (details.lines || [])
-      .map((l) => `<li style="display:flex;align-items:center;gap:8px;font-size:0.9rem;color:var(--text-muted,#b3ada0);margin:0"><span style="color:var(--accent,#c9a84c)">✓</span> ${l}</li>`)
+      .map((l) => `<li style="display:flex;align-items:center;gap:8px;font-size:0.9rem;color:var(--text-muted,#b3ada0);margin:0"><span style="color:var(--accent,#c9a84c);display:inline-flex;flex-shrink:0"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span> ${l}</li>`)
       .join("");
 
     shell.innerHTML = `
       <div style="max-width:900px;margin:0 auto;padding-top:1rem">
-        <button data-checkout-back class="button button--secondary" style="font-size:0.85rem;padding:0.45rem 0.9rem;margin-bottom:1.25rem">← ${isTr ? "Geri" : "Back"}</button>
+        <button data-checkout-back class="button button--secondary" style="font-size:0.85rem;padding:0.45rem 0.9rem;margin-bottom:1.25rem;display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>${isTr ? "Geri" : "Back"}</button>
         <h1 style="font-size:1.6rem;margin:0 0 0.35rem">${isTr ? "Ödeme" : "Checkout"}</h1>
         <p style="margin:0 0 1.75rem;color:var(--text-dim,#8b8677);font-size:0.9rem">${isTr ? "Siparişinizi tamamlayın." : "Complete your order."}</p>
         <div style="display:grid;grid-template-columns:1fr;gap:1.25rem" data-checkout-grid>
@@ -469,7 +469,7 @@ async function renderCheckoutView(intent, details, isTr) {
             <div data-payment-element style="min-height:44px"></div>
             <div data-pay-error style="display:none;color:#ff6b6b;font-size:0.82rem"></div>
             <button data-pay-submit class="button button--primary" style="width:100%;margin-top:6px">${isTr ? `Öde — ${details.priceLabel}` : `Pay ${details.priceLabel}`}</button>
-            <p style="margin:0;text-align:center;font-size:0.78rem;color:var(--text-dim,#8b8677)">🔒 ${isTr ? "Güvenli ödeme" : "Secure payment"}</p>
+            <p style="margin:0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.78rem;color:var(--text-dim,#8b8677)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>${isTr ? "Güvenli ödeme" : "Secure payment"}</p>
           </article>
         </div>
       </div>`;

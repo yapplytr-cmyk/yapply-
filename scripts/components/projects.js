@@ -70,7 +70,7 @@ export function createProjects(content) {
                 <span>${project.ctaLabel || content.projects.viewLabel}</span>
                 <small>${project.ctaHint || content.projects.ctaHint}</small>
               </div>
-              <span class="project-card__arrow" aria-hidden="true">↗</span>
+              <span class="project-card__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
             </div>
           </div>
         </a>

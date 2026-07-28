@@ -97,7 +97,7 @@ function createReviewsSection(content, reviews, locale) {
         <h3 style="margin:0;flex:1;min-width:0">${labels.title} (${reviews.length})</h3>
         <button class="button button--secondary" type="button" data-dev-profile-toggle-reviews style="font-size:0.78rem;padding:0.4rem 0.85rem;white-space:nowrap;flex-shrink:0">
           <span data-dev-profile-toggle-reviews-label>${labels.viewAll}</span>
-          <span style="margin-left:4px;display:inline-block;transition:transform 200ms" data-dev-profile-toggle-arrow>▼</span>
+          <span style="margin-left:4px;display:inline-flex;align-items:center;transition:transform 200ms" data-dev-profile-toggle-arrow><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
         </button>
       </div>
       <div class="dev-profile-reviews-list" data-dev-profile-reviews-list hidden>

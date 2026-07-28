@@ -1060,7 +1060,7 @@ export const translations = {
       },
       passwordPlaceholder: "Enter a new password",
       changePasswordLabel: "Change your password",
-      passwordUpdatedSuccess: "✓ Password updated successfully",
+      passwordUpdatedSuccess: "Password updated successfully",
       passwordHint: "Leave this blank if you do not want to change your password.",
       passwordVisibility: {
         show: "Show password",
@@ -3893,7 +3893,7 @@ export const translations = {
       },
       passwordPlaceholder: "Yeni bir sifre girin",
       changePasswordLabel: "Sifrenizi degistirin",
-      passwordUpdatedSuccess: "✓ Sifreniz basariyla guncellendi",
+      passwordUpdatedSuccess: "Sifreniz basariyla guncellendi",
       passwordHint: "Sifrenizi degistirmek istemiyorsaniz bu alani bos birakin.",
       passwordVisibility: {
         show: "Sifreyi goster",

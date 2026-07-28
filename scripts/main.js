@@ -700,7 +700,10 @@ function showStatusToast(variant, message) {
   if (existing) existing.remove();
   const el = document.createElement("div");
   el.className = `yapply-status-toast yapply-status-toast--${variant}`;
-  el.innerHTML = `<span class="yapply-status-toast__icon">${variant === "success" ? "✓" : "⏸"}</span><span>${message}</span>`;
+  const icon = variant === "success"
+    ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>`;
+  el.innerHTML = `<span class="yapply-status-toast__icon">${icon}</span><span>${message}</span>`;
   document.body.appendChild(el);
   el.addEventListener("animationend", (e) => {
     if (e.animationName === "yapplyToastOut") el.remove();
@@ -1358,12 +1361,14 @@ function setupAuthEntryForms(content) {
         setStatus("success");
 
         if (currentPage === "create-account") {
-          const redirectTarget = user.role === "developer" ? "./open-marketplace.html?tab=developer" : "./open-marketplace.html?tab=client";
+          // Everyone (clients and professionals) lands on client listings —
+          // professionals browse client projects to bid on.
+          const redirectTarget = "./open-marketplace.html?tab=client";
           window.setTimeout(() => {
             navigateTo(redirectTarget);
           }, 220);
         } else if (currentPage === "login") {
-          const redirectTarget = user.role === "developer" ? "./open-marketplace.html?tab=developer" : "./open-marketplace.html?tab=client";
+          const redirectTarget = "./open-marketplace.html?tab=client";
           window.setTimeout(() => {
             navigateTo(redirectTarget);
           }, 180);
