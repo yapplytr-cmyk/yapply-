@@ -227,13 +227,39 @@ function createBidCard(bid, content) {
 
 function createWonBidCard(bid, content) {
   const locale = getDeveloperDashboardLocale(content);
+  const isTr = locale === "tr";
   const listingHref = getMarketplaceListingHref("client", bid.listing?.id || bid.listingId || "");
-  const contact = bid.clientContact || {};
-  const clientName = contact.name || content.fallback;
-  const clientEmail = contact.email || content.fallback;
-  const clientPhone = contact.phone || content.fallback;
-  const wonLabel = locale === "tr" ? "Kazanılan Teklif" : "Won Bid";
+  // Client contact comes from the accepted listing's contact block. Only WON
+  // bids appear here, so the client's number is revealed to the professional
+  // only after the client accepts — never to bidders who didn't win.
+  const contact = bid.clientContact || bid.listing?.contact || {};
+  const clientName = contact.name || contact.fullName || bid.listing?.ownerEmail || content.fallback;
+  const clientEmail = contact.email || bid.listing?.ownerEmail || content.fallback;
+  const clientPhoneRaw = (contact.phone || "").toString().trim();
+  const clientPhone = clientPhoneRaw || content.fallback;
+  const wonLabel = isTr ? "Kazanılan Teklif" : "Won Bid";
   const dateLabel = formatDashboardDate(bid.createdAt, locale, content.fallback);
+
+  // Normalise the phone for tel: and WhatsApp (Turkish numbers → +90).
+  const digits = clientPhoneRaw.replace(/[^\d]/g, "");
+  let waDigits = digits;
+  if (waDigits.startsWith("00")) waDigits = waDigits.slice(2);
+  else if (waDigits.startsWith("0")) waDigits = "90" + waDigits.slice(1);
+  else if (waDigits.length === 10) waDigits = "90" + waDigits;
+  const telHref = "tel:" + (clientPhoneRaw.startsWith("+") ? "+" : "") + digits;
+  const phoneIcon = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+
+  const contactBanner = clientPhoneRaw ? `
+    <div class="won-bid-contact" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:0.9rem 1rem;background:var(--gold-soft,rgba(201,168,76,0.12));border-top:1px solid rgba(201,168,76,0.25)">
+      <div style="flex:1 1 160px;min-width:0">
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim,#8f8a7d)">${isTr ? "Müşteriyle iletişime geçin" : "Contact the client"}</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text,#f4f0e8)">${clientName}</div>
+        <div style="font-size:0.9rem;color:var(--text-muted,#b3ada0)">${clientPhoneRaw}</div>
+      </div>
+      <a href="${telHref}" class="button button--primary" style="padding:8px 16px;font-size:0.85rem;display:inline-flex;align-items:center;gap:6px">${phoneIcon} ${isTr ? "Ara" : "Call"}</a>
+      <a href="https://wa.me/${waDigits}" target="_blank" rel="noopener" class="button button--secondary" style="padding:8px 16px;font-size:0.85rem">WhatsApp</a>
+    </div>
+  ` : "";
 
   return `
     <article class="detail-list-card marketplace-bid-accordion panel" data-bid-item>
@@ -242,6 +268,7 @@ function createWonBidCard(bid, content) {
         <span class="dev-bid-row__status dev-bid-row__status--won">${wonLabel}</span>
         <span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
       </button>
+      ${contactBanner}
       <div class="marketplace-bid-detail" data-bid-panel hidden>
         <div class="project-detail-card__facts developer-dashboard-bid-card__facts">
           <div>
