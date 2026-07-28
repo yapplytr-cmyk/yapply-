@@ -135,7 +135,7 @@ export const translations = {
       ariaLabel: "Primary navigation",
       brandHref: "./index.html",
       links: [
-        { label: "How it works", href: "#how-it-works" },
+        { label: "How it works", href: "./index.html#how-it-works" },
         { label: "Open Marketplace", href: "./open-marketplace.html" },
       ],
       cta: "Start My Project",
@@ -2722,7 +2722,7 @@ export const translations = {
         {
           title: "Platform",
           links: [
-            { label: "How it works", href: "#how-it-works" },
+            { label: "How it works", href: "./index.html#how-it-works" },
             { label: "Open Marketplace", href: "./open-marketplace.html" },
             { label: "For professionals", href: "./professionals.html" },
           ],
@@ -2968,7 +2968,7 @@ export const translations = {
       ariaLabel: "Ana gezinme",
       brandHref: "./index.html",
       links: [
-        { label: "Nasıl çalışır", href: "#how-it-works" },
+        { label: "Nasıl çalışır", href: "./index.html#how-it-works" },
         { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
       ],
       cta: "Projemi Başlat",
@@ -5553,7 +5553,7 @@ export const translations = {
         {
           title: "Platform",
           links: [
-            { label: "Nasıl çalışır", href: "#how-it-works" },
+            { label: "Nasıl çalışır", href: "./index.html#how-it-works" },
             { label: "Açık Pazaryeri", href: "./open-marketplace.html" },
             { label: "Profesyoneller için", href: "./professionals.html" },
           ],
