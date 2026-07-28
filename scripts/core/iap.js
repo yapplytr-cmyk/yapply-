@@ -18,7 +18,7 @@
 // and is safe to ship inside the app. Get it from:
 //   RevenueCat dashboard → Project settings → API keys → Apple App Store (public key).
 // You can also set window.__YAPPLY_RC_KEY at runtime to override this.
-const REVENUECAT_IOS_API_KEY = "appl_REPLACE_WITH_YOUR_REVENUECAT_KEY";
+const REVENUECAT_IOS_API_KEY = "appl_dfvDhdAZqhkUufJrbyMQPjUDvGV";
 
 const MEMBERSHIP_PREFIX = "com.yapply.app.membership.";
 const TOKENS_PREFIX = "com.yapply.app.tokens.";
