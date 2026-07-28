@@ -22,7 +22,7 @@ import {
   updateDeveloperDashboardListing,
 } from "./core/marketplaceStore.js";
 import { applyTheme, clearAuthSession, getAuthSession, getLocale, getTheme, setAuthSession, setLocale, toggleTheme } from "./core/state.js";
-import { preWarmSupabaseClient } from "./core/supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { preWarmSupabaseClient } from "./core/supabaseClient.js";
 
 /* ── Native app detection ───────────────────────── */
 function _isNativeApp() {
@@ -326,7 +326,7 @@ let tabBarApiPromise = null;
 /* ── Eagerly preload critical modules so they're ready when renderPage runs ─── */
 appApiPromise = import("./app.js").catch(() => null);
 i18nApiPromise = import("./core/i18n.js").catch(() => null);
-authApiPromise = import("./core/auth.js?v=20260728-reset").catch(() => null);
+authApiPromise = import("./core/auth.js").catch(() => null);
 if (IS_NATIVE_APP) tabBarApiPromise = import("./components/tabBar.js").catch(() => null);
 
 function getLoadingCopy(locale = "tr") {
@@ -444,7 +444,7 @@ function renderBootFallback(appRoot, error) {
 
 async function loadAuthApi() {
   if (!authApiPromise) {
-    authApiPromise = import("./core/auth.js?v=20260728-reset").catch(() => null);
+    authApiPromise = import("./core/auth.js").catch(() => null);
   }
 
   return authApiPromise;
@@ -1183,35 +1183,45 @@ function setupAuthEntryForms(content) {
       return;
     }
 
-    // ── Forgot password: email the user a reset link ──
+    // ── Forgot password: reveal an inline in-app reset form (no native popup) ──
     const forgotBtn = form.querySelector("[data-forgot-password]");
+    const forgotInline = form.querySelector("[data-forgot-inline]");
+    const forgotEmail = form.querySelector("[data-forgot-email]");
+    const forgotSend = form.querySelector("[data-forgot-send]");
     const forgotMsg = form.querySelector("[data-forgot-msg]");
-    if (forgotBtn && !forgotBtn.dataset.wired) {
+    if (forgotBtn && forgotInline && !forgotBtn.dataset.wired) {
       forgotBtn.dataset.wired = "1";
-      forgotBtn.addEventListener("click", async () => {
-        const isTr = document.documentElement.lang === "tr";
-        const emailInput = form.querySelector('input[name="email"]');
-        let email = (emailInput?.value || "").trim();
-        if (!email) {
-          email = (window.prompt(isTr ? "Şifre sıfırlama bağlantısı için e-posta adresinizi girin:" : "Enter your email to get a reset link:") || "").trim();
+      const tr = () => document.documentElement.lang === "tr";
+      const show = (msg, ok) => {
+        if (!forgotMsg) return;
+        forgotMsg.hidden = false;
+        forgotMsg.style.color = ok ? "#3fbf7f" : "#ff6b6b";
+        forgotMsg.textContent = msg;
+      };
+      forgotBtn.addEventListener("click", () => {
+        forgotInline.hidden = !forgotInline.hidden;
+        if (!forgotInline.hidden) {
+          const loginEmail = form.querySelector('input[name="email"]')?.value?.trim();
+          if (loginEmail && forgotEmail && !forgotEmail.value) forgotEmail.value = loginEmail;
+          try { forgotEmail?.focus(); } catch (_) {}
         }
-        if (!email) return;
-        const show = (msg, ok) => {
-          if (!forgotMsg) return;
-          forgotMsg.hidden = false;
-          forgotMsg.style.color = ok ? "#3fbf7f" : "#ff6b6b";
-          forgotMsg.textContent = msg;
-        };
-        forgotBtn.disabled = true;
-        show(isTr ? "Gönderiliyor…" : "Sending…", true);
+      });
+      forgotSend?.addEventListener("click", async () => {
+        const email = (forgotEmail?.value || "").trim();
+        if (!email || !email.includes("@")) {
+          show(tr() ? "Lütfen geçerli bir e-posta girin." : "Please enter a valid email.", false);
+          return;
+        }
+        forgotSend.disabled = true;
+        show(tr() ? "Gönderiliyor…" : "Sending…", true);
         try {
           const authApi = await loadAuthApi();
           await authApi.requestPasswordReset(email);
-          show(isTr ? "Sıfırlama bağlantısı e-postanıza gönderildi. Gelen kutunuzu kontrol edin." : "A reset link has been sent to your email. Check your inbox.", true);
+          show(tr() ? "Sıfırlama bağlantısı e-postanıza gönderildi. Gelen kutunuzu kontrol edin." : "A reset link has been sent to your email. Check your inbox.", true);
         } catch (err) {
-          show(err?.message || (isTr ? "Bağlantı gönderilemedi. Lütfen tekrar deneyin." : "Could not send the reset link. Please try again."), false);
+          show(err?.message || (tr() ? "Bağlantı gönderilemedi. Lütfen tekrar deneyin." : "Could not send the reset link. Please try again."), false);
         } finally {
-          forgotBtn.disabled = false;
+          forgotSend.disabled = false;
         }
       });
     }
@@ -2036,7 +2046,7 @@ function setupMarketplaceListingInquiryForm() {
 
     // Send inquiry to backend (fire-and-forget — redirect even if it fails)
     try {
-      const { getAuthOrigin } = await import("./core/auth.js?v=20260728-reset");
+      const { getAuthOrigin } = await import("./core/auth.js");
       const origin = getAuthOrigin();
       await fetch(`${origin}/api/marketplace/inquiry/create`, {
         method: "POST",
@@ -2127,7 +2137,7 @@ function setupMarketplaceBidForm(content) {
     costBadge.dataset.filled = "1";
     (async () => {
       try {
-        const { getBidCostForListing } = await import("./core/tokenStore.js?v=20260727");
+        const { getBidCostForListing } = await import("./core/tokenStore.js");
         const cost = await getBidCostForListing({ budget: costBadge.dataset.listingBudget || "" });
         const coin = `<svg viewBox="0 0 40 40" width="1.2em" height="1.2em" style="vertical-align:-0.22em;margin-right:5px"><ellipse cx="20" cy="21.5" rx="15" ry="7.4" fill="#c98a1c"/><ellipse cx="20" cy="17" rx="15" ry="7.4" fill="#ffd54a" stroke="#a9761a" stroke-width="1.2"/><ellipse cx="20" cy="17" rx="9.8" ry="4.4" fill="none" stroke="#e2a52a" stroke-width="1.1"/><ellipse cx="15.3" cy="14.7" rx="3.7" ry="1.6" fill="#fff4c6" opacity="0.75"/></svg>`;
         costBadge.innerHTML = isTurkish
@@ -2213,7 +2223,7 @@ function setupMarketplaceBidForm(content) {
         if (listingOwner) {
           const listingTitle = result?.listing?.title || result?.listing?.name || "";
           const listingId = result?.listing?.id || formData.get("listingId") || "";
-          const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+          const { getSupabaseClient } = await import("./core/supabaseClient.js");
           const supabase = await getSupabaseClient();
           supabase.functions.invoke("send-push-notification", {
             body: {
@@ -2479,7 +2489,7 @@ function setupClientDashboard(content) {
             });
 
             // Push notification to developer's iPhone
-            const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+            const { getSupabaseClient } = await import("./core/supabaseClient.js");
             const supabase = await getSupabaseClient();
             supabase.functions.invoke("send-push-notification", {
               body: {
@@ -2733,7 +2743,7 @@ function setupClientBidsPage(content) {
             });
 
             // Push notification to developer's iPhone
-            const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+            const { getSupabaseClient } = await import("./core/supabaseClient.js");
             const supabase_cb = await getSupabaseClient();
             const listingTitle_cb = updatedListing?.title || updatedListing?.name || "";
             supabase_cb.functions.invoke("send-push-notification", {
@@ -2838,7 +2848,7 @@ function setupReportListingButton() {
         const session = getAuthSession();
         if (session?.authenticated && session.user?.id) {
           // Try to save report to Supabase
-          const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+          const { getSupabaseClient } = await import("./core/supabaseClient.js");
           const supabase = await getSupabaseClient();
           await supabase.from("listing_reports").insert({
             listing_id: listingId,
@@ -3168,7 +3178,7 @@ function setupDeveloperPublicProfile(content) {
       e.preventDefault();
       const newDesc = descForm.querySelector('[name="workDescription"]')?.value || "";
       try {
-        const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+        const { getSupabaseClient } = await import("./core/supabaseClient.js");
         const supabase = await getSupabaseClient();
         await supabase.from("profiles").update({ work_description: newDesc }).eq("id", session.user.id);
         descForm.setAttribute("hidden", "");
@@ -3505,7 +3515,7 @@ function bindInteractions(content) {
     setupBidAccordions();
     setupMarketplaceBidForm(content);
     // NAUTICO-style rotary dials for bid amount + completion timeframe
-    import("./components/bidDial.js?v=20260727").then((m) => {
+    import("./components/bidDial.js").then((m) => {
       if (m.mountBidDials) m.mountBidDials(content.meta.locale);
     }).catch(() => {});
     setupListingImageGallery();
@@ -3553,7 +3563,7 @@ function bindInteractions(content) {
     try { document.getElementById("yapply-notification-bell")?.remove(); } catch (_) {}
     setupAccountSettings(content);
   } else if (page === "developer-membership") {
-    import("./components/developerMembershipPage.js?v=20260728-coin5").then((m) => {
+    import("./components/developerMembershipPage.js").then((m) => {
       if (m.initDeveloperMembershipPage) m.initDeveloperMembershipPage(content);
     }).catch(() => {});
   } else if (page === "marketplace-submission") {
@@ -3874,7 +3884,7 @@ function setupAccountSettings(content) {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       try {
-        const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+        const { getSupabaseClient } = await import("./core/supabaseClient.js");
         const supabase = await getSupabaseClient();
         await supabase.auth.signOut();
       } catch (_) {}
@@ -3911,7 +3921,7 @@ function setupAccountSettings(content) {
       deleteYes.disabled = true;
       deleteYes.textContent = deleteYes.textContent.includes("Evet") ? "Siliniyor..." : "Deleting...";
       try {
-        const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+        const { getSupabaseClient } = await import("./core/supabaseClient.js");
         const supabase = await getSupabaseClient();
         const { error } = await supabase.rpc("delete_user_account");
         if (error) throw error;
@@ -4725,9 +4735,9 @@ async function renderPage(localeOverride) {
     // Eagerly preload page-specific component modules so they're cached by the time
     // data loading finishes. This runs in parallel with auth sync and data fetches.
     const _preloadMap = {
-      "open-marketplace": () => import("./components/openMarketplacePage.js?v=20260325"),
+      "open-marketplace": () => import("./components/openMarketplacePage.js"),
       "developer-dashboard": () => import("./components/developerDashboardPage.js"),
-      "developer-membership": () => import("./components/developerMembershipPage.js?v=20260728-coin5"),
+      "developer-membership": () => import("./components/developerMembershipPage.js"),
       "client-dashboard": () => import("./components/clientDashboardPage.js"),
       "client-bids": () => import("./components/clientBidsPage.js"),
       "marketplace-listing-detail": () => import("./components/marketplaceListingDetailPage.js"),
@@ -4800,7 +4810,7 @@ async function renderPage(localeOverride) {
 
       // Schedule background thumbnail generation for marketplace card images
       if (page === "open-marketplace" && runtimeData?.publicClientListings) {
-        import("./components/openMarketplacePage.js?v=20260325").then((mod) => {
+        import("./components/openMarketplacePage.js").then((mod) => {
           if (mod.scheduleBackgroundThumbnails) {
             mod.scheduleBackgroundThumbnails(runtimeData.publicClientListings);
           }

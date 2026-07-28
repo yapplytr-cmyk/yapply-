@@ -10,7 +10,7 @@
  *   3. Supabase JS client is tried first but we don't rely on it
  */
 
-import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { getSupabaseClient } from "./supabaseClient.js";
 
 // ─── Constants ────────────────────────────────────────────────
 const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";

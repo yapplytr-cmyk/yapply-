@@ -210,7 +210,7 @@ export async function initDeveloperMembershipPage(content) {
   const user = session?.user;
   if (!user?.id) return;
 
-  const tokenStore = await import("../core/tokenStore.js?v=20260727");
+  const tokenStore = await import("../core/tokenStore.js");
   const [status, plans, membership, packs] = await Promise.all([
     tokenStore.getTokenStatus(user.id),
     tokenStore.fetchMembershipPlans(),

@@ -11,7 +11,7 @@
  *    to the legacy 15-bids-per-30-days cycle so bidding never breaks.
  */
 
-import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { getSupabaseClient } from "./supabaseClient.js";
 
 const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
@@ -175,7 +175,7 @@ export async function spendTokensForBid(userId, listing) {
 
   // ── Legacy fallback: token RPCs not deployed → use the old bid cycle ──
   try {
-    const { consumeDeveloperBid } = await import("./supabaseMarketplace.js?v=20260727-rest-first");
+    const { consumeDeveloperBid } = await import("./supabaseMarketplace.js");
     const legacy = await consumeDeveloperBid(userId);
     return {
       success: !!legacy.success,

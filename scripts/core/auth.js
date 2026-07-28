@@ -1,5 +1,5 @@
 import { clearAuthSession, getAuthSession, setAuthSession } from "./state.js";
-import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { getRuntimeApiOrigin, getSupabaseClient } from "./supabaseClient.js";
 import { getDefaultAvatarOptions } from "./accountSettingsStore.js";
 
 const PROFILE_BASE_FIELDS =

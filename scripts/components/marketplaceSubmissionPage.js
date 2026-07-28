@@ -1206,7 +1206,7 @@ async function _isActiveMember() {
     if (!uid) return false;
     const plan = session?.user?.currentPlan;
     if (plan && String(plan).toLowerCase() !== "free") return true;
-    const { isVerifiedMember } = await import("../core/tokenStore.js?v=20260728-embed");
+    const { isVerifiedMember } = await import("../core/tokenStore.js");
     return await isVerifiedMember(uid);
   } catch (_) {
     return false;

@@ -62,7 +62,7 @@ function loadAdminDashboardApi() {
 }
 
 function loadOpenMarketplaceApi() {
-  return loadComponentModule("open-marketplace-page", () => import("./components/openMarketplacePage.js?v=20260325"));
+  return loadComponentModule("open-marketplace-page", () => import("./components/openMarketplacePage.js"));
 }
 
 function loadMarketplaceSubmissionApi() {
@@ -94,7 +94,7 @@ function loadDeveloperDashboardApi() {
 }
 
 function loadDeveloperMembershipApi() {
-  return loadComponentModule("developer-membership-page", () => import("./components/developerMembershipPage.js?v=20260728-coin5"));
+  return loadComponentModule("developer-membership-page", () => import("./components/developerMembershipPage.js"));
 }
 
 function loadDeveloperProfileApi() {
@@ -110,7 +110,7 @@ function loadProjectDetailApi() {
 }
 
 function loadAuthPagesApi() {
-  return loadComponentModule("auth-pages", () => import("./components/authPages.js?v=20260728-forgot"));
+  return loadComponentModule("auth-pages", () => import("./components/authPages.js"));
 }
 
 function loadProfessionalsApi() {

@@ -5,7 +5,7 @@
  * Supports realtime subscriptions for live badge updates.
  */
 
-import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { getSupabaseClient } from "./supabaseClient.js";
 
 // In-memory cache for quick access (avoids repeated DB hits)
 let _cache = {};

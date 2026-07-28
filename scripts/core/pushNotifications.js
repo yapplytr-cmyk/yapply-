@@ -4,7 +4,7 @@
  * Uses native AppDelegate token injection (bypasses broken Capacitor plugin listeners).
  */
 
-import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { getSupabaseClient } from "./supabaseClient.js";
 
 let _initialized = false;
 
