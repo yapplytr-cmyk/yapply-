@@ -54,6 +54,10 @@
       "destination": "/api/router?route=account/settings"
     },
     {
+      "source": "/api/account/avatar",
+      "destination": "/api/router?route=account/avatar"
+    },
+    {
       "source": "/api/account/client-dashboard",
       "destination": "/api/router?route=account/client-dashboard"
     },

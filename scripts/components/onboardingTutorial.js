@@ -52,7 +52,7 @@ function iconChooseComplete() {
  * @param {string} locale - "tr" or "en"
  * @param {Function} onComplete - called when user finishes the tutorial
  */
-export function showOnboardingTutorial(locale, onComplete) {
+export function showOnboardingTutorial(locale, onComplete, role = "client") {
   const isTr = locale === "tr";
 
   // Don't show if already seen
@@ -63,7 +63,34 @@ export function showOnboardingTutorial(locale, onComplete) {
     }
   } catch (_) {}
 
-  const slides = [
+  const isDeveloper = role === "developer";
+
+  // Professionals PLACE bids and win work — they do NOT receive bids.
+  const developerSlides = [
+    {
+      icon: iconReceiveBids(),
+      title: isTr ? "Açık İlanları Keşfedin" : "Browse Open Projects",
+      desc: isTr
+        ? "Pazar yerindeki müşteri proje ilanlarını inceleyin ve size uygun işleri bulun."
+        : "Explore client project listings in the marketplace and find work that fits you.",
+    },
+    {
+      icon: iconCreateListing(),
+      title: isTr ? "Teklifinizi Verin" : "Place Your Bids",
+      desc: isTr
+        ? "Fiyatınızı ve tamamlanma sürenizi belirterek rekabetçi teklifler gönderin."
+        : "Send competitive bids with your price and completion time to win the job.",
+    },
+    {
+      icon: iconChooseComplete(),
+      title: isTr ? "İtibarınızı Oluşturun" : "Build Your Reputation",
+      desc: isTr
+        ? "İşleri tamamlayın, yorumlar toplayın ve daha fazla iş kazanmak için profilinizi büyütün."
+        : "Complete projects, collect reviews, and grow your profile to win more work.",
+    },
+  ];
+
+  const clientSlides = [
     {
       icon: iconCreateListing(),
       title: isTr ? "Projenizi Oluşturun" : "Create Your Project",
@@ -86,6 +113,8 @@ export function showOnboardingTutorial(locale, onComplete) {
         : "Review profiles, see past work, read reviews, and choose the best option.",
     },
   ];
+
+  const slides = isDeveloper ? developerSlides : clientSlides;
 
   const overlay = document.createElement("div");
   overlay.className = "ob-tutorial";

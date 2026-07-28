@@ -2645,6 +2645,12 @@ html.keyboard-open .notification-bell-container {
   transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Hide the notification bell on the account settings page (useless there). */
+body:has(.account-settings-shell) #yapply-notification-bell,
+body:has(.account-settings-shell) .notification-bell-container {
+  display: none !important;
+}
+
 /* ═══ Liquid glass tab pill (NAUTICO-style stretch + glide) ═══ */
 .tab-bar { overflow: visible; }
 

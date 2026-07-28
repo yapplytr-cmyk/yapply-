@@ -32,6 +32,7 @@ from api.supabase_utils import (
   handle_resend_signup_otp,
   handle_supabase_bid_create,
   handle_account_settings_update,
+  handle_account_avatar_upload,
   handle_admin_identifier_resolve,
   handle_public_login,
   handle_public_auth_config,
@@ -148,6 +149,10 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "account/settings":
       run_supabase_action(self, handle_account_settings_update)
+      return
+
+    if route == "account/avatar":
+      run_supabase_action(self, handle_account_avatar_upload)
       return
 
     if route == "admin/accounts/status":

@@ -198,6 +198,91 @@ def handle_account_settings_update(handler) -> None:
   json_response(handler, HTTPStatus.OK, {"ok": True, **result})
 
 
+def handle_account_avatar_upload(handler) -> None:
+  """Upload a professional's selfie to the avatars bucket and set it as their
+  profile picture. Runs server-side with the SERVICE ROLE so it bypasses
+  storage/profiles RLS entirely — the direct client-side upload kept failing
+  because the browser had no usable Supabase storage credential. The caller is
+  authenticated + resolved from the Bearer token (no spoofing)."""
+  import base64
+  import time as _time
+  from urllib.request import Request, urlopen
+  from urllib.error import HTTPError
+  from backend.config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+
+  token = extract_bearer_token(handler)
+  # Resolve + authorize the developer from their token (server-authoritative id).
+  _, profile = require_public_access(token, "developer")
+  user_id = str(profile.get("id") or "").strip()
+  if not user_id:
+    json_response(handler, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "Could not resolve the account."})
+    return
+
+  payload = parse_json_body(handler)
+  data_url = str(payload.get("dataUrl") or "")
+  if not data_url.startswith("data:"):
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_IMAGE", "message": "A selfie image is required."})
+    return
+
+  try:
+    meta, b64 = data_url.split(",", 1)
+    mime = "image/jpeg"
+    if ";" in meta and ":" in meta:
+      mime = meta.split(":", 1)[1].split(";", 1)[0] or "image/jpeg"
+    raw = base64.b64decode(b64)
+  except Exception:  # noqa: BLE001
+    json_response(handler, HTTPStatus.BAD_REQUEST, {"ok": False, "code": "INVALID_IMAGE", "message": "The selfie image could not be decoded."})
+    return
+
+  ext = "png" if "png" in mime else "jpg"
+  path = f"{user_id}/selfie-{int(_time.time())}.{ext}"
+  base = SUPABASE_URL.rstrip("/")
+
+  # 1) Upload to storage (service role → bypasses RLS)
+  up = Request(
+    f"{base}/storage/v1/object/avatars/{path}",
+    data=raw,
+    method="POST",
+    headers={
+      "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+      "apikey": SUPABASE_SERVICE_ROLE_KEY,
+      "Content-Type": mime,
+      "x-upsert": "true",
+    },
+  )
+  try:
+    with urlopen(up, timeout=20) as resp:
+      resp.read()
+  except HTTPError as err:
+    detail = err.read().decode("utf-8", "replace")
+    json_response(handler, HTTPStatus.BAD_GATEWAY, {"ok": False, "code": "STORAGE_ERROR", "message": f"Storage upload failed: {detail[:200]}"})
+    return
+
+  public_url = f"{base}/storage/v1/object/public/avatars/{path}"
+
+  # 2) Point the profile at the new avatar + keep the selfie reference
+  patch = Request(
+    f"{base}/rest/v1/profiles?id=eq.{user_id}",
+    data=json.dumps({"avatar_url": public_url, "selfie_url": public_url}).encode("utf-8"),
+    method="PATCH",
+    headers={
+      "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+      "apikey": SUPABASE_SERVICE_ROLE_KEY,
+      "Content-Type": "application/json",
+      "Prefer": "return=minimal",
+    },
+  )
+  try:
+    with urlopen(patch, timeout=20) as resp:
+      resp.read()
+  except HTTPError as err:
+    detail = err.read().decode("utf-8", "replace")
+    json_response(handler, HTTPStatus.BAD_GATEWAY, {"ok": False, "code": "PROFILE_ERROR", "message": f"Profile update failed: {detail[:200]}"})
+    return
+
+  json_response(handler, HTTPStatus.OK, {"ok": True, "avatarUrl": public_url})
+
+
 def handle_client_dashboard(handler) -> None:
   _, profile = require_public_access(extract_bearer_token(handler), "client")
   owner_user_id = str(profile.get("id") or "").strip()

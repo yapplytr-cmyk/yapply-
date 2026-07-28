@@ -733,6 +733,43 @@ async function requestOwnAccountSettingsUpdate(payload) {
   return data;
 }
 
+/**
+ * Upload a professional's selfie via the backend (service role), which sets it
+ * as the account's profile picture. Uses the same authenticated token path as
+ * account settings, so it works reliably where the direct client-side storage
+ * upload did not. Returns the public avatar URL, and syncs the live session.
+ */
+export async function uploadSelfieAvatar(dataUrl) {
+  if (!dataUrl || !String(dataUrl).startsWith("data:")) return "";
+  const token = await getCurrentAccessToken();
+  const response = await fetch(createApiUrl("/api/account/avatar"), {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ dataUrl }),
+  });
+  const data = await readResponsePayload(response, "Selfie upload failed.");
+  if (!response.ok) {
+    throw createAuthError(data.code || "SELFIE_UPLOAD_FAILED", data.message || "Selfie upload failed.");
+  }
+  const url = data?.avatarUrl || "";
+  // Reflect immediately in the live session so the profile picture shows at once.
+  try {
+    const sess = getAuthSession();
+    if (url && sess?.user) {
+      sess.user.avatarUrl = url;
+      sess.user.profilePictureSrc = url;
+      sess.user.profilePictureUrl = url;
+      sess.user.profilePictureType = "photo";
+      setAuthSession(sess);
+    }
+  } catch (_) {}
+  return url;
+}
+
 export async function signupAccount(payload) {
   const signupPayload = ensurePublicSignupPayload(payload);
   const supabase = await getSupabaseClient();

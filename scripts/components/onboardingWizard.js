@@ -711,7 +711,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         try {
           const { showOnboardingTutorial } = await import("./onboardingTutorial.js");
           const lang = isTr ? "tr" : "en";
-          showOnboardingTutorial(lang, nav);
+          showOnboardingTutorial(lang, nav, selectedRole);
         } catch (_tutorialErr) {
           console.warn("[yapply] Tutorial load error", _tutorialErr);
           nav(); // fallback: navigate directly
@@ -1055,7 +1055,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         // ── Upload the verification selfie as the account avatar (professionals) ──
         if (selectedRole === "developer" && selfieDataUrl) {
           try {
-            await _uploadSelfieAvatar(session?.user?.id || user?.id, selfieDataUrl);
+            await authApi.uploadSelfieAvatar(selfieDataUrl);
           } catch (avatarErr) {
             console.warn("[yapply] selfie avatar upload failed:", avatarErr?.message);
           }
@@ -1188,7 +1188,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
         //  direct-signup block above — is where a professional's selfie actually lands.)
         if ((pendingRole === "developer" || selectedRole === "developer") && selfieDataUrl) {
           try {
-            await _uploadSelfieAvatar(session?.user?.id || user?.id, selfieDataUrl);
+            await authApi.uploadSelfieAvatar(selfieDataUrl);
           } catch (avatarErr) {
             console.warn("[yapply] selfie avatar upload (otp path) failed:", avatarErr?.message);
           }

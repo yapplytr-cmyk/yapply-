@@ -123,6 +123,28 @@ function computeBidDeadline(createdAtISO, timeframeText, locale) {
   return { publishedLabel, daysLeftLabel };
 }
 
+/** Bidding window length in days (mirrors computeBidDeadline). */
+function _biddingTotalDays(timeframeText) {
+  let totalDays = 30;
+  const m = String(timeframeText || "").match(/(\d+)/);
+  if (m) {
+    const months = parseInt(m[1], 10);
+    if (months > 0 && months <= 36) totalDays = months * 30;
+  }
+  return totalDays;
+}
+
+/** True once a client listing's bidding period has ended → hidden from explore. */
+function isBiddingEnded(listing) {
+  const createdAtRaw = listing?.createdAt || listing?.created_at || "";
+  if (!createdAtRaw) return false;
+  const timeframe = listing?.timeline || listing?.startDate || listing?.marketplaceMeta?.desiredTimeframe?.label || "";
+  const created = new Date(createdAtRaw);
+  if (isNaN(created.getTime())) return false;
+  const daysSince = Math.max(0, Math.floor((Date.now() - created.getTime()) / 86400000));
+  return daysSince >= _biddingTotalDays(timeframe);
+}
+
 const INITIAL_MARKETPLACE_BATCH_SIZE = 12;
 
 function getMarketplaceLocale(content) {
@@ -729,7 +751,11 @@ function createDeferredCardsTemplate(cardsMarkup, kind) {
 
 function createMarketplaceListings(content) {
   const locale = getMarketplaceLocale(content);
-  const clientItems = Array.isArray(content.tabs.client.items) ? content.tabs.client.items : [];
+  // Hide listings whose bidding period has ended — they're done accepting bids.
+  // (Completed/awarded work still lives on the professional's profile as their
+  // portfolio; this only removes them from the open explore grid.)
+  const clientItems = (Array.isArray(content.tabs.client.items) ? content.tabs.client.items : [])
+    .filter((item) => !isBiddingEnded(item));
   const developerItems = Array.isArray(content.tabs.developer.items) ? content.tabs.developer.items : [];
   const initialClientCards = clientItems
     .slice(0, INITIAL_MARKETPLACE_BATCH_SIZE)
