@@ -236,13 +236,16 @@ export function mountBidDials(locale) {
   if (tfLabel) duo.appendChild(tfLabel);
 
   // ── Amount wheel ──
+  // Hide the entire original input wrap (text input + "TL" span) — it carries
+  // its own flex layout that broke the wheel's centering. Mount the wheel on
+  // the label directly, exactly like the timeframe wheel. The hidden input
+  // still submits even inside a display:none wrap.
   amountInput.type = "hidden";
   const amountWrap = amountLabel.querySelector(".bid-amount-wrap");
-  const currency = amountLabel.querySelector(".bid-amount-currency");
-  if (currency) currency.style.display = "none";
+  if (amountWrap) amountWrap.style.display = "none";
   const amountMount = document.createElement("div");
   amountMount.setAttribute("data-bid-dial-amount", "");
-  (amountWrap || amountLabel).appendChild(amountMount);
+  amountLabel.appendChild(amountMount);
   mountDial(amountMount, {
     perTurn: 100000,
     start: 0,

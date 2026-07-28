@@ -288,6 +288,33 @@ export async function createEmbeddedCheckout(planId, userId, userEmail, packId =
   }
 }
 
+/**
+ * Create a Stripe PaymentIntent (pack) or incomplete Subscription (plan) and
+ * return its clientSecret + publishableKey, so the card form renders in-page
+ * with the Payment Element (coastmotive-style — no hosted Checkout page).
+ */
+export async function createPaymentIntent(planId, userId, userEmail, packId = "") {
+  const isNative = window.location.origin === "capacitor://localhost" ||
+    (window.location.hostname === "localhost" && !window.location.port);
+  if (isNative) {
+    return { ok: false, code: "NATIVE_USE_IAP", message: "In the iOS app, memberships are purchased through the App Store." };
+  }
+  try {
+    const resp = await fetch("/api/billing/intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(packId ? { packId, userId, userEmail } : { planId, userId, userEmail }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok && data?.clientSecret) {
+      return { ok: true, clientSecret: data.clientSecret, mode: data.mode, publishableKey: data.publishableKey };
+    }
+    return { ok: false, code: data?.code || "INTENT_FAILED", message: data?.message || "Payment could not be started." };
+  } catch (e) {
+    return { ok: false, code: "NETWORK", message: e?.message || "Network error" };
+  }
+}
+
 /** Confirm a completed embedded checkout by session id (avoids waiting on the webhook). */
 export async function confirmCheckoutStatus(sessionId) {
   try {

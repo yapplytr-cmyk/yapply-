@@ -118,6 +118,10 @@
       "destination": "/api/router?route=billing/config"
     },
     {
+      "source": "/api/billing/intent",
+      "destination": "/api/router?route=billing/intent"
+    },
+    {
       "source": "/api/billing/status",
       "destination": "/api/router?route=billing/status"
     },

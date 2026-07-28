@@ -93,7 +93,11 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
   // download from the CDN, which was the main cause of slow marketplace loads.
   try {
     const params = new URLSearchParams({
-      select: "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
+      // SLIM select — pull marketplaceMeta only, NOT the full payload. Listing
+      // payloads embed full base64 images (hundreds of KB each), so selecting
+      // `payload` made the explore fetch ~2MB. Images are lazy-loaded per card
+      // via fetchListingImage() once a card scrolls into view.
+      select: "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,marketplaceMeta:payload->marketplaceMeta,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
       order: "created_at.desc",
       limit: String(limit),
     });
@@ -119,7 +123,7 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
     let query = supabase
       .from("marketplace_listings")
       .select(`
-        id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload,
+        id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,marketplaceMeta:payload->marketplaceMeta,
         listing_bids (id, bidder_user_id, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
       `)
       .order("created_at", { ascending: false })
@@ -731,9 +735,13 @@ function normalizeListing(row) {
     updatedAt: row.updated_at,
     acceptedBidId: row.accepted_bid_id || "",
     bids,
-    // Build marketplaceMeta for backward compatibility with existing UI components
+    // Build marketplaceMeta for backward compatibility with existing UI components.
+    // `row.marketplaceMeta` is the slim-fetch alias (explore list); `row.payload`
+    // is present on full fetches (detail / my-listings).
     marketplaceMeta: {
-      ...(typeof row.payload?.marketplaceMeta === "object" ? row.payload.marketplaceMeta : {}),
+      ...(typeof row.payload?.marketplaceMeta === "object"
+        ? row.payload.marketplaceMeta
+        : (typeof row.marketplaceMeta === "object" && row.marketplaceMeta ? row.marketplaceMeta : {})),
       // ── Authoritative PG values — MUST come after payload spread ──
       listingStatus: row.status,
       bidCount: bids.length,
@@ -742,11 +750,43 @@ function normalizeListing(row) {
       acceptedBid,
       category: row.category || "",
     },
-    // Preserve attachments from payload
+    // Preserve attachments/images from payload when present (full fetch).
+    // On the slim explore fetch these are empty and loaded lazily per card.
     attachments: Array.isArray(row.payload?.attachments) ? row.payload.attachments : [],
     imageSrc: row.payload?.imageSrc || "",
     images: Array.isArray(row.payload?.images) ? row.payload.images : [],
+    // Flag: the slim fetch omitted images → the card should lazy-load one.
+    _lazyImage: !row.payload,
   };
+}
+
+/**
+ * Lazy-fetch a single listing's preview image (only the image fields, one row).
+ * Used by the explore grid to stream images in per card instead of downloading
+ * every base64 image up front.
+ */
+export async function fetchListingImage(listingId) {
+  if (!listingId) return "";
+  try {
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=imageSrc:payload->imageSrc,images:payload->images,attachments:payload->attachments&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (resp.ok) {
+      const rows = await resp.json();
+      const r = rows && rows[0];
+      if (r) {
+        if (typeof r.imageSrc === "string" && r.imageSrc.startsWith("data:")) return r.imageSrc;
+        if (typeof r.imageSrc === "string" && /^https?:\/\//.test(r.imageSrc)) return r.imageSrc;
+        if (Array.isArray(r.images) && r.images[0]?.src) return r.images[0].src;
+        if (Array.isArray(r.attachments)) {
+          const img = r.attachments.find((a) => a?.kind === "image" && a?.dataUrl);
+          if (img) return img.dataUrl;
+        }
+      }
+    }
+  } catch (_) {}
+  return "";
 }
 
 function normalizeBid(row) {

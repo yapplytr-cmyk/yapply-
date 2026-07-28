@@ -219,6 +219,99 @@ def handle_billing_checkout(handler) -> None:
     _json_response(handler, 500, {"ok": False, "code": "SERVER_ERROR", "message": str(err)[:300]})
 
 
+def _ensure_stripe_price(plan: dict) -> str:
+  """Return a recurring Stripe Price id for a plan, creating (and caching) a
+  Product + Price the first time. Needed because subscriptions with the Payment
+  Element require a real Price id, not inline price_data."""
+  existing = (plan.get("stripe_price_id") or "").strip()
+  if existing:
+    return existing
+  product = _stripe_request("/products", {"name": f"Yapply {plan['name']} Membership"})
+  price = _stripe_request("/prices", {
+    "currency": "try",
+    "unit_amount": str(int(float(plan["price_try"]) * 100)),
+    "recurring[interval]": "month",
+    "product": product["id"],
+  })
+  price_id = price.get("id") or ""
+  # Cache back onto the plan so we only create it once.
+  try:
+    _supabase_request(
+      f"/rest/v1/membership_plans?id=eq.{plan['id']}",
+      method="PATCH",
+      payload={"stripe_price_id": price_id},
+      prefer="return=minimal",
+    )
+  except Exception:  # noqa: BLE001
+    pass
+  return price_id
+
+
+def handle_billing_intent(handler) -> None:
+  """Create a PaymentIntent (token pack) or an incomplete Subscription (plan)
+  and return its client_secret, so the card form renders IN-PAGE with the Stripe
+  Payment Element — no hosted Checkout page. Card data goes straight to Stripe."""
+  try:
+    payload = json.loads(_read_body(handler) or b"{}")
+    plan_id = str(payload.get("planId") or "").strip()
+    pack_id = str(payload.get("packId") or "").strip()
+    user_id = str(payload.get("userId") or "").strip()
+    user_email = str(payload.get("userEmail") or "").strip()
+
+    if (not plan_id and not pack_id) or not user_id:
+      raise BillingError("INVALID_REQUEST", "planId or packId, and userId are required.")
+    if not STRIPE_SECRET_KEY:
+      raise BillingError("STRIPE_NOT_CONFIGURED", "Stripe is not configured (missing STRIPE_SECRET_KEY).", 503)
+
+    # ── One-time token pack → PaymentIntent ──
+    if pack_id:
+      pack = _get_pack(pack_id)
+      cents = int(round(float(pack["price_try"]) * 100))
+      intent = _stripe_request("/payment_intents", {
+        "amount": str(cents),
+        "currency": "try",
+        "automatic_payment_methods[enabled]": "true",
+        "description": f"Yapply {pack['name']} — {pack['tokens']} tokens",
+        "receipt_email": user_email or "",
+        "metadata[user_id]": user_id,
+        "metadata[pack_id]": pack_id,
+        "metadata[kind]": "pack",
+      })
+      _json_response(handler, HTTPStatus.OK, {
+        "ok": True, "mode": "payment",
+        "clientSecret": intent.get("client_secret"),
+        "publishableKey": STRIPE_PUBLISHABLE_KEY,
+      })
+      return
+
+    # ── Membership plan → incomplete Subscription ──
+    plan = _get_plan(plan_id)
+    price_id = _ensure_stripe_price(plan)
+    customer = _stripe_request("/customers", {"email": user_email} if user_email else {"metadata[user_id]": user_id})
+    sub = _stripe_request("/subscriptions", {
+      "customer": customer["id"],
+      "items[0][price]": price_id,
+      "payment_behavior": "default_incomplete",
+      "payment_settings[save_default_payment_method]": "on_subscription",
+      "expand[0]": "latest_invoice.payment_intent",
+      "metadata[user_id]": user_id,
+      "metadata[plan_id]": plan_id,
+    })
+    pi = ((sub.get("latest_invoice") or {}).get("payment_intent")) or {}
+    client_secret = pi.get("client_secret")
+    if not client_secret:
+      raise BillingError("NO_CLIENT_SECRET", "Could not initialize subscription payment.", 502)
+    _json_response(handler, HTTPStatus.OK, {
+      "ok": True, "mode": "subscription",
+      "clientSecret": client_secret,
+      "publishableKey": STRIPE_PUBLISHABLE_KEY,
+    })
+  except BillingError as err:
+    _json_response(handler, err.status, {"ok": False, "code": err.code, "message": err.message})
+  except Exception as err:  # noqa: BLE001
+    _json_response(handler, 500, {"ok": False, "code": "SERVER_ERROR", "message": str(err)[:300]})
+
+
 def handle_billing_status(handler) -> None:
   """Return the caller's membership status by checkout session_id — lets the
   client confirm success immediately after embedded checkout, without waiting
@@ -381,6 +474,18 @@ def handle_billing_webhook(handler) -> None:
           period_end = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(period_ts))
       except Exception:  # noqa: BLE001
         period_end = None
+    elif event_type == "payment_intent.succeeded":
+      # In-page token-pack purchase via the Payment Element.
+      meta = obj.get("metadata") or {}
+      if meta.get("kind") == "pack" and meta.get("pack_id") and meta.get("user_id"):
+        pack = _get_pack(str(meta.get("pack_id")))
+        tokens = int(pack.get("tokens") or 0)
+        if tokens > 0:
+          _grant_tokens(str(meta.get("user_id")), tokens, "purchase", event_id or obj.get("id"))
+        _json_response(handler, HTTPStatus.OK, {"ok": True, "granted": tokens, "pack": meta.get("pack_id")})
+        return
+      _json_response(handler, HTTPStatus.OK, {"ok": True, "ignored": "payment_intent (no pack meta)"})
+      return
     elif event_type == "customer.subscription.deleted":
       # Membership canceled/expired — revoke the badge and listing access.
       meta = obj.get("metadata") or {}

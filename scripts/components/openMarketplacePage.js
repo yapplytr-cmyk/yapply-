@@ -239,8 +239,64 @@ function getClientListingCopy(locale) {
    Cards use the same image as detail pages — no separate thumbnail
    cache needed, which also prevents visual mismatch. */
 
-/** No-op — kept as export so callers don't break */
-export function scheduleBackgroundThumbnails() {}
+/* ── Lazy per-card image loading ─────────────────────────────────
+   The explore list is fetched WITHOUT base64 images (see fetchListings),
+   so the page loads instantly. Each card's image is streamed in only when
+   the card scrolls near the viewport, via a single per-listing fetch. */
+let _lazyImgObserver = null;
+
+async function _fillLazyImage(placeholderEl) {
+  const id = placeholderEl.getAttribute("data-lazy-listing");
+  if (!id) return;
+  try {
+    const { fetchListingImage } = await import("../core/supabaseMarketplace.js");
+    const src = await fetchListingImage(id);
+    if (!src || !placeholderEl.isConnected) return;
+    const media = placeholderEl.closest(".marketplace-card__media") || placeholderEl.parentElement;
+    if (!media) return;
+    const img = document.createElement("img");
+    img.alt = "";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.style.opacity = "0";
+    img.style.transition = "opacity .35s ease";
+    img.addEventListener("load", () => { img.style.opacity = "1"; });
+    img.src = src;
+    placeholderEl.replaceWith(img);
+  } catch (_) {}
+}
+
+function _scanLazyImages() {
+  if (typeof IntersectionObserver === "undefined") {
+    // No observer support → just load them all.
+    document.querySelectorAll("[data-lazy-listing]:not([data-lazy-observed])").forEach((el) => {
+      el.setAttribute("data-lazy-observed", "1");
+      _fillLazyImage(el);
+    });
+    return;
+  }
+  if (!_lazyImgObserver) {
+    _lazyImgObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        obs.unobserve(entry.target);
+        _fillLazyImage(entry.target);
+      });
+    }, { rootMargin: "400px 0px" });
+  }
+  document.querySelectorAll("[data-lazy-listing]:not([data-lazy-observed])").forEach((el) => {
+    el.setAttribute("data-lazy-observed", "1");
+    _lazyImgObserver.observe(el);
+  });
+}
+
+/** Set up lazy image streaming for the explore grid. Re-scans a couple of times
+    to catch cards added by SWR revalidation or a tab switch. */
+export function scheduleBackgroundThumbnails() {
+  _scanLazyImages();
+  setTimeout(_scanLazyImages, 500);
+  setTimeout(_scanLazyImages, 1500);
+}
 
 function isValidImageUrl(url) {
   if (!url || typeof url !== "string") return false;
@@ -498,7 +554,7 @@ function createClientListingCard(listing, labels, locale) {
         ${
           previewImage
             ? `<img src="${previewImage}" alt="${listing.title}" loading="lazy" decoding="async" fetchpriority="low" />`
-            : `<span class="marketplace-card__media-placeholder">${copy.mediaFallback}</span>`
+            : `<span class="marketplace-card__media-placeholder" ${listing._lazyImage && listing.id ? `data-lazy-listing="${listing.id}"` : ""}>${copy.mediaFallback}</span>`
         }
       </a>
       <div class="marketplace-card__top">
@@ -593,7 +649,7 @@ function createDeveloperListingCard(listing, labels) {
         ${
           previewImage
             ? `<img src="${previewImage}" alt="${listingName}" loading="lazy" decoding="async" fetchpriority="low" />`
-            : `<span class="marketplace-card__media-placeholder">${mediaFallback}</span>`
+            : `<span class="marketplace-card__media-placeholder" ${listing._lazyImage && listing.id ? `data-lazy-listing="${listing.id}"` : ""}>${mediaFallback}</span>`
         }
       </a>
       <div class="marketplace-card__top">

@@ -16,6 +16,7 @@ from api._utils import (
 from api.billing import (
   handle_billing_checkout,
   handle_billing_config,
+  handle_billing_intent,
   handle_billing_status,
   handle_billing_webhook,
 )
@@ -179,6 +180,10 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "billing/checkout":
       handle_billing_checkout(self)
+      return
+
+    if route == "billing/intent":
+      handle_billing_intent(self)
       return
 
     if route == "billing/status":
