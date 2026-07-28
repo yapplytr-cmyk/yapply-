@@ -104,8 +104,8 @@ export async function fetchPrices(items, userId) {
     const subs = items.filter((i) => i.type !== "inapp").map((i) => i.productId);
     const inapp = items.filter((i) => i.type === "inapp").map((i) => i.productId);
     const groups = [];
-    if (subs.length) groups.push({ ids: subs, type: "subs" });
-    if (inapp.length) groups.push({ ids: inapp, type: "inapp" });
+    if (subs.length) groups.push({ ids: subs, type: "SUBSCRIPTION" });
+    if (inapp.length) groups.push({ ids: inapp, type: "NON_SUBSCRIPTION" });
     for (const g of groups) {
       const res = await P.getProducts({ productIdentifiers: g.ids, type: g.type });
       const products = (res && res.products) || [];
@@ -117,13 +117,42 @@ export async function fetchPrices(items, userId) {
   return out;
 }
 
-async function purchaseByProductId(productId, type, userId) {
-  const P = await ensureConfigured(userId);
-  const res = await P.getProducts({ productIdentifiers: [productId], type });
-  const product = ((res && res.products) || [])[0];
-  if (!product) {
-    return { ok: false, code: "PRODUCT_NOT_FOUND", message: "This product isn't available from the App Store yet." };
+// RevenueCat v13 product categories (PRODUCT_CATEGORY enum), NOT the old
+// "subs"/"inapp" PURCHASE_TYPE values.
+const CATEGORY_SUBSCRIPTION = "SUBSCRIPTION";
+const CATEGORY_NON_SUBSCRIPTION = "NON_SUBSCRIPTION";
+
+async function fetchStoreProduct(P, productId, category) {
+  // Try with the expected category, then fall back to no filter (covers
+  // category mismatches) so a valid product is never missed.
+  const attempts = [{ productIdentifiers: [productId], type: category }, { productIdentifiers: [productId] }];
+  for (const opts of attempts) {
+    try {
+      const res = await P.getProducts(opts);
+      const product = ((res && res.products) || [])[0];
+      if (product) return product;
+    } catch (_) {}
   }
+  return null;
+}
+
+async function purchaseByProductId(productId, category, userId) {
+  let P;
+  try {
+    P = await ensureConfigured(userId);
+  } catch (err) {
+    return { ok: false, code: "CONFIG_FAILED", message: (err && err.message) ? String(err.message) : "Could not start the App Store connection." };
+  }
+
+  const product = await fetchStoreProduct(P, productId, category);
+  if (!product) {
+    return {
+      ok: false,
+      code: "PRODUCT_NOT_FOUND",
+      message: "This item isn't available from the App Store yet. Brand-new products can take a few hours to go live after being created.",
+    };
+  }
+
   try {
     const purchase = await P.purchaseStoreProduct({ product });
     return { ok: true, customerInfo: purchase && purchase.customerInfo, productIdentifier: productId };
@@ -138,14 +167,14 @@ async function purchaseByProductId(productId, type, userId) {
 
 /** Buy a membership subscription (starter/pro/elite). */
 export async function purchaseMembership(planId, userId) {
-  if (!iapAvailable()) return { ok: false, code: "IAP_UNAVAILABLE", message: "In-app purchases are only available in the iOS app." };
-  return purchaseByProductId(membershipProductId(planId), "subs", userId);
+  if (!iapAvailable()) return { ok: false, code: "IAP_UNAVAILABLE", message: "In-app purchases aren't ready in this build. The app needs to be rebuilt with the RevenueCat plugin." };
+  return purchaseByProductId(membershipProductId(planId), CATEGORY_SUBSCRIPTION, userId);
 }
 
 /** Buy a one-time token pack (pack-small/medium/large). */
 export async function purchaseTokenPack(packId, userId) {
-  if (!iapAvailable()) return { ok: false, code: "IAP_UNAVAILABLE", message: "In-app purchases are only available in the iOS app." };
-  return purchaseByProductId(tokenPackProductId(packId), "inapp", userId);
+  if (!iapAvailable()) return { ok: false, code: "IAP_UNAVAILABLE", message: "In-app purchases aren't ready in this build. The app needs to be rebuilt with the RevenueCat plugin." };
+  return purchaseByProductId(tokenPackProductId(packId), CATEGORY_NON_SUBSCRIPTION, userId);
 }
 
 /** Restore previous purchases (required by App Review). */

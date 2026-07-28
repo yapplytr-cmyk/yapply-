@@ -2,6 +2,7 @@ import { createButton, createSectionHeading } from "./primitives.js";
 import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { getUnreadNotifications, markAllRead } from "../core/notifications.js";
 import { createDashboardReloadButton } from "./dashboardReloadButton.js";
+import { getTokenStatus } from "../core/tokenStore.js";
 
 function getDeveloperDashboardLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
@@ -120,40 +121,37 @@ function createStarDisplay(rating, size = 18) {
 
 function createBidCounterCard(session, locale) {
   const user = session.user || {};
-  const plan = user.currentPlan || "free";
-  const bidLimit = user.bidLimit ?? 15;
-  const bidsUsed = user.bidsUsed ?? 0;
-  const bidsRemaining = Math.max(bidLimit - bidsUsed, 0);
-  const cycleStart = user.bidCycleStart ? new Date(user.bidCycleStart) : new Date();
-  const cycleEnd = new Date(cycleStart.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const resetDate = new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", { day: "numeric", month: "short", year: "numeric" }).format(cycleEnd);
+  const isTr = locale === "tr";
+  // Real token balance from Supabase (attached in createDeveloperDashboardPage).
+  const status = session._tokenStatus || null;
+  const plan = String(user.currentPlan || "free").toLowerCase();
 
   const planLabels = {
-    free: locale === "tr" ? "Ücretsiz Plan" : "Free Plan",
-    pro40: locale === "tr" ? "40 Teklif Planı" : "40 Bid Plan",
-    unlimited: locale === "tr" ? "Sınırsız Plan" : "Unlimited Plan",
+    free: isTr ? "Ücretsiz" : "Free",
+    starter: "Starter",
+    pro: "Pro",
+    elite: "Elite",
   };
   const planLabel = planLabels[plan] || planLabels.free;
-  const isUnlimited = plan === "unlimited";
 
-  const pct = isUnlimited ? 100 : bidLimit > 0 ? Math.round((bidsRemaining / bidLimit) * 100) : 0;
-  const barColor = pct > 30 ? "var(--accent,#c9a84c)" : pct > 10 ? "#e89040" : "#e05050";
+  const balance = status ? (status.balance ?? 0) : null;
+  const bigValue = balance == null ? "—" : String(balance);
+  const ctaLabel = plan === "free"
+    ? (isTr ? "Üyelik Al" : "Get Membership")
+    : (isTr ? "Jeton Al" : "Buy Tokens");
 
   return `
     <article class="panel developer-dashboard-bid-counter" style="padding:1.25rem;display:grid;gap:0.75rem">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <h4 style="font-size:0.95rem;color:var(--text,#f4f0e8);margin:0">${locale === "tr" ? "Teklif Hakkı" : "Bid Allowance"}</h4>
+        <h4 style="font-size:0.95rem;color:var(--text,#f4f0e8);margin:0">${isTr ? "Jeton Bakiyesi" : "Token Balance"}</h4>
         <span style="font-size:0.78rem;padding:4px 10px;border-radius:999px;background:var(--gold-soft,rgba(201,168,76,0.16));color:var(--accent,#c9a84c);font-weight:600">${planLabel}</span>
       </div>
-      <div style="display:flex;align-items:baseline;gap:6px">
-        <span style="font-size:2rem;font-weight:700;color:var(--text,#f4f0e8)">${isUnlimited ? "∞" : bidsRemaining}</span>
-        <span style="font-size:0.85rem;color:var(--text-muted,#b3ada0)">/ ${isUnlimited ? "∞" : bidLimit} ${locale === "tr" ? "kalan" : "remaining"}</span>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="font-size:2rem;font-weight:700;color:var(--text,#f4f0e8)">${bigValue}</span>
+        <span style="font-size:0.85rem;color:var(--text-muted,#b3ada0)">${isTr ? "jeton" : "tokens"}</span>
       </div>
-      <div style="height:6px;border-radius:3px;background:var(--surface-soft,#171a1f);overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width 400ms ease"></div>
-      </div>
-      <p style="font-size:0.78rem;color:var(--text-dim,#8f8a7d);margin:0">${locale === "tr" ? "Yenileme tarihi:" : "Resets on:"} ${resetDate}</p>
-      ${plan === "free" ? `<a href="./developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${locale === "tr" ? "Planı Yükselt" : "Upgrade Plan"}</a>` : ""}
+      <p style="font-size:0.78rem;color:var(--text-dim,#8f8a7d);margin:0">${isTr ? "Her teklif, projenin büyüklüğüne göre jeton harcar." : "Each bid spends tokens based on the project's size."}</p>
+      <a href="./developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${ctaLabel}</a>
     </article>
   `;
 }
@@ -479,6 +477,13 @@ export async function createDeveloperDashboardPage(content) {
 
   if (!session.authenticated || session.user?.role !== "developer") {
     return createAccessDenied(content);
+  }
+
+  // Live token balance for the balance card (real value from Supabase).
+  try {
+    session._tokenStatus = await getTokenStatus(session.user.id);
+  } catch (_) {
+    session._tokenStatus = null;
   }
 
   const notifications = (await getUnreadNotifications(session.user.id)).filter((n) => n.type === "bid-accepted");
