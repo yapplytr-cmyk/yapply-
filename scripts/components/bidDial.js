@@ -218,6 +218,13 @@ export function mountDial(mountEl, opts = {}, onChange) {
  */
 export function mountBidDials(locale) {
   const isTr = locale === "tr";
+  // Desktop (mouse) keeps the plain number input + week dropdown — the drag
+  // wheels are a touch interaction and are awkward with a mouse. Only mount the
+  // wheels on touch devices (phones / the app).
+  const isDesktop = typeof window.matchMedia === "function" &&
+    window.matchMedia("(min-width: 768px) and (pointer: fine)").matches;
+  if (isDesktop) return;
+
   const form = document.querySelector("[data-marketplace-bid-form]") || document.querySelector('form input[name="bidAmount"]')?.closest("form");
   if (!form) return;
   if (form.querySelector(".y-dial-duo")) return; // already mounted

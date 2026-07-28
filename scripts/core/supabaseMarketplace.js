@@ -150,8 +150,12 @@ export async function fetchListing(listingId) {
   if (!listingId) return null;
 
   // ── Attempt 1: Raw REST API (no SDK download — fastest cold path) ──
+  // Uses payload_lite (payload with base64 images stripped) aliased as payload,
+  // so the detail fetch is ~2KB instead of ~750KB and the page renders instantly.
+  // The hero image is streamed in separately via fetchListingImages().
   try {
-    const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&limit=1`, {
+    const slimCols = "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload:payload_lite,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)";
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=${slimCols}&limit=1`, {
       headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
     });
     if (resp.ok) {
@@ -755,9 +759,49 @@ function normalizeListing(row) {
     attachments: Array.isArray(row.payload?.attachments) ? row.payload.attachments : [],
     imageSrc: row.payload?.imageSrc || "",
     images: Array.isArray(row.payload?.images) ? row.payload.images : [],
-    // Flag: the slim fetch omitted images → the card should lazy-load one.
-    _lazyImage: !row.payload,
+    // Flag: this fetch carried no embedded image (slim explore/detail fetch, or
+    // a genuinely image-less listing) → the UI should stream the image in via
+    // fetchListingImage(s). Full fetches (my-listings/dashboards) keep images.
+    _lazyImage: !(
+      row.payload && (
+        (Array.isArray(row.payload.attachments) && row.payload.attachments.length > 0) ||
+        (Array.isArray(row.payload.images) && row.payload.images.length > 0) ||
+        (typeof row.payload.imageSrc === "string" && row.payload.imageSrc.trim().length > 0)
+      )
+    ),
   };
+}
+
+/**
+ * Fetch ALL of a listing's preview images (full base64), one row. Used by the
+ * detail page to stream the hero gallery in after an instant slim render.
+ * Returns an array of { src, name }.
+ */
+export async function fetchListingImages(listingId) {
+  if (!listingId) return [];
+  try {
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=imageSrc:payload->imageSrc,images:payload->images,attachments:payload->attachments&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (!resp.ok) return [];
+    const rows = await resp.json();
+    const r = rows && rows[0];
+    if (!r) return [];
+    const out = [];
+    const seen = new Set();
+    const push = (src, name) => {
+      if (typeof src === "string" && src && !seen.has(src)) { seen.add(src); out.push({ src, name: name || "Project image" }); }
+    };
+    if (Array.isArray(r.attachments)) {
+      r.attachments.forEach((a) => { if (a && (a.kind === "image" || /^data:image|^https?:/.test(a.dataUrl || a.src || "")) ) push(a.dataUrl || a.src || a.url, a.name); });
+    }
+    if (Array.isArray(r.images)) r.images.forEach((im) => push(im?.src || im?.dataUrl, im?.name));
+    if (typeof r.imageSrc === "string") push(r.imageSrc, "Project image");
+    return out;
+  } catch (_) {
+    return [];
+  }
 }
 
 /**

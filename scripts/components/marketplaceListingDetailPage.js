@@ -414,6 +414,20 @@ function getListingImageItems(listing) {
 function createClientVisual(detailContent, listing) {
   const imageItems = getListingImageItems(listing);
 
+  // Slim fetch → image not embedded yet. Render a skeleton hero and stream the
+  // real photo in (hydrateDetailMedia). Keeps the page instant, image seamless.
+  if (imageItems.length === 0 && listing._lazyImage && listing.id) {
+    return `
+      <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact marketplace-detail-visual--media panel">
+        <div class="marketplace-detail-visual-gallery marketplace-detail-visual-gallery--single" data-gallery-container data-gallery-lazy="${listing.id}" data-board-title="${(detailContent.boardTitle || "").replace(/"/g, "&quot;")}" data-board-type="${(listing.projectType || "").replace(/"/g, "&quot;")}" data-board-loc="${(listing.location || "").replace(/"/g, "&quot;")}">
+          <div class="marketplace-detail-visual-slide marketplace-detail-visual-slide--active" data-gallery-slide="0">
+            <div class="yapply-img-skeleton"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   if (imageItems.length === 0) {
     return `
       <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact panel">
@@ -871,4 +885,67 @@ export function createMarketplaceListingDetailPage(content, listingType, listing
   }
 
   return createClientDetail(content, listing);
+}
+
+/**
+ * Stream the listing hero photo into the skeleton after the (slim) detail page
+ * has rendered instantly. Fetches only the image row — the page itself already
+ * loaded without the heavy base64. Falls back to the board placeholder if the
+ * listing genuinely has no photo.
+ */
+let _detailSkeletonCssInjected = false;
+export async function hydrateDetailMedia() {
+  if (!_detailSkeletonCssInjected) {
+    _detailSkeletonCssInjected = true;
+    const st = document.createElement("style");
+    st.id = "yapply-detail-skeleton-css";
+    st.textContent = `
+      @keyframes yapplyImgShimmer {0%{background-position:-200% 0}100%{background-position:200% 0}}
+      .yapply-img-skeleton{display:block;width:100%;min-height:240px;height:100%;border-radius:8px;background:linear-gradient(100deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.11) 40%,rgba(255,255,255,0.04) 55%);background-size:200% 100%;animation:yapplyImgShimmer 1.3s linear infinite;}
+      [data-theme="light"] .yapply-img-skeleton{background:linear-gradient(100deg,rgba(0,0,0,0.05) 25%,rgba(0,0,0,0.10) 40%,rgba(0,0,0,0.05) 55%);background-size:200% 100%;}
+    `;
+    document.head.appendChild(st);
+  }
+
+  const containers = Array.from(document.querySelectorAll("[data-gallery-lazy]"));
+  if (!containers.length) return;
+  const { fetchListingImages } = await import("../core/supabaseMarketplace.js");
+
+  for (const container of containers) {
+    const id = container.getAttribute("data-gallery-lazy");
+    if (!id || container.dataset.lazyDone) continue;
+    container.dataset.lazyDone = "1";
+
+    let images = [];
+    try { images = await fetchListingImages(id); } catch (_) {}
+
+    if (images && images.length) {
+      container.innerHTML = images
+        .map((im, i) => `
+          <div class="marketplace-detail-visual-slide${i === 0 ? " marketplace-detail-visual-slide--active" : ""}" data-gallery-slide="${i}">
+            <img src="${im.src}" alt="${String(im.name || "").replace(/"/g, "&quot;")}" decoding="async" loading="${i === 0 ? "eager" : "lazy"}" style="opacity:0;transition:opacity .35s ease" onload="this.style.opacity=1" />
+          </div>`)
+        .join("");
+      if (images.length > 1) {
+        const parent = container.closest(".marketplace-detail-visual");
+        if (parent && !parent.querySelector(".gallery-arrow")) {
+          parent.insertAdjacentHTML("beforeend", `
+            <button class="gallery-arrow gallery-arrow--prev" data-gallery-prev aria-label="Previous image">&#8249;</button>
+            <button class="gallery-arrow gallery-arrow--next" data-gallery-next aria-label="Next image">&#8250;</button>
+            <div class="gallery-dots">${images.map((_, i) => `<span class="gallery-dot${i === 0 ? " gallery-dot--active" : ""}" data-gallery-dot="${i}"></span>`).join("")}</div>`);
+        }
+      }
+      try { window.__yapplySetupGallery?.(); } catch (_) {}
+    } else {
+      // No photo on this listing — show the styled board placeholder instead.
+      const bt = container.getAttribute("data-board-title") || "";
+      const bty = container.getAttribute("data-board-type") || "";
+      const bl = container.getAttribute("data-board-loc") || "";
+      const panel = container.closest(".project-hero-visual");
+      if (panel) {
+        panel.classList.remove("marketplace-detail-visual--media");
+        panel.innerHTML = `<div class="project-hero-visual__grid"></div><div class="project-hero-board"><span>${bt}</span><strong>${bty}</strong><p>${bl}</p></div>`;
+      }
+    }
+  }
 }

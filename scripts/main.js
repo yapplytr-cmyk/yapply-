@@ -3452,6 +3452,12 @@ function bindInteractions(content) {
       if (m.mountBidDials) m.mountBidDials(content.meta.locale);
     }).catch(() => {});
     setupListingImageGallery();
+    // Expose gallery setup so the lazy media hydrate can re-init after injecting.
+    window.__yapplySetupGallery = setupListingImageGallery;
+    // Stream the hero photo in (detail fetch is slim for instant render).
+    import("./components/marketplaceListingDetailPage.js").then((m) => {
+      if (m.hydrateDetailMedia) m.hydrateDetailMedia();
+    }).catch(() => {});
     setupMarketplaceListingInquiryForm();
     setupMarketplaceDeleteActions(content.meta.locale);
     setupDeveloperInquiryForm();
