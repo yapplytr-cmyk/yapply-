@@ -876,6 +876,28 @@ export async function resendSignupOtp(email) {
   return true;
 }
 
+/**
+ * Send a password-reset email. Supabase emails the user a link that lands on
+ * reset-password.html, where they set a new password.
+ */
+export async function requestPasswordReset(email) {
+  const cleanEmail = normalizeEmail(email);
+  if (!cleanEmail || !cleanEmail.includes("@")) {
+    throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
+  }
+  const supabase = await getSupabaseClient();
+  // The reset link is opened from an email in a normal browser, so it must be a
+  // real https origin — never capacitor://localhost (native app).
+  let origin = getAuthOrigin();
+  if (!/^https?:\/\//.test(origin || "")) origin = "https://yapplytr.com";
+  const redirectTo = `${origin}/reset-password.html`;
+  const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
+  if (error) {
+    throw mapSupabaseError(error, "RESET_REQUEST_FAILED");
+  }
+  return true;
+}
+
 export async function loginAccount(payload, audience = "public") {
   const supabase = await getSupabaseClient();
   const password = String(payload.password || "");

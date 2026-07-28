@@ -94,7 +94,7 @@ function loadDeveloperDashboardApi() {
 }
 
 function loadDeveloperMembershipApi() {
-  return loadComponentModule("developer-membership-page", () => import("./components/developerMembershipPage.js?v=20260728-coin3"));
+  return loadComponentModule("developer-membership-page", () => import("./components/developerMembershipPage.js?v=20260728-coin4"));
 }
 
 function loadDeveloperProfileApi() {
@@ -110,7 +110,7 @@ function loadProjectDetailApi() {
 }
 
 function loadAuthPagesApi() {
-  return loadComponentModule("auth-pages", () => import("./components/authPages.js"));
+  return loadComponentModule("auth-pages", () => import("./components/authPages.js?v=20260728-forgot"));
 }
 
 function loadProfessionalsApi() {

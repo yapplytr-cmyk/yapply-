@@ -326,7 +326,7 @@ let tabBarApiPromise = null;
 /* ── Eagerly preload critical modules so they're ready when renderPage runs ─── */
 appApiPromise = import("./app.js").catch(() => null);
 i18nApiPromise = import("./core/i18n.js").catch(() => null);
-authApiPromise = import("./core/auth.js?v=20260312-public-auth-backend").catch(() => null);
+authApiPromise = import("./core/auth.js?v=20260728-reset").catch(() => null);
 if (IS_NATIVE_APP) tabBarApiPromise = import("./components/tabBar.js").catch(() => null);
 
 function getLoadingCopy(locale = "tr") {
@@ -444,7 +444,7 @@ function renderBootFallback(appRoot, error) {
 
 async function loadAuthApi() {
   if (!authApiPromise) {
-    authApiPromise = import("./core/auth.js?v=20260312-public-auth-backend").catch(() => null);
+    authApiPromise = import("./core/auth.js?v=20260728-reset").catch(() => null);
   }
 
   return authApiPromise;
@@ -1181,6 +1181,39 @@ function setupAuthEntryForms(content) {
 
     if (!success) {
       return;
+    }
+
+    // ── Forgot password: email the user a reset link ──
+    const forgotBtn = form.querySelector("[data-forgot-password]");
+    const forgotMsg = form.querySelector("[data-forgot-msg]");
+    if (forgotBtn && !forgotBtn.dataset.wired) {
+      forgotBtn.dataset.wired = "1";
+      forgotBtn.addEventListener("click", async () => {
+        const isTr = document.documentElement.lang === "tr";
+        const emailInput = form.querySelector('input[name="email"]');
+        let email = (emailInput?.value || "").trim();
+        if (!email) {
+          email = (window.prompt(isTr ? "Şifre sıfırlama bağlantısı için e-posta adresinizi girin:" : "Enter your email to get a reset link:") || "").trim();
+        }
+        if (!email) return;
+        const show = (msg, ok) => {
+          if (!forgotMsg) return;
+          forgotMsg.hidden = false;
+          forgotMsg.style.color = ok ? "#3fbf7f" : "#ff6b6b";
+          forgotMsg.textContent = msg;
+        };
+        forgotBtn.disabled = true;
+        show(isTr ? "Gönderiliyor…" : "Sending…", true);
+        try {
+          const authApi = await loadAuthApi();
+          await authApi.requestPasswordReset(email);
+          show(isTr ? "Sıfırlama bağlantısı e-postanıza gönderildi. Gelen kutunuzu kontrol edin." : "A reset link has been sent to your email. Check your inbox.", true);
+        } catch (err) {
+          show(err?.message || (isTr ? "Bağlantı gönderilemedi. Lütfen tekrar deneyin." : "Could not send the reset link. Please try again."), false);
+        } finally {
+          forgotBtn.disabled = false;
+        }
+      });
     }
 
     const successTitle = success.querySelector("h3");
@@ -2003,7 +2036,7 @@ function setupMarketplaceListingInquiryForm() {
 
     // Send inquiry to backend (fire-and-forget — redirect even if it fails)
     try {
-      const { getAuthOrigin } = await import("./core/auth.js?v=20260312-public-auth-backend");
+      const { getAuthOrigin } = await import("./core/auth.js?v=20260728-reset");
       const origin = getAuthOrigin();
       await fetch(`${origin}/api/marketplace/inquiry/create`, {
         method: "POST",
@@ -2096,7 +2129,7 @@ function setupMarketplaceBidForm(content) {
       try {
         const { getBidCostForListing } = await import("./core/tokenStore.js?v=20260727");
         const cost = await getBidCostForListing({ budget: costBadge.dataset.listingBudget || "" });
-        const coin = `<svg viewBox="0 0 40 40" width="1.1em" height="1.1em" style="vertical-align:-0.18em;margin-right:5px"><defs><radialGradient id="ycFaceBid" cx="36%" cy="31%" r="78%"><stop offset="0%" stop-color="#f4e6c6"/><stop offset="52%" stop-color="#dcc283"/><stop offset="100%" stop-color="#b6924c"/></radialGradient></defs><circle cx="20" cy="20" r="18.5" fill="#9c7d3e"/><circle cx="20" cy="20" r="16.5" fill="url(#ycFaceBid)"/><circle cx="20" cy="20" r="12.8" fill="none" stroke="#fff" stroke-opacity="0.28" stroke-width="1"/><ellipse cx="14.5" cy="13" rx="6" ry="3.4" fill="#fff" opacity="0.30"/></svg>`;
+        const coin = `<svg viewBox="0 0 40 40" width="1.15em" height="1.15em" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.2em;margin-right:5px"><circle cx="20" cy="20" r="14.5" stroke-width="2.1"/><circle cx="20" cy="20" r="9.3" stroke-width="1.6" opacity="0.8"/><path d="M30.5 30.5 A14.5 14.5 0 0 1 9.5 30.5" stroke-width="3.6"/><path d="M11.6 15.2 A14.5 14.5 0 0 1 16 10.8" stroke-width="1.3" opacity="0.5"/></svg>`;
         costBadge.innerHTML = isTurkish
           ? `${coin}Bu teklif <strong>${cost} jeton</strong> harcar`
           : `${coin}This bid costs <strong>${cost} token${cost === 1 ? "" : "s"}</strong>`;
@@ -3520,7 +3553,7 @@ function bindInteractions(content) {
     try { document.getElementById("yapply-notification-bell")?.remove(); } catch (_) {}
     setupAccountSettings(content);
   } else if (page === "developer-membership") {
-    import("./components/developerMembershipPage.js?v=20260728-coin3").then((m) => {
+    import("./components/developerMembershipPage.js?v=20260728-coin4").then((m) => {
       if (m.initDeveloperMembershipPage) m.initDeveloperMembershipPage(content);
     }).catch(() => {});
   } else if (page === "marketplace-submission") {
@@ -4694,7 +4727,7 @@ async function renderPage(localeOverride) {
     const _preloadMap = {
       "open-marketplace": () => import("./components/openMarketplacePage.js?v=20260325"),
       "developer-dashboard": () => import("./components/developerDashboardPage.js"),
-      "developer-membership": () => import("./components/developerMembershipPage.js?v=20260728-coin3"),
+      "developer-membership": () => import("./components/developerMembershipPage.js?v=20260728-coin4"),
       "client-dashboard": () => import("./components/clientDashboardPage.js"),
       "client-bids": () => import("./components/clientBidsPage.js"),
       "marketplace-listing-detail": () => import("./components/marketplaceListingDetailPage.js"),

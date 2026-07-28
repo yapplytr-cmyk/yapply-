@@ -5,10 +5,13 @@
 
 import { createButton, createSectionHeading } from "./primitives.js";
 
-/* ── Yapply token coin — one shaded 3D metallic coin, no symbol, gentle shine.
-      Used everywhere so every jeton looks identical. ── */
-function yapplyCoin(sizeEm = 1.15) {
-  return `<span class="yapply-coin" style="width:${sizeEm}em;height:${sizeEm}em" aria-hidden="true"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ycFace" cx="36%" cy="31%" r="78%"><stop offset="0%" stop-color="#f4e6c6"/><stop offset="52%" stop-color="#dcc283"/><stop offset="100%" stop-color="#b6924c"/></radialGradient></defs><circle cx="20" cy="20" r="18.5" fill="#9c7d3e"/><circle cx="20" cy="20" r="16.5" fill="url(#ycFace)"/><circle cx="20" cy="20" r="12.8" fill="none" stroke="#fff" stroke-opacity="0.28" stroke-width="1"/><ellipse cx="14.5" cy="13" rx="6" ry="3.4" fill="#fff" opacity="0.30"/></svg></span>`;
+/* ── Yapply token coin — a DRAWN coin (line art with shading), like the app's
+      other icons. Inherits currentColor. Same graphic everywhere. ── */
+function yapplyCoin(sizeEm = 1.2) {
+  return `<span class="yapply-coin" style="width:${sizeEm}em;height:${sizeEm}em" aria-hidden="true">${_yapplyCoinSvg()}</span>`;
+}
+function _yapplyCoinSvg() {
+  return `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="14.5" stroke-width="2.1"/><circle cx="20" cy="20" r="9.3" stroke-width="1.6" opacity="0.8"/><path d="M30.5 30.5 A14.5 14.5 0 0 1 9.5 30.5" stroke-width="3.6"/><path d="M11.6 15.2 A14.5 14.5 0 0 1 16 10.8" stroke-width="1.3" opacity="0.5"/></svg>`;
 }
 
 function _ensureCoinCss() {
@@ -16,14 +19,10 @@ function _ensureCoinCss() {
   const style = document.createElement("style");
   style.id = "yapply-coin-css";
   style.textContent = `
-    .yapply-coin { position:relative; display:inline-block; vertical-align:-0.18em; margin-right:3px;
-      border-radius:50%; overflow:hidden; }
-    .yapply-coin svg { display:block; width:100%; height:100%; }
-    .yapply-coin::after { content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none;
-      background:linear-gradient(115deg, transparent 42%, rgba(255,255,255,0.55) 50%, transparent 58%);
-      transform:translateX(-130%); animation: yapplyCoinShine 5s ease-in-out infinite; }
-    @keyframes yapplyCoinShine { 0%,72%{transform:translateX(-130%)} 88%,100%{transform:translateX(130%)} }
-    @media (prefers-reduced-motion: reduce) { .yapply-coin::after { animation:none; opacity:0; } }
+    .yapply-coin { display:inline-block; vertical-align:-0.2em; margin-right:3px; }
+    .yapply-coin svg { display:block; width:100%; height:100%; animation: yapplyCoinBob 3s ease-in-out infinite; will-change:transform; }
+    @keyframes yapplyCoinBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-1.5px)} }
+    @media (prefers-reduced-motion: reduce) { .yapply-coin svg { animation:none; } }
   `;
   document.head.appendChild(style);
 }

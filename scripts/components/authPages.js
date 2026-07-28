@@ -185,6 +185,12 @@ export function createCreateAccountPage(content) {
 
 export function createLoginPage(content) {
   const isNative = document.documentElement.classList.contains("has-tab-bar");
+  const isTr = content.meta?.locale === "tr";
+  const forgotHtml = `
+    <div class="auth-forgot-row" style="text-align:right;margin-top:-4px">
+      <button type="button" class="auth-forgot-link" data-forgot-password style="background:none;border:0;padding:0;font-size:0.82rem;color:var(--accent,#c9a84c);cursor:pointer;text-decoration:underline">${isTr ? "Şifremi unuttum" : "Forgot password?"}</button>
+    </div>
+    <div class="auth-forgot-msg" data-forgot-msg hidden style="font-size:0.85rem;margin-top:6px"></div>`;
 
   /* ── Native iOS: clean minimal login ── */
   if (isNative) {
@@ -233,6 +239,7 @@ export function createLoginPage(content) {
               <span>${content.form.fields.password.label}</span>
               <input type="password" name="password" placeholder="${content.form.fields.password.placeholder}" autocomplete="current-password" required />
             </label>
+            ${forgotHtml}
             <div class="form-actions form-field--full">
               <button class="button button--primary auth-native-submit" type="submit">${content.form.submitLabel}</button>
             </div>
@@ -277,6 +284,7 @@ export function createLoginPage(content) {
               <span>${content.form.fields.password.label}</span>
               <input type="password" name="password" placeholder="${content.form.fields.password.placeholder}" autocomplete="current-password" required />
             </label>
+            ${forgotHtml}
             <div class="form-actions form-field--full">
               <button class="button button--primary" type="submit">${content.form.submitLabel}</button>
             </div>
