@@ -19,6 +19,7 @@ from api.billing import (
   handle_billing_intent,
   handle_billing_status,
   handle_billing_webhook,
+  handle_billing_revenuecat_webhook,
 )
 from api.supabase_utils import (
   handle_admin_account_delete,
@@ -197,6 +198,10 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "billing/webhook":
       handle_billing_webhook(self)
+      return
+
+    if route == "billing/revenuecat-webhook":
+      handle_billing_revenuecat_webhook(self)
       return
 
     if route == "notify":

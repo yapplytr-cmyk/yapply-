@@ -4,6 +4,7 @@
  */
 
 import { createButton, createSectionHeading } from "./primitives.js";
+import { iapAvailable, purchaseMembership, purchaseTokenPack } from "../core/iap.js";
 
 /* ── Yapply token coin — a DRAWN coin (line art with shading), like the app's
       other icons. Inherits currentColor. Same graphic everywhere. ── */
@@ -356,6 +357,26 @@ export async function initDeveloperMembershipPage(content) {
               isTr ? "İstediğiniz zaman iptal" : "Cancel anytime",
             ],
           };
+        }
+
+        // Native iOS app → buy through Apple's In-App Purchase sheet (RevenueCat).
+        // The RevenueCat webhook then grants the membership/tokens in Supabase.
+        if (iapAvailable()) {
+          btn.textContent = isTr ? "App Store açılıyor…" : "Opening App Store…";
+          const purchase = packId
+            ? await purchaseTokenPack(packId, user.id)
+            : await purchaseMembership(planId, user.id);
+          btn.disabled = false;
+          btn.textContent = prevLabel;
+          if (purchase.ok) {
+            showNote(btn, isTr
+              ? "Satın alma tamamlandı! Üyeliğiniz/jetonlarınız birkaç saniye içinde hesabınıza yansır."
+              : "Purchase complete! Your membership/tokens will appear on your account within a few seconds.");
+            window.setTimeout(() => { try { window.location.reload(); } catch (_) {} }, 4500);
+          } else if (!purchase.cancelled) {
+            showNote(btn, purchase.message || (isTr ? "Satın alma tamamlanamadı." : "Purchase could not be completed."));
+          }
+          return;
         }
 
         const result = await tokenStore.createPaymentIntent(planId, user.id, user.email || "", packId);
