@@ -5,9 +5,9 @@
 
 import { createButton, createSectionHeading } from "./primitives.js";
 
-/* ── Yapply token coin — small 3D orange spinning coin (replaces the 🪙 emoji) ── */
-function yapplyCoin(sizeEm = 1.15) {
-  return `<span class="yapply-coin" style="width:${sizeEm}em;height:${sizeEm}em" aria-hidden="true"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="yapplyCoinGrad" cx="37%" cy="30%" r="80%"><stop offset="0%" stop-color="#ffdca6"/><stop offset="45%" stop-color="#ff9d3c"/><stop offset="100%" stop-color="#df6a12"/></radialGradient></defs><circle cx="20" cy="20" r="18" fill="url(#yapplyCoinGrad)" stroke="#b8560f" stroke-width="2"/><circle cx="20" cy="20" r="13.5" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="1.3"/><text x="20" y="25.5" text-anchor="middle" font-size="15" font-weight="900" fill="#fff3e0" font-family="system-ui,-apple-system,sans-serif">₺</text></svg></span>`;
+/* ── Yapply token coin — one simple flat orange coin graphic, used everywhere ── */
+function yapplyCoin(sizeEm = 1.1) {
+  return `<span class="yapply-coin" style="width:${sizeEm}em;height:${sizeEm}em" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9.5" fill="#f2903a" stroke="#c96a18" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#ffd9a8" stroke-width="1.1"/><text x="12" y="15.7" text-anchor="middle" font-size="8.5" font-weight="800" fill="#fff" font-family="system-ui,-apple-system,sans-serif">₺</text></svg></span>`;
 }
 
 function _ensureCoinCss() {
@@ -15,10 +15,8 @@ function _ensureCoinCss() {
   const style = document.createElement("style");
   style.id = "yapply-coin-css";
   style.textContent = `
-    @keyframes yapplyCoinSpin { 0%{transform:rotateY(0deg)} 100%{transform:rotateY(360deg)} }
-    .yapply-coin { display:inline-block; vertical-align:-0.2em; perspective:80px; margin-right:2px; }
-    .yapply-coin svg { display:block; width:100%; height:100%; transform-style:preserve-3d; animation:yapplyCoinSpin 3.4s cubic-bezier(.55,.1,.45,.9) infinite; filter:drop-shadow(0 1px 2px rgba(180,80,10,0.45)); }
-    @media (prefers-reduced-motion: reduce) { .yapply-coin svg { animation:none; } }
+    .yapply-coin { display:inline-block; vertical-align:-0.16em; margin-right:3px; }
+    .yapply-coin svg { display:block; width:100%; height:100%; }
   `;
   document.head.appendChild(style);
 }
@@ -175,7 +173,7 @@ export function createDeveloperMembershipPage(content, session) {
         ${planCard("unlimited", false)}
       </div>
 
-      <div style="text-align:center">
+      <div style="text-align:center;margin-top:2.5rem">
         ${createButton({ href: "./developer-dashboard.html", label: locale === "tr" ? "Dashboard'a Dön" : "Back to Dashboard", variant: "secondary" })}
       </div>
     </section>

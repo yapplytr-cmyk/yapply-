@@ -131,6 +131,13 @@ function nativeSoftNavigate(href) {
 }
 
 // Intercept all <a> clicks on native app for soft navigation
+// Native app has no website homepage — boot straight into Explore with the
+// Explore tab selected. Set this before the tab bar or the page renders so the
+// bottom tab highlights Explore from the very first frame.
+if (IS_NATIVE_APP && document.body && (!document.body.dataset.page || document.body.dataset.page === "home")) {
+  document.body.dataset.page = "open-marketplace";
+}
+
 if (IS_NATIVE_APP) {
   document.addEventListener("click", (e) => {
     // Don't intercept if modifier keys are held
