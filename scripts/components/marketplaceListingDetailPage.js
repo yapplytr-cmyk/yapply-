@@ -253,6 +253,7 @@ function createBidSubmissionSection(content, listing) {
         <div class="panel application-panel">
           <form class="application-form" data-marketplace-bid-form novalidate>
             <input type="hidden" name="listingId" value="${listing.id}" />
+            <div class="bid-token-cost" data-bid-cost-badge data-listing-budget="${String(listing.budget || listing.marketplaceMeta?.budget?.label || listing.marketplaceMeta?.budget || "").replace(/"/g, "&quot;")}" hidden></div>
             <div class="auth-form-error form-field--full" data-marketplace-bid-error hidden style="display: none;">
               <strong data-marketplace-bid-error-title>${bidForm.errorTitle}</strong>
               <p data-marketplace-bid-error-text>${bidForm.errorFallback}</p>

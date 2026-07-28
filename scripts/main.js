@@ -2088,6 +2088,23 @@ function setupMarketplaceBidForm(content) {
 
   setBidStatus(null);
 
+  // ── Show the token cost for THIS project up front (scales with budget) ──
+  const costBadge = form.querySelector("[data-bid-cost-badge]");
+  if (costBadge && !costBadge.dataset.filled) {
+    costBadge.dataset.filled = "1";
+    (async () => {
+      try {
+        const { getBidCostForListing } = await import("./core/tokenStore.js?v=20260727");
+        const cost = await getBidCostForListing({ budget: costBadge.dataset.listingBudget || "" });
+        const coin = `<svg viewBox="0 0 24 24" width="1.05em" height="1.05em" style="vertical-align:-0.16em;margin-right:4px"><circle cx="12" cy="12" r="9.5" fill="#f2903a" stroke="#c96a18" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#ffd9a8" stroke-width="1.1"/><text x="12" y="15.7" text-anchor="middle" font-size="8.5" font-weight="800" fill="#fff" font-family="system-ui,sans-serif">₺</text></svg>`;
+        costBadge.innerHTML = isTurkish
+          ? `${coin}Bu teklif <strong>${cost} jeton</strong> harcar`
+          : `${coin}This bid costs <strong>${cost} token${cost === 1 ? "" : "s"}</strong>`;
+        costBadge.hidden = false;
+      } catch (_) {}
+    })();
+  }
+
   // ── Bid amount: numeric-only with Turkish dot formatting ──
   const amountInput = form.querySelector("[data-bid-amount-input]");
   if (amountInput) {

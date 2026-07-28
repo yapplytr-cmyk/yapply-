@@ -2838,3 +2838,22 @@ body:has(.account-settings-shell) .notification-bell-container {
   .y-dial-input { font-size: 2.25rem; }
   .y-dial-unit { font-size: 0.74rem; }
 }
+
+/* Bid token-cost badge — shows up front how many tokens a bid on this project
+   costs (scales with the project budget). */
+.bid-token-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted, #b3ada0);
+  background: rgba(242, 144, 58, 0.10);
+  border: 1px solid rgba(242, 144, 58, 0.30);
+  border-radius: 999px;
+  padding: 5px 12px;
+  margin-bottom: 12px;
+  align-self: flex-start;
+  width: fit-content;
+}
+.bid-token-cost strong { color: var(--accent, #c9a84c); font-weight: 800; }
