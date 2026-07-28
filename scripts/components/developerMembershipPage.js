@@ -4,7 +4,7 @@
  */
 
 import { createButton, createSectionHeading } from "./primitives.js";
-import { iapAvailable, purchaseMembership, purchaseTokenPack } from "../core/iap.js";
+import { iapAvailable, purchaseMembership, purchaseTokenPack, restorePurchases } from "../core/iap.js";
 
 /* ── Yapply token coin — a DRAWN coin (line art with shading), like the app's
       other icons. Inherits currentColor. Same graphic everywhere. ── */
@@ -320,6 +320,54 @@ export async function initDeveloperMembershipPage(content) {
     }
     note.textContent = msg;
   };
+
+  // ── 2c. Subscription disclosures, legal links & Restore Purchases (App Review) ──
+  if (!document.querySelector("[data-membership-legal]")) {
+    const legal = document.createElement("div");
+    legal.setAttribute("data-membership-legal", "");
+    legal.style.cssText = "max-width:640px;margin:2.5rem auto 0;text-align:center";
+    const disclosure = isTr
+      ? "Yapply üyelikleri (Starter, Pro, Elite) aylık olarak otomatik yenilenen aboneliklerdir. Ödeme, satın alma onaylandığında Apple Kimliğinize yansıtılır. Abonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir ve aynı ücret alınır. Aboneliğinizi App Store hesap ayarlarınızdan yönetebilir veya iptal edebilirsiniz."
+      : "Yapply memberships (Starter, Pro, Elite) are monthly auto-renewable subscriptions. Payment is charged to your Apple ID at confirmation of purchase. The subscription renews automatically for the same price unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your App Store account settings.";
+    const restoreBtn = iapAvailable()
+      ? `<button class="button button--secondary" data-restore-purchases style="margin-bottom:1.1rem">${isTr ? "Satın Alımları Geri Yükle" : "Restore Purchases"}</button>`
+      : "";
+    legal.innerHTML = `
+      ${restoreBtn}
+      <p style="font-size:0.78rem;color:var(--text-dim);line-height:1.6;margin:0 0 0.8rem">${disclosure}</p>
+      <p style="font-size:0.82rem;margin:0">
+        <a href="./terms.html" style="color:var(--accent,#c9a84c);text-decoration:underline">${isTr ? "Kullanım Koşulları (EULA)" : "Terms of Use (EULA)"}</a>
+        &nbsp;&middot;&nbsp;
+        <a href="./privacy.html" style="color:var(--accent,#c9a84c);text-decoration:underline">${isTr ? "Gizlilik Politikası" : "Privacy Policy"}</a>
+      </p>
+    `;
+    document.querySelector(".section-shell")?.appendChild(legal);
+    const restore = legal.querySelector("[data-restore-purchases]");
+    if (restore) {
+      restore.addEventListener("click", async () => {
+        restore.disabled = true;
+        const prev = restore.textContent;
+        restore.textContent = isTr ? "Geri yükleniyor…" : "Restoring…";
+        try {
+          const res = await restorePurchases(user.id);
+          if (res && res.ok) {
+            const has = Array.isArray(res.activeEntitlements) && res.activeEntitlements.length > 0;
+            showNote(restore, has
+              ? (isTr ? "Satın alımlarınız geri yüklendi." : "Your purchases have been restored.")
+              : (isTr ? "Geri yüklenecek aktif satın alım bulunamadı." : "No active purchases found to restore."));
+            if (has) setTimeout(() => window.location.reload(), 2500);
+          } else {
+            showNote(restore, isTr ? "Satın alımlar geri yüklenemedi. Lütfen tekrar deneyin." : "Could not restore purchases. Please try again.");
+          }
+        } catch (_) {
+          showNote(restore, isTr ? "Satın alımlar geri yüklenemedi. Lütfen tekrar deneyin." : "Could not restore purchases. Please try again.");
+        } finally {
+          restore.disabled = false;
+          restore.textContent = prev;
+        }
+      });
+    }
+  }
 
   const bindButtons = () => {
     document.querySelectorAll("[data-token-plan-select], [data-membership-select], [data-token-pack-select]").forEach((btn) => {
