@@ -1,8 +1,9 @@
 /**
- * bidDial.js — Yapply rotary dial (ported from the NAUTICO spending dial).
- * Drag-to-wind ring with graduation ticks, typeable center value and
- * haptic feedback on native. Writes its value into a hidden form input,
- * so the existing bid submission flow is completely untouched.
+ * bidDial.js — Yapply rotary wheel (NAUTICO-style).
+ * Compact drag-to-spin wheel with a big readable value and the unit stacked
+ * underneath (never clipped). Tap the number to type. Detent haptic + a full
+ * click on every notch. Writes into the existing hidden form inputs, so the
+ * bid submission flow is untouched. No +/- stepper buttons.
  */
 
 function _isNative() {
@@ -16,13 +17,13 @@ function haptic(kind) {
       if (kind === "success") window.Capacitor.Plugins.Haptics.notification({ type: "SUCCESS" });
       else window.Capacitor.Plugins.Haptics.impact({ style: kind === "medium" ? "MEDIUM" : "LIGHT" });
     } else if (navigator.vibrate) {
-      // Web fallback so the wheel still "kicks" on Android / supported browsers.
-      navigator.vibrate(kind === "medium" ? 12 : 5);
+      navigator.vibrate(kind === "medium" ? 14 : 6);
     }
   } catch (_) {}
 }
 
-// Short WebAudio "tick" — the scroll-wheel click, no audio asset required.
+// Fuller WebAudio "tick": a bright click layered over a short low body, so it
+// reads as a satisfying detent rather than a thin blip. No audio asset needed.
 let _ac = null;
 function tickSound() {
   try {
@@ -31,51 +32,60 @@ function tickSound() {
     _ac = _ac || new AC();
     if (_ac.state === "suspended") _ac.resume();
     const t = _ac.currentTime;
-    const o = _ac.createOscillator();
-    const g = _ac.createGain();
-    o.type = "square";
-    o.frequency.setValueAtTime(1500, t);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.05, t + 0.003);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.028);
-    o.connect(g);
-    g.connect(_ac.destination);
-    o.start(t);
-    o.stop(t + 0.032);
+    const out = _ac.createGain();
+    out.gain.value = 0.9;
+    out.connect(_ac.destination);
+
+    // Bright click
+    const o1 = _ac.createOscillator();
+    const g1 = _ac.createGain();
+    o1.type = "square";
+    o1.frequency.setValueAtTime(1250, t);
+    g1.gain.setValueAtTime(0.0001, t);
+    g1.gain.exponentialRampToValueAtTime(0.09, t + 0.004);
+    g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+    o1.connect(g1); g1.connect(out);
+    o1.start(t); o1.stop(t + 0.05);
+
+    // Low body for fullness
+    const o2 = _ac.createOscillator();
+    const g2 = _ac.createGain();
+    o2.type = "triangle";
+    o2.frequency.setValueAtTime(320, t);
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(0.07, t + 0.006);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    o2.connect(g2); g2.connect(out);
+    o2.start(t); o2.stop(t + 0.065);
   } catch (_) {}
 }
 
-// One "detent" of feedback: haptic tick + audible click together.
 function detent() {
   haptic("light");
   tickSound();
 }
 
 /**
- * Mounts a dial into mountEl.
- * opts: { perTurn, prefix, suffix, suffixFn, steps, start, min, max, sub, format, parse }
- * onChange(value) — called with the numeric value on every change.
+ * Mounts a compact wheel into mountEl.
+ * opts: { perTurn, start, min, max, unit, unitFn }
+ * onChange(value) — numeric value on every change.
  */
 export function mountDial(mountEl, opts = {}, onChange) {
   const PER_TURN = opts.perTurn || 100;
-  const PREFIX = opts.prefix || "";
-  const STEPS = opts.steps || [-10, -1, 1, 10];
   const MIN = opts.min ?? 0;
   const MAX = opts.max ?? Infinity;
-  const SUB = opts.sub || "";
-  const NTICKS = 60;
-  const R = 96;
+  const NTICKS = 48;
+  const R = 92;
 
   let value = Math.min(MAX, Math.max(MIN, opts.start ?? MIN));
-
-  const suffixOf = (v) => (typeof opts.suffixFn === "function" ? opts.suffixFn(v) : (opts.suffix || ""));
+  const unitOf = (v) => (typeof opts.unitFn === "function" ? opts.unitFn(v) : (opts.unit || ""));
   const fmt = (v) => String(Math.round(v));
 
   let ticksSvg = "";
   for (let i = 0; i < NTICKS; i++) {
     const a = (i / NTICKS) * 2 * Math.PI - Math.PI / 2;
-    const major = i % 5 === 0;
-    const rIn = major ? 110 : 113;
+    const major = i % 4 === 0;
+    const rIn = major ? 108 : 112;
     const x1 = 120 + rIn * Math.cos(a), y1 = 120 + rIn * Math.sin(a);
     const x2 = 120 + 120 * Math.cos(a), y2 = 120 + 120 * Math.sin(a);
     ticksSvg += `<line class="y-dial-tick${major ? " major" : ""}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"></line>`;
@@ -91,13 +101,9 @@ export function mountDial(mountEl, opts = {}, onChange) {
         </svg>
         <div class="y-dial-rot"><span class="y-dial-dot"></span></div>
         <div class="y-dial-center">
-          <div class="y-dial-amount">${PREFIX ? `<span class="y-dial-cur">${PREFIX}</span>` : ""}<input class="y-dial-input" inputmode="numeric" value="${fmt(value)}" /><span class="y-dial-suf">${suffixOf(value)}</span></div>
-          <div class="y-dial-laps"></div>
-          ${SUB ? `<div class="y-dial-sub">${SUB}</div>` : ""}
+          <input class="y-dial-input" inputmode="numeric" value="${fmt(value)}" />
+          <div class="y-dial-unit">${unitOf(value)}</div>
         </div>
-      </div>
-      <div class="y-dial-row">
-        ${STEPS.map((d) => `<button type="button" class="y-dial-step" data-d="${d}">${d > 0 ? "+" : "−"}${Math.abs(d) >= 1000 ? `${Math.abs(d) / 1000}k` : Math.abs(d)}</button>`).join("")}
       </div>
     </div>`;
 
@@ -105,29 +111,25 @@ export function mountDial(mountEl, opts = {}, onChange) {
   const rot = mountEl.querySelector(".y-dial-rot");
   const prog = mountEl.querySelector(".y-dial-prog");
   const input = mountEl.querySelector(".y-dial-input");
-  const suf = mountEl.querySelector(".y-dial-suf");
-  const lapsEl = mountEl.querySelector(".y-dial-laps");
+  const unitEl = mountEl.querySelector(".y-dial-unit");
   const ticks = Array.from(mountEl.querySelectorAll(".y-dial-tick"));
   const CIRC = 2 * Math.PI * R;
   prog.style.strokeDasharray = CIRC;
 
   function fitAmount(str) {
     const len = String(str).length;
-    input.style.width = Math.max(2, len + 0.5) + "ch";
-    input.style.fontSize = len <= 4 ? "1.85rem" : len <= 6 ? "1.5rem" : len <= 8 ? "1.2rem" : "1rem";
+    input.style.fontSize = len <= 3 ? "1.7rem" : len <= 5 ? "1.35rem" : len <= 7 ? "1.05rem" : "0.85rem";
   }
 
   let lastLit = -1;
 
   function render() {
     const frac = ((value - MIN) % PER_TURN) / PER_TURN;
-    const laps = Math.floor((value - MIN) / PER_TURN);
     prog.style.strokeDashoffset = CIRC * (1 - frac);
     rot.style.transform = `rotate(${frac * 360}deg)`;
     const lit = Math.round(frac * NTICKS);
     ticks.forEach((t, i) => t.classList.toggle("lit", i < lit));
-    lapsEl.textContent = laps >= 1 ? `×${laps}` : "";
-    if (suf) suf.textContent = suffixOf(value);
+    if (unitEl) unitEl.textContent = unitOf(value);
     if (document.activeElement !== input) {
       input.value = fmt(value);
       fitAmount(input.value);
@@ -143,21 +145,17 @@ export function mountDial(mountEl, opts = {}, onChange) {
   function setValue(v, withHaptic) {
     value = Math.min(MAX, Math.max(MIN, v));
     render();
-    // Fire one detent (haptic + click) each time the wheel crosses a graduation
-    // tick — this is what makes it feel like the NAUTICO scroll wheel.
     if (withHaptic) {
       const frac = ((value - MIN) % PER_TURN) / PER_TURN;
       const lit = Math.round(frac * NTICKS);
-      if (lit !== lastLit) {
-        detent();
-        lastLit = lit;
-      }
+      if (lit !== lastLit) { detent(); lastLit = lit; }
     }
     notify();
   }
 
   render();
   notify();
+  fitAmount(input.value);
 
   // Type in the center
   input.addEventListener("input", () => {
@@ -169,12 +167,7 @@ export function mountDial(mountEl, opts = {}, onChange) {
   });
   input.addEventListener("blur", () => render());
 
-  // Stepper buttons
-  mountEl.querySelectorAll(".y-dial-step").forEach((b) => {
-    b.addEventListener("click", () => setValue(value + parseFloat(b.dataset.d), true));
-  });
-
-  // Drag-to-wind
+  // Drag-to-spin
   let dragging = false;
   let lastAngle = 0;
   function angleAt(e) {
@@ -217,44 +210,49 @@ export function mountDial(mountEl, opts = {}, onChange) {
 }
 
 /**
- * Mounts the bid dials on the listing detail page:
- *  - bid amount dial (TL) → writes to the bidAmount input
- *  - completion timeframe dial (weeks/months) → writes the localized label
- *    ("2 hafta" / "3 ay") into the estimatedCompletionTimeframe input
+ * Mounts the bid wheels on the listing detail page, side by side:
+ *  - bid amount (TL) → writes to the bidAmount input
+ *  - completion timeframe (weeks→"hafta", months→"ay") → writes the label into
+ *    the estimatedCompletionTimeframe hidden input.
  * No-op if the bid form isn't on the page.
  */
 export function mountBidDials(locale) {
   const isTr = locale === "tr";
   const form = document.querySelector("[data-marketplace-bid-form]") || document.querySelector('form input[name="bidAmount"]')?.closest("form");
   if (!form) return;
+  if (form.querySelector(".y-dial-duo")) return; // already mounted
 
-  // ── Amount dial ──
   const amountInput = form.querySelector('input[name="bidAmount"]');
-  const amountWrap = form.querySelector(".bid-amount-wrap");
-  if (amountInput && amountWrap && !form.querySelector("[data-bid-dial-amount]")) {
-    amountInput.type = "hidden";
-    const currency = amountWrap.querySelector(".bid-amount-currency");
-    if (currency) currency.style.display = "none";
-    const mount = document.createElement("div");
-    mount.setAttribute("data-bid-dial-amount", "");
-    amountWrap.appendChild(mount);
-    mountDial(mount, {
-      perTurn: 100000,
-      prefix: "",
-      suffix: " TL",
-      steps: [-50000, -10000, 10000, 50000],
-      start: 0,
-      min: 0,
-      max: 500000000,
-      sub: isTr ? "çevirin · yazmak için dokunun" : "drag · tap to type",
-    }, (v) => {
-      amountInput.value = v > 0 ? String(v) : "";
-    });
-  }
-
-  // ── Timeframe dial (weeks 1-3 → "hafta", 4+ → months "ay") ──
+  const amountLabel = amountInput?.closest(".form-field") || amountInput?.closest("label");
   const tfSelect = form.querySelector('select[name="estimatedCompletionTimeframe"]');
-  if (tfSelect && !form.querySelector("[data-bid-dial-timeframe]")) {
+  const tfLabel = tfSelect?.closest(".form-field") || tfSelect?.closest("label");
+  if (!amountInput || !amountLabel) return;
+
+  // Build a shared side-by-side row and move both fields into it.
+  const duo = document.createElement("div");
+  duo.className = "y-dial-duo";
+  amountLabel.parentNode.insertBefore(duo, amountLabel);
+  duo.appendChild(amountLabel);
+  if (tfLabel) duo.appendChild(tfLabel);
+
+  // ── Amount wheel ──
+  amountInput.type = "hidden";
+  const amountWrap = amountLabel.querySelector(".bid-amount-wrap");
+  const currency = amountLabel.querySelector(".bid-amount-currency");
+  if (currency) currency.style.display = "none";
+  const amountMount = document.createElement("div");
+  amountMount.setAttribute("data-bid-dial-amount", "");
+  (amountWrap || amountLabel).appendChild(amountMount);
+  mountDial(amountMount, {
+    perTurn: 100000,
+    start: 0,
+    min: 0,
+    max: 500000000,
+    unit: "TL",
+  }, (v) => { amountInput.value = v > 0 ? String(v) : ""; });
+
+  // ── Timeframe wheel (1-3 → "hafta", 4+ → months "ay") ──
+  if (tfSelect && tfLabel) {
     const hidden = document.createElement("input");
     hidden.type = "hidden";
     hidden.name = "estimatedCompletionTimeframe";
@@ -266,26 +264,20 @@ export function mountBidDials(locale) {
     const holder = tfSelect.parentElement;
     tfSelect.remove();
     holder.appendChild(hidden);
-    const mount = document.createElement("div");
-    mount.setAttribute("data-bid-dial-timeframe", "");
-    holder.appendChild(mount);
-    hidden.value = label(4); // sensible default: 1 month
-    mountDial(mount, {
+    const tfMount = document.createElement("div");
+    tfMount.setAttribute("data-bid-dial-timeframe", "");
+    holder.appendChild(tfMount);
+    hidden.value = label(4);
+    mountDial(tfMount, {
       perTurn: 12,
-      prefix: "",
-      suffixFn: (v) => {
-        const w = Math.max(1, Math.round(v));
-        if (w <= 3) return isTr ? " hafta" : ` week${w === 1 ? "" : "s"}`;
-        const m = Math.max(1, Math.round(w / 4));
-        return isTr ? ` ay (${m})` : ` wk (~${m} mo)`;
-      },
-      steps: [-4, -1, 1, 4],
       start: 4,
       min: 1,
       max: 52,
-      sub: isTr ? "tamamlanma süresi (hafta)" : "completion time (weeks)",
-    }, (v) => {
-      hidden.value = label(Math.max(1, Math.round(v)));
-    });
+      unitFn: (v) => {
+        const w = Math.max(1, Math.round(v));
+        if (w <= 3) return isTr ? "hafta" : (w === 1 ? "week" : "weeks");
+        return isTr ? "ay" : "months";
+      },
+    }, (v) => { hidden.value = label(Math.max(1, Math.round(v))); });
   }
 }

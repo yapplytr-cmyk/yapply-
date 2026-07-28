@@ -2728,17 +2728,44 @@ html.keyboard-open .notification-bell-container {
 .tab-bar__item { position: relative; z-index: 1; }
 
 /* ═══ Yapply rotary bid dial (NAUTICO-style, gold) ═══ */
-.y-dial-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; padding: 4px 0; margin: 0 auto; }
+/* Two compact wheels sit side by side; each field label sits above its wheel. */
+.y-dial-duo {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+.y-dial-duo > .form-field,
+.y-dial-duo > label {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+.y-dial-duo > .form-field > span,
+.y-dial-duo > label > span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim, #8b8677);
+}
+
+.y-dial-wrap { display: flex; align-items: center; justify-content: center; width: 100%; }
 .y-dial {
-  position: relative; width: min(52vw, 184px); aspect-ratio: 1 / 1; margin: 0 auto;
+  position: relative; width: 100%; max-width: 148px; aspect-ratio: 1 / 1; margin: 0 auto;
   touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .y-dial-svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
-.y-dial-track { fill: none; stroke: var(--line, rgba(255,255,255,0.12)); stroke-width: 12; opacity: 0.6; }
+.y-dial-track { fill: none; stroke: var(--line, rgba(255,255,255,0.12)); stroke-width: 11; opacity: 0.6; }
 .y-dial-prog {
-  fill: none; stroke: var(--accent, #c9a84c); stroke-width: 12; stroke-linecap: round;
+  fill: none; stroke: var(--accent, #c9a84c); stroke-width: 11; stroke-linecap: round;
   transition: stroke-dashoffset .2s cubic-bezier(.22,.9,.3,1);
-  filter: drop-shadow(0 0 6px rgba(201,168,76,0.5));
+  filter: drop-shadow(0 0 5px rgba(201,168,76,0.5));
 }
 .y-dial-tick { stroke: var(--line, rgba(255,255,255,0.12)); stroke-width: 2; opacity: .4; transition: opacity .2s linear; }
 .y-dial-tick.major { stroke-width: 3; opacity: .6; }
@@ -2749,40 +2776,35 @@ html.keyboard-open .notification-bell-container {
 }
 .y-dial.dragging .y-dial-prog, .y-dial.dragging .y-dial-rot { transition: none; }
 .y-dial-dot {
-  position: absolute; top: 8%; left: 50%; width: 20px; height: 20px;
+  position: absolute; top: 8%; left: 50%; width: 16px; height: 16px;
   transform: translate(-50%, -50%);
   border-radius: 50%; background: var(--accent, #c9a84c);
-  box-shadow: 0 3px 11px rgba(0,0,0,0.4), 0 0 0 5px rgba(201,168,76,0.16), inset 0 1px 0 rgba(255,255,255,0.55);
+  box-shadow: 0 2px 9px rgba(0,0,0,0.4), 0 0 0 4px rgba(201,168,76,0.16), inset 0 1px 0 rgba(255,255,255,0.55);
   border: 3px solid var(--bg, #060709); transition: transform .18s cubic-bezier(.22,.9,.3,1);
 }
 .y-dial.dragging .y-dial-dot { transform: translate(-50%, -50%) scale(1.16); }
+/* Center: big number with the unit stacked beneath — never clipped. */
 .y-dial-center {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; pointer-events: none; padding: 0 14%;
+  justify-content: center; pointer-events: none; padding: 0 18%; gap: 1px;
 }
-.y-dial-amount { display: inline-flex; align-items: baseline; justify-content: center; gap: 1px; color: var(--text, #f4f0e8); max-width: 100%; }
-.y-dial-cur { font-size: 1.3rem; font-weight: 800; opacity: .85; }
-.y-dial-suf { font-size: 0.95rem; font-weight: 700; opacity: .7; margin-left: 2px; white-space: nowrap; }
 .y-dial-input,
 .y-dial-input:focus,
 .y-dial-input:focus-visible {
-  width: 3ch; min-width: 1ch; max-width: 100%;
+  width: 100%; max-width: 100%;
   background: transparent !important; border: 0 !important; outline: 0 !important;
   box-shadow: none !important; border-radius: 0 !important;
-  pointer-events: auto; font-size: 2.5rem; font-weight: 800; color: var(--text, #f4f0e8);
-  text-align: center; padding: 0; margin: 0; line-height: 1.05; letter-spacing: -0.02em;
+  pointer-events: auto; font-size: 1.7rem; font-weight: 800; color: var(--text, #f4f0e8);
+  text-align: center; padding: 0; margin: 0; line-height: 1.02; letter-spacing: -0.02em;
   caret-color: var(--accent, #c9a84c); -webkit-appearance: none; appearance: none;
   -webkit-tap-highlight-color: transparent; font-family: var(--font-display, inherit);
 }
-.y-dial-laps { font-size: .78rem; font-weight: 700; color: var(--text-muted, #b3ada0); margin-top: 4px; min-height: 1em; }
-.y-dial-sub { font-size: .68rem; color: var(--text-dim, #8b8677); margin-top: 2px; letter-spacing: .08em; text-transform: uppercase; }
-.y-dial-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.y-dial-step {
-  min-width: 58px; padding: 11px 10px; border-radius: 13px; cursor: pointer;
-  background: rgba(255,255,255,0.05); border: 1px solid var(--line, rgba(255,255,255,0.12));
-  color: var(--text, #f4f0e8); font-weight: 700; font-size: .88rem;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform .12s ease, background .15s ease;
+.y-dial-unit {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted, #b3ada0); line-height: 1; margin-top: 3px; white-space: nowrap;
 }
-.y-dial-step:active { transform: scale(0.93); background: rgba(201,168,76,0.18); }
-[data-theme="light"] .y-dial-step { background: rgba(0,0,0,0.04); }
+/* Slightly larger wheels once there's room */
+@media (min-width: 460px) {
+  .y-dial { max-width: 168px; }
+  .y-dial-input { font-size: 1.9rem; }
+}
