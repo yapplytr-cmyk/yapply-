@@ -161,7 +161,7 @@ export async function fetchListing(listingId) {
     if (resp.ok) {
       const rows = await resp.json();
       if (!rows || rows.length === 0) return null;
-      return normalizeListing(rows[0]);
+      return await enrichListingBids(normalizeListing(rows[0]));
     }
     console.warn("[yapply] fetchListing REST non-OK:", resp.status);
   } catch (e) {
@@ -180,7 +180,7 @@ export async function fetchListing(listingId) {
       .eq("id", listingId)
       .single();
 
-    if (!error && data) return normalizeListing(data);
+    if (!error && data) return await enrichListingBids(normalizeListing(data));
     if (error && error.code === "PGRST116") return null;
     if (error) console.warn("[yapply] fetchListing JS error:", error.message);
   } catch (e) {
@@ -209,7 +209,7 @@ export async function fetchMyListings(ownerUserId) {
       .eq("owner_user_id", ownerUserId)
       .order("created_at", { ascending: false });
 
-    if (!error && data) return (data || []).map(normalizeListing);
+    if (!error && data) return await enrichListingsBids((data || []).map(normalizeListing));
     if (error) console.warn("[yapply] fetchMyListings JS error:", error.message);
   } catch (e) {
     console.warn("[yapply] fetchMyListings JS threw:", e?.message);
@@ -223,7 +223,7 @@ export async function fetchMyListings(ownerUserId) {
   });
   if (!resp.ok) throw new Error(`fetchMyListings failed (HTTP ${resp.status})`);
   const rows = await resp.json();
-  return (rows || []).map(normalizeListing);
+  return await enrichListingsBids((rows || []).map(normalizeListing));
 }
 
 /**
@@ -862,6 +862,77 @@ function normalizeBidWithListing(row) {
     bid.listing = normalizeListing(row.marketplace_listings);
   }
   return bid;
+}
+
+// Default avatar used when a bidder has no custom profile picture.
+const DEFAULT_BID_AVATAR = "./assets/avatars/avatar-bird-business.png";
+
+/** Batch-fetch minimal profile info (avatar + plan) for a set of user IDs. */
+async function fetchBidderProfiles(ids) {
+  const byId = {};
+  if (!Array.isArray(ids) || !ids.length) return byId;
+  try {
+    const token = (typeof getStoredAccessToken === "function" && getStoredAccessToken()) || SUPABASE_ANON_KEY;
+    const inList = ids.map((id) => encodeURIComponent(`"${id}"`)).join(",");
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=in.(${inList})&select=id,avatar_url,current_plan,company_name`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
+    );
+    if (resp.ok) {
+      const rows = await resp.json();
+      (Array.isArray(rows) ? rows : []).forEach((r) => {
+        if (r && r.id) byId[r.id] = r;
+      });
+    }
+  } catch (_) {}
+  return byId;
+}
+
+/** Apply fetched bidder profiles onto a bid list (mutates developerProfileReference). */
+function applyBidderProfiles(bids, byId) {
+  (Array.isArray(bids) ? bids : []).forEach((b) => {
+    const ref = b.developerProfileReference || (b.developerProfileReference = {});
+    const p = byId[b.developerUserId || b.developerId];
+    if (p) {
+      ref.avatarSrc = p.avatar_url || DEFAULT_BID_AVATAR;
+      ref.isVerified = !!(p.current_plan && String(p.current_plan).toLowerCase() !== "free");
+      if (!ref.companyName) ref.companyName = p.company_name || b.companyName || "";
+    } else if (!ref.avatarSrc) {
+      ref.avatarSrc = DEFAULT_BID_AVATAR;
+    }
+  });
+}
+
+/**
+ * Enrich a single listing's bids with the bidder's avatar + verified
+ * (paid-member) status. Best-effort: never throws.
+ */
+async function enrichListingBids(listing) {
+  const bids = Array.isArray(listing?.bids) ? listing.bids : [];
+  if (!bids.length) return listing;
+  const ids = [...new Set(bids.map((b) => b.developerUserId || b.developerId).filter(Boolean))];
+  if (!ids.length) return listing;
+  const byId = await fetchBidderProfiles(ids);
+  applyBidderProfiles(bids, byId);
+  return listing;
+}
+
+/**
+ * Enrich many listings' bids in ONE batched profile query. Best-effort.
+ */
+async function enrichListingsBids(listings) {
+  const arr = Array.isArray(listings) ? listings : [];
+  const ids = [
+    ...new Set(
+      arr.flatMap((l) => (Array.isArray(l?.bids) ? l.bids : []))
+        .map((b) => b.developerUserId || b.developerId)
+        .filter(Boolean)
+    ),
+  ];
+  if (!ids.length) return listings;
+  const byId = await fetchBidderProfiles(ids);
+  arr.forEach((l) => applyBidderProfiles(Array.isArray(l?.bids) ? l.bids : [], byId));
+  return listings;
 }
 
 // ─── Developer Reviews ──────────────────────────────────────

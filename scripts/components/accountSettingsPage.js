@@ -1,5 +1,6 @@
 import { createButton, createSectionHeading } from "./primitives.js";
 import { getDefaultAvatarOptions } from "../core/accountSettingsStore.js";
+import { verifiedSealMarkup, wrapAvatarWithSeal } from "./verifiedSeal.js";
 
 function getAccountSettingsLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
@@ -98,9 +99,9 @@ export function createAccountSettingsPage(content) {
       ${createSectionHeading(content.section)}
       <div class="account-settings-layout">
         <article class="panel account-settings-summary">
-          <div class="account-settings-avatar">
+          ${wrapAvatarWithSeal(`<div class="account-settings-avatar">
             <img src="${currentAvatar}" alt="${content.fields.profilePicture}" data-account-settings-preview />
-          </div>
+          </div>`, _isVerifiedMember ? verifiedSealMarkup(locale) : "")}
           <div class="account-settings-summary__copy">
             <p class="eyebrow">${content.summary.eyebrow}</p>
             <h3>${displayName}${verifiedBadge}</h3>

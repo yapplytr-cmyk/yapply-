@@ -1,4 +1,5 @@
 import { createButton, createSectionHeading } from "./primitives.js";
+import { verifiedSealMarkup, wrapAvatarWithSeal } from "./verifiedSeal.js";
 
 function getLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
@@ -168,6 +169,7 @@ export function createDeveloperPublicProfilePage(content) {
   const verifiedBadge = isVerified
     ? `<span class="yapply-verified-badge" title="${locale === "tr" ? "Doğrulanmış Üye" : "Verified Member"}" style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#c9a84c,#e6c76a);color:#14161b;font-size:0.68rem;font-weight:800;letter-spacing:0.02em;padding:2px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;box-shadow:0 1px 6px rgba(201,168,76,0.4)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>${locale === "tr" ? "Doğrulanmış" : "Verified"}</span>`
     : "";
+  const verifiedSeal = isVerified ? verifiedSealMarkup(locale) : "";
   const description = profile.work_description || profile.specialties || "";
   const serviceArea = profile.service_area || "";
   const professionType = profile.profession_type || "";
@@ -189,7 +191,7 @@ export function createDeveloperPublicProfilePage(content) {
   return `
     <section class="section-shell" id="developer-public-profile">
       <div class="dev-profile-hero-avatar">
-        <img class="dev-profile-hero-avatar__img" src="${avatar}" alt="${profileName}" loading="lazy" decoding="async" fetchpriority="low" />
+        ${wrapAvatarWithSeal(`<img class="dev-profile-hero-avatar__img" src="${avatar}" alt="${profileName}" loading="lazy" decoding="async" fetchpriority="low" />`, verifiedSeal)}
         <p class="dev-profile-hero-avatar__name">${profileName}${verifiedBadge}</p>
         ${professionType ? `<p class="dev-profile-hero-avatar__subtitle">${professionType}</p>` : ""}
       </div>

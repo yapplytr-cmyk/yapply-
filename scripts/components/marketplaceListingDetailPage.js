@@ -1,5 +1,6 @@
 import { getDefaultAvatarOptions } from "../core/accountSettingsStore.js";
 import { createButton, createSectionHeading } from "./primitives.js";
+import { verifiedSealMarkup, verifiedCheckBadge } from "./verifiedSeal.js";
 
 /** No-op — images are already compressed at upload time (1024px / 400KB max) */
 export function compressDetailImages() {}
@@ -584,16 +585,25 @@ function createClientDetail(content, listing) {
                 copy.fallback;
               const ratingLabel = formatBidRating(developerReference, locale, copy.latestBids.noRating);
               const submittedLabel = formatRelativeTime(bid.createdAt, locale, copy.fallback);
+              const bidderAvatar = developerReference.avatarSrc || "./assets/avatars/avatar-bird-business.png";
+              const bidderVerified = developerReference.isVerified === true;
+              const rowBadge = bidderVerified ? verifiedCheckBadge(locale) : "";
               return `
                 <article class="detail-list-card marketplace-bid-card marketplace-bid-accordion" data-bid-item>
                   <button class="marketplace-bid-row" type="button" data-bid-trigger aria-expanded="false">
-                    <span class="marketplace-bid-row__amount"><strong>${bid.bidAmount?.label || copy.fallback}</strong></span>
+                    <span class="marketplace-bid-row__amount"><strong>${bid.bidAmount?.label || copy.fallback}</strong>${rowBadge}</span>
                     <span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
                   </button>
                   <div class="marketplace-bid-detail" data-bid-panel hidden>
+                    <div class="marketplace-bid-bidder">
+                      <span class="marketplace-bid-bidder__avatar" style="position:relative;display:inline-flex;line-height:0">
+                        <img src="${bidderAvatar}" alt="${developerName}" loading="lazy" decoding="async" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--surface-300,#d1d5db)" />
+                        ${bidderVerified ? verifiedSealMarkup(locale) : ""}
+                      </span>
+                      <span class="marketplace-bid-bidder__name">${developerName}${bidderVerified ? verifiedCheckBadge(locale) : ""}</span>
+                    </div>
                     <div class="project-detail-card__facts">
                       ${createSummaryGrid([
-                        { label: copy.latestBids.bidder, value: developerName },
                         { label: copy.latestBids.timeframe, value: bid.estimatedCompletionTimeframe?.label || copy.fallback },
                         { label: copy.latestBids.rating, value: ratingLabel },
                         { label: copy.latestBids.submitted, value: submittedLabel },

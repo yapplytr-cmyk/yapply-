@@ -1,6 +1,7 @@
 import { createButton, createSectionHeading } from "./primitives.js";
 import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { createDashboardReloadButton } from "./dashboardReloadButton.js";
+import { verifiedSealMarkup, verifiedCheckBadge } from "./verifiedSeal.js";
 
 function getLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
@@ -59,14 +60,24 @@ function createBidCard(bid, listing, content, locale) {
       </button>`;
   }
 
+  const ref = bid.developerProfileReference || {};
+  const bidderVerified = ref.isVerified === true;
+  const bidderAvatar = ref.avatarSrc || "./assets/avatars/avatar-bird-business.png";
+  const bidderName = bid.companyName || ref.companyName || bid.developerName || content.fallback;
+  const bidderHref = encodeURIComponent(bid.bidderUserId || bid.bidder_user_id || ref.userId || "");
+
   return `
     <div class="client-bids-card panel${isAccepted ? " client-bids-card--accepted" : ""}">
       <div class="client-bids-card__header">
-        <div class="client-bids-card__dev">
-          <a href="./developer-public-profile.html?dev=${encodeURIComponent(bid.bidderUserId || bid.bidder_user_id || bid.developerProfileReference?.userId || "")}" style="color:inherit;text-decoration:underline;text-underline-offset:2px"><strong>${bid.companyName || bid.developerProfileReference?.companyName || bid.developerName || content.fallback}</strong></a>
+        <div class="client-bids-card__dev" style="display:flex;align-items:center;gap:10px">
+          <a href="./developer-public-profile.html?dev=${bidderHref}" class="client-bids-card__dev-avatar" style="position:relative;display:inline-flex;line-height:0;flex:0 0 auto">
+            <img src="${bidderAvatar}" alt="${bidderName}" loading="lazy" decoding="async" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--surface-300,#d1d5db)" />
+            ${bidderVerified ? verifiedSealMarkup(locale) : ""}
+          </a>
+          <a href="./developer-public-profile.html?dev=${bidderHref}" style="color:inherit;text-decoration:underline;text-underline-offset:2px"><strong>${bidderName}</strong></a>
         </div>
         <div class="client-bids-card__amount">
-          ${bid.bidAmount?.label || content.fallback}
+          ${bid.bidAmount?.label || content.fallback}${bidderVerified ? verifiedCheckBadge(locale) : ""}
         </div>
       </div>
       <div class="client-bids-card__details" data-client-bids-details="${bid.id}" hidden>
