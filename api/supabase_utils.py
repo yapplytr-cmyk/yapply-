@@ -211,8 +211,10 @@ def handle_account_avatar_upload(handler) -> None:
   from backend.config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
   token = extract_bearer_token(handler)
-  # Resolve + authorize the developer from their token (server-authoritative id).
-  _, profile = require_public_access(token, "developer")
+  # Resolve the caller from their token (server-authoritative id). Any
+  # authenticated user may set THEIR OWN avatar — no role restriction, so this
+  # never rejects a freshly-created professional whose role claim is still settling.
+  _, profile = require_public_access(token, "")
   user_id = str(profile.get("id") or "").strip()
   if not user_id:
     json_response(handler, HTTPStatus.UNAUTHORIZED, {"ok": False, "code": "AUTH_REQUIRED", "message": "Could not resolve the account."})

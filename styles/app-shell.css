@@ -2687,6 +2687,12 @@ body:has(.account-settings-shell) .notification-bell-container {
 /* Active icon brightens like NAUTICO */
 .tab-bar__item { color: rgba(244, 240, 232, 0.42); transition: color .35s cubic-bezier(.4,0,.2,1), transform .2s ease; }
 .tab-bar__item--active { color: var(--accent, #c9a84c); }
+/* Light mode: icons were a light cream (invisible on white). Make them dark;
+   active is near-black. The gold liquid pill stays for visibility. */
+[data-theme="light"] .tab-bar__item { color: rgba(20, 22, 27, 0.5); }
+[data-theme="light"] .tab-bar__item--active { color: #14161b; }
+[data-theme="light"] .tab-bar__icon,
+[data-theme="light"] .tab-bar__icon svg { color: inherit; }
 .tab-bar__item:active { transform: scale(0.94); }
 .tab-bar__item--center:active { transform: none; }
 

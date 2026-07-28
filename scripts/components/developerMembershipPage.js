@@ -309,6 +309,32 @@ export async function initDeveloperMembershipPage(content) {
         const prevLabel = btn.textContent;
         btn.textContent = isTr ? "Yükleniyor…" : "Loading…";
 
+        // Build the order summary from the selected plan / pack.
+        const nf = (n) => Number(n).toLocaleString(isTr ? "tr-TR" : "en-US");
+        let details;
+        if (packId) {
+          const p = (Array.isArray(packs) ? packs : []).find((x) => x.id === packId) || {};
+          details = {
+            title: p.name || (isTr ? "Jeton Paketi" : "Token Pack"),
+            priceLabel: `${nf(p.price_try || 0)} TL`,
+            recurring: false,
+            lines: [`🪙 ${p.tokens || 0} ${isTr ? "jeton" : "tokens"}`, isTr ? "Tek seferlik ödeme" : "One-time payment"],
+          };
+        } else {
+          const p = (Array.isArray(plans) ? plans : []).find((x) => x.id === planId) || {};
+          details = {
+            title: `${p.name || (isTr ? "Üyelik" : "Membership")} ${isTr ? "Üyeliği" : "Membership"}`,
+            priceLabel: `${nf(p.price_try || 0)} TL${isTr ? " / ay" : " / mo"}`,
+            recurring: true,
+            lines: [
+              `🪙 ${p.tokens_per_month || 0} ${isTr ? "jeton / ay" : "tokens / month"}`,
+              isTr ? "Doğrulanmış rozet" : "Verified badge",
+              isTr ? "Profesyonel ilan yayınlama" : "Publish professional listings",
+              isTr ? "İstediğiniz zaman iptal" : "Cancel anytime",
+            ],
+          };
+        }
+
         const result = await tokenStore.createPaymentIntent(planId, user.id, user.email || "", packId);
         btn.disabled = false;
         btn.textContent = prevLabel;
@@ -323,17 +349,7 @@ export async function initDeveloperMembershipPage(content) {
           return;
         }
 
-        const mounted = await openPaymentElement(result, isTr, () => {
-          // On success: show confirmation + refresh balances shortly after.
-          const note = document.createElement("div");
-          note.className = "panel";
-          note.style.cssText = "padding:1rem;margin:0 0 1.5rem;border-color:#3fbf7f;color:var(--text)";
-          note.textContent = isTr
-            ? "Ödemeniz alındı! Üyeliğiniz ve jetonlarınız birkaç saniye içinde aktif olur."
-            : "Payment received! Your membership and tokens activate within a few seconds.";
-          document.querySelector(".section-shell")?.prepend(note);
-          setTimeout(() => { try { window.location.reload(); } catch (_) {} }, 2500);
-        });
+        const mounted = await renderCheckoutView(result, details, isTr);
         if (!mounted.ok) {
           showNote(btn, mounted.message || (isTr ? "Ödeme ekranı yüklenemedi." : "Could not load the payment form."));
         }
@@ -391,11 +407,11 @@ function loadStripeJs() {
 }
 
 /**
- * Open the Stripe Payment Element inside a Yapply modal — card fields render
- * on OUR page (coastmotive-style), no hosted Checkout page. Card data still
- * goes straight to Stripe. onSuccess() fires when payment confirms.
+ * Render a full Yapply-themed checkout PAGE (not a popup): swaps the membership
+ * content for an order summary + inline Stripe Payment Element + Pay button.
+ * Card fields are Stripe's (PCI), styled to match Yapply. Back returns to plans.
  */
-async function openPaymentElement(intent, isTr, onSuccess) {
+async function renderCheckoutView(intent, details, isTr) {
   try {
     const pk = intent.publishableKey;
     if (!pk) {
@@ -404,47 +420,70 @@ async function openPaymentElement(intent, isTr, onSuccess) {
     const Stripe = await loadStripeJs();
     if (!Stripe) return { ok: false, message: "Stripe.js unavailable" };
 
-    const overlay = document.createElement("div");
-    overlay.setAttribute("data-payment-modal", "");
-    overlay.style.cssText = [
-      "position:fixed", "inset:0", "z-index:6000",
-      "background:rgba(0,0,0,0.72)", "backdrop-filter:blur(6px)", "-webkit-backdrop-filter:blur(6px)",
-      "display:flex", "align-items:flex-start", "justify-content:center", "overflow:auto", "padding:24px 12px",
-    ].join(";");
-    overlay.innerHTML = `
-      <div style="width:100%;max-width:460px;background:var(--surface,#14161b);color:var(--text,#f4f0e8);border:1px solid var(--line,rgba(255,255,255,0.1));border-radius:18px;padding:22px 20px 20px;position:relative;box-shadow:0 24px 80px rgba(0,0,0,0.55)">
-        <button data-close-pay aria-label="Close" style="position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(255,255,255,0.08);color:var(--text,#f4f0e8);font-size:19px;line-height:1;cursor:pointer">&times;</button>
-        <h3 style="margin:0 0 4px;font-size:1.15rem">${isTr ? "Ödeme" : "Payment"}</h3>
-        <p style="margin:0 0 16px;font-size:0.82rem;color:var(--text-dim,#8b8677)">🔒 ${isTr ? "Stripe ile güvenli şekilde işlenir" : "Processed securely by Stripe"}</p>
-        <div data-payment-element style="min-height:40px"></div>
-        <div data-pay-error style="display:none;color:#ff6b6b;font-size:0.82rem;margin-top:10px"></div>
-        <button data-pay-submit class="button button--primary" style="width:100%;margin-top:16px">${isTr ? "Öde" : "Pay now"}</button>
-      </div>`;
-    document.body.appendChild(overlay);
+    const shell = document.querySelector(".section-shell");
+    if (!shell) return { ok: false, message: "Page container not found" };
 
-    const errEl = overlay.querySelector("[data-pay-error]");
-    const payBtn = overlay.querySelector("[data-pay-submit]");
+    const featureLines = (details.lines || [])
+      .map((l) => `<li style="display:flex;align-items:center;gap:8px;font-size:0.9rem;color:var(--text-muted,#b3ada0);margin:0"><span style="color:var(--accent,#c9a84c)">✓</span> ${l}</li>`)
+      .join("");
+
+    shell.innerHTML = `
+      <div style="max-width:900px;margin:0 auto;padding-top:1rem">
+        <button data-checkout-back class="button button--secondary" style="font-size:0.85rem;padding:0.45rem 0.9rem;margin-bottom:1.25rem">← ${isTr ? "Geri" : "Back"}</button>
+        <h1 style="font-size:1.6rem;margin:0 0 0.35rem">${isTr ? "Ödeme" : "Checkout"}</h1>
+        <p style="margin:0 0 1.75rem;color:var(--text-dim,#8b8677);font-size:0.9rem">${isTr ? "Ödemeniz Yapply içinde güvenli şekilde tamamlanır." : "Complete your payment securely inside Yapply."}</p>
+        <div style="display:grid;grid-template-columns:1fr;gap:1.25rem" data-checkout-grid>
+          <article class="panel" style="padding:1.5rem;display:grid;gap:0.9rem;align-content:start">
+            <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim,#8b8677)">${isTr ? "Sipariş Özeti" : "Order Summary"}</span>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+              <strong style="font-size:1.15rem">${details.title}</strong>
+              <strong style="font-size:1.35rem;color:var(--accent,#c9a84c);white-space:nowrap">${details.priceLabel}</strong>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0;display:grid;gap:8px">${featureLines}</ul>
+          </article>
+          <article class="panel" style="padding:1.5rem;display:grid;gap:0.9rem;align-content:start">
+            <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim,#8b8677)">${isTr ? "Ödeme Bilgileri" : "Payment Details"}</span>
+            <div data-payment-element style="min-height:44px"></div>
+            <div data-pay-error style="display:none;color:#ff6b6b;font-size:0.82rem"></div>
+            <button data-pay-submit class="button button--primary" style="width:100%;margin-top:6px">${isTr ? `Öde — ${details.priceLabel}` : `Pay ${details.priceLabel}`}</button>
+            <p style="margin:0;text-align:center;font-size:0.78rem;color:var(--text-dim,#8b8677)">🔒 ${isTr ? "Stripe ile şifrelenmiş ve güvenli" : "Encrypted & processed securely by Stripe"}</p>
+          </article>
+        </div>
+      </div>`;
+
+    // Two columns on wider screens.
+    const grid = shell.querySelector("[data-checkout-grid]");
+    if (grid && window.matchMedia("(min-width: 720px)").matches) {
+      grid.style.gridTemplateColumns = "1fr 1fr";
+    }
+
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (_) {}
+
+    const errEl = shell.querySelector("[data-pay-error]");
+    const payBtn = shell.querySelector("[data-pay-submit]");
     const showErr = (m) => { if (errEl) { errEl.textContent = m; errEl.style.display = "block"; } };
+
+    shell.querySelector("[data-checkout-back]")?.addEventListener("click", () => {
+      try { window.location.reload(); } catch (_) {}
+    });
 
     const stripe = Stripe(pk);
     const isLight = document.documentElement.getAttribute("data-theme") === "light";
     const elements = stripe.elements({
       clientSecret: intent.clientSecret,
-      appearance: { theme: isLight ? "stripe" : "night", variables: { colorPrimary: "#c9a84c" } },
+      appearance: {
+        theme: isLight ? "stripe" : "night",
+        variables: { colorPrimary: "#c9a84c", borderRadius: "10px" },
+      },
     });
     const paymentElement = elements.create("payment", { layout: "tabs" });
-    paymentElement.mount(overlay.querySelector("[data-payment-element]"));
-
-    const close = () => { try { paymentElement.destroy(); } catch (_) {} overlay.remove(); };
-    overlay.querySelector("[data-close-pay]")?.addEventListener("click", close);
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+    paymentElement.mount(shell.querySelector("[data-payment-element]"));
 
     payBtn?.addEventListener("click", async () => {
       payBtn.disabled = true;
       const prev = payBtn.textContent;
       payBtn.textContent = isTr ? "İşleniyor…" : "Processing…";
       if (errEl) errEl.style.display = "none";
-      // redirect:'if_required' keeps card payments fully on our page.
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: { return_url: window.location.href.split("?")[0] + "?checkout=return" },
@@ -457,10 +496,16 @@ async function openPaymentElement(intent, isTr, onSuccess) {
         return;
       }
       if (paymentIntent && (paymentIntent.status === "succeeded" || paymentIntent.status === "processing")) {
-        close();
-        if (typeof onSuccess === "function") onSuccess();
+        shell.innerHTML = `
+          <div style="max-width:560px;margin:3rem auto;text-align:center">
+            <div style="width:72px;height:72px;border-radius:50%;background:#3fbf7f;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem">
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>
+            </div>
+            <h1 style="font-size:1.5rem;margin:0 0 0.5rem">${isTr ? "Ödeme Alındı!" : "Payment Received!"}</h1>
+            <p style="color:var(--text-muted,#b3ada0)">${isTr ? "Üyeliğiniz ve jetonlarınız birkaç saniye içinde aktif olur." : "Your membership and tokens activate within a few seconds."}</p>
+          </div>`;
+        setTimeout(() => { try { window.location.href = window.location.pathname; } catch (_) {} }, 2600);
       } else {
-        // A redirect-based method will navigate away to return_url on its own.
         payBtn.textContent = isTr ? "Yönlendiriliyor…" : "Redirecting…";
       }
     });
