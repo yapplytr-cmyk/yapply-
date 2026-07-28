@@ -1113,13 +1113,22 @@ def _dispatch_notification(notify_type: str, payload: dict) -> dict:
 def _generate_recovery_link(email: str, redirect_to: str) -> str:
   """Call Supabase GoTrue admin generate_link (type=recovery) and return the
   action link. Returns "" on any failure (e.g. no such user)."""
-  import os
   import json as _json
   from urllib.request import Request, urlopen
   from urllib.error import HTTPError, URLError
 
-  supabase_url = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
-  service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+  # Use the backend config resolver so we accept every env-var alias the rest of
+  # the app does (SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL and
+  # SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY).
+  try:
+    from backend.config import SUPABASE_URL as _URL, SUPABASE_SERVICE_ROLE_KEY as _KEY
+    supabase_url = (_URL or "").rstrip("/")
+    service_key = _KEY or ""
+  except Exception:
+    import os
+    supabase_url = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_SECRET_KEY") or ""
+
   if not supabase_url or not service_key:
     return ""
 
