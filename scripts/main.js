@@ -3503,7 +3503,7 @@ function bindInteractions(content) {
     try { document.getElementById("yapply-notification-bell")?.remove(); } catch (_) {}
     setupAccountSettings(content);
   } else if (page === "developer-membership") {
-    import("./components/developerMembershipPage.js").then((m) => {
+    import("./components/developerMembershipPage.js?v=20260728-coin2").then((m) => {
       if (m.initDeveloperMembershipPage) m.initDeveloperMembershipPage(content);
     }).catch(() => {});
   } else if (page === "marketplace-submission") {
@@ -4677,7 +4677,7 @@ async function renderPage(localeOverride) {
     const _preloadMap = {
       "open-marketplace": () => import("./components/openMarketplacePage.js?v=20260325"),
       "developer-dashboard": () => import("./components/developerDashboardPage.js"),
-      "developer-membership": () => import("./components/developerMembershipPage.js"),
+      "developer-membership": () => import("./components/developerMembershipPage.js?v=20260728-coin2"),
       "client-dashboard": () => import("./components/clientDashboardPage.js"),
       "client-bids": () => import("./components/clientBidsPage.js"),
       "marketplace-listing-detail": () => import("./components/marketplaceListingDetailPage.js"),
