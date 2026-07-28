@@ -3485,6 +3485,9 @@ function bindInteractions(content) {
   } else if (page === "developer-public-profile") {
     setupDeveloperPublicProfile(content);
   } else if (page === "account-settings") {
+    // No notification bell on settings — remove any that carried over from a
+    // previous page (SPA navigation) so it never flashes here.
+    try { document.getElementById("yapply-notification-bell")?.remove(); } catch (_) {}
     setupAccountSettings(content);
   } else if (page === "developer-membership") {
     import("./components/developerMembershipPage.js").then((m) => {

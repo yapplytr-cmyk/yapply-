@@ -30,7 +30,7 @@ export function createNotificationBell() {
   // Never mount the bell on the account settings page (avoids the brief flash
   // before the CSS :has() rule can hide it).
   try {
-    if (/account-settings/i.test(window.location.pathname) || document.querySelector(".account-settings-shell")) {
+    if (document.body?.dataset?.page === "account-settings" || /account-settings/i.test(window.location.pathname) || document.querySelector(".account-settings-shell")) {
       _bellRoot?.remove();
       _bellRoot = null;
       return;
@@ -273,7 +273,7 @@ export async function initNotificationBell(userId) {
   if (!userId) return;
   // Skip entirely on the settings page (no bell there).
   try {
-    if (/account-settings/i.test(window.location.pathname) || document.querySelector(".account-settings-shell")) return;
+    if (document.body?.dataset?.page === "account-settings" || /account-settings/i.test(window.location.pathname) || document.querySelector(".account-settings-shell")) return;
   } catch (_) {}
 
   createNotificationBell();
