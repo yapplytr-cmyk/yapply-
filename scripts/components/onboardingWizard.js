@@ -283,7 +283,7 @@ export function createOnboardingWizard(content, locale) {
                 <!-- Live camera capture (primary — must be taken now for verification) -->
                 <div data-onboarding-selfie-camera-ui>
                   <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Doğrulama için şimdi ön kameradan bir selfie çekin" : "Take a live selfie with the front camera now to verify"}</p>
-                  <video data-onboarding-selfie-video autoplay playsinline muted style="width:100%;max-width:280px;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius-sm);display:none"></video>
+                  <video data-onboarding-selfie-video autoplay playsinline muted style="width:100%;max-width:280px;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius-sm);display:none;transform:scaleX(-1)"></video>
                   <canvas data-onboarding-selfie-canvas style="display:none"></canvas>
                   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
                     <button type="button" class="button button--secondary" data-onboarding-selfie-start style="font-size:0.85rem;padding:8px 16px">
@@ -1351,7 +1351,13 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       selfieCanvas.width = out;
       selfieCanvas.height = out;
       const ctx = selfieCanvas.getContext("2d");
+      // Mirror the capture to match the mirrored (normal-selfie) preview, so
+      // what you see is what you get.
+      ctx.save();
+      ctx.translate(out, 0);
+      ctx.scale(-1, 1);
       ctx.drawImage(selfieVideo, sx, sy, side, side, 0, 0, out, out);
+      ctx.restore();
       selfieDataUrl = selfieCanvas.toDataURL("image/jpeg", 0.85);
       if (selfieDataInput) selfieDataInput.value = selfieDataUrl;
       if (selfiePreview) {
