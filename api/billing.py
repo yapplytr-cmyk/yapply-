@@ -33,9 +33,20 @@ from backend.config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
 STRIPE_SECRET_KEY = (os.environ.get("STRIPE_SECRET_KEY") or "").strip()
 STRIPE_WEBHOOK_SECRET = (os.environ.get("STRIPE_WEBHOOK_SECRET") or "").strip()
+STRIPE_PUBLISHABLE_KEY = (os.environ.get("STRIPE_PUBLISHABLE_KEY") or "").strip()
 SITE_ORIGIN = (os.environ.get("SITE_ORIGIN") or "https://yapplytr.com").strip()
 
 STRIPE_API = "https://api.stripe.com/v1"
+
+
+def handle_billing_config(handler) -> None:
+  """Return the publishable key so the client can mount Stripe Elements /
+  embedded Checkout. The publishable key is not secret."""
+  _json_response(handler, HTTPStatus.OK, {
+    "ok": True,
+    "publishableKey": STRIPE_PUBLISHABLE_KEY,
+    "configured": bool(STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY),
+  })
 
 
 class BillingError(Exception):
@@ -110,14 +121,31 @@ def _get_pack(pack_id: str) -> dict:
   return rows[0]
 
 
+def _apply_ui_mode(session_form: dict, embedded: bool) -> None:
+  """Configure a session form for either embedded (in-app) or hosted checkout."""
+  if embedded:
+    # Payment happens inside Yapply — no redirect to Stripe's hosted portal.
+    session_form["ui_mode"] = "embedded"
+    session_form["return_url"] = (
+      f"{SITE_ORIGIN}/developer-membership.html?checkout=return&session_id={{CHECKOUT_SESSION_ID}}"
+    )
+  else:
+    session_form["success_url"] = f"{SITE_ORIGIN}/developer-membership.html?checkout=success"
+    session_form["cancel_url"] = f"{SITE_ORIGIN}/developer-membership.html?checkout=cancel"
+
+
 def handle_billing_checkout(handler) -> None:
-  """Create a Stripe Checkout Session for a membership plan."""
+  """Create a Stripe Checkout Session for a membership plan or token pack.
+  If {embedded:true}, returns a clientSecret for in-app Embedded Checkout;
+  otherwise returns a hosted-checkout url (legacy)."""
   try:
     payload = json.loads(_read_body(handler) or b"{}")
     plan_id = str(payload.get("planId") or "").strip()
     pack_id = str(payload.get("packId") or "").strip()
     user_id = str(payload.get("userId") or "").strip()
     user_email = str(payload.get("userEmail") or "").strip()
+    # Default to embedded (in-app) unless the caller explicitly opts out.
+    embedded = payload.get("embedded", True) is not False
 
     if (not plan_id and not pack_id) or not user_id:
       raise BillingError("INVALID_REQUEST", "planId or packId, and userId are required.")
@@ -127,8 +155,6 @@ def handle_billing_checkout(handler) -> None:
       pack = _get_pack(pack_id)
       pack_form = {
         "mode": "payment",
-        "success_url": f"{SITE_ORIGIN}/developer-membership.html?checkout=success",
-        "cancel_url": f"{SITE_ORIGIN}/developer-membership.html?checkout=cancel",
         "client_reference_id": user_id,
         "metadata[user_id]": user_id,
         "metadata[pack_id]": pack_id,
@@ -139,24 +165,27 @@ def handle_billing_checkout(handler) -> None:
         "line_items[0][price_data][unit_amount]": str(int(float(pack["price_try"]) * 100)),
         "line_items[0][price_data][product_data][name]": f"Yapply {pack['name']} — {pack['tokens']} tokens",
       }
+      _apply_ui_mode(pack_form, embedded)
       if user_email:
         pack_form["customer_email"] = user_email
       session = _stripe_request("/checkout/sessions", pack_form)
-      _json_response(handler, HTTPStatus.OK, {"ok": True, "url": session.get("url")})
+      if embedded:
+        _json_response(handler, HTTPStatus.OK, {"ok": True, "clientSecret": session.get("client_secret")})
+      else:
+        _json_response(handler, HTTPStatus.OK, {"ok": True, "url": session.get("url")})
       return
 
     plan = _get_plan(plan_id)
 
     session_form = {
       "mode": "subscription",
-      "success_url": f"{SITE_ORIGIN}/developer-membership.html?checkout=success",
-      "cancel_url": f"{SITE_ORIGIN}/developer-membership.html?checkout=cancel",
       "client_reference_id": user_id,
       "metadata[user_id]": user_id,
       "metadata[plan_id]": plan_id,
       "subscription_data[metadata][user_id]": user_id,
       "subscription_data[metadata][plan_id]": plan_id,
     }
+    _apply_ui_mode(session_form, embedded)
     if user_email:
       session_form["customer_email"] = user_email
 
@@ -173,7 +202,47 @@ def handle_billing_checkout(handler) -> None:
       session_form["line_items[0][price_data][product_data][name]"] = f"Yapply {plan['name']} Membership"
 
     session = _stripe_request("/checkout/sessions", session_form)
-    _json_response(handler, HTTPStatus.OK, {"ok": True, "url": session.get("url")})
+    if embedded:
+      _json_response(handler, HTTPStatus.OK, {"ok": True, "clientSecret": session.get("client_secret")})
+    else:
+      _json_response(handler, HTTPStatus.OK, {"ok": True, "url": session.get("url")})
+  except BillingError as err:
+    _json_response(handler, err.status, {"ok": False, "code": err.code, "message": err.message})
+  except Exception as err:  # noqa: BLE001
+    _json_response(handler, 500, {"ok": False, "code": "SERVER_ERROR", "message": str(err)[:300]})
+
+
+def handle_billing_status(handler) -> None:
+  """Return the caller's membership status by checkout session_id — lets the
+  client confirm success immediately after embedded checkout, without waiting
+  on the webhook. Reads the Stripe session and reports paid/plan."""
+  try:
+    payload = json.loads(_read_body(handler) or b"{}")
+    session_id = str(payload.get("sessionId") or "").strip()
+    if not session_id:
+      raise BillingError("INVALID_REQUEST", "sessionId is required.")
+    if not STRIPE_SECRET_KEY:
+      raise BillingError("STRIPE_NOT_CONFIGURED", "Stripe is not configured.", 503)
+    req = Request(
+      f"{STRIPE_API}/checkout/sessions/{session_id}",
+      method="GET",
+      headers={"Authorization": f"Bearer {STRIPE_SECRET_KEY}"},
+    )
+    try:
+      with urlopen(req, timeout=20) as resp:
+        session = json.loads(resp.read().decode("utf-8"))
+    except HTTPError as err:
+      detail = err.read().decode("utf-8", "replace")
+      raise BillingError("STRIPE_ERROR", f"Stripe error: {detail[:300]}", 502)
+    paid = session.get("payment_status") in ("paid", "no_payment_required")
+    meta = session.get("metadata") or {}
+    _json_response(handler, HTTPStatus.OK, {
+      "ok": True,
+      "paid": paid,
+      "status": session.get("status"),
+      "planId": meta.get("plan_id") or "",
+      "packId": meta.get("pack_id") or "",
+    })
   except BillingError as err:
     _json_response(handler, err.status, {"ok": False, "code": err.code, "message": err.message})
   except Exception as err:  # noqa: BLE001
@@ -223,6 +292,20 @@ def _upsert_membership(user_id: str, plan_id: str, provider_ref: str | None, per
     },
     prefer="resolution=merge-duplicates",
   )
+
+
+def _set_profile_plan(user_id: str, plan_id: str) -> None:
+  """Mirror the active plan onto the profile so the verified badge and the
+  professional-listing gate can read it directly from profiles.current_plan."""
+  try:
+    _supabase_request(
+      f"/rest/v1/profiles?id=eq.{user_id}",
+      method="PATCH",
+      payload={"current_plan": plan_id or "free", "updated_at": "now()"},
+      prefer="return=minimal",
+    )
+  except Exception:  # noqa: BLE001
+    pass
 
 
 def _already_processed(event_id: str) -> bool:
@@ -291,6 +374,23 @@ def handle_billing_webhook(handler) -> None:
           period_end = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(period_ts))
       except Exception:  # noqa: BLE001
         period_end = None
+    elif event_type == "customer.subscription.deleted":
+      # Membership canceled/expired — revoke the badge and listing access.
+      meta = obj.get("metadata") or {}
+      user_id = str(meta.get("user_id") or "")
+      if user_id:
+        try:
+          _supabase_request(
+            f"/rest/v1/memberships?user_id=eq.{user_id}",
+            method="PATCH",
+            payload={"status": "canceled", "updated_at": "now()"},
+            prefer="return=minimal",
+          )
+        except Exception:  # noqa: BLE001
+          pass
+        _set_profile_plan(user_id, "free")
+      _json_response(handler, HTTPStatus.OK, {"ok": True, "canceled": user_id})
+      return
     else:
       _json_response(handler, HTTPStatus.OK, {"ok": True, "ignored": event_type})
       return
@@ -304,6 +404,8 @@ def handle_billing_webhook(handler) -> None:
     if tokens > 0:
       _grant_tokens(user_id, tokens, "membership_grant", event_id or provider_ref)
     _upsert_membership(user_id, plan_id, provider_ref, period_end)
+    # Mirror onto the profile → drives verified badge + professional-listing gate.
+    _set_profile_plan(user_id, plan_id)
 
     _json_response(handler, HTTPStatus.OK, {"ok": True, "granted": tokens})
   except BillingError as err:

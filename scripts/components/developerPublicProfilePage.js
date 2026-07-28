@@ -164,6 +164,10 @@ export function createDeveloperPublicProfilePage(content) {
   const isClient = session.authenticated && session.user?.role === "client";
 
   const profileName = profile.company_name || profile.full_name || profile.username || profile.email || "";
+  const isVerified = profile.current_plan && String(profile.current_plan).toLowerCase() !== "free";
+  const verifiedBadge = isVerified
+    ? `<span class="yapply-verified-badge" title="${locale === "tr" ? "Doğrulanmış Üye" : "Verified Member"}" style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#c9a84c,#e6c76a);color:#14161b;font-size:0.68rem;font-weight:800;letter-spacing:0.02em;padding:2px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;box-shadow:0 1px 6px rgba(201,168,76,0.4)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>${locale === "tr" ? "Doğrulanmış" : "Verified"}</span>`
+    : "";
   const description = profile.work_description || profile.specialties || "";
   const serviceArea = profile.service_area || "";
   const professionType = profile.profession_type || "";
@@ -186,7 +190,7 @@ export function createDeveloperPublicProfilePage(content) {
     <section class="section-shell" id="developer-public-profile">
       <div class="dev-profile-hero-avatar">
         <img class="dev-profile-hero-avatar__img" src="${avatar}" alt="${profileName}" loading="lazy" decoding="async" fetchpriority="low" />
-        <p class="dev-profile-hero-avatar__name">${profileName}</p>
+        <p class="dev-profile-hero-avatar__name">${profileName}${verifiedBadge}</p>
         ${professionType ? `<p class="dev-profile-hero-avatar__subtitle">${professionType}</p>` : ""}
       </div>
 
@@ -195,7 +199,7 @@ export function createDeveloperPublicProfilePage(content) {
           <div class="developer-dashboard-profile__header">
             <div class="developer-dashboard-profile__copy">
               <p class="eyebrow">${content.heading.eyebrow}</p>
-              <h2 style="margin:0">${profileName}</h2>
+              <h2 style="margin:0">${profileName}${verifiedBadge}</h2>
               ${isDeveloperOwn ? `
                 <div data-dev-profile-description-display>
                   <p style="margin:0.5rem 0">${description || labels.noDescription}</p>

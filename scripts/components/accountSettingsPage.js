@@ -75,6 +75,10 @@ export function createAccountSettingsPage(content) {
   const profileTypeLabel = getProfileTypeLabel(user.role, content);
   const username = user.username || "";
   const displayName = user.companyName || user.username || user.fullName || user.email || content.fallback;
+  const _isVerifiedMember = user.role === "developer" && user.currentPlan && String(user.currentPlan).toLowerCase() !== "free";
+  const verifiedBadge = _isVerifiedMember
+    ? `<span title="${locale === "tr" ? "Doğrulanmış Üye" : "Verified Member"}" style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#c9a84c,#e6c76a);color:#14161b;font-size:0.66rem;font-weight:800;padding:2px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;box-shadow:0 1px 6px rgba(201,168,76,0.4)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>${locale === "tr" ? "Doğrulanmış" : "Verified"}</span>`
+    : "";
   const avatarChoiceLabel =
     locale === "tr"
       ? "Varsayılan kuş avatarlarından biri"
@@ -99,7 +103,7 @@ export function createAccountSettingsPage(content) {
           </div>
           <div class="account-settings-summary__copy">
             <p class="eyebrow">${content.summary.eyebrow}</p>
-            <h3>${displayName}</h3>
+            <h3>${displayName}${verifiedBadge}</h3>
             <p>${content.summary.description}</p>
           </div>
         </article>

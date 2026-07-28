@@ -244,19 +244,76 @@ export async function fetchMyMembership(userId) {
   return null;
 }
 
-/** Start a Stripe Checkout for a plan (web only — native app must use App Store IAP). */
+/** Fetch the Stripe publishable key (for embedded checkout). Cached. */
+let _stripeConfigCache = null;
+export async function fetchStripeConfig() {
+  if (_stripeConfigCache) return _stripeConfigCache;
+  try {
+    const resp = await fetch("/api/billing/config");
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok) {
+      _stripeConfigCache = data;
+      return data;
+    }
+  } catch (_) {}
+  return { ok: false, publishableKey: "", configured: false };
+}
+
+/**
+ * Create an embedded Stripe Checkout session and return its clientSecret.
+ * The payment UI is mounted INSIDE Yapply (no redirect to Stripe's portal).
+ * Native app must use App Store IAP instead.
+ */
+export async function createEmbeddedCheckout(planId, userId, userEmail, packId = "") {
+  const isNative = window.location.origin === "capacitor://localhost" ||
+    (window.location.hostname === "localhost" && !window.location.port);
+  if (isNative) {
+    return { ok: false, code: "NATIVE_USE_IAP", message: "In the iOS app, memberships are purchased through the App Store." };
+  }
+  try {
+    const resp = await fetch("/api/billing/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        packId ? { packId, userId, userEmail, embedded: true } : { planId, userId, userEmail, embedded: true }
+      ),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok && data?.clientSecret) {
+      return { ok: true, clientSecret: data.clientSecret };
+    }
+    return { ok: false, code: data?.code || "CHECKOUT_FAILED", message: data?.message || "Checkout could not be started." };
+  } catch (e) {
+    return { ok: false, code: "NETWORK", message: e?.message || "Network error" };
+  }
+}
+
+/** Confirm a completed embedded checkout by session id (avoids waiting on the webhook). */
+export async function confirmCheckoutStatus(sessionId) {
+  try {
+    const resp = await fetch("/api/billing/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok) return data;
+  } catch (_) {}
+  return { ok: false, paid: false };
+}
+
+/** Legacy hosted-checkout redirect (kept as a fallback). */
 export async function startStripeCheckout(planId, userId, userEmail, packId = "") {
   const isNative = window.location.origin === "capacitor://localhost" ||
     (window.location.hostname === "localhost" && !window.location.port);
   if (isNative) {
     return { ok: false, code: "NATIVE_USE_IAP", message: "In the iOS app, memberships are purchased through the App Store." };
   }
-
   try {
     const resp = await fetch("/api/billing/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(packId ? { packId, userId, userEmail } : { planId, userId, userEmail }),
+      body: JSON.stringify(packId ? { packId, userId, userEmail, embedded: false } : { planId, userId, userEmail, embedded: false }),
     });
     const data = await resp.json().catch(() => ({}));
     if (resp.ok && data?.url) {
@@ -266,5 +323,16 @@ export async function startStripeCheckout(planId, userId, userEmail, packId = ""
     return { ok: false, code: data?.code || "CHECKOUT_FAILED", message: data?.message || "Checkout could not be started." };
   } catch (e) {
     return { ok: false, code: "NETWORK", message: e?.message || "Network error" };
+  }
+}
+
+/** Check whether the user currently has an active membership (verified pro). */
+export async function isVerifiedMember(userId) {
+  if (!userId) return false;
+  try {
+    const m = await fetchMyMembership(userId);
+    return !!(m && String(m.status).toLowerCase() === "active");
+  } catch (_) {
+    return false;
   }
 }

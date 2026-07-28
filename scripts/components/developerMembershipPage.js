@@ -43,7 +43,7 @@ function getMembershipCopy(locale) {
       },
       perMonth: "/ ay",
       popular: "En Popüler",
-      contactSales: "Ödeme entegrasyonu yakında aktif olacaktır.",
+      contactSales: "Ödemeler Yapply içinde güvenli şekilde Stripe ile alınır.",
     };
   }
   return {
@@ -78,7 +78,7 @@ function getMembershipCopy(locale) {
     },
     perMonth: "/ month",
     popular: "Most Popular",
-    contactSales: "Payment integration will be available soon.",
+    contactSales: "Payments are taken securely with Stripe, right inside Yapply.",
   };
 }
 
@@ -285,33 +285,47 @@ export async function initDeveloperMembershipPage(content) {
     planContainer.parentElement.insertBefore(packsSection, planContainer.nextSibling);
   }
 
-  // ── 3. Bind buy buttons ──
+  // ── 3. Bind buy buttons → in-app embedded Stripe checkout ──
+  const showNote = (btn, msg) => {
+    let note = document.querySelector("[data-membership-note]");
+    if (!note) {
+      note = document.createElement("p");
+      note.setAttribute("data-membership-note", "");
+      note.style.cssText = "text-align:center;font-size:0.85rem;color:var(--accent,#c9a84c);margin:1rem 0";
+      (btn?.closest("article") || document.querySelector(".section-shell"))?.appendChild(note);
+    }
+    note.textContent = msg;
+  };
+
   const bindButtons = () => {
     document.querySelectorAll("[data-token-plan-select], [data-membership-select], [data-token-pack-select]").forEach((btn) => {
+      if (btn.dataset.checkoutWired) return;
+      btn.dataset.checkoutWired = "1";
       btn.addEventListener("click", async () => {
         const packId = btn.getAttribute("data-token-pack-select") || "";
         const planId = btn.getAttribute("data-token-plan-select") || btn.getAttribute("data-membership-select") || "";
         if (!packId && (!planId || planId === "free")) return;
         btn.disabled = true;
         const prevLabel = btn.textContent;
-        btn.textContent = isTr ? "Yönlendiriliyor…" : "Redirecting…";
-        const result = await tokenStore.startStripeCheckout(planId, user.id, user.email || "", packId);
+        btn.textContent = isTr ? "Yükleniyor…" : "Loading…";
+
+        const result = await tokenStore.createEmbeddedCheckout(planId, user.id, user.email || "", packId);
+        btn.disabled = false;
+        btn.textContent = prevLabel;
+
         if (!result.ok) {
-          btn.disabled = false;
-          btn.textContent = prevLabel;
           const msg = result.code === "NATIVE_USE_IAP"
             ? (isTr ? "Uygulamada üyelikler App Store üzerinden satın alınır. Şimdilik web sitemizden satın alabilirsiniz: yapplytr.com" : "In the app, memberships are purchased via the App Store. For now you can purchase on our website: yapplytr.com")
             : result.code === "STRIPE_NOT_CONFIGURED"
-              ? (isTr ? "Ödeme sistemi çok yakında aktif olacak." : "Payments are launching very soon.")
+              ? (isTr ? "Ödeme sistemi henüz yapılandırılmadı." : "Payments are not configured yet.")
               : (result.message || (isTr ? "Ödeme başlatılamadı." : "Checkout could not be started."));
-          let note = document.querySelector("[data-membership-note]");
-          if (!note) {
-            note = document.createElement("p");
-            note.setAttribute("data-membership-note", "");
-            note.style.cssText = "text-align:center;font-size:0.85rem;color:var(--accent,#c9a84c);margin:1rem 0";
-            btn.closest("article")?.appendChild(note);
-          }
-          note.textContent = msg;
+          showNote(btn, msg);
+          return;
+        }
+
+        const mounted = await openEmbeddedCheckout(result.clientSecret, isTr);
+        if (!mounted.ok) {
+          showNote(btn, mounted.message || (isTr ? "Ödeme ekranı yüklenemedi." : "Could not load the payment screen."));
         }
       });
     });
@@ -320,7 +334,26 @@ export async function initDeveloperMembershipPage(content) {
 
   // ── 4. Checkout return states ──
   const params = new URLSearchParams(window.location.search);
-  if (params.get("checkout") === "success") {
+  if (params.get("checkout") === "return") {
+    const sessionId = params.get("session_id") || "";
+    const st = sessionId ? await tokenStore.confirmCheckoutStatus(sessionId) : { paid: false };
+    const note = document.createElement("div");
+    note.className = "panel";
+    if (st.paid) {
+      note.style.cssText = "padding:1rem;margin:0 0 1.5rem;border-color:#3fbf7f;color:var(--text)";
+      note.textContent = isTr
+        ? "Ödemeniz alındı! Üyeliğiniz ve jetonlarınız birkaç saniye içinde aktif olur."
+        : "Payment received! Your membership and tokens activate within a few seconds.";
+    } else {
+      note.style.cssText = "padding:1rem;margin:0 0 1.5rem;border-color:var(--accent,#c9a84c);color:var(--text)";
+      note.textContent = isTr
+        ? "Ödeme tamamlanmadı. İstediğiniz zaman tekrar deneyebilirsiniz."
+        : "Payment was not completed. You can try again anytime.";
+    }
+    document.querySelector(".section-shell")?.prepend(note);
+    // Clean the URL so a refresh doesn't re-trigger.
+    try { window.history.replaceState({}, "", window.location.pathname); } catch (_) {}
+  } else if (params.get("checkout") === "success") {
     const note = document.createElement("div");
     note.className = "panel";
     note.style.cssText = "padding:1rem;margin:0 0 1.5rem;border-color:#3fbf7f;color:var(--text)";
@@ -328,5 +361,69 @@ export async function initDeveloperMembershipPage(content) {
       ? "Ödemeniz alındı! Jetonlarınız birkaç saniye içinde hesabınıza eklenir."
       : "Payment received! Your tokens will appear in your account within a few seconds.";
     document.querySelector(".section-shell")?.prepend(note);
+  }
+}
+
+/** Lazy-load Stripe.js once. */
+let _stripeJsPromise = null;
+function loadStripeJs() {
+  if (window.Stripe) return Promise.resolve(window.Stripe);
+  if (_stripeJsPromise) return _stripeJsPromise;
+  _stripeJsPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://js.stripe.com/v3/";
+    s.async = true;
+    s.onload = () => resolve(window.Stripe);
+    s.onerror = () => reject(new Error("Stripe.js failed to load"));
+    document.head.appendChild(s);
+  });
+  return _stripeJsPromise;
+}
+
+/**
+ * Open Stripe Embedded Checkout inside a Yapply modal — the whole payment
+ * happens in-app; on completion Stripe returns to developer-membership.html.
+ */
+async function openEmbeddedCheckout(clientSecret, isTr) {
+  try {
+    const { fetchStripeConfig } = await import("../core/tokenStore.js?v=20260728-embed");
+    const cfg = await fetchStripeConfig();
+    if (!cfg?.publishableKey) {
+      return { ok: false, message: isTr ? "Ödeme anahtarı eksik (STRIPE_PUBLISHABLE_KEY)." : "Missing publishable key (STRIPE_PUBLISHABLE_KEY)." };
+    }
+    const Stripe = await loadStripeJs();
+    if (!Stripe) return { ok: false, message: "Stripe.js unavailable" };
+
+    // Modal shell
+    const overlay = document.createElement("div");
+    overlay.setAttribute("data-embedded-checkout", "");
+    overlay.style.cssText = [
+      "position:fixed", "inset:0", "z-index:6000",
+      "background:rgba(0,0,0,0.72)", "backdrop-filter:blur(6px)",
+      "-webkit-backdrop-filter:blur(6px)",
+      "display:flex", "align-items:flex-start", "justify-content:center",
+      "overflow:auto", "padding:24px 12px",
+    ].join(";");
+    overlay.innerHTML = `
+      <div style="width:100%;max-width:520px;background:#fff;border-radius:16px;overflow:hidden;position:relative;box-shadow:0 24px 80px rgba(0,0,0,0.5)">
+        <button data-close-checkout aria-label="Close" style="position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,0.06);color:#111;font-size:20px;line-height:1;cursor:pointer">&times;</button>
+        <div id="yapply-embedded-checkout" style="min-height:60vh"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const stripe = Stripe(cfg.publishableKey);
+    const checkout = await stripe.initEmbeddedCheckout({ clientSecret });
+    checkout.mount("#yapply-embedded-checkout");
+
+    const close = () => {
+      try { checkout.destroy(); } catch (_) {}
+      overlay.remove();
+    };
+    overlay.querySelector("[data-close-checkout]")?.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: e?.message || "Checkout error" };
   }
 }

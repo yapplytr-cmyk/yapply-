@@ -612,6 +612,38 @@ def resolve_marketplace_bidder(handler, payload: dict) -> dict | None:
   }
 
 
+def _owner_has_active_membership(user_id):
+  """Returns True (active member), False (free/none), or None (unknown/error).
+  Checks profiles.current_plan first, then falls back to the memberships table."""
+  if not user_id:
+    return None
+  import os
+  from urllib.request import Request, urlopen
+
+  supabase_url = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
+  service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+  if not supabase_url or not service_key:
+    return None
+  headers = {"apikey": service_key, "Authorization": f"Bearer {service_key}"}
+  try:
+    url = f"{supabase_url}/rest/v1/profiles?id=eq.{user_id}&select=current_plan"
+    req = Request(url, headers=headers)
+    with urlopen(req, timeout=8) as resp:
+      rows = json.loads(resp.read().decode("utf-8") or "[]")
+    if rows:
+      plan = str((rows[0] or {}).get("current_plan") or "").strip().lower()
+      if plan and plan != "free":
+        return True
+    # Fall back to an explicit active membership row.
+    murl = f"{supabase_url}/rest/v1/memberships?user_id=eq.{user_id}&status=eq.active&select=user_id&limit=1"
+    mreq = Request(murl, headers=headers)
+    with urlopen(mreq, timeout=8) as mresp:
+      mrows = json.loads(mresp.read().decode("utf-8") or "[]")
+    return bool(mrows)
+  except Exception:  # noqa: BLE001
+    return None
+
+
 def handle_marketplace_listing_create(handler) -> None:
   try:
     payload = parse_json_body(handler)
@@ -642,6 +674,18 @@ def handle_marketplace_listing_create(handler) -> None:
   if listing_type == "professional" and owner["role"] != "developer":
     json_response(handler, HTTPStatus.FORBIDDEN, {"ok": False, "code": "OWNER_ROLE_INVALID", "message": "Only developer accounts can create professional listings."})
     return
+
+  # Members-only: professional listings require an active membership.
+  # Fail-open on lookup errors so a transient issue never blocks a paying member.
+  if listing_type == "professional":
+    member_state = _owner_has_active_membership(owner.get("id"))
+    if member_state is False:
+      json_response(handler, HTTPStatus.FORBIDDEN, {
+        "ok": False,
+        "code": "MEMBERSHIP_REQUIRED",
+        "message": "An active membership is required to publish professional listings.",
+      })
+      return
 
   try:
     stored_listing = create_marketplace_listing(

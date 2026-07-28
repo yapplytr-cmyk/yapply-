@@ -4302,6 +4302,7 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
         if (!prof.profession_type && session.user?.professionType) prof.profession_type = session.user.professionType;
         if (!prof.specialties && session.user?.specialties) prof.specialties = session.user.specialties;
         if (!prof.work_description && session.user?.workDescription) prof.work_description = session.user.workDescription;
+        if (!prof.current_plan && session.user?.currentPlan) prof.current_plan = session.user.currentPlan;
         if (!prof.id) prof.id = session.user.id;
         if (!prof.role) prof.role = session.user.role;
         profileData.profile = prof;

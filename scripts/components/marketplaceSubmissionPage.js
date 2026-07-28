@@ -674,6 +674,11 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
   const isProfessional = wizardType === "professional";
   const WIZARD_STEPS = isProfessional ? professionalWizardSteps(isTr) : clientWizardSteps(isTr);
 
+  // ── Members-only gate: professional listings require an active membership ──
+  if (isProfessional) {
+    _requireMembershipOrPrompt(root, isTr);
+  }
+
   const CLIENT_STEP_RENDERERS = [
     (d) => renderStepProjectTitle(d, isTr),
     (d) => renderStepProjectType(d, isTr),
@@ -1088,6 +1093,16 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
       flyIcon.classList.add("wizard-icon__graphic--fly");
     }
 
+    // Enforce members-only for professional listings at submit time too.
+    if (isProfessional && !(await _isActiveMember())) {
+      showError(isTr
+        ? "Profesyonel ilan yayınlamak için aktif bir üyelik gerekir. Yükseltmek için Üyelik sayfasına gidin."
+        : "An active membership is required to publish professional listings. Visit the Membership page to upgrade.");
+      nextBtn.disabled = false;
+      _injectUpgradeCta(root, isTr);
+      return;
+    }
+
     try {
       const formData = new FormData();
 
@@ -1178,4 +1193,65 @@ export function initSubmissionWizard(container, { saveMarketplaceSubmission, onS
   window.addEventListener("beforeunload", clearPreviewUrls, { once: true });
 
   renderStep();
+}
+
+/* ── Members-only professional listing gate ─────────────────────
+   A pro can publish professional listings only with an active membership.
+   Fast path: session.user.currentPlan; falls back to the memberships table. */
+async function _isActiveMember() {
+  try {
+    const { getAuthSession } = await import("../core/state.js");
+    const session = getAuthSession && getAuthSession();
+    const uid = session?.user?.id;
+    if (!uid) return false;
+    const plan = session?.user?.currentPlan;
+    if (plan && String(plan).toLowerCase() !== "free") return true;
+    const { isVerifiedMember } = await import("../core/tokenStore.js?v=20260728-embed");
+    return await isVerifiedMember(uid);
+  } catch (_) {
+    return false;
+  }
+}
+
+function _injectUpgradeCta(root, isTr) {
+  if (root.querySelector("[data-membership-gate-cta]")) return;
+  const cta = document.createElement("div");
+  cta.setAttribute("data-membership-gate-cta", "");
+  cta.style.cssText = "text-align:center;margin:1rem 0";
+  cta.innerHTML = `<a class="button button--primary" href="./developer-membership.html" style="display:inline-block">${
+    isTr ? "Üyeliğe Geç" : "Go to Membership"
+  }</a>`;
+  const errorBox = root.querySelector("[data-wizard-error]");
+  (errorBox?.parentElement || root).appendChild(cta);
+}
+
+/* Runs the gate on wizard open. If the pro is not a member, replaces the
+   wizard body with an upgrade prompt so they don't fill it out for nothing. */
+async function _requireMembershipOrPrompt(root, isTr) {
+  const ok = await _isActiveMember();
+  if (ok) return;
+  const body = root.querySelector("[data-wizard-body]");
+  const nextBtn = root.querySelector("[data-wizard-next]");
+  const backBtn = root.querySelector("[data-wizard-back]");
+  const title = root.querySelector("[data-wizard-title]");
+  const subtitle = root.querySelector("[data-wizard-subtitle]");
+  if (title) title.textContent = isTr ? "Üyelik Gerekli" : "Membership Required";
+  if (subtitle) subtitle.textContent = isTr
+    ? "Profesyonel ilanları yalnızca üyeler yayınlayabilir."
+    : "Only members can publish professional listings.";
+  if (nextBtn) nextBtn.style.display = "none";
+  if (backBtn) backBtn.style.display = "none";
+  if (body) {
+    body.innerHTML = `
+      <div class="panel" style="padding:1.5rem;display:grid;gap:1rem;text-align:center">
+        <p style="font-size:0.95rem;color:var(--text-muted);margin:0">${
+          isTr
+            ? "Profesyonel ilan yayınlamak ve doğrulanmış rozeti almak için bir üyelik planı seçin."
+            : "Choose a membership plan to publish professional listings and get the verified badge."
+        }</p>
+        <a class="button button--primary" href="./developer-membership.html" style="justify-self:center">${
+          isTr ? "Planları Gör" : "View Plans"
+        }</a>
+      </div>`;
+  }
 }

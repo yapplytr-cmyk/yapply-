@@ -15,6 +15,8 @@ from api._utils import (
 )
 from api.billing import (
   handle_billing_checkout,
+  handle_billing_config,
+  handle_billing_status,
   handle_billing_webhook,
 )
 from api.supabase_utils import (
@@ -106,6 +108,10 @@ class handler(BaseHTTPRequestHandler):
       run_api_action(self, handle_marketplace_listing_index)
       return
 
+    if route == "billing/config":
+      handle_billing_config(self)
+      return
+
     json_response(
       self,
       HTTPStatus.NOT_FOUND,
@@ -173,6 +179,10 @@ class handler(BaseHTTPRequestHandler):
 
     if route == "billing/checkout":
       handle_billing_checkout(self)
+      return
+
+    if route == "billing/status":
+      handle_billing_status(self)
       return
 
     if route == "billing/webhook":

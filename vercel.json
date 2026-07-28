@@ -114,6 +114,14 @@
       "destination": "/api/router?route=billing/checkout"
     },
     {
+      "source": "/api/billing/config",
+      "destination": "/api/router?route=billing/config"
+    },
+    {
+      "source": "/api/billing/status",
+      "destination": "/api/router?route=billing/status"
+    },
+    {
       "source": "/api/billing/webhook",
       "destination": "/api/router?route=billing/webhook"
     }
