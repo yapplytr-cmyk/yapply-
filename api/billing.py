@@ -37,6 +37,9 @@ STRIPE_PUBLISHABLE_KEY = (os.environ.get("STRIPE_PUBLISHABLE_KEY") or "").strip(
 SITE_ORIGIN = (os.environ.get("SITE_ORIGIN") or "https://yapplytr.com").strip()
 
 STRIPE_API = "https://api.stripe.com/v1"
+# Pinned so embedded Checkout (ui_mode=embedded) keeps working regardless of the
+# account's default API version. Overridable via env if ever needed.
+STRIPE_API_VERSION = (os.environ.get("STRIPE_API_VERSION") or "2024-06-20").strip()
 
 
 def handle_billing_config(handler) -> None:
@@ -82,6 +85,10 @@ def _stripe_request(path: str, form: dict) -> dict:
     headers={
       "Authorization": f"Bearer {STRIPE_SECRET_KEY}",
       "Content-Type": "application/x-www-form-urlencoded",
+      # Pin to an API version where embedded Checkout uses ui_mode=embedded
+      # (matches Stripe.js initEmbeddedCheckout). Newer default versions renamed
+      # it and reject "embedded", which broke checkout.
+      "Stripe-Version": STRIPE_API_VERSION,
     },
   )
   try:
@@ -226,7 +233,7 @@ def handle_billing_status(handler) -> None:
     req = Request(
       f"{STRIPE_API}/checkout/sessions/{session_id}",
       method="GET",
-      headers={"Authorization": f"Bearer {STRIPE_SECRET_KEY}"},
+      headers={"Authorization": f"Bearer {STRIPE_SECRET_KEY}", "Stripe-Version": STRIPE_API_VERSION},
     )
     try:
       with urlopen(req, timeout=20) as resp:

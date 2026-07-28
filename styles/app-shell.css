@@ -2757,36 +2757,61 @@ html.keyboard-open .notification-bell-container {
 
 .y-dial-wrap { display: flex; align-items: center; justify-content: center; width: 100%; }
 .y-dial {
-  position: relative; width: 100%; max-width: 148px; aspect-ratio: 1 / 1; margin: 0 auto;
+  position: relative; width: 100%; max-width: 158px; aspect-ratio: 1 / 1; margin: 0 auto;
   touch-action: none; user-select: none; -webkit-user-select: none;
+  cursor: grab;
 }
-.y-dial-svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
-.y-dial-track { fill: none; stroke: var(--line, rgba(255,255,255,0.12)); stroke-width: 11; opacity: 0.6; }
+.y-dial.dragging { cursor: grabbing; }
+/* Physical dial body — a subtle raised disc so the wheel reads as an object,
+   not an empty ring. */
+.y-dial::before {
+  content: ""; position: absolute; inset: 12%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),
+    linear-gradient(160deg, rgba(255,255,255,0.05), rgba(0,0,0,0.18));
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -8px 18px rgba(0,0,0,0.28), 0 6px 18px rgba(0,0,0,0.30);
+}
+[data-theme="light"] .y-dial::before {
+  background:
+    radial-gradient(circle at 50% 32%, rgba(0,0,0,0.03), rgba(0,0,0,0) 60%),
+    linear-gradient(160deg, rgba(0,0,0,0.03), rgba(0,0,0,0.08));
+  border-color: rgba(0,0,0,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -8px 18px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.10);
+}
+.y-dial-svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; position: relative; z-index: 1; }
+.y-dial-track { fill: none; stroke: rgba(255,255,255,0.14); stroke-width: 9; }
+[data-theme="light"] .y-dial-track { stroke: rgba(0,0,0,0.12); }
 .y-dial-prog {
-  fill: none; stroke: var(--accent, #c9a84c); stroke-width: 11; stroke-linecap: round;
+  fill: none; stroke: var(--accent, #c9a84c); stroke-width: 9; stroke-linecap: round;
   transition: stroke-dashoffset .2s cubic-bezier(.22,.9,.3,1);
-  filter: drop-shadow(0 0 5px rgba(201,168,76,0.5));
+  filter: drop-shadow(0 0 6px rgba(201,168,76,0.6));
 }
-.y-dial-tick { stroke: var(--line, rgba(255,255,255,0.12)); stroke-width: 2; opacity: .4; transition: opacity .2s linear; }
-.y-dial-tick.major { stroke-width: 3; opacity: .6; }
-.y-dial-tick.lit { opacity: 1; stroke: var(--accent, #c9a84c); }
+/* Graduation ticks are clearly visible at rest — this is what makes it look
+   like a real wheel instead of a bare circle. */
+.y-dial-tick { stroke: rgba(255,255,255,0.32); stroke-width: 2; transition: stroke .12s linear; }
+.y-dial-tick.major { stroke: rgba(255,255,255,0.5); stroke-width: 2.6; }
+.y-dial-tick.lit { stroke: var(--accent, #c9a84c); }
+[data-theme="light"] .y-dial-tick { stroke: rgba(0,0,0,0.28); }
+[data-theme="light"] .y-dial-tick.major { stroke: rgba(0,0,0,0.45); }
 .y-dial-rot {
-  position: absolute; inset: 0; pointer-events: none; will-change: transform;
+  position: absolute; inset: 0; pointer-events: none; will-change: transform; z-index: 2;
   transition: transform .2s cubic-bezier(.22,.9,.3,1);
 }
 .y-dial.dragging .y-dial-prog, .y-dial.dragging .y-dial-rot { transition: none; }
 .y-dial-dot {
-  position: absolute; top: 8%; left: 50%; width: 16px; height: 16px;
+  position: absolute; top: 4.5%; left: 50%; width: 15px; height: 15px;
   transform: translate(-50%, -50%);
   border-radius: 50%; background: var(--accent, #c9a84c);
-  box-shadow: 0 2px 9px rgba(0,0,0,0.4), 0 0 0 4px rgba(201,168,76,0.16), inset 0 1px 0 rgba(255,255,255,0.55);
+  box-shadow: 0 2px 9px rgba(0,0,0,0.45), 0 0 0 4px rgba(201,168,76,0.18), inset 0 1px 0 rgba(255,255,255,0.6);
   border: 3px solid var(--bg, #060709); transition: transform .18s cubic-bezier(.22,.9,.3,1);
 }
-.y-dial.dragging .y-dial-dot { transform: translate(-50%, -50%) scale(1.16); }
+.y-dial.dragging .y-dial-dot { transform: translate(-50%, -50%) scale(1.18); }
 /* Center: big number with the unit stacked beneath — never clipped. */
 .y-dial-center {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; pointer-events: none; padding: 0 18%; gap: 1px;
+  justify-content: center; pointer-events: none; padding: 0 20%; gap: 2px; z-index: 3;
 }
 .y-dial-input,
 .y-dial-input:focus,
@@ -2794,17 +2819,20 @@ html.keyboard-open .notification-bell-container {
   width: 100%; max-width: 100%;
   background: transparent !important; border: 0 !important; outline: 0 !important;
   box-shadow: none !important; border-radius: 0 !important;
-  pointer-events: auto; font-size: 1.7rem; font-weight: 800; color: var(--text, #f4f0e8);
+  pointer-events: auto; font-size: 2rem; font-weight: 800; color: var(--text, #f4f0e8);
   text-align: center; padding: 0; margin: 0; line-height: 1.02; letter-spacing: -0.02em;
   caret-color: var(--accent, #c9a84c); -webkit-appearance: none; appearance: none;
   -webkit-tap-highlight-color: transparent; font-family: var(--font-display, inherit);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.35);
 }
+[data-theme="light"] .y-dial-input { text-shadow: none; }
 .y-dial-unit {
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--text-muted, #b3ada0); line-height: 1; margin-top: 3px; white-space: nowrap;
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent, #c9a84c); line-height: 1; margin-top: 2px; white-space: nowrap; opacity: 0.92;
 }
-/* Slightly larger wheels once there's room */
-@media (min-width: 460px) {
-  .y-dial { max-width: 168px; }
-  .y-dial-input { font-size: 1.9rem; }
+/* Larger wheels once there's room */
+@media (min-width: 440px) {
+  .y-dial { max-width: 188px; }
+  .y-dial-input { font-size: 2.3rem; }
+  .y-dial-unit { font-size: 0.76rem; }
 }
