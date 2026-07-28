@@ -1088,7 +1088,68 @@ def _dispatch_notification(notify_type: str, payload: dict) -> dict:
     send_inquiry_received(listing, inquiry)
     return {"sent": True, "type": notify_type}
 
+  if notify_type == "password_reset":
+    # Generate a Supabase recovery link with the service-role key, then email it
+    # via Resend (reliable) instead of Supabase's default rate-limited mailer.
+    # Always report success generically so we never reveal whether an account
+    # exists for a given email (prevents account enumeration).
+    email = (payload.get("email") or "").strip()
+    redirect_to = (payload.get("redirectTo") or "https://yapplytr.com/reset-password.html").strip()
+    locale = payload.get("locale") or "tr"
+    if not email:
+      return {"sent": True, "type": notify_type}
+    try:
+      link = _generate_recovery_link(email, redirect_to)
+      if link:
+        from backend.email import send_password_reset
+        send_password_reset(email, link, locale)
+    except Exception as exc:
+      log.warning("Password reset dispatch failed: %s", exc)
+    return {"sent": True, "type": notify_type}
+
   return {"sent": False, "type": notify_type, "reason": "unknown_type"}
+
+
+def _generate_recovery_link(email: str, redirect_to: str) -> str:
+  """Call Supabase GoTrue admin generate_link (type=recovery) and return the
+  action link. Returns "" on any failure (e.g. no such user)."""
+  import os
+  import json as _json
+  from urllib.request import Request, urlopen
+  from urllib.error import HTTPError, URLError
+
+  supabase_url = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
+  service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+  if not supabase_url or not service_key:
+    return ""
+
+  body = _json.dumps({
+    "type": "recovery",
+    "email": email,
+    "redirect_to": redirect_to,
+  }).encode("utf-8")
+  req = Request(
+    f"{supabase_url}/auth/v1/admin/generate_link",
+    method="POST",
+    data=body,
+    headers={
+      "Authorization": f"Bearer {service_key}",
+      "apikey": service_key,
+      "Content-Type": "application/json",
+    },
+  )
+  try:
+    with urlopen(req, timeout=10) as resp:
+      data = _json.loads(resp.read().decode("utf-8") or "{}")
+  except (HTTPError, URLError, OSError, ValueError):
+    return ""
+
+  # GoTrue returns action_link at top level (newer) or under "properties".
+  return (
+    data.get("action_link")
+    or (data.get("properties") or {}).get("action_link")
+    or ""
+  )
 
 
 def _send_push_for_bid_accepted(listing: dict, bid: dict) -> None:

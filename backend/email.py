@@ -463,3 +463,37 @@ def send_inquiry_received(listing: dict[str, Any], inquiry: dict[str, Any]) -> N
   )
 
   _send_email(to, f"New inquiry on \"{listing_title}\"", _branded_html("New Inquiry", body))
+
+
+# ── 6. Password reset ────────────────────────────────────
+
+def send_password_reset(email: str, reset_link: str, locale: str = "tr") -> None:
+  """Email a password-reset link via Resend (reliable), instead of relying on
+  Supabase's default rate-limited email service."""
+  to = (email or "").strip()
+  if not to or not reset_link:
+    return
+
+  is_tr = str(locale).lower().startswith("tr")
+
+  if is_tr:
+    heading = "Şifreni sıfırla"
+    p1 = "Yapply hesabın için bir şifre sıfırlama talebi aldık. Yeni bir şifre belirlemek için aşağıdaki butona tıkla."
+    cta = "Şifreyi Sıfırla"
+    p2 = "Bu bağlantı kısa bir süre için geçerlidir. Eğer bu talebi sen yapmadıysan, bu e-postayı yok sayabilirsin — hesabın güvende."
+    subject = "Yapply — Şifre sıfırlama bağlantın"
+  else:
+    heading = "Reset your password"
+    p1 = "We received a request to reset the password for your Yapply account. Tap the button below to set a new password."
+    cta = "Reset Password"
+    p2 = "This link is valid for a short time. If you didn&rsquo;t request this, you can safely ignore this email — your account is secure."
+    subject = "Yapply — Your password reset link"
+
+  body = (
+    _heading(heading)
+    + _paragraph(p1)
+    + _cta_button(cta, reset_link)
+    + _paragraph(p2)
+  )
+
+  _send_email(to, subject, _branded_html("Password Reset", body))

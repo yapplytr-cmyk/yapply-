@@ -885,17 +885,37 @@ export async function requestPasswordReset(email) {
   if (!cleanEmail || !cleanEmail.includes("@")) {
     throw createAuthError("EMAIL_INVALID", "Please enter a valid email address.");
   }
-  const supabase = await getSupabaseClient();
   // The reset link is opened from an email in a normal browser, so it must be a
   // real https origin — never capacitor://localhost (native app).
   let origin = getAuthOrigin();
   if (!/^https?:\/\//.test(origin || "")) origin = "https://yapplytr.com";
   const redirectTo = `${origin}/reset-password.html`;
-  const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
-  if (error) {
-    throw mapSupabaseError(error, "RESET_REQUEST_FAILED");
+  const locale = (typeof document !== "undefined" && document.documentElement.lang === "tr") ? "tr" : "en";
+
+  // Primary path: send the reset link through our own Resend-backed /api/notify
+  // endpoint. Supabase's built-in reset email is heavily rate-limited and was
+  // not delivering; Resend is the same channel our other transactional emails use.
+  try {
+    const resp = await fetch(`${origin}/api/notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "password_reset", payload: { email: cleanEmail, redirectTo, locale } }),
+    });
+    if (resp.ok) return true;
+  } catch (_) {
+    // fall through to Supabase fallback
   }
-  return true;
+
+  // Fallback: Supabase's own mailer, in case the API path is unavailable.
+  try {
+    const supabase = await getSupabaseClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
+    if (error) throw mapSupabaseError(error, "RESET_REQUEST_FAILED");
+    return true;
+  } catch (err) {
+    if (err && err.code) throw err;
+    throw createAuthError("RESET_REQUEST_FAILED", "Could not send the reset link. Please try again.");
+  }
 }
 
 export async function loginAccount(payload, audience = "public") {

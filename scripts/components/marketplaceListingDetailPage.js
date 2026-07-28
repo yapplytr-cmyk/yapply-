@@ -595,12 +595,12 @@ function createClientDetail(content, listing) {
                     <span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
                   </button>
                   <div class="marketplace-bid-detail" data-bid-panel hidden>
-                    <div class="marketplace-bid-bidder">
-                      <span class="marketplace-bid-bidder__avatar" style="position:relative;display:inline-flex;line-height:0">
+                    <div class="marketplace-bid-bidder" style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem">
+                      <span class="marketplace-bid-bidder__avatar" style="position:relative;display:inline-flex;line-height:0;flex:0 0 auto">
                         <img src="${bidderAvatar}" alt="${developerName}" loading="lazy" decoding="async" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--surface-300,#d1d5db)" />
                         ${bidderVerified ? verifiedSealMarkup(locale) : ""}
                       </span>
-                      <span class="marketplace-bid-bidder__name">${developerName}${bidderVerified ? verifiedCheckBadge(locale) : ""}</span>
+                      <span class="marketplace-bid-bidder__name" style="display:inline-flex;align-items:center;font-weight:600">${developerName}${bidderVerified ? verifiedCheckBadge(locale) : ""}</span>
                     </div>
                     <div class="project-detail-card__facts">
                       ${createSummaryGrid([
@@ -643,7 +643,7 @@ function createClientDetail(content, listing) {
   const detailAcceptedDevId = detailAcceptedBid?.bidderUserId || detailAcceptedBid?.bidder_user_id || detailAcceptedBid?.developerProfileReference?.userId || "";
   const isTR = locale === "tr";
   const reviewLabels = {
-    title: isTR ? "Geliştiriciyi Değerlendir" : "Rate this Developer",
+    title: isTR ? "Profesyoneli Değerlendir" : "Rate this Professional",
     ratingLabel: isTR ? "Puanınız" : "Your Rating",
     commentLabel: isTR ? "Yorum (isteğe bağlı)" : "Comment (optional)",
     commentPlaceholder: isTR ? "Bu geliştirici ile çalışma deneyiminizi paylaşın..." : "Share your experience working with this developer...",
@@ -651,8 +651,8 @@ function createClientDetail(content, listing) {
   };
   const detailAlreadyReviewed = Boolean(listing._hasReview);
   const detailReviewMarkup = isOwner && detailAcceptedBidId && detailAcceptedDevId && !detailAlreadyReviewed ? `
-    <section class="section-shell" style="padding-top:0">
-      <div class="panel" style="padding:1.25rem">
+    <section class="section-shell" id="leave-review" style="padding-top:0;scroll-margin-top:80px">
+      <div class="panel" style="padding:1.25rem;border:1px solid var(--accent,#c9a84c)">
         <h3 style="margin:0 0 0.75rem;font-size:1rem">${reviewLabels.title}</h3>
         <form data-inline-review-form data-review-dev="${detailAcceptedDevId}" data-review-listing="${listing.id}" data-review-bid="${detailAcceptedBidId}">
           <div data-star-input-group>

@@ -36,13 +36,20 @@ function createBidCard(bid, listing, content, locale) {
   const isAccepted = Boolean(acceptedBidId && bid.id === acceptedBidId);
   const isClosed = isListingClosed(listing);
 
+  const reviewHref = `${getMarketplaceListingHref("client", listing.id)}#leave-review`;
   let actionMarkup;
   if (isAccepted) {
     actionMarkup = `
-      <span class="client-bids-accept-badge client-bids-accept-badge--accepted">
-        <svg class="client-bids-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        ${content.acceptedLabel}
-      </span>`;
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="client-bids-accept-badge client-bids-accept-badge--accepted">
+          <svg class="client-bids-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          ${content.acceptedLabel}
+        </span>
+        <a class="button button--primary" href="${reviewHref}" style="display:inline-flex;align-items:center;gap:6px;font-size:0.82rem;padding:0.4rem 0.85rem;text-decoration:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+          ${locale === "tr" ? "Değerlendir" : "Leave a review"}
+        </a>
+      </div>`;
   } else if (isClosed) {
     actionMarkup = `<span class="client-bids-closed-label">${content.closedLabel}</span>`;
   } else {

@@ -1,5 +1,5 @@
 import { getAuthSession } from "./state.js";
-import { getSupabaseClient } from "./supabaseClient.js";
+import { getSupabaseClient, getSupabaseRuntimeConfig } from "./supabaseClient.js";
 import {
   createDeveloperProfileReference,
   validateMarketplaceBidDraft,
@@ -462,14 +462,28 @@ export async function enrichMarketplaceListingsWithCreatorAvatars(listings = [])
 
   try {
     if (unresolvedOwnerIds.length > 0) {
-      const supabase = await getSupabaseClient();
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id,role,avatar_url")
-        .in("id", unresolvedOwnerIds);
+      // Raw REST instead of the JS SDK, so read-only pages never trigger the
+      // ~110KB Supabase SDK download just to resolve creator avatars.
+      let fetchedRows = [];
+      let error = null;
+      try {
+        const { supabaseUrl, supabaseAnonKey } = await getSupabaseRuntimeConfig();
+        const inList = unresolvedOwnerIds.map((id) => encodeURIComponent(`"${id}"`)).join(",");
+        const resp = await fetch(
+          `${supabaseUrl}/rest/v1/profiles?id=in.(${inList})&select=id,role,avatar_url`,
+          { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}` } }
+        );
+        if (resp.ok) {
+          fetchedRows = await resp.json();
+        } else {
+          error = new Error(`profiles REST ${resp.status}`);
+        }
+      } catch (restErr) {
+        error = restErr;
+      }
 
       if (!error) {
-        const fetchedRows = Array.isArray(data) ? data : [];
+        fetchedRows = Array.isArray(fetchedRows) ? fetchedRows : [];
         const seenIds = new Set();
 
         fetchedRows.forEach((row) => {

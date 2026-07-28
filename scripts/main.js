@@ -3656,6 +3656,8 @@ function setupAccountSettings(content) {
 
   const defaultOptions = getDefaultAvatarOptions(session.user.role);
   let isSubmitting = false;
+  let pendingUploadDataUrl = "";
+  let pendingUploadName = "";
 
   const getSelectedAvatar = () => {
     const selected = avatarOptions.find((option) => option.checked);
@@ -3763,9 +3765,49 @@ function setupAccountSettings(content) {
 
   avatarOptions.forEach((option) => {
     option.addEventListener("change", () => {
+      pendingUploadDataUrl = "";
+      pendingUploadName = "";
+      if (uploadName) uploadName.textContent = "";
       syncPreview();
     });
   });
+
+  // ── Optional custom photo upload (client accounts) ──
+  const uploadBtn = document.querySelector("[data-account-settings-upload-btn]");
+  const uploadInput = document.querySelector("[data-account-settings-upload-input]");
+  const uploadName = document.querySelector("[data-account-settings-upload-name]");
+  if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      uploadInput.click();
+    });
+    uploadInput.addEventListener("change", () => {
+      const file = uploadInput.files && uploadInput.files[0];
+      if (!file) return;
+      const isTR = document.documentElement.lang === "tr";
+      if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
+        setStatus("error", isTR ? "Lütfen bir PNG, JPG veya WEBP görseli seç." : "Please choose a PNG, JPG or WEBP image.");
+        uploadInput.value = "";
+        return;
+      }
+      if (file.size > 6 * 1024 * 1024) {
+        setStatus("error", isTR ? "Görsel 6MB'den küçük olmalı." : "Image must be under 6MB.");
+        uploadInput.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingUploadDataUrl = String(reader.result || "");
+        pendingUploadName = file.name || "photo";
+        if (uploadName) uploadName.textContent = pendingUploadName;
+        // Deselect any bird avatar so the custom photo wins.
+        avatarOptions.forEach((o) => { o.checked = false; });
+        if (preview && pendingUploadDataUrl) preview.src = pendingUploadDataUrl;
+        setStatus(null);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -3795,13 +3837,25 @@ function setupAccountSettings(content) {
       const selectedAvatar = getSelectedAvatar();
       const profilePictureId = selectedAvatar.id || session.user.profilePictureId || defaultOptions[0]?.id || "";
 
+      // If the client just picked a custom photo, save it as an upload; otherwise
+      // keep the selected default (bird) avatar behaviour.
+      const avatarPayload = pendingUploadDataUrl
+        ? {
+            profilePictureType: "upload",
+            profilePictureUploadDataUrl: pendingUploadDataUrl,
+            profilePictureUploadName: pendingUploadName || "photo",
+          }
+        : {
+            profilePictureType: "default",
+            profilePictureId,
+          };
+
       const updatedSession = await authApi.saveOwnAccountSettings({
         username: String(formData.get("username") || "").trim(),
         email: String(formData.get("email") || "").trim(),
         password: passwordInput && !passwordInput.disabled ? String(formData.get("password") || "") : "",
         workDescription: String(formData.get("workDescription") || "").trim(),
-        profilePictureType: "default",
-        profilePictureId,
+        ...avatarPayload,
       });
 
       if (updatedSession?.passwordUpdated) {

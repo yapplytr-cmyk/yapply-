@@ -179,9 +179,17 @@ export function createAccountSettingsPage(content) {
               </div>
             </fieldset>`
               : `<fieldset class="form-field form-field--full account-settings-avatar-group">
-              <span>${content.fields.defaultAvatars}</span>
-              <small>${content.defaultAvatarHint.replace("{choice}", avatarChoiceLabel)}</small>
-              <div class="account-settings-avatar-grid">
+              <span>${locale === "tr" ? "Profil Fotoğrafı" : "Profile Picture"}</span>
+              <small>${locale === "tr" ? "İstersen kendi fotoğrafını yükle, istemezsen aşağıdaki kuş avatarlarından birini seç." : "Optionally upload your own photo, or pick one of the bird avatars below."}</small>
+              <div class="account-settings-avatar-upload" style="display:flex;align-items:center;gap:12px;margin:12px 0">
+                <button type="button" class="button button--secondary" data-account-settings-upload-btn style="font-size:0.85rem;padding:0.45rem 0.9rem">
+                  ${locale === "tr" ? "Fotoğraf Yükle" : "Upload Photo"}
+                </button>
+                <span data-account-settings-upload-name style="font-size:0.8rem;color:var(--muted,#8a8f98)"></span>
+                <input type="file" accept="image/png,image/jpeg,image/webp" hidden data-account-settings-upload-input />
+              </div>
+              <small style="opacity:0.75">${locale === "tr" ? "veya bir avatar seç:" : "or choose an avatar:"}</small>
+              <div class="account-settings-avatar-grid" style="margin-top:8px">
                 ${createAvatarOptions(user, content)}
               </div>
             </fieldset>`}

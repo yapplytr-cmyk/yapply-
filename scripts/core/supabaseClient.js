@@ -238,7 +238,8 @@ export async function getSupabaseClient() {
  * Call this early during app boot so the client is ready when first needed.
  */
 export function preWarmSupabaseClient() {
-  // Add preconnect hints for all external origins the app needs
+  // Add preconnect hints for all external origins the app needs. This is cheap
+  // and keeps the TLS handshake warm without downloading the ~110KB SDK.
   const origins = [
     "https://cdn.jsdelivr.net",
     SUPABASE_URL,
@@ -253,6 +254,18 @@ export function preWarmSupabaseClient() {
     }
   });
 
-  // Just trigger the lazy init — don't await
-  getSupabaseClient().catch(() => {});
+  // Defer the actual SDK module download to idle time so it never blocks the
+  // first paint. The hot read paths use raw REST and don't need the SDK; any
+  // auth/write op calls getSupabaseClient() on demand, so correctness is
+  // unchanged — this just moves ~110KB off the critical boot path.
+  const warm = () => { getSupabaseClient().catch(() => {}); };
+  try {
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(warm, { timeout: 4000 });
+    } else {
+      setTimeout(warm, 1200);
+    }
+  } catch (_) {
+    warm();
+  }
 }
