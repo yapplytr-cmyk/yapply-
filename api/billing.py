@@ -109,9 +109,19 @@ def _supabase_request(path: str, method: str = "GET", payload: dict | None = Non
     headers["Prefer"] = prefer
   data = json.dumps(payload).encode("utf-8") if payload is not None else None
   req = Request(f"{SUPABASE_URL}{path}", data=data, method=method, headers=headers)
-  with urlopen(req, timeout=20) as resp:
-    raw = resp.read().decode("utf-8")
-    return json.loads(raw) if raw else None
+  try:
+    with urlopen(req, timeout=20) as resp:
+      raw = resp.read().decode("utf-8")
+      return json.loads(raw) if raw else None
+  except HTTPError as err:
+    # Surface the actual PostgREST/Postgres error body so failures are
+    # diagnosable instead of collapsing into an opaque 500.
+    detail = ""
+    try:
+      detail = err.read().decode("utf-8", "replace")
+    except Exception:  # noqa: BLE001
+      pass
+    raise BillingError("SUPABASE_ERROR", f"Supabase {err.code} on {method} {path}: {detail[:400]}", 502)
 
 
 def _get_plan(plan_id: str) -> dict:
@@ -395,7 +405,7 @@ def _upsert_membership(
       "provider": provider,
       "provider_ref": provider_ref,
       "current_period_end": period_end,
-      "updated_at": "now()",
+      "updated_at": _now_iso(),
     },
     prefer="resolution=merge-duplicates",
   )
@@ -408,7 +418,7 @@ def _set_profile_plan(user_id: str, plan_id: str) -> None:
     _supabase_request(
       f"/rest/v1/profiles?id=eq.{user_id}",
       method="PATCH",
-      payload={"current_plan": plan_id or "free", "updated_at": "now()"},
+      payload={"current_plan": plan_id or "free", "updated_at": _now_iso()},
       prefer="return=minimal",
     )
   except Exception:  # noqa: BLE001
@@ -502,7 +512,7 @@ def handle_billing_webhook(handler) -> None:
           _supabase_request(
             f"/rest/v1/memberships?user_id=eq.{user_id}",
             method="PATCH",
-            payload={"status": "canceled", "updated_at": "now()"},
+            payload={"status": "canceled", "updated_at": _now_iso()},
             prefer="return=minimal",
           )
         except Exception:  # noqa: BLE001
@@ -562,6 +572,13 @@ def _ms_to_iso(ms) -> str | None:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(secs))
   except Exception:  # noqa: BLE001
     return None
+
+
+def _now_iso() -> str:
+  """Current UTC time as an ISO-8601 string Postgres can parse. The literal
+  string 'now()' is NOT a valid timestamptz input, so we must send a real
+  timestamp for updated_at columns."""
+  return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 def handle_billing_revenuecat_webhook(handler) -> None:
