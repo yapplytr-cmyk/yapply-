@@ -683,7 +683,7 @@ function showStatusToast(variant, message) {
   if (existing) existing.remove();
   const el = document.createElement("div");
   el.className = `yapply-status-toast yapply-status-toast--${variant}`;
-  el.innerHTML = `<span class="yapply-status-toast__icon">${variant === "success" ? "✓" : "⏸"}</span><span>${message}</span>`;
+  el.innerHTML = `<span class="yapply-status-toast__icon">${variant === "success" ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>` : `<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>`}</span><span>${message}</span>`;
   document.body.appendChild(el);
   el.addEventListener("animationend", (e) => {
     if (e.animationName === "yapplyToastOut") el.remove();
@@ -2204,10 +2204,10 @@ function showBidLimitModal() {
   modal.innerHTML = `
     <div style="background:var(--bg-panel-strong,#1a1c22);border:1px solid var(--line,rgba(255,255,255,0.08));border-radius:var(--radius-lg,1.5rem);padding:2rem;max-width:420px;width:100%;text-align:center;box-shadow:var(--shadow-strong)">
       <div style="font-size:2.5rem;margin-bottom:0.75rem">&#9888;&#65039;</div>
-      <h3 style="color:var(--text,#f4f0e8);font-size:1.2rem;margin-bottom:0.5rem">
+      <h3 style="color:var(--text,#E2EEF8);font-size:1.2rem;margin-bottom:0.5rem">
         ${isTr ? "Teklif Limitine Ulaştınız" : "Bid Limit Reached"}
       </h3>
-      <p style="color:var(--text-muted,#b3ada0);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem">
+      <p style="color:var(--text-muted,#8BBAD6);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem">
         ${isTr
           ? "Bu döngüdeki ücretsiz teklif hakkınızı kullandınız. Daha fazla teklif vermek için planınızı yükseltin."
           : "You have used all your free bids for this cycle. Upgrade your plan to place more bids."}
@@ -2812,8 +2812,8 @@ function setupInlineReviewForms(session, content) {
           const gradId = s.getAttribute("data-grad-id");
           if (svg && path) {
             const active = sVal <= val;
-            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #f59e0b)" : "none");
-            path.setAttribute("stroke", active ? "#b45309" : "var(--text-300, #9ca3af)");
+            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #2ECC9A)" : "none");
+            path.setAttribute("stroke", active ? "#17805F" : "var(--text-300, #9ca3af)");
             path.setAttribute("stroke-width", active ? "0.6" : "1.2");
             svg.setAttribute("class", active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty");
           }
@@ -2898,7 +2898,7 @@ function setupInlineReviewForms(session, content) {
         const wrapper = form.closest(".panel") || form.parentElement;
         if (wrapper) {
           const filledStars = Array.from({ length: 5 }, (_, i) =>
-            `<svg width="24" height="24" viewBox="0 0 24 24" fill="${i < rating ? "var(--accent-500, #f59e0b)" : "none"}" stroke="var(--accent-500, #f59e0b)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`
+            `<svg width="24" height="24" viewBox="0 0 24 24" fill="${i < rating ? "var(--accent-500, #2ECC9A)" : "none"}" stroke="var(--accent-500, #2ECC9A)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`
           ).join("");
           wrapper.innerHTML = `
             <div style="padding:1rem;text-align:center">
@@ -2964,8 +2964,8 @@ function setupDeveloperPublicProfile(content) {
           const gradId = s.getAttribute("data-grad-id");
           if (svg && path) {
             const active = sVal <= val;
-            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #f59e0b)" : "none");
-            path.setAttribute("stroke", active ? "#b45309" : "var(--text-300, #9ca3af)");
+            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #2ECC9A)" : "none");
+            path.setAttribute("stroke", active ? "#17805F" : "var(--text-300, #9ca3af)");
             path.setAttribute("stroke-width", active ? "0.6" : "1.2");
             svg.setAttribute("class", active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty");
           }
@@ -4366,7 +4366,7 @@ function setupPullToRefresh() {
       /* Blocks under bird */
       .ptr-blocks { display: flex; gap: 2px; height: 6px; }
       .ptr-block { width: 8px; height: 6px; border-radius: 1.5px;
-        background: var(--accent, #c9a84c); transform: scaleY(0);
+        background: var(--accent, #2A8DC8); transform: scaleY(0);
         transform-origin: bottom; transition: transform 200ms ease; }
 
       /* States based on pull progress — bird fades in piece by piece */

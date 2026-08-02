@@ -21,12 +21,12 @@ function createStarDisplay(rating, size = 18) {
   const empty = 5 - full - (hasHalf ? 1 : 0);
   const uid = `sg${Math.random().toString(36).slice(2, 8)}`;
 
-  const gradDef = `<defs><linearGradient id="${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient></defs>`;
+  const gradDef = `<defs><linearGradient id="${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#5FE0B8"/><stop offset="50%" stop-color="#2ECC9A"/><stop offset="100%" stop-color="#1E9E77"/></linearGradient></defs>`;
   const starPath = `M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z`;
 
-  const starFull = `<svg class="yapply-star yapply-star--full" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<path d="${starPath}" fill="url(#${uid})" stroke="#b45309" stroke-width="0.6"/></svg>`;
+  const starFull = `<svg class="yapply-star yapply-star--full" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<path d="${starPath}" fill="url(#${uid})" stroke="#17805F" stroke-width="0.6"/></svg>`;
   const halfId = `${uid}h`;
-  const starHalf = `<svg class="yapply-star yapply-star--half" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<defs><clipPath id="${halfId}"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="${starPath}" fill="none" stroke="#b45309" stroke-width="0.6"/><path d="${starPath}" fill="url(#${uid})" clip-path="url(#${halfId})"/></svg>`;
+  const starHalf = `<svg class="yapply-star yapply-star--half" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<defs><clipPath id="${halfId}"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="${starPath}" fill="none" stroke="#17805F" stroke-width="0.6"/><path d="${starPath}" fill="url(#${uid})" clip-path="url(#${halfId})"/></svg>`;
   const starEmpty = `<svg class="yapply-star yapply-star--empty" width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${starPath}" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.2"/></svg>`;
 
   return `<span class="dev-profile-stars yapply-stars" style="display:inline-flex;align-items:center;gap:2px">
@@ -44,7 +44,7 @@ function createStarInput(content) {
         return `
       <button type="button" class="dev-profile-star-input yapply-star-input-btn" data-star-value="${n}" data-grad-id="${gid}" aria-label="${n} star${n > 1 ? "s" : ""}">
         <svg class="yapply-star yapply-star--empty" width="28" height="28" viewBox="0 0 24 24">
-          <defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient></defs>
+          <defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#5FE0B8"/><stop offset="50%" stop-color="#2ECC9A"/><stop offset="100%" stop-color="#1E9E77"/></linearGradient></defs>
           <path d="${starPath}" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.2" data-star-path/>
         </svg>
       </button>`;
@@ -167,7 +167,7 @@ export function createDeveloperPublicProfilePage(content) {
   const profileName = profile.company_name || profile.full_name || profile.username || profile.email || "";
   const isVerified = profile.current_plan && String(profile.current_plan).toLowerCase() !== "free";
   const verifiedBadge = isVerified
-    ? `<span class="yapply-verified-badge" title="${locale === "tr" ? "Doğrulanmış Üye" : "Verified Member"}" style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#c9a84c,#e6c76a);color:#14161b;font-size:0.68rem;font-weight:800;letter-spacing:0.02em;padding:2px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;box-shadow:0 1px 6px rgba(201,168,76,0.4)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>${locale === "tr" ? "Doğrulanmış" : "Verified"}</span>`
+    ? `<span class="yapply-verified-badge" title="${locale === "tr" ? "Doğrulanmış Üye" : "Verified Member"}" style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#2A8DC8,#7EC8E3);color:#FFFFFF;font-size:0.68rem;font-weight:800;letter-spacing:0.02em;padding:2px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;box-shadow:0 1px 6px rgba(27,111,168,0.4)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>${locale === "tr" ? "Doğrulanmış" : "Verified"}</span>`
     : "";
   const verifiedSeal = isVerified ? verifiedSealMarkup(locale) : "";
   const description = profile.work_description || profile.specialties || "";

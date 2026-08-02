@@ -22,7 +22,7 @@ export function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   getStorage()?.setItem(THEME_STORAGE_KEY, theme);
   // Sync native WebView background color with theme to prevent black bar in light mode
-  const bgColor = theme === "light" ? "#f3efe6" : "#060709";
+  const bgColor = theme === "light" ? "#E9F1F8" : "#08131F";
   document.documentElement.style.backgroundColor = bgColor;
   document.body.style.backgroundColor = bgColor;
   try {

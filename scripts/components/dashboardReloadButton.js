@@ -35,7 +35,7 @@ const RELOAD_BUTTON_STYLES = `
   }
   .dashboard-reload-btn--spinning svg {
     animation: dashboard-reload-spin 700ms cubic-bezier(0.4, 0, 0.2, 1);
-    stroke: var(--accent, #c9a84c);
+    stroke: var(--accent, #2A8DC8);
   }
   @keyframes dashboard-reload-spin {
     0% { transform: rotate(0deg); }

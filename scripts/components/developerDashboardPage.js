@@ -108,12 +108,12 @@ function createStarDisplay(rating, size = 18) {
   const empty = 5 - full - (hasHalf ? 1 : 0);
   const uid = `sg${Math.random().toString(36).slice(2, 8)}`;
 
-  const gradDef = `<defs><linearGradient id="${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient></defs>`;
+  const gradDef = `<defs><linearGradient id="${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#5FE0B8"/><stop offset="50%" stop-color="#2ECC9A"/><stop offset="100%" stop-color="#1E9E77"/></linearGradient></defs>`;
   const starPath = `M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z`;
 
-  const starFull = `<svg class="yapply-star yapply-star--full" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<path d="${starPath}" fill="url(#${uid})" stroke="#b45309" stroke-width="0.6"/></svg>`;
+  const starFull = `<svg class="yapply-star yapply-star--full" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<path d="${starPath}" fill="url(#${uid})" stroke="#17805F" stroke-width="0.6"/></svg>`;
   const halfId = `${uid}h`;
-  const starHalf = `<svg class="yapply-star yapply-star--half" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<defs><clipPath id="${halfId}"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="${starPath}" fill="none" stroke="#b45309" stroke-width="0.6"/><path d="${starPath}" fill="url(#${uid})" clip-path="url(#${halfId})"/></svg>`;
+  const starHalf = `<svg class="yapply-star yapply-star--half" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<defs><clipPath id="${halfId}"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="${starPath}" fill="none" stroke="#17805F" stroke-width="0.6"/><path d="${starPath}" fill="url(#${uid})" clip-path="url(#${halfId})"/></svg>`;
   const starEmpty = `<svg class="yapply-star yapply-star--empty" width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${starPath}" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.2"/></svg>`;
 
   return `<span class="yapply-stars" style="display:inline-flex;align-items:center;gap:2px">${starFull.repeat(full)}${hasHalf ? starHalf : ""}${starEmpty.repeat(empty)}</span>`;
@@ -143,14 +143,14 @@ function createBidCounterCard(session, locale) {
   return `
     <article class="panel developer-dashboard-bid-counter" style="padding:1.25rem;display:grid;gap:0.75rem">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <h4 style="font-size:0.95rem;color:var(--text,#f4f0e8);margin:0">${isTr ? "Jeton Bakiyesi" : "Token Balance"}</h4>
-        <span style="font-size:0.78rem;padding:4px 10px;border-radius:999px;background:var(--gold-soft,rgba(201,168,76,0.16));color:var(--accent,#c9a84c);font-weight:600">${planLabel}</span>
+        <h4 style="font-size:0.95rem;color:var(--text,#E2EEF8);margin:0">${isTr ? "Jeton Bakiyesi" : "Token Balance"}</h4>
+        <span style="font-size:0.78rem;padding:4px 10px;border-radius:999px;background:var(--gold-soft,rgba(27,111,168,0.16));color:var(--accent,#2A8DC8);font-weight:600">${planLabel}</span>
       </div>
       <div style="display:flex;align-items:baseline;gap:8px">
-        <span style="font-size:2rem;font-weight:700;color:var(--text,#f4f0e8)">${bigValue}</span>
-        <span style="font-size:0.85rem;color:var(--text-muted,#b3ada0)">${isTr ? "jeton" : "tokens"}</span>
+        <span style="font-size:2rem;font-weight:700;color:var(--text,#E2EEF8)">${bigValue}</span>
+        <span style="font-size:0.85rem;color:var(--text-muted,#8BBAD6)">${isTr ? "jeton" : "tokens"}</span>
       </div>
-      <p style="font-size:0.78rem;color:var(--text-dim,#8f8a7d);margin:0">${isTr ? "Her teklif, projenin büyüklüğüne göre jeton harcar." : "Each bid spends tokens based on the project's size."}</p>
+      <p style="font-size:0.78rem;color:var(--text-dim,#507A98);margin:0">${isTr ? "Her teklif, projenin büyüklüğüne göre jeton harcar." : "Each bid spends tokens based on the project's size."}</p>
       <a href="./developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${ctaLabel}</a>
     </article>
   `;
@@ -250,11 +250,11 @@ function createWonBidCard(bid, content) {
   const phoneIcon = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
 
   const contactBanner = clientPhoneRaw ? `
-    <div class="won-bid-contact" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:0.9rem 1rem;background:var(--gold-soft,rgba(201,168,76,0.12));border-top:1px solid rgba(201,168,76,0.25)">
+    <div class="won-bid-contact" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:0.9rem 1rem;background:var(--gold-soft,rgba(27,111,168,0.12));border-top:1px solid rgba(27,111,168,0.25)">
       <div style="flex:1 1 160px;min-width:0">
-        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim,#8f8a7d)">${isTr ? "Müşteriyle iletişime geçin" : "Contact the client"}</div>
-        <div style="font-size:1rem;font-weight:700;color:var(--text,#f4f0e8)">${clientName}</div>
-        <div style="font-size:0.9rem;color:var(--text-muted,#b3ada0)">${clientPhoneRaw}</div>
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim,#507A98)">${isTr ? "Müşteriyle iletişime geçin" : "Contact the client"}</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text,#E2EEF8)">${clientName}</div>
+        <div style="font-size:0.9rem;color:var(--text-muted,#8BBAD6)">${clientPhoneRaw}</div>
       </div>
       <a href="${telHref}" class="button button--primary" style="padding:8px 16px;font-size:0.85rem;display:inline-flex;align-items:center;gap:6px">${phoneIcon} ${isTr ? "Ara" : "Call"}</a>
       <a href="https://wa.me/${waDigits}" target="_blank" rel="noopener" class="button button--secondary" style="padding:8px 16px;font-size:0.85rem">WhatsApp</a>

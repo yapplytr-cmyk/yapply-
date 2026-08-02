@@ -2144,7 +2144,7 @@ function setupMarketplaceBidForm(content) {
       try {
         const { getBidCostForListing } = await import("./core/tokenStore.js");
         const cost = await getBidCostForListing({ budget: costBadge.dataset.listingBudget || "" });
-        const coin = `<svg viewBox="0 0 40 40" width="1.2em" height="1.2em" style="vertical-align:-0.22em;margin-right:5px"><ellipse cx="20" cy="21.5" rx="15" ry="7.4" fill="#c98a1c"/><ellipse cx="20" cy="17" rx="15" ry="7.4" fill="#ffd54a" stroke="#a9761a" stroke-width="1.2"/><ellipse cx="20" cy="17" rx="9.8" ry="4.4" fill="none" stroke="#e2a52a" stroke-width="1.1"/><ellipse cx="15.3" cy="14.7" rx="3.7" ry="1.6" fill="#fff4c6" opacity="0.75"/></svg>`;
+        const coin = `<svg viewBox="0 0 40 40" width="1.2em" height="1.2em" style="vertical-align:-0.22em;margin-right:5px"><ellipse cx="20" cy="21.5" rx="15" ry="7.4" fill="#1B6FA8"/><ellipse cx="20" cy="17" rx="15" ry="7.4" fill="#4EB4E8" stroke="#155B8A" stroke-width="1.2"/><ellipse cx="20" cy="17" rx="9.8" ry="4.4" fill="none" stroke="#2A8DC8" stroke-width="1.1"/><ellipse cx="15.3" cy="14.7" rx="3.7" ry="1.6" fill="#EAF5FC" opacity="0.75"/></svg>`;
         costBadge.innerHTML = isTurkish
           ? `${coin}Bu teklif <strong>${cost} jeton</strong> harcar`
           : `${coin}This bid costs <strong>${cost} token${cost === 1 ? "" : "s"}</strong>`;
@@ -2289,10 +2289,10 @@ function showBidLimitModal(error = null) {
   modal.innerHTML = `
     <div style="background:var(--bg-panel-strong,#1a1c22);border:1px solid var(--line,rgba(255,255,255,0.08));border-radius:var(--radius-lg,1.5rem);padding:2rem;max-width:420px;width:100%;text-align:center;box-shadow:var(--shadow-strong)">
       <div style="font-size:2.5rem;margin-bottom:0.75rem">&#9888;&#65039;</div>
-      <h3 style="color:var(--text,#f4f0e8);font-size:1.2rem;margin-bottom:0.5rem">
+      <h3 style="color:var(--text,#E2EEF8);font-size:1.2rem;margin-bottom:0.5rem">
         ${isTokens ? (isTr ? "Yetersiz Jeton" : "Not Enough Tokens") : (isTr ? "Teklif Limitine Ulaştınız" : "Bid Limit Reached")}
       </h3>
-      <p style="color:var(--text-muted,#b3ada0);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem">
+      <p style="color:var(--text-muted,#8BBAD6);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem">
         ${isTokens
           ? (isTr
               ? `Bu teklif ${tokenCost} jeton gerektiriyor${tokenBalance >= 0 ? ` (bakiyeniz: ${tokenBalance})` : ""}. Daha fazla jeton için üyelik planınızı yükseltin.`
@@ -2901,8 +2901,8 @@ function setupInlineReviewForms(session, content) {
           const gradId = s.getAttribute("data-grad-id");
           if (svg && path) {
             const active = sVal <= val;
-            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #f59e0b)" : "none");
-            path.setAttribute("stroke", active ? "#b45309" : "var(--text-300, #9ca3af)");
+            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #2ECC9A)" : "none");
+            path.setAttribute("stroke", active ? "#17805F" : "var(--text-300, #9ca3af)");
             path.setAttribute("stroke-width", active ? "0.6" : "1.2");
             svg.setAttribute("class", active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty");
           }
@@ -2987,7 +2987,7 @@ function setupInlineReviewForms(session, content) {
         const wrapper = form.closest(".panel") || form.parentElement;
         if (wrapper) {
           const filledStars = Array.from({ length: 5 }, (_, i) =>
-            `<svg width="24" height="24" viewBox="0 0 24 24" fill="${i < rating ? "var(--accent-500, #f59e0b)" : "none"}" stroke="var(--accent-500, #f59e0b)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`
+            `<svg width="24" height="24" viewBox="0 0 24 24" fill="${i < rating ? "var(--accent-500, #2ECC9A)" : "none"}" stroke="var(--accent-500, #2ECC9A)" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>`
           ).join("");
           wrapper.innerHTML = `
             <div style="padding:1rem;text-align:center">
@@ -3053,8 +3053,8 @@ function setupDeveloperPublicProfile(content) {
           const gradId = s.getAttribute("data-grad-id");
           if (svg && path) {
             const active = sVal <= val;
-            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #f59e0b)" : "none");
-            path.setAttribute("stroke", active ? "#b45309" : "var(--text-300, #9ca3af)");
+            path.setAttribute("fill", active && gradId ? `url(#${gradId})` : active ? "var(--accent-500, #2ECC9A)" : "none");
+            path.setAttribute("stroke", active ? "#17805F" : "var(--text-300, #9ca3af)");
             path.setAttribute("stroke-width", active ? "0.6" : "1.2");
             svg.setAttribute("class", active ? "yapply-star yapply-star--full" : "yapply-star yapply-star--empty");
           }
@@ -3371,13 +3371,13 @@ function injectBirdLoader() {
           <ellipse cx="52" cy="64" rx="23" ry="18" fill="var(--text-muted)" opacity="0.35"/>
           <circle cx="74" cy="50" r="13" fill="var(--text-muted)" opacity="0.4"/>
           <circle cx="78" cy="47" r="2.2" fill="currentColor"/>
-          <path d="M85 50 95 46 88 55Z" fill="var(--accent)"/>
+          <path d="M85 50 95 46 88 55Z" fill="var(--bird)"/>
           <path d="M49 81V89" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
           <path d="M58 81V89" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
         <svg class="yapply-loader__pickaxe" viewBox="0 0 64 64" fill="none" style="position:absolute;right:-10px;top:14px;">
           <line x1="18" y1="46" x2="46" y2="18" stroke="var(--text-muted)" stroke-width="4" stroke-linecap="round"/>
-          <path d="M40 12 52 14 50 26 44 22 42 16Z" fill="var(--accent)" opacity="0.9"/>
+          <path d="M40 12 52 14 50 26 44 22 42 16Z" fill="var(--bird)" opacity="0.9"/>
         </svg>
       </div>
       <div class="yapply-loader__blocks">
@@ -4518,19 +4518,19 @@ function setupPullToRefresh() {
 
       /* Bird SVG */
       .ptr-bird-svg { width: 44px; height: 44px; }
-      .ptr-bird-body-fill { fill: var(--accent, #c9a84c); opacity: 0; transition: opacity 300ms ease; }
-      .ptr-bird-wing { fill: var(--accent, #c9a84c); opacity: 0; transition: opacity 300ms ease 50ms; }
-      .ptr-bird-tail { fill: var(--accent, #c9a84c); opacity: 0; transition: opacity 200ms ease; }
+      .ptr-bird-body-fill { fill: var(--bird, #c9a84c); opacity: 0; transition: opacity 300ms ease; }
+      .ptr-bird-wing { fill: var(--bird, #c9a84c); opacity: 0; transition: opacity 300ms ease 50ms; }
+      .ptr-bird-tail { fill: var(--bird, #c9a84c); opacity: 0; transition: opacity 200ms ease; }
       .ptr-bird-eye { fill: var(--bg, #060709); opacity: 0; transition: opacity 200ms ease 200ms; }
       .ptr-bird-eye-shine { fill: #fff; opacity: 0; transition: opacity 200ms ease 250ms; }
       .ptr-bird-beak { fill: var(--text, #fff); opacity: 0; transition: opacity 200ms ease 250ms; }
-      .ptr-bird-legs { stroke: var(--accent, #c9a84c); stroke-width: 1.5; fill: none;
+      .ptr-bird-legs { stroke: var(--bird, #c9a84c); stroke-width: 1.5; fill: none;
         stroke-linecap: round; opacity: 0; transition: opacity 200ms ease 200ms; }
 
       /* Blocks under bird */
       .ptr-blocks { display: flex; gap: 2px; height: 6px; }
       .ptr-block { width: 8px; height: 6px; border-radius: 1.5px;
-        background: var(--accent, #c9a84c); transform: scaleY(0);
+        background: var(--accent, #2A8DC8); transform: scaleY(0);
         transform-origin: bottom; transition: transform 200ms ease; }
 
       /* States based on pull progress — bird fades in piece by piece */

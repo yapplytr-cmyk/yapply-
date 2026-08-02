@@ -12,46 +12,62 @@
   --radius-xl: 2.75rem;
   --transition: 180ms ease;
   --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
-  --gold: #c9a84c;
-  --gold-soft: rgba(201, 168, 76, 0.16);
+
+  /* ── Marine palette (matches NAUTICO) ───────────────────────
+     Legacy token names kept so every existing rule retints
+     automatically — only the values moved from gold to blue. */
+  --ocean-blue: #1B6FA8;
+  --sea-blue: #2A8DC8;
+  --baby-blue: #7EC8E3;
+  --sky-light: #D6EAF8;
+  --sea-green: #2ECC9A;
+  --grad-primary: linear-gradient(135deg, #1B6FA8 0%, #2A8DC8 100%);
+
+  /* Yapply mascot stays Yapply gold — the bird is brand identity,
+     not UI chrome, so it does NOT follow the marine accent. */
+  --bird: #c9a84c;
+  --bird-strong: #e0c06d;
+
+  --gold: #1B6FA8;
+  --gold-soft: rgba(27, 111, 168, 0.16);
   --shadow-strong: 0 30px 80px rgba(0, 0, 0, 0.28);
   --shadow-soft: 0 16px 36px rgba(0, 0, 0, 0.16);
 }
 
 html[data-theme="dark"] {
-  --bg: #060709;
-  --bg-elevated: rgba(15, 17, 20, 0.78);
-  --bg-panel: rgba(20, 22, 26, 0.74);
-  --bg-panel-strong: rgba(24, 26, 32, 0.94);
-  --surface: #101216;
-  --surface-soft: #171a1f;
+  --bg: #08131F;
+  --bg-elevated: rgba(12, 27, 42, 0.78);
+  --bg-panel: rgba(15, 33, 51, 0.74);
+  --bg-panel-strong: rgba(18, 38, 58, 0.94);
+  --surface: #0C1B2A;
+  --surface-soft: #0F2133;
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.16);
-  --text: #f4f0e8;
-  --text-muted: #b3ada0;
-  --text-dim: #8f8a7d;
-  --accent: #c9a84c;
-  --accent-strong: #e0c06d;
-  --success: #8bc3a4;
-  --hero-glow: rgba(201, 168, 76, 0.2);
+  --text: #E2EEF8;
+  --text-muted: #8BBAD6;
+  --text-dim: #507A98;
+  --accent: #2A8DC8;
+  --accent-strong: #7EC8E3;
+  --success: #2ECC9A;
+  --hero-glow: rgba(27, 111, 168, 0.28);
 }
 
 html[data-theme="light"] {
-  --bg: #f3efe6;
-  --bg-elevated: rgba(255, 251, 245, 0.82);
+  --bg: #E9F1F8;
+  --bg-elevated: rgba(255, 255, 255, 0.86);
   --bg-panel: rgba(255, 255, 255, 0.8);
   --bg-panel-strong: rgba(255, 255, 255, 0.96);
   --surface: #ffffff;
-  --surface-soft: #ece7dc;
-  --line: rgba(25, 28, 34, 0.08);
-  --line-strong: rgba(25, 28, 34, 0.14);
-  --text: #111317;
-  --text-muted: #4a4d53;
-  --text-dim: #6b7079;
-  --accent: #b88f26;
-  --accent-strong: #8e6a11;
-  --success: #2d6d4a;
-  --hero-glow: rgba(184, 143, 38, 0.14);
-  --shadow-strong: 0 32px 76px rgba(39, 32, 18, 0.14);
-  --shadow-soft: 0 18px 40px rgba(39, 32, 18, 0.08);
+  --surface-soft: #EFF6FB;
+  --line: rgba(11, 40, 64, 0.10);
+  --line-strong: rgba(11, 40, 64, 0.18);
+  --text: #08243A;
+  --text-muted: #35617F;
+  --text-dim: #6A93B2;
+  --accent: #1B6FA8;
+  --accent-strong: #155B8A;
+  --success: #1E9E77;
+  --hero-glow: rgba(27, 111, 168, 0.14);
+  --shadow-strong: 0 32px 76px rgba(11, 40, 64, 0.14);
+  --shadow-soft: 0 18px 40px rgba(11, 40, 64, 0.08);
 }

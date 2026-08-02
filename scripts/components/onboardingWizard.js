@@ -33,8 +33,8 @@ const BIRD_DEV_SUCCESS_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-
     <circle cx="100" cy="82" r="28" fill="#e8823a"/>
     <circle cx="112" cy="74" r="4" fill="#222"/><circle cx="112" cy="74" r="1.5" fill="#fff"/>
     <path d="M126 82l14-5-9 12z" fill="#f0a030"/>
-    <path d="M73 80c0-15 12-28 27-28s27 13 27 28" fill="#c9a84c" stroke="#a08030" stroke-width="2"/>
-    <rect x="69" y="78" width="62" height="7" rx="3" fill="#d4b050"/>
+    <path d="M73 80c0-15 12-28 27-28s27 13 27 28" fill="#2A8DC8" stroke="#155B8A" stroke-width="2"/>
+    <rect x="69" y="78" width="62" height="7" rx="3" fill="#2A8DC8"/>
     <rect x="72" y="108" width="56" height="42" rx="5" fill="#4a7a40"/>
     <path d="M90 108v42M110 108v42" stroke="#3a6a30" stroke-width="1"/>
   </g>
@@ -42,9 +42,9 @@ const BIRD_DEV_SUCCESS_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-
     <rect x="142" y="118" width="6" height="24" rx="2" fill="#888"/>
     <circle cx="145" cy="118" r="7" fill="none" stroke="#888" stroke-width="3"/>
   </g>
-  <circle class="ob-sp1" cx="40" cy="35" r="5" fill="#c9a84c"/>
+  <circle class="ob-sp1" cx="40" cy="35" r="5" fill="#2A8DC8"/>
   <circle class="ob-sp2" cx="160" cy="30" r="4" fill="#e8823a"/>
-  <circle class="ob-sp3" cx="155" cy="170" r="5" fill="#c9a84c"/>
+  <circle class="ob-sp3" cx="155" cy="170" r="5" fill="#2A8DC8"/>
   <path class="ob-sp1" d="M30 160l4-8 4 8-8-4 8 0z" fill="#e8823a" opacity="0.7"/>
   <path class="ob-sp3" d="M50 55l3-6 3 6-6-3 6 0z" fill="#4a7a40" opacity="0.7"/>
 </svg>`;
@@ -71,13 +71,13 @@ const BIRD_CLIENT_SUCCESS_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bi
     <path d="M126 80l14-5-9 12z" fill="#f0a030"/>
     <rect x="72" y="106" width="56" height="42" rx="5" fill="#6b6e76"/>
     <rect x="86" y="106" width="28" height="42" rx="3" fill="#e8e4dc"/>
-    <path d="M86 110h28" stroke="#c9a84c" stroke-width="2"/>
-    <path d="M100 110v9" stroke="#c9a84c" stroke-width="2"/>
+    <path d="M86 110h28" stroke="#2A8DC8" stroke-width="2"/>
+    <path d="M100 110v9" stroke="#2A8DC8" stroke-width="2"/>
   </g>
-  <rect class="ob-c1" x="35" y="25" width="6" height="3" rx="1" fill="#c9a84c"/>
+  <rect class="ob-c1" x="35" y="25" width="6" height="3" rx="1" fill="#2A8DC8"/>
   <rect class="ob-c2" x="155" y="20" width="5" height="3" rx="1" fill="#e8823a"/>
   <rect class="ob-c3" x="45" y="165" width="6" height="3" rx="1" fill="#4a7a40"/>
-  <rect class="ob-c4" x="150" y="160" width="5" height="3" rx="1" fill="#c9a84c"/>
+  <rect class="ob-c4" x="150" y="160" width="5" height="3" rx="1" fill="#2A8DC8"/>
   <circle class="ob-c1" cx="170" cy="50" r="3" fill="#e8823a" opacity="0.8"/>
   <circle class="ob-c3" cx="30" cy="140" r="3" fill="#6b6e76" opacity="0.6"/>
 </svg>`;
@@ -97,11 +97,11 @@ const BIRD_EMAIL_SVG = `<svg viewBox="0 0 200 200" class="onboarding-bird-svg">
   </g>
   <!-- Envelope in bird's wing area -->
   <g transform="translate(60, 115)">
-    <rect x="0" y="0" width="80" height="52" rx="6" fill="#f5f0e0" stroke="#c9a84c" stroke-width="2"/>
-    <path d="M0 0l40 28 40-28" fill="none" stroke="#c9a84c" stroke-width="2.5" stroke-linejoin="round"/>
-    <path d="M0 52l28-20M80 52l-28-20" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+    <rect x="0" y="0" width="80" height="52" rx="6" fill="#F4F9FC" stroke="#2A8DC8" stroke-width="2"/>
+    <path d="M0 0l40 28 40-28" fill="none" stroke="#2A8DC8" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M0 52l28-20M80 52l-28-20" fill="none" stroke="#2A8DC8" stroke-width="1.5" stroke-linecap="round"/>
     <!-- @ symbol on envelope -->
-    <text x="40" y="38" text-anchor="middle" fill="#c9a84c" font-size="18" font-weight="bold" font-family="system-ui">@</text>
+    <text x="40" y="38" text-anchor="middle" fill="#2A8DC8" font-size="18" font-weight="bold" font-family="system-ui">@</text>
   </g>
 </svg>`;
 
@@ -113,16 +113,14 @@ export function createOnboardingWizard(content, locale) {
       <!-- Step 1: Language Selection -->
       <div class="onboarding-step onboarding-step--active" data-onboarding-step="1">
         <div class="onboarding-step__content">
-          <div style="font-size:3rem;margin-bottom:0.5rem;text-align:center">&#127760;</div>
+          <div style="margin-bottom:0.5rem;text-align:center;line-height:0"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
           <h2 class="onboarding-step__title">Dil Seçin / Choose Language</h2>
           <p class="onboarding-step__desc">Uygulamayı hangi dilde kullanmak istersiniz?</p>
           <div class="onboarding-theme-buttons">
             <button class="onboarding-theme-btn onboarding-theme-btn--active" type="button" data-onboarding-lang="tr">
-              <span style="font-size:1.3rem;line-height:1">&#127481;&#127479;</span>
               <span>Türkçe</span>
             </button>
             <button class="onboarding-theme-btn" type="button" data-onboarding-lang="en">
-              <span style="font-size:1.3rem;line-height:1">&#127468;&#127463;</span>
               <span>English</span>
             </button>
           </div>
@@ -146,11 +144,11 @@ export function createOnboardingWizard(content, locale) {
           <p class="onboarding-step__desc" data-onboarding-theme-desc>${isTr ? "Uygulamayı açık veya koyu modda kullanmak ister misiniz?" : "Would you like to use the app in Light or Dark mode?"}</p>
           <div class="onboarding-theme-buttons">
             <button class="onboarding-theme-btn" type="button" data-onboarding-theme="light">
-              <span style="font-size:1.3rem;line-height:1">&#9728;&#65039;</span>
+              <span style="line-height:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>
               <span data-onboarding-theme-light-label>${isTr ? "Açık Mod" : "Light Mode"}</span>
             </button>
             <button class="onboarding-theme-btn onboarding-theme-btn--active" type="button" data-onboarding-theme="dark">
-              <span style="font-size:1.3rem;line-height:1">&#127769;</span>
+              <span style="line-height:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
               <span data-onboarding-theme-dark-label>${isTr ? "Koyu Mod" : "Dark Mode"}</span>
             </button>
           </div>
@@ -279,7 +277,7 @@ export function createOnboardingWizard(content, locale) {
                    This becomes the account's profile picture. -->
               <div class="onboarding-field" data-onboarding-selfie-section>
                 <span>${isTr ? "Selfie Doğrulama (Zorunlu)" : "Selfie Verification (Required)"}</span>
-                <p style="font-size:0.78rem;color:var(--accent, #c9a84c);margin:2px 0 8px">${isTr ? "Bu fotoğraf profil resminiz olarak kullanılacaktır." : "This photo will be used as your profile picture."}</p>
+                <p style="font-size:0.78rem;color:var(--accent, #2A8DC8);margin:2px 0 8px">${isTr ? "Bu fotoğraf profil resminiz olarak kullanılacaktır." : "This photo will be used as your profile picture."}</p>
                 <!-- Live camera capture (primary — must be taken now for verification) -->
                 <div data-onboarding-selfie-camera-ui>
                   <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Doğrulama için şimdi ön kameradan bir selfie çekin" : "Take a live selfie with the front camera now to verify"}</p>
@@ -302,7 +300,7 @@ export function createOnboardingWizard(content, locale) {
                   <p style="font-size:0.8rem;color:var(--text-muted);margin:4px 0 8px">${isTr ? "Kamera açılamıyorsa bir selfie yükleyin" : "If the camera won't open, upload a selfie"}</p>
                   <input type="file" accept="image/*" capture="user" data-onboarding-selfie-file style="margin-top:6px" />
                 </div>
-                <img data-onboarding-selfie-preview style="display:none;width:140px;height:140px;object-fit:cover;border-radius:50%;margin-top:10px;border:2px solid var(--accent,#c9a84c)" />
+                <img data-onboarding-selfie-preview style="display:none;width:140px;height:140px;object-fit:cover;border-radius:50%;margin-top:10px;border:2px solid var(--accent,#2A8DC8)" />
                 <input type="hidden" name="selfieData" data-onboarding-selfie-data />
               </div>
 
@@ -362,7 +360,7 @@ export function createOnboardingWizard(content, locale) {
           <p class="onboarding-step__desc" data-onboarding-verify-desc>
             ${isTr ? "Doğrulama kodunu e-postanıza gönderdik." : "We sent a verification code to your email."}
           </p>
-          <p class="onboarding-verify-email-display" data-onboarding-verify-email style="font-weight:600;color:var(--accent,#c9a84c);margin:4px 0 18px;font-size:0.95rem"></p>
+          <p class="onboarding-verify-email-display" data-onboarding-verify-email style="font-weight:600;color:var(--accent,#2A8DC8);margin:4px 0 18px;font-size:0.95rem"></p>
 
           <div class="onboarding-form-error" data-onboarding-otp-error hidden style="margin-bottom:12px">
             <p data-onboarding-otp-error-text></p>
@@ -378,7 +376,7 @@ export function createOnboardingWizard(content, locale) {
 
           <p style="font-size:0.85rem;color:var(--text-muted,#9ca3af);margin-top:8px">
             ${isTr ? "Kod gelmedi mi?" : "Didn't receive the code?"}
-            <button type="button" data-onboarding-resend-btn style="background:none;border:none;color:var(--accent,#c9a84c);font-weight:600;cursor:pointer;font-size:0.85rem;text-decoration:underline;padding:0 4px">
+            <button type="button" data-onboarding-resend-btn style="background:none;border:none;color:var(--accent,#2A8DC8);font-weight:600;cursor:pointer;font-size:0.85rem;text-decoration:underline;padding:0 4px">
               ${isTr ? "Tekrar Gönder" : "Resend"}
             </button>
           </p>
@@ -858,7 +856,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       document.documentElement.dataset.theme = theme;
       try { localStorage.setItem("yapply-theme", theme); } catch (_) {}
       // Update background color for website and native
-      const bgColor = theme === "light" ? "#f3efe6" : "#060709";
+      const bgColor = theme === "light" ? "#E9F1F8" : "#08131F";
       document.documentElement.style.backgroundColor = bgColor;
       document.body.style.backgroundColor = bgColor;
       const metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -1122,7 +1120,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       updateVerifyBtnState();
 
       // Highlight border when filled
-      e.target.style.borderColor = val ? "var(--accent,#c9a84c)" : "var(--surface-300,#d1d5db)";
+      e.target.style.borderColor = val ? "var(--accent,#2A8DC8)" : "var(--surface-300,#d1d5db)";
     });
 
     digit.addEventListener("keydown", (e) => {
@@ -1146,7 +1144,7 @@ export function initOnboardingWizard(loadAuthApi, setAuthSession, setDocumentAut
       pasted.split("").forEach((ch, i) => {
         if (otpDigits[i]) {
           otpDigits[i].value = ch;
-          otpDigits[i].style.borderColor = ch ? "var(--accent,#c9a84c)" : "var(--surface-300,#d1d5db)";
+          otpDigits[i].style.borderColor = ch ? "var(--accent,#2A8DC8)" : "var(--surface-300,#d1d5db)";
         }
       });
       if (pasted.length > 0 && otpDigits[Math.min(pasted.length, 5)]) {

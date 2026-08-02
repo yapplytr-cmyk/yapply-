@@ -107,12 +107,12 @@ function createStarDisplay(rating, size = 18) {
   const empty = 5 - full - (hasHalf ? 1 : 0);
   const uid = `sg${Math.random().toString(36).slice(2, 8)}`;
 
-  const gradDef = `<defs><linearGradient id="${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></linearGradient></defs>`;
+  const gradDef = `<defs><linearGradient id="${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#5FE0B8"/><stop offset="50%" stop-color="#2ECC9A"/><stop offset="100%" stop-color="#1E9E77"/></linearGradient></defs>`;
   const starPath = `M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z`;
 
-  const starFull = `<svg class="yapply-star yapply-star--full" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<path d="${starPath}" fill="url(#${uid})" stroke="#b45309" stroke-width="0.6"/></svg>`;
+  const starFull = `<svg class="yapply-star yapply-star--full" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<path d="${starPath}" fill="url(#${uid})" stroke="#17805F" stroke-width="0.6"/></svg>`;
   const halfId = `${uid}h`;
-  const starHalf = `<svg class="yapply-star yapply-star--half" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<defs><clipPath id="${halfId}"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="${starPath}" fill="none" stroke="#b45309" stroke-width="0.6"/><path d="${starPath}" fill="url(#${uid})" clip-path="url(#${halfId})"/></svg>`;
+  const starHalf = `<svg class="yapply-star yapply-star--half" width="${size}" height="${size}" viewBox="0 0 24 24">${gradDef}<defs><clipPath id="${halfId}"><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="${starPath}" fill="none" stroke="#17805F" stroke-width="0.6"/><path d="${starPath}" fill="url(#${uid})" clip-path="url(#${halfId})"/></svg>`;
   const starEmpty = `<svg class="yapply-star yapply-star--empty" width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${starPath}" fill="none" stroke="var(--text-300, #9ca3af)" stroke-width="1.2"/></svg>`;
 
   return `<span class="yapply-stars" style="display:inline-flex;align-items:center;gap:2px">${starFull.repeat(full)}${hasHalf ? starHalf : ""}${starEmpty.repeat(empty)}</span>`;
@@ -137,22 +137,22 @@ function createBidCounterCard(session, locale) {
   const isUnlimited = plan === "unlimited";
 
   const pct = isUnlimited ? 100 : bidLimit > 0 ? Math.round((bidsRemaining / bidLimit) * 100) : 0;
-  const barColor = pct > 30 ? "var(--accent,#c9a84c)" : pct > 10 ? "#e89040" : "#e05050";
+  const barColor = pct > 30 ? "var(--accent,#2A8DC8)" : pct > 10 ? "#e89040" : "#e05050";
 
   return `
     <article class="panel developer-dashboard-bid-counter" style="padding:1.25rem;display:grid;gap:0.75rem">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <h4 style="font-size:0.95rem;color:var(--text,#f4f0e8);margin:0">${locale === "tr" ? "Teklif Hakkı" : "Bid Allowance"}</h4>
-        <span style="font-size:0.78rem;padding:4px 10px;border-radius:999px;background:var(--gold-soft,rgba(201,168,76,0.16));color:var(--accent,#c9a84c);font-weight:600">${planLabel}</span>
+        <h4 style="font-size:0.95rem;color:var(--text,#E2EEF8);margin:0">${locale === "tr" ? "Teklif Hakkı" : "Bid Allowance"}</h4>
+        <span style="font-size:0.78rem;padding:4px 10px;border-radius:999px;background:var(--gold-soft,rgba(27,111,168,0.16));color:var(--accent,#2A8DC8);font-weight:600">${planLabel}</span>
       </div>
       <div style="display:flex;align-items:baseline;gap:6px">
-        <span style="font-size:2rem;font-weight:700;color:var(--text,#f4f0e8)">${isUnlimited ? "∞" : bidsRemaining}</span>
-        <span style="font-size:0.85rem;color:var(--text-muted,#b3ada0)">/ ${isUnlimited ? "∞" : bidLimit} ${locale === "tr" ? "kalan" : "remaining"}</span>
+        <span style="font-size:2rem;font-weight:700;color:var(--text,#E2EEF8)">${isUnlimited ? "∞" : bidsRemaining}</span>
+        <span style="font-size:0.85rem;color:var(--text-muted,#8BBAD6)">/ ${isUnlimited ? "∞" : bidLimit} ${locale === "tr" ? "kalan" : "remaining"}</span>
       </div>
-      <div style="height:6px;border-radius:3px;background:var(--surface-soft,#171a1f);overflow:hidden">
+      <div style="height:6px;border-radius:3px;background:var(--surface-soft,#0F2133);overflow:hidden">
         <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width 400ms ease"></div>
       </div>
-      <p style="font-size:0.78rem;color:var(--text-dim,#8f8a7d);margin:0">${locale === "tr" ? "Yenileme tarihi:" : "Resets on:"} ${resetDate}</p>
+      <p style="font-size:0.78rem;color:var(--text-dim,#507A98);margin:0">${locale === "tr" ? "Yenileme tarihi:" : "Resets on:"} ${resetDate}</p>
       ${plan === "free" ? `<a href="./developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${locale === "tr" ? "Planı Yükselt" : "Upgrade Plan"}</a>` : ""}
     </article>
   `;

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Yapply | Listing Manager</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: -apple-system, "Inter", system-ui, sans-serif; background: #0a0b0e; color: #f4f0e8; padding: 24px; }
+      .wrap { max-width: 1100px; margin: 0 auto; }
+      h1 { font-size: 1.4rem; margin-bottom: 4px; }
+      .sub { color: #8b8677; font-size: 0.85rem; margin-bottom: 24px; }
+      .panel { background: #14161b; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+      .row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+      .grow { flex: 1; min-width: 220px; }
+      img.thumb { width: 72px; height: 54px; object-fit: cover; border-radius: 8px; background: #23262d; }
+      .title { font-weight: 700; }
+      .meta { font-size: 0.78rem; color: #8b8677; margin-top: 2px; }
+      .pill { display: inline-block; font-size: 0.7rem; padding: 2px 10px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.15); margin-right: 6px; }
+      .pill.open { color: #7fd9a5; border-color: #2c5e42; }
+      .pill.closed { color: #d98f7f; border-color: #5e342c; }
+      button { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #1d2026; color: #f4f0e8; padding: 9px 16px; }
+      button:hover { background: #262a32; }
+      button.danger { border-color: #7d2f2f; color: #ff9c9c; }
+      button.danger:hover { background: #3a1d1d; }
+      button.primary { background: #c9a84c; border-color: #c9a84c; color: #14161b; font-weight: 700; }
+      input { font: inherit; background: #1d2026; color: #f4f0e8; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; width: 100%; }
+      label { font-size: 0.8rem; color: #8b8677; display: block; margin-bottom: 6px; }
+      .field { margin-bottom: 14px; }
+      .note { font-size: 0.82rem; color: #8b8677; margin-top: 10px; }
+      .error { color: #ff9c9c; }
+      .ok { color: #7fd9a5; }
+      .confirm { background: #241416; border: 1px solid #7d2f2f; border-radius: 10px; padding: 12px; margin-top: 10px; font-size: 0.85rem; }
+      .tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+      .tabs button.active { background: #c9a84c; color: #14161b; border-color: #c9a84c; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Yapply Listing Manager</h1>
+      <p class="sub">Admin-only. Sign in with your Yapply admin account to view and delete marketplace listings.</p>
+
+      <div class="panel" id="login-panel">
+        <div class="field">
+          <label>Admin email</label>
+          <input type="email" id="admin-email" autocomplete="username" placeholder="admin@..." />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="admin-password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <button class="primary" id="login-btn">Sign in</button>
+        <p class="note" id="login-status"></p>
+      </div>
+
+      <div id="app-panel" style="display:none">
+        <div class="tabs">
+          <button data-tab="client" class="active">Client Listings</button>
+          <button data-tab="professional">Professional Listings</button>
+          <button data-tab="all">All Statuses</button>
+          <button id="refresh-btn" style="margin-left:auto">↻ Refresh</button>
+        </div>
+        <div id="listing-container"></div>
+        <p class="note" id="app-status"></p>
+      </div>
+    </div>
+
+    <script>
+      const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb2ljdnFnZnlkd2ZwdHR6Z3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTY0MDgsImV4cCI6MjA4ODg5MjQwOH0.UOsoPsANDynWmiZ4eWM_dLYU8dBsZvALraKKLqHC6Wg";
+      let accessToken = "";
+      let currentTab = "client";
+
+      const $ = (sel) => document.querySelector(sel);
+
+      async function adminLogin() {
+        const email = $("#admin-email").value.trim();
+        const password = $("#admin-password").value;
+        const status = $("#login-status");
+        status.textContent = "Signing in…";
+        status.className = "note";
+        try {
+          const resp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await resp.json();
+          if (!resp.ok || !data.access_token) {
+            status.textContent = data.error_description || data.msg || "Sign-in failed.";
+            status.className = "note error";
+            return;
+          }
+          accessToken = data.access_token;
+          // Verify admin role via profiles
+          const profResp = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${data.user.id}&select=role`, {
+            headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}` },
+          });
+          const prof = (await profResp.json())[0] || {};
+          if (prof.role !== "admin" && prof.role !== "moderator") {
+            status.textContent = "This account is not an admin account.";
+            status.className = "note error";
+            accessToken = "";
+            return;
+          }
+          $("#login-panel").style.display = "none";
+          $("#app-panel").style.display = "block";
+          loadListings();
+        } catch (e) {
+          status.textContent = "Network error: " + (e && e.message || e);
+          status.className = "note error";
+        }
+      }
+
+      function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      }
+
+      function firstImage(listing) {
+        try {
+          const p = listing.payload || {};
+          const imgs = p.photos || p.images || p.media || [];
+          const src = Array.isArray(imgs) ? (imgs[0] && (imgs[0].src || imgs[0].url || imgs[0])) : null;
+          if (typeof src === "string" && (src.startsWith("http") || src.startsWith("data:"))) return src;
+        } catch (_) {}
+        return "";
+      }
+
+      async function loadListings() {
+        const box = $("#listing-container");
+        const status = $("#app-status");
+        box.innerHTML = "<div class='panel'>Loading…</div>";
+        status.textContent = "";
+        let url = `${SUPABASE_URL}/rest/v1/marketplace_listings?select=id,listing_type,status,title,location,budget,category,owner_email,created_at,payload&order=created_at.desc&limit=100`;
+        if (currentTab === "client") url += "&listing_type=eq.client";
+        if (currentTab === "professional") url += "&listing_type=eq.professional";
+        try {
+          const resp = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}` } });
+          const rows = await resp.json();
+          if (!Array.isArray(rows)) throw new Error("Unexpected response");
+          if (rows.length === 0) { box.innerHTML = "<div class='panel'>No listings found.</div>"; return; }
+          box.innerHTML = rows.map((l) => {
+            const img = firstImage(l);
+            const isOpen = (l.status || "") === "open-for-bids";
+            return `
+              <div class="panel" data-listing="${esc(l.id)}">
+                <div class="row">
+                  ${img ? `<img class="thumb" src="${esc(img)}" alt="" loading="lazy" />` : `<div class="thumb"></div>`}
+                  <div class="grow">
+                    <div class="title">${esc(l.title || "(untitled)")}</div>
+                    <div class="meta">
+                      <span class="pill ${isOpen ? "open" : "closed"}">${esc(l.status || "?")}</span>
+                      <span class="pill">${esc(l.listing_type || "?")}</span>
+                      ${esc(l.location || "")} · ${esc(l.budget || "")} · ${esc(l.owner_email || "")} · ${new Date(l.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <button class="danger" data-delete="${esc(l.id)}">Delete</button>
+                </div>
+                <div class="confirm" data-confirm="${esc(l.id)}" style="display:none">
+                  Really delete "<strong>${esc(l.title || l.id)}</strong>" and all its bids? This cannot be undone.
+                  <div class="row" style="margin-top:8px">
+                    <button class="danger" data-confirm-yes="${esc(l.id)}">Yes, delete permanently</button>
+                    <button data-confirm-no="${esc(l.id)}">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join("");
+          bindDeletes();
+        } catch (e) {
+          box.innerHTML = `<div class='panel error'>Could not load listings: ${esc(e && e.message || e)}</div>`;
+        }
+      }
+
+      function bindDeletes() {
+        document.querySelectorAll("[data-delete]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-delete");
+            const conf = document.querySelector(`[data-confirm="${id}"]`);
+            if (conf) conf.style.display = "block";
+          });
+        });
+        document.querySelectorAll("[data-confirm-no]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-confirm-no");
+            const conf = document.querySelector(`[data-confirm="${id}"]`);
+            if (conf) conf.style.display = "none";
+          });
+        });
+        document.querySelectorAll("[data-confirm-yes]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-confirm-yes");
+            btn.disabled = true;
+            btn.textContent = "Deleting…";
+            try {
+              const resp = await fetch("/api/marketplace/listings/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                body: JSON.stringify({ listingId: id }),
+              });
+              const data = await resp.json().catch(() => ({}));
+              if (resp.ok && data.ok) {
+                const card = document.querySelector(`[data-listing="${id}"]`);
+                if (card) card.remove();
+                $("#app-status").textContent = "Listing deleted.";
+                $("#app-status").className = "note ok";
+              } else {
+                throw new Error(data.message || `HTTP ${resp.status}`);
+              }
+            } catch (e) {
+              btn.disabled = false;
+              btn.textContent = "Yes, delete permanently";
+              $("#app-status").textContent = "Delete failed: " + (e && e.message || e);
+              $("#app-status").className = "note error";
+            }
+          });
+        });
+      }
+
+      $("#login-btn").addEventListener("click", adminLogin);
+      $("#admin-password").addEventListener("keydown", (e) => { if (e.key === "Enter") adminLogin(); });
+      $("#refresh-btn").addEventListener("click", loadListings);
+      document.querySelectorAll(".tabs [data-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".tabs [data-tab]").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentTab = btn.getAttribute("data-tab");
+          loadListings();
+        });
+      });
+    </script>
+  </body>
+</html>

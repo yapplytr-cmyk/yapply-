@@ -14,7 +14,7 @@ function yapplyCoin(sizeEm = 1.2) {
 function _yapplyCoinSvg() {
   // Coin viewed at an angle: a tilted face ellipse sitting on a darker edge
   // band (its thickness) → a 3D, drawn, yellow coin.
-  return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="21.5" rx="15" ry="7.4" fill="#c98a1c"/><ellipse cx="20" cy="17" rx="15" ry="7.4" fill="#ffd54a" stroke="#a9761a" stroke-width="1.2"/><ellipse cx="20" cy="17" rx="9.8" ry="4.4" fill="none" stroke="#e2a52a" stroke-width="1.1"/><ellipse cx="15.3" cy="14.7" rx="3.7" ry="1.6" fill="#fff4c6" opacity="0.75"/></svg>`;
+  return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="21.5" rx="15" ry="7.4" fill="#1B6FA8"/><ellipse cx="20" cy="17" rx="15" ry="7.4" fill="#4EB4E8" stroke="#155B8A" stroke-width="1.2"/><ellipse cx="20" cy="17" rx="9.8" ry="4.4" fill="none" stroke="#2A8DC8" stroke-width="1.1"/><ellipse cx="15.3" cy="14.7" rx="3.7" ry="1.6" fill="#EAF5FC" opacity="0.75"/></svg>`;
 }
 
 function _ensureCoinCss() {
@@ -130,11 +130,11 @@ export function createDeveloperMembershipPage(content, session) {
     const plan = copy[planKey];
     const isCurrent = currentPlan === planKey;
     const popularBadge = isPopular
-      ? `<span style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent,#c9a84c);color:#111;font-size:0.72rem;font-weight:700;padding:4px 14px;border-radius:999px;white-space:nowrap">${copy.popular}</span>`
+      ? `<span style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent,#2A8DC8);color:#FFFFFF;font-size:0.72rem;font-weight:700;padding:4px 14px;border-radius:999px;white-space:nowrap">${copy.popular}</span>`
       : "";
 
     return `
-      <article class="panel" style="position:relative;padding:1.75rem;display:grid;gap:1rem;${isPopular ? "overflow:visible;border-color:var(--accent,#c9a84c);box-shadow:0 0 30px rgba(201,168,76,0.15)" : ""}${isCurrent ? ";outline:2px solid var(--accent,#c9a84c);outline-offset:2px" : ""}">
+      <article class="panel" style="position:relative;padding:1.75rem;display:grid;gap:1rem;${isPopular ? "overflow:visible;border-color:var(--accent,#2A8DC8);box-shadow:0 0 30px rgba(27,111,168,0.15)" : ""}${isCurrent ? ";outline:2px solid var(--accent,#2A8DC8);outline-offset:2px" : ""}">
         ${popularBadge}
         <div>
           <h3 style="font-size:1.15rem;margin:0 0 4px">${plan.name}</h3>
@@ -265,8 +265,8 @@ export async function initDeveloperMembershipPage(content) {
       const isCurrent = currentPlanId === plan.id;
       const isPopular = idx === 1;
       return `
-        <article class="panel" style="position:relative;padding:1.75rem;display:grid;gap:1rem;${isPopular ? "overflow:visible;border-color:var(--accent,#c9a84c);box-shadow:0 0 30px rgba(201,168,76,0.15)" : ""}${isCurrent ? ";outline:2px solid var(--accent,#c9a84c);outline-offset:2px" : ""}">
-          ${isPopular ? `<span style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent,#c9a84c);color:#111;font-size:0.72rem;font-weight:700;padding:4px 14px;border-radius:999px;white-space:nowrap">${isTr ? "En Popüler" : "Most Popular"}</span>` : ""}
+        <article class="panel" style="position:relative;padding:1.75rem;display:grid;gap:1rem;${isPopular ? "overflow:visible;border-color:var(--accent,#2A8DC8);box-shadow:0 0 30px rgba(27,111,168,0.15)" : ""}${isCurrent ? ";outline:2px solid var(--accent,#2A8DC8);outline-offset:2px" : ""}">
+          ${isPopular ? `<span style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent,#2A8DC8);color:#FFFFFF;font-size:0.72rem;font-weight:700;padding:4px 14px;border-radius:999px;white-space:nowrap">${isTr ? "En Popüler" : "Most Popular"}</span>` : ""}
           <div>
             <h3 style="font-size:1.15rem;margin:0 0 4px">${plan.name}</h3>
             <p style="font-size:0.82rem;color:var(--text-muted)">${yapplyCoin()} ${plan.tokens_per_month} ${isTr ? "jeton / ay" : "tokens / month"}</p>
@@ -315,7 +315,7 @@ export async function initDeveloperMembershipPage(content) {
     if (!note) {
       note = document.createElement("p");
       note.setAttribute("data-membership-note", "");
-      note.style.cssText = "text-align:center;font-size:0.85rem;color:var(--accent,#c9a84c);margin:1rem 0";
+      note.style.cssText = "text-align:center;font-size:0.85rem;color:var(--accent,#2A8DC8);margin:1rem 0";
       (btn?.closest("article") || document.querySelector(".section-shell"))?.appendChild(note);
     }
     note.textContent = msg;
@@ -336,9 +336,9 @@ export async function initDeveloperMembershipPage(content) {
       ${restoreBtn}
       <p style="font-size:0.78rem;color:var(--text-dim);line-height:1.6;margin:0 0 0.8rem">${disclosure}</p>
       <p style="font-size:0.82rem;margin:0">
-        <a href="./terms.html" style="color:var(--accent,#c9a84c);text-decoration:underline">${isTr ? "Kullanım Koşulları (EULA)" : "Terms of Use (EULA)"}</a>
+        <a href="./terms.html" style="color:var(--accent,#2A8DC8);text-decoration:underline">${isTr ? "Kullanım Koşulları (EULA)" : "Terms of Use (EULA)"}</a>
         &nbsp;&middot;&nbsp;
-        <a href="./privacy.html" style="color:var(--accent,#c9a84c);text-decoration:underline">${isTr ? "Gizlilik Politikası" : "Privacy Policy"}</a>
+        <a href="./privacy.html" style="color:var(--accent,#2A8DC8);text-decoration:underline">${isTr ? "Gizlilik Politikası" : "Privacy Policy"}</a>
       </p>
     `;
     document.querySelector(".section-shell")?.appendChild(legal);
@@ -463,7 +463,7 @@ export async function initDeveloperMembershipPage(content) {
         ? "Ödemeniz alındı! Üyeliğiniz ve jetonlarınız birkaç saniye içinde aktif olur."
         : "Payment received! Your membership and tokens activate within a few seconds.";
     } else {
-      note.style.cssText = "padding:1rem;margin:0 0 1.5rem;border-color:var(--accent,#c9a84c);color:var(--text)";
+      note.style.cssText = "padding:1rem;margin:0 0 1.5rem;border-color:var(--accent,#2A8DC8);color:var(--text)";
       note.textContent = isTr
         ? "Ödeme tamamlanmadı. İstediğiniz zaman tekrar deneyebilirsiniz."
         : "Payment was not completed. You can try again anytime.";
@@ -516,29 +516,29 @@ async function renderCheckoutView(intent, details, isTr) {
     if (!shell) return { ok: false, message: "Page container not found" };
 
     const featureLines = (details.lines || [])
-      .map((l) => `<li style="display:flex;align-items:center;gap:8px;font-size:0.9rem;color:var(--text-muted,#b3ada0);margin:0"><span style="color:var(--accent,#c9a84c);display:inline-flex;flex-shrink:0"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span> ${l}</li>`)
+      .map((l) => `<li style="display:flex;align-items:center;gap:8px;font-size:0.9rem;color:var(--text-muted,#8BBAD6);margin:0"><span style="color:var(--accent,#2A8DC8);display:inline-flex;flex-shrink:0"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span> ${l}</li>`)
       .join("");
 
     shell.innerHTML = `
       <div style="max-width:900px;margin:0 auto;padding-top:1rem">
         <button data-checkout-back class="button button--secondary" style="font-size:0.85rem;padding:0.45rem 0.9rem;margin-bottom:1.25rem;display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>${isTr ? "Geri" : "Back"}</button>
         <h1 style="font-size:1.6rem;margin:0 0 0.35rem">${isTr ? "Ödeme" : "Checkout"}</h1>
-        <p style="margin:0 0 1.75rem;color:var(--text-dim,#8b8677);font-size:0.9rem">${isTr ? "Siparişinizi tamamlayın." : "Complete your order."}</p>
+        <p style="margin:0 0 1.75rem;color:var(--text-dim,#6A93B2);font-size:0.9rem">${isTr ? "Siparişinizi tamamlayın." : "Complete your order."}</p>
         <div style="display:grid;grid-template-columns:1fr;gap:1.25rem" data-checkout-grid>
           <article class="panel" style="padding:1.5rem;display:grid;gap:0.9rem;align-content:start">
-            <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim,#8b8677)">${isTr ? "Sipariş Özeti" : "Order Summary"}</span>
+            <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim,#6A93B2)">${isTr ? "Sipariş Özeti" : "Order Summary"}</span>
             <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
               <strong style="font-size:1.15rem">${details.title}</strong>
-              <strong style="font-size:1.35rem;color:var(--accent,#c9a84c);white-space:nowrap">${details.priceLabel}</strong>
+              <strong style="font-size:1.35rem;color:var(--accent,#2A8DC8);white-space:nowrap">${details.priceLabel}</strong>
             </div>
             <ul style="list-style:none;padding:0;margin:0;display:grid;gap:8px">${featureLines}</ul>
           </article>
           <article class="panel" style="padding:1.5rem;display:grid;gap:0.9rem;align-content:start">
-            <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim,#8b8677)">${isTr ? "Ödeme Bilgileri" : "Payment Details"}</span>
+            <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim,#6A93B2)">${isTr ? "Ödeme Bilgileri" : "Payment Details"}</span>
             <div data-payment-element style="min-height:44px"></div>
             <div data-pay-error style="display:none;color:#ff6b6b;font-size:0.82rem"></div>
             <button data-pay-submit class="button button--primary" style="width:100%;margin-top:6px">${isTr ? `Öde — ${details.priceLabel}` : `Pay ${details.priceLabel}`}</button>
-            <p style="margin:0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.78rem;color:var(--text-dim,#8b8677)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>${isTr ? "Güvenli ödeme" : "Secure payment"}</p>
+            <p style="margin:0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.78rem;color:var(--text-dim,#6A93B2)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>${isTr ? "Güvenli ödeme" : "Secure payment"}</p>
           </article>
         </div>
       </div>`;
@@ -565,7 +565,7 @@ async function renderCheckoutView(intent, details, isTr) {
       clientSecret: intent.clientSecret,
       appearance: {
         theme: isLight ? "stripe" : "night",
-        variables: { colorPrimary: "#c9a84c", borderRadius: "10px" },
+        variables: { colorPrimary: "#2A8DC8", borderRadius: "10px" },
       },
     });
     const paymentElement = elements.create("payment", { layout: "tabs" });
@@ -594,7 +594,7 @@ async function renderCheckoutView(intent, details, isTr) {
               <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>
             </div>
             <h1 style="font-size:1.5rem;margin:0 0 0.5rem">${isTr ? "Ödeme Alındı!" : "Payment Received!"}</h1>
-            <p style="color:var(--text-muted,#b3ada0)">${isTr ? "Üyeliğiniz ve jetonlarınız birkaç saniye içinde aktif olur." : "Your membership and tokens activate within a few seconds."}</p>
+            <p style="color:var(--text-muted,#8BBAD6)">${isTr ? "Üyeliğiniz ve jetonlarınız birkaç saniye içinde aktif olur." : "Your membership and tokens activate within a few seconds."}</p>
           </div>`;
         setTimeout(() => { try { window.location.href = window.location.pathname; } catch (_) {} }, 2600);
       } else {

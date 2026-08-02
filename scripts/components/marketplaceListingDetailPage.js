@@ -652,7 +652,7 @@ function createClientDetail(content, listing) {
   const detailAlreadyReviewed = Boolean(listing._hasReview);
   const detailReviewMarkup = isOwner && detailAcceptedBidId && detailAcceptedDevId && !detailAlreadyReviewed ? `
     <section class="section-shell" id="leave-review" style="padding-top:0;scroll-margin-top:80px">
-      <div class="panel" style="padding:1.25rem;border:1px solid var(--accent,#c9a84c)">
+      <div class="panel" style="padding:1.25rem;border:1px solid var(--accent,#2A8DC8)">
         <h3 style="margin:0 0 0.75rem;font-size:1rem">${reviewLabels.title}</h3>
         <form data-inline-review-form data-review-dev="${detailAcceptedDevId}" data-review-listing="${listing.id}" data-review-bid="${detailAcceptedBidId}">
           <div data-star-input-group>

@@ -78,7 +78,7 @@ export function createAccountSettingsPage(content) {
   const displayName = user.companyName || user.username || user.fullName || user.email || content.fallback;
   const _isVerifiedMember = user.role === "developer" && user.currentPlan && String(user.currentPlan).toLowerCase() !== "free";
   const verifiedBadge = _isVerifiedMember
-    ? `<span title="${locale === "tr" ? "Doğrulanmış Üye" : "Verified Member"}" style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#c9a84c,#e6c76a);color:#14161b;font-size:0.66rem;font-weight:800;padding:2px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;box-shadow:0 1px 6px rgba(201,168,76,0.4)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>${locale === "tr" ? "Doğrulanmış" : "Verified"}</span>`
+    ? `<span title="${locale === "tr" ? "Doğrulanmış Üye" : "Verified Member"}" style="display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#2A8DC8,#7EC8E3);color:#FFFFFF;font-size:0.66rem;font-weight:800;padding:2px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;box-shadow:0 1px 6px rgba(27,111,168,0.4)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>${locale === "tr" ? "Doğrulanmış" : "Verified"}</span>`
     : "";
   const avatarChoiceLabel =
     locale === "tr"
@@ -175,7 +175,7 @@ export function createAccountSettingsPage(content) {
               <span>${locale === "tr" ? "Profil Fotoğrafı" : "Profile Picture"}</span>
               <small>${locale === "tr" ? "Profesyonel hesaplarda profil fotoğrafı, kayıt sırasında çekilen doğrulama selfie'nizdir ve değiştirilemez." : "For professional accounts your profile picture is the verification selfie taken at sign-up and cannot be changed."}</small>
               <div class="account-settings-avatar" style="margin-top:10px">
-                <img src="${currentAvatar}" alt="${content.fields.profilePicture}" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:2px solid var(--accent,#c9a84c)" />
+                <img src="${currentAvatar}" alt="${content.fields.profilePicture}" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:2px solid var(--accent,#2A8DC8)" />
               </div>
             </fieldset>`
               : `<fieldset class="form-field form-field--full account-settings-avatar-group">
@@ -201,10 +201,10 @@ export function createAccountSettingsPage(content) {
             <span class="account-settings-theme-label">${locale === "tr" ? "Dil" : "Language"}</span>
             <div class="account-settings-theme-switch" data-account-lang-switch>
               <button class="account-settings-theme-option" type="button" data-account-lang="tr">
-                <span>&#127481;&#127479;</span> Türkçe
+                Türkçe
               </button>
               <button class="account-settings-theme-option" type="button" data-account-lang="en">
-                <span>&#127468;&#127463;</span> English
+                English
               </button>
             </div>
           </div>
@@ -212,10 +212,10 @@ export function createAccountSettingsPage(content) {
             <span class="account-settings-theme-label">${locale === "tr" ? "Tema" : "Theme"}</span>
             <div class="account-settings-theme-switch" data-account-theme-switch>
               <button class="account-settings-theme-option" type="button" data-account-theme="light">
-                <span>&#9728;&#65039;</span> ${locale === "tr" ? "Açık" : "Light"}
+                <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span> ${locale === "tr" ? "Açık" : "Light"}
               </button>
               <button class="account-settings-theme-option" type="button" data-account-theme="dark">
-                <span>&#127769;</span> ${locale === "tr" ? "Koyu" : "Dark"}
+                <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span> ${locale === "tr" ? "Koyu" : "Dark"}
               </button>
             </div>
           </div>

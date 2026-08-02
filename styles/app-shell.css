@@ -64,11 +64,11 @@ html:not(.has-tab-bar) .app-splash {
   justify-content: center;
 }
 
-/* ── Bird part fills ─────────────────────────── */
-.splash-mark__body { fill: var(--accent); opacity: 0.9; }
-.splash-mark__head { fill: var(--accent); }
-.splash-mark__wing { fill: var(--accent); opacity: 0.6; }
-.splash-mark__tail { fill: var(--accent); opacity: 0.7; }
+/* ── Bird part fills (mascot keeps Yapply gold) ── */
+.splash-mark__body { fill: var(--bird); opacity: 0.9; }
+.splash-mark__head { fill: var(--bird); }
+.splash-mark__wing { fill: var(--bird); opacity: 0.6; }
+.splash-mark__tail { fill: var(--bird); opacity: 0.7; }
 .splash-mark__eye { fill: var(--bg); }
 .splash-mark__beak { fill: var(--text); opacity: 0.9; }
 .splash-mark__leg { opacity: 0.8; }
@@ -221,10 +221,12 @@ html:not(.has-tab-bar) .app-splash {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--bg);
+  background: var(--grad-primary, linear-gradient(135deg, #1B6FA8 0%, #2A8DC8 100%));
+  color: #FFFFFF;
   box-shadow:
-    0 3px 10px rgba(201, 168, 76, 0.35),
+    0 8px 22px rgba(27, 111, 168, 0.50),
+    0 0 26px rgba(46, 204, 154, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
     0 0 0 3px var(--bg);
   margin-top: -26px;
   transition: transform 180ms var(--ease-premium), box-shadow 180ms var(--ease-premium);
@@ -237,7 +239,7 @@ html:not(.has-tab-bar) .app-splash {
 .tab-bar__item--center .tab-bar__icon--plus {
   width: 22px;
   height: 22px;
-  color: var(--bg);
+  color: #FFFFFF;
 }
 
 .tab-bar__item--center .tab-bar__label {
@@ -376,26 +378,28 @@ html[data-theme="light"] .tab-bar {
 
 html[data-theme="light"] .tab-bar__center-ring {
   box-shadow:
-    0 3px 10px rgba(184, 143, 38, 0.25),
+    0 8px 22px rgba(27, 111, 168, 0.38),
+    0 0 22px rgba(46, 204, 154, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
     0 0 0 3px var(--bg);
 }
 
 html[data-theme="light"] #tab-bar-root {
-  background: #f3efe6;
+  background: #E9F1F8;
 }
 
 html[data-theme="light"].has-tab-bar {
-  background: #f3efe6;
+  background: #E9F1F8;
 }
 
 html[data-theme="light"].has-tab-bar body {
-  background: #f3efe6;
+  background: #E9F1F8;
 }
 
 /* Ensure body pseudo-elements also cover light mode */
 html[data-theme="light"].has-tab-bar body::before,
 html[data-theme="light"].has-tab-bar body::after {
-  background: #f3efe6 !important;
+  background: #E9F1F8 !important;
 }
 
 /* ─────────────────────────────────────────────────
@@ -638,7 +642,7 @@ html.has-tab-bar .wizard-progress {
 .wizard-input:focus,
 .wizard-textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+  box-shadow: 0 0 0 3px rgba(27, 111, 168, 0.15);
 }
 
 .wizard-input::placeholder,
@@ -687,7 +691,7 @@ html.has-tab-bar .wizard-progress {
 
 .wizard-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+  box-shadow: 0 0 0 3px rgba(27, 111, 168, 0.15);
 }
 
 .wizard-select option {
@@ -889,19 +893,19 @@ html.has-tab-bar .wizard-progress {
 
 .wizard-btn--next {
   background: var(--accent);
-  color: var(--bg);
+  color: #FFFFFF;
   flex: 1;
 }
 
 .wizard-btn--publish {
   background: var(--accent);
-  color: var(--bg);
+  color: #FFFFFF;
   animation: wizardPulse 1.5s ease infinite;
 }
 
 @keyframes wizardPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.3); }
-  50% { box-shadow: 0 0 0 6px rgba(201, 168, 76, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(27, 111, 168, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(27, 111, 168, 0); }
 }
 
 /* ── Wizard Bird Mascot (SVG-based) ───────────── */
@@ -921,7 +925,7 @@ html.has-tab-bar .wizard-progress {
 .wizard-icon__graphic {
   width: 48px;
   height: 48px;
-  color: var(--accent, #c9a84c);
+  color: var(--accent, #2A8DC8);
   opacity: 1;
   transform: scale(1) translateY(0);
   transition: opacity 0.22s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -956,7 +960,7 @@ html.has-tab-bar .wizard-progress {
 
 /* Dark mode: slightly brighter icon */
 html[data-theme="dark"] .wizard-icon__graphic {
-  color: var(--accent-strong, #e0c06d);
+  color: var(--accent-strong, #7EC8E3);
 }
 
 /* Small screens */
@@ -1033,7 +1037,7 @@ html.has-tab-bar .marketplace-card[hidden] {
 }
 
 html.has-tab-bar .marketplace-card:active {
-  background: rgba(201, 168, 76, 0.06);
+  background: rgba(27, 111, 168, 0.06);
 }
 
 /* Thumbnail — left column, spans all rows */
@@ -1211,7 +1215,7 @@ html.has-tab-bar .marketplace-card__bid-count {
   font-size: 0.6rem;
   font-weight: 600;
   color: var(--accent);
-  background: rgba(201, 168, 76, 0.12);
+  background: rgba(27, 111, 168, 0.12);
   padding: 0.1rem 0.4rem;
   border-radius: 0.3rem;
   margin-left: auto;
@@ -1342,7 +1346,7 @@ html.has-tab-bar .client-dashboard-card__summary {
 }
 
 html.has-tab-bar .client-dashboard-card__summary:active {
-  background: rgba(201, 168, 76, 0.06);
+  background: rgba(27, 111, 168, 0.06);
 }
 
 /* Arrow — matches marketplace arrow exactly */
@@ -1540,7 +1544,7 @@ html.has-tab-bar .client-dashboard-card__panel {
 }
 
 .tab-popup__option:active {
-  background: rgba(201, 168, 76, 0.12);
+  background: rgba(27, 111, 168, 0.12);
 }
 
 .tab-popup__bird-icon,
@@ -2102,7 +2106,7 @@ html.has-tab-bar .client-dashboard-card__summary--loading::after {
 }
 
 .welcome-page__btn--primary {
-  background: var(--accent, #c9a84c);
+  background: var(--accent, #2A8DC8);
   color: #fff;
 }
 
@@ -2111,7 +2115,7 @@ html[data-theme="light"] .welcome-page__btn--primary {
 }
 
 .welcome-page__btn--secondary {
-  background: var(--surface, #101216);
+  background: var(--surface, #0C1B2A);
   color: var(--text);
   border: 1px solid var(--line);
 }
@@ -2162,7 +2166,7 @@ html[data-theme="light"] .welcome-page__btn--secondary {
 }
 
 .ob-tutorial__card {
-  background: var(--bg, #060709);
+  background: var(--bg, #08131F);
   border: 1px solid var(--line);
   border-radius: var(--radius-md, 1.5rem);
   max-width: 380px;
@@ -2206,7 +2210,7 @@ html[data-theme="light"] .welcome-page__btn--secondary {
 .ob-tutorial__icon {
   width: 80px;
   height: 80px;
-  color: var(--accent, #c9a84c);
+  color: var(--accent, #2A8DC8);
   margin-bottom: 0.5rem;
 }
 
@@ -2250,7 +2254,7 @@ html[data-theme="light"] .welcome-page__btn--secondary {
 }
 
 .ob-tutorial__dot--active {
-  background: var(--accent, #c9a84c);
+  background: var(--accent, #2A8DC8);
   transform: scale(1.3);
 }
 
@@ -2263,7 +2267,7 @@ html[data-theme="light"] .welcome-page__btn--secondary {
   font-weight: 600;
   border-radius: var(--radius-xs, 0.875rem);
   border: none;
-  background: var(--accent, #c9a84c);
+  background: var(--accent, #2A8DC8);
   color: #fff;
   cursor: pointer;
   transition: transform 120ms ease;
@@ -2275,11 +2279,11 @@ html[data-theme="light"] .welcome-page__btn--secondary {
 }
 
 html[data-theme="dark"] .ob-tutorial__card {
-  background: var(--bg, #060709);
+  background: var(--bg, #08131F);
 }
 
 html[data-theme="light"] .ob-tutorial__card {
-  background: var(--bg, #f3efe6);
+  background: var(--bg, #E9F1F8);
 }
 
 html[data-theme="light"] .ob-tutorial__btn {
@@ -2611,11 +2615,11 @@ html.keyboard-open .notification-bell-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent, #c9a84c);
-  color: #14161b;
+  background: var(--accent, #2A8DC8);
+  color: #FFFFFF;
   box-shadow:
-    0 6px 24px rgba(201, 168, 76, 0.45),
-    0 0 0 6px rgba(201, 168, 76, 0.16);
+    0 6px 24px rgba(27, 111, 168, 0.45),
+    0 0 0 6px rgba(27, 111, 168, 0.16);
   animation: yapplyStepCheckPop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .yapply-step-check--leaving .yapply-step-check__badge {
@@ -2640,8 +2644,8 @@ html.keyboard-open .notification-bell-container {
 .yapply-step-progress__fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent, #c9a84c), #e6cd7e);
-  box-shadow: 0 0 10px rgba(201, 168, 76, 0.55);
+  background: linear-gradient(90deg, var(--accent, #2A8DC8), #A8DCEE);
+  box-shadow: 0 0 10px rgba(27, 111, 168, 0.55);
   transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -2680,7 +2684,7 @@ body:has(.account-settings-shell) .notification-bell-container {
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.18));
 }
 /* Center "+" keeps its gold disc so it still reads as the primary action. */
-.tab-bar__center-ring { box-shadow: 0 3px 12px rgba(201, 168, 76, 0.45) !important; }
+.tab-bar__center-ring { box-shadow: 0 3px 12px rgba(27, 111, 168, 0.45) !important; }
 
 /* Icons-only bar: labels removed, icons perfectly centered (NAUTICO look) */
 .tab-bar__label { display: none !important; }
@@ -2693,13 +2697,13 @@ body:has(.account-settings-shell) .notification-bell-container {
 .tab-bar--dev { align-items: center !important; }
 .tab-bar__item--center .tab-bar__center-ring { margin-top: -30px; }
 .tab-bar__item--center .tab-bar__label { display: none !important; }
-/* Active icon brightens like NAUTICO */
-.tab-bar__item { color: rgba(244, 240, 232, 0.42); transition: color .35s cubic-bezier(.4,0,.2,1), transform .2s ease; }
-.tab-bar__item--active { color: var(--accent, #c9a84c); }
-/* Light mode: icons were a light cream (invisible on white). Make them dark;
-   active is near-black. The gold liquid pill stays for visibility. */
-[data-theme="light"] .tab-bar__item { color: rgba(20, 22, 27, 0.5); }
-[data-theme="light"] .tab-bar__item--active { color: #14161b; }
+/* NAUTICO tab treatment: muted icon, pure-white when the liquid pill sits under it */
+.tab-bar__item { color: rgba(255, 255, 255, 0.45); transition: color .35s cubic-bezier(.4,0,.2,1), transform .2s ease; }
+.tab-bar__item--active { color: #FFFFFF; }
+/* Light mode: ocean-ink icons; the active tab rides a filled gradient pill,
+   so it goes white — exactly like NAUTICO's bottom bar. */
+[data-theme="light"] .tab-bar__item { color: rgba(8, 36, 58, 0.72); }
+[data-theme="light"] .tab-bar__item--active { color: #FFFFFF; }
 [data-theme="light"] .tab-bar__icon,
 [data-theme="light"] .tab-bar__icon svg { color: inherit; }
 .tab-bar__item:active { transform: scale(0.94); }
@@ -2713,14 +2717,15 @@ body:has(.account-settings-shell) .notification-bell-container {
   height: 38px;
   margin-top: -19px; /* vertically centered on the icon row */
   border-radius: 19px;
-  background: rgba(201, 168, 76, 0.14);
+  background: rgba(255, 255, 255, 0.10);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(201, 168, 76, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow:
-    0 0 18px rgba(201, 168, 76, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+    0 0 18px rgba(27, 111, 168, 0.30),
+    0 0 26px rgba(46, 204, 154, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
   pointer-events: none;
   z-index: 0;
   opacity: 0;
@@ -2738,11 +2743,12 @@ body:has(.account-settings-shell) .notification-bell-container {
 }
 
 [data-theme="light"] .tab-bar__liquid {
-  background: rgba(201, 168, 76, 0.16);
-  border-color: rgba(160, 128, 40, 0.25);
+  background: var(--grad-primary, linear-gradient(135deg, rgba(27,111,168,0.92), rgba(42,141,200,0.92)));
+  border-color: rgba(255, 255, 255, 0.25);
   box-shadow:
-    0 0 16px rgba(201, 168, 76, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    0 6px 18px rgba(27, 111, 168, 0.35),
+    0 0 22px rgba(46, 204, 154, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
 }
 
 /* Tabs render above the pill */
@@ -2773,7 +2779,7 @@ body:has(.account-settings-shell) .notification-bell-container {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-dim, #8b8677);
+  color: var(--text-dim, #6A93B2);
 }
 
 .y-dial-wrap { display: flex; align-items: center; justify-content: center; width: 100%; }
@@ -2788,13 +2794,13 @@ body:has(.account-settings-shell) .notification-bell-container {
 .y-dial-track { fill: none; stroke: rgba(255,255,255,0.13); stroke-width: 8; }
 [data-theme="light"] .y-dial-track { stroke: rgba(0,0,0,0.10); }
 .y-dial-prog {
-  fill: none; stroke: var(--accent, #c9a84c); stroke-width: 8; stroke-linecap: round;
+  fill: none; stroke: var(--accent, #2A8DC8); stroke-width: 8; stroke-linecap: round;
   transition: stroke-dashoffset .2s cubic-bezier(.22,.9,.3,1);
 }
 /* Graduation ticks clearly visible at rest — reads as a real wheel. */
 .y-dial-tick { stroke: rgba(255,255,255,0.30); stroke-width: 2; transition: stroke .12s linear; }
 .y-dial-tick.major { stroke: rgba(255,255,255,0.48); stroke-width: 2.6; }
-.y-dial-tick.lit { stroke: var(--accent, #c9a84c); }
+.y-dial-tick.lit { stroke: var(--accent, #2A8DC8); }
 [data-theme="light"] .y-dial-tick { stroke: rgba(0,0,0,0.26); }
 [data-theme="light"] .y-dial-tick.major { stroke: rgba(0,0,0,0.42); }
 .y-dial-rot {
@@ -2805,8 +2811,8 @@ body:has(.account-settings-shell) .notification-bell-container {
 .y-dial-dot {
   position: absolute; top: 4.2%; left: 50%; width: 14px; height: 14px;
   transform: translate(-50%, -50%);
-  border-radius: 50%; background: var(--accent, #c9a84c);
-  border: 3px solid var(--bg, #060709);
+  border-radius: 50%; background: var(--accent, #2A8DC8);
+  border: 3px solid var(--bg, #08131F);
   transition: transform .18s cubic-bezier(.22,.9,.3,1);
 }
 .y-dial.dragging .y-dial-dot { transform: translate(-50%, -50%) scale(1.18); }
@@ -2822,14 +2828,14 @@ body:has(.account-settings-shell) .notification-bell-container {
   display: block; width: 100%; max-width: 100%;
   background: transparent !important; border: 0 !important; outline: 0 !important;
   box-shadow: none !important; border-radius: 0 !important;
-  pointer-events: auto; font-size: 1.95rem; font-weight: 800; color: var(--text, #f4f0e8);
+  pointer-events: auto; font-size: 1.95rem; font-weight: 800; color: var(--text, #E2EEF8);
   text-align: center; padding: 0; margin: 0 auto; line-height: 1.02; letter-spacing: -0.02em;
-  caret-color: var(--accent, #c9a84c); -webkit-appearance: none; appearance: none;
+  caret-color: var(--accent, #2A8DC8); -webkit-appearance: none; appearance: none;
   -webkit-tap-highlight-color: transparent; font-family: var(--font-display, inherit);
 }
 .y-dial-unit {
   font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--accent, #c9a84c); line-height: 1; margin-top: 2px; white-space: nowrap; opacity: 0.9;
+  color: var(--accent, #2A8DC8); line-height: 1; margin-top: 2px; white-space: nowrap; opacity: 0.9;
   text-align: center;
 }
 /* Larger wheels once there's room */
@@ -2847,13 +2853,13 @@ body:has(.account-settings-shell) .notification-bell-container {
   gap: 2px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-muted, #b3ada0);
-  background: rgba(242, 144, 58, 0.10);
-  border: 1px solid rgba(242, 144, 58, 0.30);
+  color: var(--text-muted, #8BBAD6);
+  background: rgba(46, 204, 154, 0.10);
+  border: 1px solid rgba(46, 204, 154, 0.30);
   border-radius: 999px;
   padding: 5px 12px;
   margin-bottom: 12px;
   align-self: flex-start;
   width: fit-content;
 }
-.bid-token-cost strong { color: var(--accent, #c9a84c); font-weight: 800; }
+.bid-token-cost strong { color: var(--accent, #2A8DC8); font-weight: 800; }

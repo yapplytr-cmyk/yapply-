@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#060709" />
+    <meta name="theme-color" content="#08131F" />
     <title>Yapply | Account Settings</title>
     <meta
       name="description"
@@ -44,7 +44,7 @@
           document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
           // Sync bg color with theme
           var t = localStorage.getItem('yapply-theme') || 'dark';
-          var bgc = t === 'light' ? '#f3efe6' : '#060709';
+          var bgc = t === 'light' ? '#E9F1F8' : '#08131F';
           document.documentElement.style.backgroundColor = bgc;
           var tc = document.querySelector('meta[name="theme-color"]');
           if (tc) tc.content = bgc;

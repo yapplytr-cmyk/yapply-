@@ -188,12 +188,12 @@ export function createLoginPage(content) {
   const isTr = content.meta?.locale === "tr";
   const forgotHtml = `
     <div class="auth-forgot-row" style="text-align:right;margin-top:-4px">
-      <button type="button" class="auth-forgot-link" data-forgot-password style="background:none;border:0;padding:0;font-size:0.82rem;color:var(--accent,#c9a84c);cursor:pointer;text-decoration:underline">${isTr ? "Şifremi unuttum" : "Forgot password?"}</button>
+      <button type="button" class="auth-forgot-link" data-forgot-password style="background:none;border:0;padding:0;font-size:0.82rem;color:var(--accent,#2A8DC8);cursor:pointer;text-decoration:underline">${isTr ? "Şifremi unuttum" : "Forgot password?"}</button>
     </div>
     <div class="auth-forgot-inline" data-forgot-inline hidden style="margin-top:10px;padding:14px;border:1px solid var(--line,rgba(255,255,255,0.12));border-radius:14px;background:rgba(255,255,255,0.02)">
       <div style="font-size:0.9rem;font-weight:700;margin-bottom:4px">${isTr ? "Şifre Sıfırlama" : "Reset your password"}</div>
-      <div style="font-size:0.82rem;color:var(--text-muted,#b3ada0);margin-bottom:10px">${isTr ? "E-posta adresinize bir sıfırlama bağlantısı göndereceğiz." : "We'll email you a link to set a new password."}</div>
-      <input type="email" inputmode="email" autocomplete="email" data-forgot-email placeholder="${isTr ? "E-posta adresiniz" : "Your email address"}" style="width:100%;padding:11px 13px;border-radius:11px;border:1px solid var(--line,rgba(255,255,255,0.12));background:rgba(255,255,255,0.03);color:var(--text,#f4f0e8);font-size:1rem" />
+      <div style="font-size:0.82rem;color:var(--text-muted,#8BBAD6);margin-bottom:10px">${isTr ? "E-posta adresinize bir sıfırlama bağlantısı göndereceğiz." : "We'll email you a link to set a new password."}</div>
+      <input type="email" inputmode="email" autocomplete="email" data-forgot-email placeholder="${isTr ? "E-posta adresiniz" : "Your email address"}" style="width:100%;padding:11px 13px;border-radius:11px;border:1px solid var(--line,rgba(255,255,255,0.12));background:rgba(255,255,255,0.03);color:var(--text,#E2EEF8);font-size:1rem" />
       <button type="button" class="button button--primary" data-forgot-send style="width:100%;margin-top:10px">${isTr ? "Sıfırlama Bağlantısı Gönder" : "Send reset link"}</button>
       <div class="auth-forgot-msg" data-forgot-msg hidden style="font-size:0.85rem;margin-top:8px"></div>
     </div>`;

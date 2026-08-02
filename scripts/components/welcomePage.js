@@ -4,18 +4,18 @@
  */
 
 const WELCOME_BIRD_SVG = `<svg viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <ellipse cx="80" cy="90" rx="36" ry="28" fill="var(--accent, #c9a84c)" opacity="0.15"/>
-  <ellipse cx="80" cy="88" rx="30" ry="22" fill="var(--accent, #c9a84c)" opacity="0.08"/>
+  <ellipse cx="80" cy="90" rx="36" ry="28" fill="#c9a84c" opacity="0.15"/>
+  <ellipse cx="80" cy="88" rx="30" ry="22" fill="#c9a84c" opacity="0.08"/>
   <g style="animation:welcome-bird-float 3s ease-in-out infinite">
-    <ellipse cx="80" cy="82" rx="28" ry="20" fill="var(--accent, #c9a84c)"/>
-    <circle cx="80" cy="60" r="16" fill="var(--accent, #c9a84c)"/>
-    <path d="M60 74l-14-8 10 16z" fill="var(--accent-strong, #e0c06d)" opacity="0.7"/>
-    <ellipse cx="76" cy="82" rx="10" ry="14" transform="rotate(-20 76 82)" fill="var(--accent-strong, #e0c06d)" opacity="0.5"/>
-    <circle cx="87" cy="56" r="3" fill="var(--bg, #060709)"/>
+    <ellipse cx="80" cy="82" rx="28" ry="20" fill="#c9a84c"/>
+    <circle cx="80" cy="60" r="16" fill="#c9a84c"/>
+    <path d="M60 74l-14-8 10 16z" fill="#e0c06d" opacity="0.7"/>
+    <ellipse cx="76" cy="82" rx="10" ry="14" transform="rotate(-20 76 82)" fill="#e0c06d" opacity="0.5"/>
+    <circle cx="87" cy="56" r="3" fill="var(--bg, #08131F)"/>
     <circle cx="87" cy="55.5" r="1" fill="#fff" opacity="0.8"/>
-    <path d="M94 60l12-5-8 10z" fill="var(--accent-strong, #e0c06d)"/>
-    <line x1="72" y1="100" x2="68" y2="116" stroke="var(--accent, #c9a84c)" stroke-width="2" stroke-linecap="round"/>
-    <line x1="88" y1="100" x2="92" y2="116" stroke="var(--accent, #c9a84c)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M94 60l12-5-8 10z" fill="#e0c06d"/>
+    <line x1="72" y1="100" x2="68" y2="116" stroke="#c9a84c" stroke-width="2" stroke-linecap="round"/>
+    <line x1="88" y1="100" x2="92" y2="116" stroke="#c9a84c" stroke-width="2" stroke-linecap="round"/>
   </g>
 </svg>`;
 

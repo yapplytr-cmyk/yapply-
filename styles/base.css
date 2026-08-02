@@ -73,7 +73,7 @@ body::before {
   height: 22rem;
   left: -8rem;
   top: 4rem;
-  background: rgba(201, 168, 76, 0.08);
+  background: rgba(27, 111, 168, 0.08);
   transform: translate3d(calc(var(--ambient-shift-x) * -0.65), calc(var(--ambient-shift-y) * -1), 0);
   animation: ambientFloatA 18s ease-in-out infinite;
 }
