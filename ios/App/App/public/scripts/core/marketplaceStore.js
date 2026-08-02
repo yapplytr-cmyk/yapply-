@@ -1,5 +1,5 @@
 import { getAuthSession } from "./state.js";
-import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { getSupabaseClient, getSupabaseRuntimeConfig } from "./supabaseClient.js";
 import {
   createDeveloperProfileReference,
   validateMarketplaceBidDraft,
@@ -462,14 +462,28 @@ export async function enrichMarketplaceListingsWithCreatorAvatars(listings = [])
 
   try {
     if (unresolvedOwnerIds.length > 0) {
-      const supabase = await getSupabaseClient();
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id,role,avatar_url")
-        .in("id", unresolvedOwnerIds);
+      // Raw REST instead of the JS SDK, so read-only pages never trigger the
+      // ~110KB Supabase SDK download just to resolve creator avatars.
+      let fetchedRows = [];
+      let error = null;
+      try {
+        const { supabaseUrl, supabaseAnonKey } = await getSupabaseRuntimeConfig();
+        const inList = unresolvedOwnerIds.map((id) => encodeURIComponent(`"${id}"`)).join(",");
+        const resp = await fetch(
+          `${supabaseUrl}/rest/v1/profiles?id=in.(${inList})&select=id,role,avatar_url`,
+          { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}` } }
+        );
+        if (resp.ok) {
+          fetchedRows = await resp.json();
+        } else {
+          error = new Error(`profiles REST ${resp.status}`);
+        }
+      } catch (restErr) {
+        error = restErr;
+      }
 
       if (!error) {
-        const fetchedRows = Array.isArray(data) ? data : [];
+        fetchedRows = Array.isArray(fetchedRows) ? fetchedRows : [];
         const seenIds = new Set();
 
         fetchedRows.forEach((row) => {
@@ -1135,7 +1149,7 @@ async function createBackendMarketplaceListing(listing) {
   // Do NOT strip or re-upload images; inline data URLs render correctly.
   const pgPayload = listing;
 
-  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js?v=20260321v6");
+  const { createListing: pgCreateListing } = await import("./supabaseMarketplace.js");
   const result = await pgCreateListing({
     id: listing?.id || undefined,
     ownerUserId: owner?.id || null,
@@ -1178,10 +1192,27 @@ export async function submitMarketplaceBid(formData) {
     throw createSubmissionError("BIDDER_ROLE_INVALID", "Only developer accounts can submit bids.");
   }
 
-  // ── Bid limit enforcement ──
-  const { consumeDeveloperBid } = await import("./supabaseMarketplace.js?v=20260321v6");
-  const bidResult = await consumeDeveloperBid(session.user.id);
+  // ── Token / bid-limit enforcement ──
+  // Tokens are the primary system; if token RPCs are not deployed the
+  // tokenStore falls back to the legacy 15-bids-per-cycle automatically.
+  const { spendTokensForBid } = await import("./tokenStore.js");
+  const spendListingId = escapeHtml(formData.get("listingId") || "");
+  let spendListing = { id: spendListingId };
+  try {
+    spendListing = (await fetchPublicMarketplaceListing(spendListingId)) || spendListing;
+  } catch (_) {}
+
+  const bidResult = await spendTokensForBid(session.user.id, spendListing);
   if (!bidResult.success) {
+    if (bidResult.code === "INSUFFICIENT_TOKENS") {
+      const err = createSubmissionError(
+        "INSUFFICIENT_TOKENS",
+        `This bid costs ${bidResult.cost} token${bidResult.cost === 1 ? "" : "s"} and your balance is ${bidResult.balance}. Upgrade your membership to get more tokens.`
+      );
+      err.tokenCost = bidResult.cost;
+      err.tokenBalance = bidResult.balance;
+      throw err;
+    }
     const err = createSubmissionError("BID_LIMIT_REACHED", "You have reached your bid limit for this cycle.");
     err.bidsRemaining = bidResult.bidsRemaining;
     err.bidLimit = bidResult.bidLimit;
@@ -1229,7 +1260,7 @@ export async function submitMarketplaceBid(formData) {
     createBid: pgCreateBid,
     fetchListing: pgFetchListing,
     ensureListingInPg,
-  } = await import("./supabaseMarketplace.js?v=20260321v6");
+  } = await import("./supabaseMarketplace.js");
 
   // ── Step 1: Ensure the listing exists in PG before bidding ──
   // The listing might only exist in Cloud Storage or localStorage.
@@ -1350,7 +1381,7 @@ export async function fetchPublicMarketplaceListings({
   const request = (async () => {
     // ─── Try Supabase PostgreSQL first (fast, direct) ───
     try {
-      const { fetchListings } = await import("./supabaseMarketplace.js?v=20260321v6");
+      const { fetchListings } = await import("./supabaseMarketplace.js");
       const results = await fetchListings({ type, status, category, limit });
       console.log("[yapply] Kesfet: loaded", results.length, "listings from Supabase PG");
       return results;
@@ -1396,7 +1427,7 @@ export async function fetchPublicMarketplaceListing(listingId) {
   const request = (async () => {
     // ─── Try Supabase PostgreSQL first ───
     try {
-      const { fetchListing } = await import("./supabaseMarketplace.js?v=20260321v6");
+      const { fetchListing } = await import("./supabaseMarketplace.js");
       const result = await fetchListing(listingId);
       console.log("[yapply] Detail: loaded listing", listingId, "from Supabase PG");
       return result;
@@ -1470,7 +1501,7 @@ async function _fetchDeveloperDashboardDataImpl() {
 
   // ─── Try Supabase PostgreSQL first ───
   try {
-    const { fetchBidsForDeveloper, fetchMyListings, fetchReviewsForDeveloper } = await import("./supabaseMarketplace.js?v=20260321v6");
+    const { fetchBidsForDeveloper, fetchMyListings, fetchReviewsForDeveloper } = await import("./supabaseMarketplace.js");
     const [pgListings, pgBidEntries, pgReviews] = await Promise.all([
       fetchMyListings(ownerUserId),
       fetchBidsForDeveloper(ownerUserId),
@@ -1819,7 +1850,7 @@ export async function acceptClientDashboardBidRemote(listingId, bidId) {
   // Try Supabase PG accept first
   let updatedListing = null;
   try {
-    const { acceptBid: pgAcceptBid } = await import("./supabaseMarketplace.js?v=20260321v6");
+    const { acceptBid: pgAcceptBid } = await import("./supabaseMarketplace.js");
     updatedListing = await pgAcceptBid(listingId, bidId, ownerUserId);
     console.log("[yapply] Bid accepted via Supabase PG:", bidId);
   } catch (supaErr) {
@@ -2104,7 +2135,7 @@ async function _fetchClientDashboardDataImpl() {
 
   // ─── Try Supabase PostgreSQL first ───
   try {
-    const { fetchMyListings } = await import("./supabaseMarketplace.js?v=20260321v6");
+    const { fetchMyListings } = await import("./supabaseMarketplace.js");
     const pgListings = await fetchMyListings(ownerUserId);
     console.log("[yapply] ClientDashboard: loaded", pgListings.length, "listings from Supabase PG");
     return { listings: pgListings };
@@ -2146,7 +2177,7 @@ export async function deleteBackendMarketplaceListing(listingId) {
 
   // Delete from Supabase PG (the source of truth for the app)
   try {
-    const { deleteListingFromPg } = await import("./supabaseMarketplace.js?v=20260321v6");
+    const { deleteListingFromPg } = await import("./supabaseMarketplace.js");
     await deleteListingFromPg(listingId);
     console.log("[Yapply] Listing deleted from PG:", listingId);
   } catch (pgError) {

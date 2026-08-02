@@ -22,7 +22,7 @@ import {
   updateDeveloperDashboardListing,
 } from "./core/marketplaceStore.js";
 import { applyTheme, clearAuthSession, getAuthSession, getLocale, getTheme, setAuthSession, setLocale, toggleTheme } from "./core/state.js";
-import { preWarmSupabaseClient } from "./core/supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { preWarmSupabaseClient } from "./core/supabaseClient.js";
 
 /* ── Native app detection ───────────────────────── */
 function _isNativeApp() {
@@ -131,6 +131,13 @@ function nativeSoftNavigate(href) {
 }
 
 // Intercept all <a> clicks on native app for soft navigation
+// Native app has no website homepage — boot straight into Explore with the
+// Explore tab selected. Set this before the tab bar or the page renders so the
+// bottom tab highlights Explore from the very first frame.
+if (IS_NATIVE_APP && document.body && (!document.body.dataset.page || document.body.dataset.page === "home")) {
+  document.body.dataset.page = "open-marketplace";
+}
+
 if (IS_NATIVE_APP) {
   document.addEventListener("click", (e) => {
     // Don't intercept if modifier keys are held
@@ -294,6 +301,16 @@ if (IS_NATIVE_APP) {
 /* ── Pre-warm Supabase CDN client immediately on boot ─── */
 preWarmSupabaseClient();
 
+// ── Boot prefetch: start fetching marketplace listings the instant the app
+//    opens (native), so data is already in-flight while the page renders.
+//    The request cache dedupes this with the page's own fetch.
+if (IS_NATIVE_APP) {
+  try {
+    fetchPublicMarketplaceListings({ type: "client", status: "open-for-bids", limit: 24 }).catch(() => {});
+    fetchPublicMarketplaceListings({ type: "professional", status: "open-for-bids", limit: 24 }).catch(() => {});
+  } catch (_) {}
+}
+
 let cleanupRevealAnimations = () => {};
 let cleanupParallax = () => {};
 let cleanupHeroScene = () => {};
@@ -309,7 +326,7 @@ let tabBarApiPromise = null;
 /* ── Eagerly preload critical modules so they're ready when renderPage runs ─── */
 appApiPromise = import("./app.js").catch(() => null);
 i18nApiPromise = import("./core/i18n.js").catch(() => null);
-authApiPromise = import("./core/auth.js?v=20260312-public-auth-backend").catch(() => null);
+authApiPromise = import("./core/auth.js").catch(() => null);
 if (IS_NATIVE_APP) tabBarApiPromise = import("./components/tabBar.js").catch(() => null);
 
 function getLoadingCopy(locale = "tr") {
@@ -427,7 +444,7 @@ function renderBootFallback(appRoot, error) {
 
 async function loadAuthApi() {
   if (!authApiPromise) {
-    authApiPromise = import("./core/auth.js?v=20260312-public-auth-backend").catch(() => null);
+    authApiPromise = import("./core/auth.js").catch(() => null);
   }
 
   return authApiPromise;
@@ -470,7 +487,7 @@ function dismissSplashScreen() {
   if (!splash) return;
   // Wait for fly animation to finish (~2s) then fade out
   const elapsed = performance.now() - _splashStartTime;
-  const remaining = Math.max(0, 1900 - elapsed); // let the 2s animation nearly complete
+  const remaining = Math.max(0, 500 - elapsed); // minimal splash — buttery startup
   setTimeout(() => {
     splash.classList.add("app-splash--hidden");
     // Reveal the tab bar and app content underneath
@@ -683,7 +700,10 @@ function showStatusToast(variant, message) {
   if (existing) existing.remove();
   const el = document.createElement("div");
   el.className = `yapply-status-toast yapply-status-toast--${variant}`;
-  el.innerHTML = `<span class="yapply-status-toast__icon">${variant === "success" ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>` : `<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>`}</span><span>${message}</span>`;
+  const icon = variant === "success"
+    ? `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>`;
+  el.innerHTML = `<span class="yapply-status-toast__icon">${icon}</span><span>${message}</span>`;
   document.body.appendChild(el);
   el.addEventListener("animationend", (e) => {
     if (e.animationName === "yapplyToastOut") el.remove();
@@ -1166,6 +1186,49 @@ function setupAuthEntryForms(content) {
       return;
     }
 
+    // ── Forgot password: reveal an inline in-app reset form (no native popup) ──
+    const forgotBtn = form.querySelector("[data-forgot-password]");
+    const forgotInline = form.querySelector("[data-forgot-inline]");
+    const forgotEmail = form.querySelector("[data-forgot-email]");
+    const forgotSend = form.querySelector("[data-forgot-send]");
+    const forgotMsg = form.querySelector("[data-forgot-msg]");
+    if (forgotBtn && forgotInline && !forgotBtn.dataset.wired) {
+      forgotBtn.dataset.wired = "1";
+      const tr = () => document.documentElement.lang === "tr";
+      const show = (msg, ok) => {
+        if (!forgotMsg) return;
+        forgotMsg.hidden = false;
+        forgotMsg.style.color = ok ? "#3fbf7f" : "#ff6b6b";
+        forgotMsg.textContent = msg;
+      };
+      forgotBtn.addEventListener("click", () => {
+        forgotInline.hidden = !forgotInline.hidden;
+        if (!forgotInline.hidden) {
+          const loginEmail = form.querySelector('input[name="email"]')?.value?.trim();
+          if (loginEmail && forgotEmail && !forgotEmail.value) forgotEmail.value = loginEmail;
+          try { forgotEmail?.focus(); } catch (_) {}
+        }
+      });
+      forgotSend?.addEventListener("click", async () => {
+        const email = (forgotEmail?.value || "").trim();
+        if (!email || !email.includes("@")) {
+          show(tr() ? "Lütfen geçerli bir e-posta girin." : "Please enter a valid email.", false);
+          return;
+        }
+        forgotSend.disabled = true;
+        show(tr() ? "Gönderiliyor…" : "Sending…", true);
+        try {
+          const authApi = await loadAuthApi();
+          await authApi.requestPasswordReset(email);
+          show(tr() ? "Sıfırlama bağlantısı e-postanıza gönderildi. Gelen kutunuzu kontrol edin." : "A reset link has been sent to your email. Check your inbox.", true);
+        } catch (err) {
+          show(err?.message || (tr() ? "Bağlantı gönderilemedi. Lütfen tekrar deneyin." : "Could not send the reset link. Please try again."), false);
+        } finally {
+          forgotSend.disabled = false;
+        }
+      });
+    }
+
     const successTitle = success.querySelector("h3");
     const successBody = success.querySelector("p");
 
@@ -1298,12 +1361,14 @@ function setupAuthEntryForms(content) {
         setStatus("success");
 
         if (currentPage === "create-account") {
-          const redirectTarget = user.role === "developer" ? "./open-marketplace.html?tab=developer" : "./open-marketplace.html?tab=client";
+          // Everyone (clients and professionals) lands on client listings —
+          // professionals browse client projects to bid on.
+          const redirectTarget = "./open-marketplace.html?tab=client";
           window.setTimeout(() => {
             navigateTo(redirectTarget);
           }, 220);
         } else if (currentPage === "login") {
-          const redirectTarget = user.role === "developer" ? "./open-marketplace.html?tab=developer" : "./open-marketplace.html?tab=client";
+          const redirectTarget = "./open-marketplace.html?tab=client";
           window.setTimeout(() => {
             navigateTo(redirectTarget);
           }, 180);
@@ -1986,7 +2051,7 @@ function setupMarketplaceListingInquiryForm() {
 
     // Send inquiry to backend (fire-and-forget — redirect even if it fails)
     try {
-      const { getAuthOrigin } = await import("./core/auth.js?v=20260312-public-auth-backend");
+      const { getAuthOrigin } = await import("./core/auth.js");
       const origin = getAuthOrigin();
       await fetch(`${origin}/api/marketplace/inquiry/create`, {
         method: "POST",
@@ -2071,6 +2136,23 @@ function setupMarketplaceBidForm(content) {
 
   setBidStatus(null);
 
+  // ── Show the token cost for THIS project up front (scales with budget) ──
+  const costBadge = form.querySelector("[data-bid-cost-badge]");
+  if (costBadge && !costBadge.dataset.filled) {
+    costBadge.dataset.filled = "1";
+    (async () => {
+      try {
+        const { getBidCostForListing } = await import("./core/tokenStore.js");
+        const cost = await getBidCostForListing({ budget: costBadge.dataset.listingBudget || "" });
+        const coin = `<svg viewBox="0 0 40 40" width="1.2em" height="1.2em" style="vertical-align:-0.22em;margin-right:5px"><ellipse cx="20" cy="21.5" rx="15" ry="7.4" fill="#1B6FA8"/><ellipse cx="20" cy="17" rx="15" ry="7.4" fill="#4EB4E8" stroke="#155B8A" stroke-width="1.2"/><ellipse cx="20" cy="17" rx="9.8" ry="4.4" fill="none" stroke="#2A8DC8" stroke-width="1.1"/><ellipse cx="15.3" cy="14.7" rx="3.7" ry="1.6" fill="#EAF5FC" opacity="0.75"/></svg>`;
+        costBadge.innerHTML = isTurkish
+          ? `${coin}Bu teklif <strong>${cost} jeton</strong> harcar`
+          : `${coin}This bid costs <strong>${cost} token${cost === 1 ? "" : "s"}</strong>`;
+        costBadge.hidden = false;
+      } catch (_) {}
+    })();
+  }
+
   // ── Bid amount: numeric-only with Turkish dot formatting ──
   const amountInput = form.querySelector("[data-bid-amount-input]");
   if (amountInput) {
@@ -2146,7 +2228,7 @@ function setupMarketplaceBidForm(content) {
         if (listingOwner) {
           const listingTitle = result?.listing?.title || result?.listing?.name || "";
           const listingId = result?.listing?.id || formData.get("listingId") || "";
-          const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+          const { getSupabaseClient } = await import("./core/supabaseClient.js");
           const supabase = await getSupabaseClient();
           supabase.functions.invoke("send-push-notification", {
             body: {
@@ -2168,9 +2250,9 @@ function setupMarketplaceBidForm(content) {
     } catch (error) {
       setButtonLoading(submitButton, false);
 
-      // ── Bid limit reached — show modal and redirect ──
-      if (error?.code === "BID_LIMIT_REACHED") {
-        showBidLimitModal();
+      // ── Bid limit reached / not enough tokens — show modal and redirect ──
+      if (error?.code === "BID_LIMIT_REACHED" || error?.code === "INSUFFICIENT_TOKENS") {
+        showBidLimitModal(error);
         return;
       }
 
@@ -2191,8 +2273,11 @@ function setupMarketplaceBidForm(content) {
  * Show a popup/modal when developer has reached their bid limit.
  * Offers to redirect them to the membership/upgrade page.
  */
-function showBidLimitModal() {
+function showBidLimitModal(error = null) {
   const isTr = document.documentElement.lang === "tr";
+  const isTokens = error?.code === "INSUFFICIENT_TOKENS";
+  const tokenCost = Number(error?.tokenCost || 0);
+  const tokenBalance = Number(error?.tokenBalance ?? -1);
 
   // Remove any existing modal
   document.querySelector("[data-bid-limit-modal]")?.remove();
@@ -2205,12 +2290,16 @@ function showBidLimitModal() {
     <div style="background:var(--bg-panel-strong,#1a1c22);border:1px solid var(--line,rgba(255,255,255,0.08));border-radius:var(--radius-lg,1.5rem);padding:2rem;max-width:420px;width:100%;text-align:center;box-shadow:var(--shadow-strong)">
       <div style="font-size:2.5rem;margin-bottom:0.75rem">&#9888;&#65039;</div>
       <h3 style="color:var(--text,#E2EEF8);font-size:1.2rem;margin-bottom:0.5rem">
-        ${isTr ? "Teklif Limitine Ulaştınız" : "Bid Limit Reached"}
+        ${isTokens ? (isTr ? "Yetersiz Jeton" : "Not Enough Tokens") : (isTr ? "Teklif Limitine Ulaştınız" : "Bid Limit Reached")}
       </h3>
       <p style="color:var(--text-muted,#8BBAD6);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem">
-        ${isTr
-          ? "Bu döngüdeki ücretsiz teklif hakkınızı kullandınız. Daha fazla teklif vermek için planınızı yükseltin."
-          : "You have used all your free bids for this cycle. Upgrade your plan to place more bids."}
+        ${isTokens
+          ? (isTr
+              ? `Bu teklif ${tokenCost} jeton gerektiriyor${tokenBalance >= 0 ? ` (bakiyeniz: ${tokenBalance})` : ""}. Daha fazla jeton için üyelik planınızı yükseltin.`
+              : `This bid costs ${tokenCost} token${tokenCost === 1 ? "" : "s"}${tokenBalance >= 0 ? ` (your balance: ${tokenBalance})` : ""}. Upgrade your membership to get more tokens.`)
+          : (isTr
+              ? "Bu döngüdeki ücretsiz teklif hakkınızı kullandınız. Daha fazla teklif vermek için planınızı yükseltin."
+              : "You have used all your free bids for this cycle. Upgrade your plan to place more bids.")}
       </p>
       <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
         <button class="button button--primary" data-bid-limit-upgrade style="font-size:0.9rem;padding:10px 24px">
@@ -2405,7 +2494,7 @@ function setupClientDashboard(content) {
             });
 
             // Push notification to developer's iPhone
-            const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+            const { getSupabaseClient } = await import("./core/supabaseClient.js");
             const supabase = await getSupabaseClient();
             supabase.functions.invoke("send-push-notification", {
               body: {
@@ -2659,7 +2748,7 @@ function setupClientBidsPage(content) {
             });
 
             // Push notification to developer's iPhone
-            const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+            const { getSupabaseClient } = await import("./core/supabaseClient.js");
             const supabase_cb = await getSupabaseClient();
             const listingTitle_cb = updatedListing?.title || updatedListing?.name || "";
             supabase_cb.functions.invoke("send-push-notification", {
@@ -2764,7 +2853,7 @@ function setupReportListingButton() {
         const session = getAuthSession();
         if (session?.authenticated && session.user?.id) {
           // Try to save report to Supabase
-          const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+          const { getSupabaseClient } = await import("./core/supabaseClient.js");
           const supabase = await getSupabaseClient();
           await supabase.from("listing_reports").insert({
             listing_id: listingId,
@@ -3094,7 +3183,7 @@ function setupDeveloperPublicProfile(content) {
       e.preventDefault();
       const newDesc = descForm.querySelector('[name="workDescription"]')?.value || "";
       try {
-        const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+        const { getSupabaseClient } = await import("./core/supabaseClient.js");
         const supabase = await getSupabaseClient();
         await supabase.from("profiles").update({ work_description: newDesc }).eq("id", session.user.id);
         descForm.setAttribute("hidden", "");
@@ -3282,13 +3371,13 @@ function injectBirdLoader() {
           <ellipse cx="52" cy="64" rx="23" ry="18" fill="var(--text-muted)" opacity="0.35"/>
           <circle cx="74" cy="50" r="13" fill="var(--text-muted)" opacity="0.4"/>
           <circle cx="78" cy="47" r="2.2" fill="currentColor"/>
-          <path d="M85 50 95 46 88 55Z" fill="var(--accent)"/>
+          <path d="M85 50 95 46 88 55Z" fill="var(--bird)"/>
           <path d="M49 81V89" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
           <path d="M58 81V89" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
         <svg class="yapply-loader__pickaxe" viewBox="0 0 64 64" fill="none" style="position:absolute;right:-10px;top:14px;">
           <line x1="18" y1="46" x2="46" y2="18" stroke="var(--text-muted)" stroke-width="4" stroke-linecap="round"/>
-          <path d="M40 12 52 14 50 26 44 22 42 16Z" fill="var(--accent)" opacity="0.9"/>
+          <path d="M40 12 52 14 50 26 44 22 42 16Z" fill="var(--bird)" opacity="0.9"/>
         </svg>
       </div>
       <div class="yapply-loader__blocks">
@@ -3430,7 +3519,17 @@ function bindInteractions(content) {
     window.scrollTo(0, 0);
     setupBidAccordions();
     setupMarketplaceBidForm(content);
+    // NAUTICO-style rotary dials for bid amount + completion timeframe
+    import("./components/bidDial.js").then((m) => {
+      if (m.mountBidDials) m.mountBidDials(content.meta.locale);
+    }).catch(() => {});
     setupListingImageGallery();
+    // Expose gallery setup so the lazy media hydrate can re-init after injecting.
+    window.__yapplySetupGallery = setupListingImageGallery;
+    // Stream the hero photo in (detail fetch is slim for instant render).
+    import("./components/marketplaceListingDetailPage.js").then((m) => {
+      if (m.hydrateDetailMedia) m.hydrateDetailMedia();
+    }).catch(() => {});
     setupMarketplaceListingInquiryForm();
     setupMarketplaceDeleteActions(content.meta.locale);
     setupDeveloperInquiryForm();
@@ -3464,7 +3563,14 @@ function bindInteractions(content) {
   } else if (page === "developer-public-profile") {
     setupDeveloperPublicProfile(content);
   } else if (page === "account-settings") {
+    // No notification bell on settings — remove any that carried over from a
+    // previous page (SPA navigation) so it never flashes here.
+    try { document.getElementById("yapply-notification-bell")?.remove(); } catch (_) {}
     setupAccountSettings(content);
+  } else if (page === "developer-membership") {
+    import("./components/developerMembershipPage.js").then((m) => {
+      if (m.initDeveloperMembershipPage) m.initDeveloperMembershipPage(content);
+    }).catch(() => {});
   } else if (page === "marketplace-submission") {
     setupApplicationForm();
     setupProjectInquiryForm();
@@ -3550,6 +3656,8 @@ function setupAccountSettings(content) {
 
   const defaultOptions = getDefaultAvatarOptions(session.user.role);
   let isSubmitting = false;
+  let pendingUploadDataUrl = "";
+  let pendingUploadName = "";
 
   const getSelectedAvatar = () => {
     const selected = avatarOptions.find((option) => option.checked);
@@ -3657,9 +3765,49 @@ function setupAccountSettings(content) {
 
   avatarOptions.forEach((option) => {
     option.addEventListener("change", () => {
+      pendingUploadDataUrl = "";
+      pendingUploadName = "";
+      if (uploadName) uploadName.textContent = "";
       syncPreview();
     });
   });
+
+  // ── Optional custom photo upload (client accounts) ──
+  const uploadBtn = document.querySelector("[data-account-settings-upload-btn]");
+  const uploadInput = document.querySelector("[data-account-settings-upload-input]");
+  const uploadName = document.querySelector("[data-account-settings-upload-name]");
+  if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      uploadInput.click();
+    });
+    uploadInput.addEventListener("change", () => {
+      const file = uploadInput.files && uploadInput.files[0];
+      if (!file) return;
+      const isTR = document.documentElement.lang === "tr";
+      if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
+        setStatus("error", isTR ? "Lütfen bir PNG, JPG veya WEBP görseli seç." : "Please choose a PNG, JPG or WEBP image.");
+        uploadInput.value = "";
+        return;
+      }
+      if (file.size > 6 * 1024 * 1024) {
+        setStatus("error", isTR ? "Görsel 6MB'den küçük olmalı." : "Image must be under 6MB.");
+        uploadInput.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingUploadDataUrl = String(reader.result || "");
+        pendingUploadName = file.name || "photo";
+        if (uploadName) uploadName.textContent = pendingUploadName;
+        // Deselect any bird avatar so the custom photo wins.
+        avatarOptions.forEach((o) => { o.checked = false; });
+        if (preview && pendingUploadDataUrl) preview.src = pendingUploadDataUrl;
+        setStatus(null);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -3689,13 +3837,25 @@ function setupAccountSettings(content) {
       const selectedAvatar = getSelectedAvatar();
       const profilePictureId = selectedAvatar.id || session.user.profilePictureId || defaultOptions[0]?.id || "";
 
+      // If the client just picked a custom photo, save it as an upload; otherwise
+      // keep the selected default (bird) avatar behaviour.
+      const avatarPayload = pendingUploadDataUrl
+        ? {
+            profilePictureType: "upload",
+            profilePictureUploadDataUrl: pendingUploadDataUrl,
+            profilePictureUploadName: pendingUploadName || "photo",
+          }
+        : {
+            profilePictureType: "default",
+            profilePictureId,
+          };
+
       const updatedSession = await authApi.saveOwnAccountSettings({
         username: String(formData.get("username") || "").trim(),
         email: String(formData.get("email") || "").trim(),
         password: passwordInput && !passwordInput.disabled ? String(formData.get("password") || "") : "",
         workDescription: String(formData.get("workDescription") || "").trim(),
-        profilePictureType: "default",
-        profilePictureId,
+        ...avatarPayload,
       });
 
       if (updatedSession?.passwordUpdated) {
@@ -3783,7 +3943,7 @@ function setupAccountSettings(content) {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       try {
-        const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+        const { getSupabaseClient } = await import("./core/supabaseClient.js");
         const supabase = await getSupabaseClient();
         await supabase.auth.signOut();
       } catch (_) {}
@@ -3820,7 +3980,7 @@ function setupAccountSettings(content) {
       deleteYes.disabled = true;
       deleteYes.textContent = deleteYes.textContent.includes("Evet") ? "Siliniyor..." : "Deleting...";
       try {
-        const { getSupabaseClient } = await import("./core/supabaseClient.js?v=20260312-supabase-runtime-fix");
+        const { getSupabaseClient } = await import("./core/supabaseClient.js");
         const supabase = await getSupabaseClient();
         const { error } = await supabase.rpc("delete_user_account");
         if (error) throw error;
@@ -3857,8 +4017,9 @@ if (IS_NATIVE_APP && document.getElementById("app-splash")) {
       if (key && key.startsWith(SWR_CACHE_KEY + ":")) {
         try {
           const entry = JSON.parse(localStorage.getItem(key));
-          // Clear anything older than 1 minute on cold boot
-          if (!entry || (Date.now() - (entry.ts || 0)) > 60000) {
+          // Keep marketplace cache up to 24h — it renders instantly and
+          // background revalidation replaces stale data within a second.
+          if (!entry || (Date.now() - (entry.ts || 0)) > 86400000) {
             keysToRemove.push(key);
           }
         } catch (_) {
@@ -3983,7 +4144,9 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
     // Try to return cached data instantly
     const cached = swrRead(cacheId);
     const proCached = swrRead(proCacheId);
-    const hasFreshCache = cached && !swrIsStale(cached);
+    // Instant render whenever we have real cached data (even if stale) —
+    // the background fetch below re-renders automatically if data changed.
+    const hasFreshCache = !!(cached && Array.isArray(cached.data) && cached.data.length > 0);
 
     // Start the network fetch (will run regardless for revalidation)
     const fetchPromise = (async () => {
@@ -4274,6 +4437,7 @@ async function loadMarketplaceRuntimeData(page, listingType, listingId) {
         if (!prof.profession_type && session.user?.professionType) prof.profession_type = session.user.professionType;
         if (!prof.specialties && session.user?.specialties) prof.specialties = session.user.specialties;
         if (!prof.work_description && session.user?.workDescription) prof.work_description = session.user.workDescription;
+        if (!prof.current_plan && session.user?.currentPlan) prof.current_plan = session.user.currentPlan;
         if (!prof.id) prof.id = session.user.id;
         if (!prof.role) prof.role = session.user.role;
         profileData.profile = prof;
@@ -4354,13 +4518,13 @@ function setupPullToRefresh() {
 
       /* Bird SVG */
       .ptr-bird-svg { width: 44px; height: 44px; }
-      .ptr-bird-body-fill { fill: var(--accent, #c9a84c); opacity: 0; transition: opacity 300ms ease; }
-      .ptr-bird-wing { fill: var(--accent, #c9a84c); opacity: 0; transition: opacity 300ms ease 50ms; }
-      .ptr-bird-tail { fill: var(--accent, #c9a84c); opacity: 0; transition: opacity 200ms ease; }
+      .ptr-bird-body-fill { fill: var(--bird, #c9a84c); opacity: 0; transition: opacity 300ms ease; }
+      .ptr-bird-wing { fill: var(--bird, #c9a84c); opacity: 0; transition: opacity 300ms ease 50ms; }
+      .ptr-bird-tail { fill: var(--bird, #c9a84c); opacity: 0; transition: opacity 200ms ease; }
       .ptr-bird-eye { fill: var(--bg, #060709); opacity: 0; transition: opacity 200ms ease 200ms; }
       .ptr-bird-eye-shine { fill: #fff; opacity: 0; transition: opacity 200ms ease 250ms; }
       .ptr-bird-beak { fill: var(--text, #fff); opacity: 0; transition: opacity 200ms ease 250ms; }
-      .ptr-bird-legs { stroke: var(--accent, #c9a84c); stroke-width: 1.5; fill: none;
+      .ptr-bird-legs { stroke: var(--bird, #c9a84c); stroke-width: 1.5; fill: none;
         stroke-linecap: round; opacity: 0; transition: opacity 200ms ease 200ms; }
 
       /* Blocks under bird */
@@ -4605,10 +4769,11 @@ async function renderPage(localeOverride) {
   cleanupBirdScroll();
   cleanupHeroScene();
 
-  // Show bird loader only if the page takes >300ms to load (skip on background re-renders)
+  // Show bird loader only if the page genuinely takes a while (>600ms) —
+  // instant/cached renders never flash a loading screen.
   let _birdLoaderTimeout = null;
   if (IS_NATIVE_APP && !isBackgroundRefresh) {
-    _birdLoaderTimeout = setTimeout(() => { showBirdLoader(); }, 300);
+    _birdLoaderTimeout = setTimeout(() => { showBirdLoader(); }, 600);
   }
 
   try {
@@ -4629,7 +4794,7 @@ async function renderPage(localeOverride) {
     // Eagerly preload page-specific component modules so they're cached by the time
     // data loading finishes. This runs in parallel with auth sync and data fetches.
     const _preloadMap = {
-      "open-marketplace": () => import("./components/openMarketplacePage.js?v=20260325"),
+      "open-marketplace": () => import("./components/openMarketplacePage.js"),
       "developer-dashboard": () => import("./components/developerDashboardPage.js"),
       "developer-membership": () => import("./components/developerMembershipPage.js"),
       "client-dashboard": () => import("./components/clientDashboardPage.js"),
@@ -4704,7 +4869,7 @@ async function renderPage(localeOverride) {
 
       // Schedule background thumbnail generation for marketplace card images
       if (page === "open-marketplace" && runtimeData?.publicClientListings) {
-        import("./components/openMarketplacePage.js?v=20260325").then((mod) => {
+        import("./components/openMarketplacePage.js").then((mod) => {
           if (mod.scheduleBackgroundThumbnails) {
             mod.scheduleBackgroundThumbnails(runtimeData.publicClientListings);
           }

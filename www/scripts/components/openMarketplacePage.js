@@ -123,6 +123,28 @@ function computeBidDeadline(createdAtISO, timeframeText, locale) {
   return { publishedLabel, daysLeftLabel };
 }
 
+/** Bidding window length in days (mirrors computeBidDeadline). */
+function _biddingTotalDays(timeframeText) {
+  let totalDays = 30;
+  const m = String(timeframeText || "").match(/(\d+)/);
+  if (m) {
+    const months = parseInt(m[1], 10);
+    if (months > 0 && months <= 36) totalDays = months * 30;
+  }
+  return totalDays;
+}
+
+/** True once a client listing's bidding period has ended → hidden from explore. */
+function isBiddingEnded(listing) {
+  const createdAtRaw = listing?.createdAt || listing?.created_at || "";
+  if (!createdAtRaw) return false;
+  const timeframe = listing?.timeline || listing?.startDate || listing?.marketplaceMeta?.desiredTimeframe?.label || "";
+  const created = new Date(createdAtRaw);
+  if (isNaN(created.getTime())) return false;
+  const daysSince = Math.max(0, Math.floor((Date.now() - created.getTime()) / 86400000));
+  return daysSince >= _biddingTotalDays(timeframe);
+}
+
 const INITIAL_MARKETPLACE_BATCH_SIZE = 12;
 
 function getMarketplaceLocale(content) {
@@ -196,6 +218,10 @@ function getClientListingCopy(locale) {
         title: "Henüz yayında tekliflere açık müşteri ilanı yok.",
         description: "İlk müşteri proje talebi yayınlandığında burada görünecek.",
       },
+      emptyDeveloper: {
+        title: "Henüz yayında profesyonel ilanı yok.",
+        description: "İlk profesyonel ilanı yayınlandığında burada görünecek.",
+      },
       error: {
         title: "İlanlar şu anda yüklenemiyor.",
         description: "Lütfen biraz sonra tekrar deneyin.",
@@ -218,6 +244,10 @@ function getClientListingCopy(locale) {
       title: "No open client listings are live yet.",
       description: "The first published client project request will appear here.",
     },
+    emptyDeveloper: {
+      title: "No professional listings are live yet.",
+      description: "The first published professional listing will appear here.",
+    },
     error: {
       title: "Listings could not be loaded right now.",
       description: "Please try again in a moment.",
@@ -231,8 +261,64 @@ function getClientListingCopy(locale) {
    Cards use the same image as detail pages — no separate thumbnail
    cache needed, which also prevents visual mismatch. */
 
-/** No-op — kept as export so callers don't break */
-export function scheduleBackgroundThumbnails() {}
+/* ── Lazy per-card image loading ─────────────────────────────────
+   The explore list is fetched WITHOUT base64 images (see fetchListings),
+   so the page loads instantly. Each card's image is streamed in only when
+   the card scrolls near the viewport, via a single per-listing fetch. */
+let _lazyImgObserver = null;
+
+async function _fillLazyImage(placeholderEl) {
+  const id = placeholderEl.getAttribute("data-lazy-listing");
+  if (!id) return;
+  try {
+    const { fetchListingImage } = await import("../core/supabaseMarketplace.js");
+    const src = await fetchListingImage(id);
+    if (!src || !placeholderEl.isConnected) return;
+    const media = placeholderEl.closest(".marketplace-card__media") || placeholderEl.parentElement;
+    if (!media) return;
+    const img = document.createElement("img");
+    img.alt = "";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.style.opacity = "0";
+    img.style.transition = "opacity .35s ease";
+    img.addEventListener("load", () => { img.style.opacity = "1"; });
+    img.src = src;
+    placeholderEl.replaceWith(img);
+  } catch (_) {}
+}
+
+function _scanLazyImages() {
+  if (typeof IntersectionObserver === "undefined") {
+    // No observer support → just load them all.
+    document.querySelectorAll("[data-lazy-listing]:not([data-lazy-observed])").forEach((el) => {
+      el.setAttribute("data-lazy-observed", "1");
+      _fillLazyImage(el);
+    });
+    return;
+  }
+  if (!_lazyImgObserver) {
+    _lazyImgObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        obs.unobserve(entry.target);
+        _fillLazyImage(entry.target);
+      });
+    }, { rootMargin: "400px 0px" });
+  }
+  document.querySelectorAll("[data-lazy-listing]:not([data-lazy-observed])").forEach((el) => {
+    el.setAttribute("data-lazy-observed", "1");
+    _lazyImgObserver.observe(el);
+  });
+}
+
+/** Set up lazy image streaming for the explore grid. Re-scans a couple of times
+    to catch cards added by SWR revalidation or a tab switch. */
+export function scheduleBackgroundThumbnails() {
+  _scanLazyImages();
+  setTimeout(_scanLazyImages, 500);
+  setTimeout(_scanLazyImages, 1500);
+}
 
 function isValidImageUrl(url) {
   if (!url || typeof url !== "string") return false;
@@ -313,10 +399,12 @@ function createClientFilters(content) {
   `;
 }
 
-function createClientEmptyState(content, tone = "empty") {
+function createClientEmptyState(content, tone = "empty", kind = "client") {
   const locale = getMarketplaceLocale(content);
   const copy = getClientListingCopy(locale);
-  const stateCopy = tone === "error" ? copy.error : copy.empty;
+  const stateCopy = tone === "error"
+    ? copy.error
+    : (kind === "developer" && copy.emptyDeveloper) ? copy.emptyDeveloper : copy.empty;
 
   return `
     <div class="marketplace-empty panel">
@@ -488,7 +576,7 @@ function createClientListingCard(listing, labels, locale) {
         ${
           previewImage
             ? `<img src="${previewImage}" alt="${listing.title}" loading="lazy" decoding="async" fetchpriority="low" />`
-            : `<span class="marketplace-card__media-placeholder">${copy.mediaFallback}</span>`
+            : `<span class="marketplace-card__media-placeholder" ${listing._lazyImage && listing.id ? `data-lazy-listing="${listing.id}"` : ""}>${copy.mediaFallback}</span>`
         }
       </a>
       <div class="marketplace-card__top">
@@ -583,7 +671,7 @@ function createDeveloperListingCard(listing, labels) {
         ${
           previewImage
             ? `<img src="${previewImage}" alt="${listingName}" loading="lazy" decoding="async" fetchpriority="low" />`
-            : `<span class="marketplace-card__media-placeholder">${mediaFallback}</span>`
+            : `<span class="marketplace-card__media-placeholder" ${listing._lazyImage && listing.id ? `data-lazy-listing="${listing.id}"` : ""}>${mediaFallback}</span>`
         }
       </a>
       <div class="marketplace-card__top">
@@ -663,7 +751,11 @@ function createDeferredCardsTemplate(cardsMarkup, kind) {
 
 function createMarketplaceListings(content) {
   const locale = getMarketplaceLocale(content);
-  const clientItems = Array.isArray(content.tabs.client.items) ? content.tabs.client.items : [];
+  // Hide listings whose bidding period has ended — they're done accepting bids.
+  // (Completed/awarded work still lives on the professional's profile as their
+  // portfolio; this only removes them from the open explore grid.)
+  const clientItems = (Array.isArray(content.tabs.client.items) ? content.tabs.client.items : [])
+    .filter((item) => !isBiddingEnded(item));
   const developerItems = Array.isArray(content.tabs.developer.items) ? content.tabs.developer.items : [];
   const initialClientCards = clientItems
     .slice(0, INITIAL_MARKETPLACE_BATCH_SIZE)
@@ -694,14 +786,14 @@ function createMarketplaceListings(content) {
   const developerSkeletonCards = createSkeletonCards(4);
 
   const developerPanelBody = content.publicListingError
-    ? createClientEmptyState(content, "error")
+    ? createClientEmptyState(content, "error", "developer")
     : developerItems.length > 0
       ? `
         <div class="marketplace-grid" data-marketplace-developer-grid>${initialDeveloperCards}</div>
         ${createDeferredCardsTemplate(deferredDeveloperCards, "developer")}
-        <div data-marketplace-developer-empty hidden>${createClientEmptyState(content)}</div>
+        <div data-marketplace-developer-empty hidden>${createClientEmptyState(content, "empty", "developer")}</div>
       `
-      : createClientEmptyState(content);
+      : createClientEmptyState(content, "empty", "developer");
 
   return `
     <section class="section-shell" id="marketplace-listings">

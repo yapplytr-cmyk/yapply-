@@ -10,7 +10,7 @@
  *   3. Supabase JS client is tried first but we don't rely on it
  */
 
-import { getSupabaseClient } from "./supabaseClient.js?v=20260312-supabase-runtime-fix";
+import { getSupabaseClient } from "./supabaseClient.js";
 
 // ─── Constants ────────────────────────────────────────────────
 const SUPABASE_URL = "https://sgoicvqgfydwfpttzgqu.supabase.co";
@@ -88,14 +88,42 @@ async function getBestAccessToken(supabase) {
  * Fetch all open marketplace listings (for Kesfet page).
  */
 export async function fetchListings({ type = "client", status = "open-for-bids", category = "", limit = 24 } = {}) {
-  const supabase = await getSupabaseClient();
+  // ── Attempt 1: Raw REST API (no SDK download — fastest cold path) ──
+  // Returns identical data to the JS client but skips the ~150KB Supabase SDK
+  // download from the CDN, which was the main cause of slow marketplace loads.
+  try {
+    const params = new URLSearchParams({
+      // SLIM select — pull marketplaceMeta only, NOT the full payload. Listing
+      // payloads embed full base64 images (hundreds of KB each), so selecting
+      // `payload` made the explore fetch ~2MB. Images are lazy-loaded per card
+      // via fetchListingImage() once a card scrolls into view.
+      select: "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,marketplaceMeta:payload->marketplaceMeta,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
+      order: "created_at.desc",
+      limit: String(limit),
+    });
+    if (type) params.append("listing_type", `eq.${type}`);
+    if (status && status !== "all") params.append("status", `eq.${status}`);
+    if (category) params.append("category", `eq.${category}`);
 
-  // ── Attempt 1: Supabase JS client ──
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?${params}`, {
+      headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (resp.ok) {
+      const rows = await resp.json();
+      return (rows || []).map(normalizeListing);
+    }
+    console.warn("[yapply] fetchListings REST non-OK:", resp.status);
+  } catch (e) {
+    console.warn("[yapply] fetchListings REST threw:", e?.message);
+  }
+
+  // ── Attempt 2: Supabase JS client (fallback — downloads SDK) ──
+  const supabase = await getSupabaseClient();
   try {
     let query = supabase
       .from("marketplace_listings")
       .select(`
-        id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload,
+        id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,marketplaceMeta:payload->marketplaceMeta,
         listing_bids (id, bidder_user_id, status, company_name, bid_amount, estimated_timeframe, proposal_message, payload, created_at)
       `)
       .order("created_at", { ascending: false })
@@ -112,22 +140,7 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
     console.warn("[yapply] fetchListings JS threw:", e?.message);
   }
 
-  // ── Attempt 2: Raw REST API ──
-  const params = new URLSearchParams({
-    select: "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload,listing_bids(id,bidder_user_id,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)",
-    order: "created_at.desc",
-    limit: String(limit),
-  });
-  if (type) params.append("listing_type", `eq.${type}`);
-  if (status && status !== "all") params.append("status", `eq.${status}`);
-  if (category) params.append("category", `eq.${category}`);
-
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?${params}`, {
-    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
-  });
-  if (!resp.ok) throw new Error(`fetchListings failed (HTTP ${resp.status})`);
-  const rows = await resp.json();
-  return (rows || []).map(normalizeListing);
+  throw new Error("fetchListings failed (REST and JS client both errored)");
 }
 
 /**
@@ -136,9 +149,27 @@ export async function fetchListings({ type = "client", status = "open-for-bids",
 export async function fetchListing(listingId) {
   if (!listingId) return null;
 
-  const supabase = await getSupabaseClient();
+  // ── Attempt 1: Raw REST API (no SDK download — fastest cold path) ──
+  // Uses payload_lite (payload with base64 images stripped) aliased as payload,
+  // so the detail fetch is ~2KB instead of ~750KB and the page renders instantly.
+  // The hero image is streamed in separately via fetchListingImages().
+  try {
+    const slimCols = "id,listing_type,status,title,description,location,budget,timeframe,project_type,category,owner_user_id,owner_email,owner_role,created_at,updated_at,accepted_bid_id,payload:payload_lite,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)";
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=${slimCols}&limit=1`, {
+      headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (resp.ok) {
+      const rows = await resp.json();
+      if (!rows || rows.length === 0) return null;
+      return await enrichListingBids(normalizeListing(rows[0]));
+    }
+    console.warn("[yapply] fetchListing REST non-OK:", resp.status);
+  } catch (e) {
+    console.warn("[yapply] fetchListing REST threw:", e?.message);
+  }
 
-  // ── Attempt 1: Supabase JS client ──
+  // ── Attempt 2: Supabase JS client (fallback — downloads SDK) ──
+  const supabase = await getSupabaseClient();
   try {
     const { data, error } = await supabase
       .from("marketplace_listings")
@@ -149,21 +180,14 @@ export async function fetchListing(listingId) {
       .eq("id", listingId)
       .single();
 
-    if (!error && data) return normalizeListing(data);
+    if (!error && data) return await enrichListingBids(normalizeListing(data));
     if (error && error.code === "PGRST116") return null;
     if (error) console.warn("[yapply] fetchListing JS error:", error.message);
   } catch (e) {
     console.warn("[yapply] fetchListing JS threw:", e?.message);
   }
 
-  // ── Attempt 2: Raw REST API ──
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=*,listing_bids(id,bidder_user_id,bidder_role,status,company_name,bid_amount,estimated_timeframe,proposal_message,payload,created_at)&limit=1`, {
-    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
-  });
-  if (!resp.ok) throw new Error(`fetchListing failed (HTTP ${resp.status})`);
-  const rows = await resp.json();
-  if (!rows || rows.length === 0) return null;
-  return normalizeListing(rows[0]);
+  throw new Error("fetchListing failed (REST and JS client both errored)");
 }
 
 /**
@@ -185,7 +209,7 @@ export async function fetchMyListings(ownerUserId) {
       .eq("owner_user_id", ownerUserId)
       .order("created_at", { ascending: false });
 
-    if (!error && data) return (data || []).map(normalizeListing);
+    if (!error && data) return await enrichListingsBids((data || []).map(normalizeListing));
     if (error) console.warn("[yapply] fetchMyListings JS error:", error.message);
   } catch (e) {
     console.warn("[yapply] fetchMyListings JS threw:", e?.message);
@@ -199,7 +223,7 @@ export async function fetchMyListings(ownerUserId) {
   });
   if (!resp.ok) throw new Error(`fetchMyListings failed (HTTP ${resp.status})`);
   const rows = await resp.json();
-  return (rows || []).map(normalizeListing);
+  return await enrichListingsBids((rows || []).map(normalizeListing));
 }
 
 /**
@@ -715,9 +739,13 @@ function normalizeListing(row) {
     updatedAt: row.updated_at,
     acceptedBidId: row.accepted_bid_id || "",
     bids,
-    // Build marketplaceMeta for backward compatibility with existing UI components
+    // Build marketplaceMeta for backward compatibility with existing UI components.
+    // `row.marketplaceMeta` is the slim-fetch alias (explore list); `row.payload`
+    // is present on full fetches (detail / my-listings).
     marketplaceMeta: {
-      ...(typeof row.payload?.marketplaceMeta === "object" ? row.payload.marketplaceMeta : {}),
+      ...(typeof row.payload?.marketplaceMeta === "object"
+        ? row.payload.marketplaceMeta
+        : (typeof row.marketplaceMeta === "object" && row.marketplaceMeta ? row.marketplaceMeta : {})),
       // ── Authoritative PG values — MUST come after payload spread ──
       listingStatus: row.status,
       bidCount: bids.length,
@@ -726,11 +754,83 @@ function normalizeListing(row) {
       acceptedBid,
       category: row.category || "",
     },
-    // Preserve attachments from payload
+    // Preserve attachments/images from payload when present (full fetch).
+    // On the slim explore fetch these are empty and loaded lazily per card.
     attachments: Array.isArray(row.payload?.attachments) ? row.payload.attachments : [],
     imageSrc: row.payload?.imageSrc || "",
     images: Array.isArray(row.payload?.images) ? row.payload.images : [],
+    // Flag: this fetch carried no embedded image (slim explore/detail fetch, or
+    // a genuinely image-less listing) → the UI should stream the image in via
+    // fetchListingImage(s). Full fetches (my-listings/dashboards) keep images.
+    _lazyImage: !(
+      row.payload && (
+        (Array.isArray(row.payload.attachments) && row.payload.attachments.length > 0) ||
+        (Array.isArray(row.payload.images) && row.payload.images.length > 0) ||
+        (typeof row.payload.imageSrc === "string" && row.payload.imageSrc.trim().length > 0)
+      )
+    ),
   };
+}
+
+/**
+ * Fetch ALL of a listing's preview images (full base64), one row. Used by the
+ * detail page to stream the hero gallery in after an instant slim render.
+ * Returns an array of { src, name }.
+ */
+export async function fetchListingImages(listingId) {
+  if (!listingId) return [];
+  try {
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=imageSrc:payload->imageSrc,images:payload->images,attachments:payload->attachments&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (!resp.ok) return [];
+    const rows = await resp.json();
+    const r = rows && rows[0];
+    if (!r) return [];
+    const out = [];
+    const seen = new Set();
+    const push = (src, name) => {
+      if (typeof src === "string" && src && !seen.has(src)) { seen.add(src); out.push({ src, name: name || "Project image" }); }
+    };
+    if (Array.isArray(r.attachments)) {
+      r.attachments.forEach((a) => { if (a && (a.kind === "image" || /^data:image|^https?:/.test(a.dataUrl || a.src || "")) ) push(a.dataUrl || a.src || a.url, a.name); });
+    }
+    if (Array.isArray(r.images)) r.images.forEach((im) => push(im?.src || im?.dataUrl, im?.name));
+    if (typeof r.imageSrc === "string") push(r.imageSrc, "Project image");
+    return out;
+  } catch (_) {
+    return [];
+  }
+}
+
+/**
+ * Lazy-fetch a single listing's preview image (only the image fields, one row).
+ * Used by the explore grid to stream images in per card instead of downloading
+ * every base64 image up front.
+ */
+export async function fetchListingImage(listingId) {
+  if (!listingId) return "";
+  try {
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/marketplace_listings?id=eq.${encodeURIComponent(listingId)}&select=imageSrc:payload->imageSrc,images:payload->images,attachments:payload->attachments&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (resp.ok) {
+      const rows = await resp.json();
+      const r = rows && rows[0];
+      if (r) {
+        if (typeof r.imageSrc === "string" && r.imageSrc.startsWith("data:")) return r.imageSrc;
+        if (typeof r.imageSrc === "string" && /^https?:\/\//.test(r.imageSrc)) return r.imageSrc;
+        if (Array.isArray(r.images) && r.images[0]?.src) return r.images[0].src;
+        if (Array.isArray(r.attachments)) {
+          const img = r.attachments.find((a) => a?.kind === "image" && a?.dataUrl);
+          if (img) return img.dataUrl;
+        }
+      }
+    }
+  } catch (_) {}
+  return "";
 }
 
 function normalizeBid(row) {
@@ -762,6 +862,77 @@ function normalizeBidWithListing(row) {
     bid.listing = normalizeListing(row.marketplace_listings);
   }
   return bid;
+}
+
+// Default avatar used when a bidder has no custom profile picture.
+const DEFAULT_BID_AVATAR = "./assets/avatars/avatar-bird-business.png";
+
+/** Batch-fetch minimal profile info (avatar + plan) for a set of user IDs. */
+async function fetchBidderProfiles(ids) {
+  const byId = {};
+  if (!Array.isArray(ids) || !ids.length) return byId;
+  try {
+    const token = (typeof getStoredAccessToken === "function" && getStoredAccessToken()) || SUPABASE_ANON_KEY;
+    const inList = ids.map((id) => encodeURIComponent(`"${id}"`)).join(",");
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=in.(${inList})&select=id,avatar_url,current_plan,company_name`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
+    );
+    if (resp.ok) {
+      const rows = await resp.json();
+      (Array.isArray(rows) ? rows : []).forEach((r) => {
+        if (r && r.id) byId[r.id] = r;
+      });
+    }
+  } catch (_) {}
+  return byId;
+}
+
+/** Apply fetched bidder profiles onto a bid list (mutates developerProfileReference). */
+function applyBidderProfiles(bids, byId) {
+  (Array.isArray(bids) ? bids : []).forEach((b) => {
+    const ref = b.developerProfileReference || (b.developerProfileReference = {});
+    const p = byId[b.developerUserId || b.developerId];
+    if (p) {
+      ref.avatarSrc = p.avatar_url || DEFAULT_BID_AVATAR;
+      ref.isVerified = !!(p.current_plan && String(p.current_plan).toLowerCase() !== "free");
+      if (!ref.companyName) ref.companyName = p.company_name || b.companyName || "";
+    } else if (!ref.avatarSrc) {
+      ref.avatarSrc = DEFAULT_BID_AVATAR;
+    }
+  });
+}
+
+/**
+ * Enrich a single listing's bids with the bidder's avatar + verified
+ * (paid-member) status. Best-effort: never throws.
+ */
+async function enrichListingBids(listing) {
+  const bids = Array.isArray(listing?.bids) ? listing.bids : [];
+  if (!bids.length) return listing;
+  const ids = [...new Set(bids.map((b) => b.developerUserId || b.developerId).filter(Boolean))];
+  if (!ids.length) return listing;
+  const byId = await fetchBidderProfiles(ids);
+  applyBidderProfiles(bids, byId);
+  return listing;
+}
+
+/**
+ * Enrich many listings' bids in ONE batched profile query. Best-effort.
+ */
+async function enrichListingsBids(listings) {
+  const arr = Array.isArray(listings) ? listings : [];
+  const ids = [
+    ...new Set(
+      arr.flatMap((l) => (Array.isArray(l?.bids) ? l.bids : []))
+        .map((b) => b.developerUserId || b.developerId)
+        .filter(Boolean)
+    ),
+  ];
+  if (!ids.length) return listings;
+  const byId = await fetchBidderProfiles(ids);
+  arr.forEach((l) => applyBidderProfiles(Array.isArray(l?.bids) ? l.bids : [], byId));
+  return listings;
 }
 
 // ─── Developer Reviews ──────────────────────────────────────

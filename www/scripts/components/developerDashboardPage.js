@@ -2,6 +2,7 @@ import { createButton, createSectionHeading } from "./primitives.js";
 import { getMarketplaceListingHref } from "../core/marketplaceStore.js";
 import { getUnreadNotifications, markAllRead } from "../core/notifications.js";
 import { createDashboardReloadButton } from "./dashboardReloadButton.js";
+import { getTokenStatus } from "../core/tokenStore.js";
 
 function getDeveloperDashboardLocale(content) {
   return content.meta?.locale === "tr" ? "tr" : "en";
@@ -120,40 +121,37 @@ function createStarDisplay(rating, size = 18) {
 
 function createBidCounterCard(session, locale) {
   const user = session.user || {};
-  const plan = user.currentPlan || "free";
-  const bidLimit = user.bidLimit ?? 15;
-  const bidsUsed = user.bidsUsed ?? 0;
-  const bidsRemaining = Math.max(bidLimit - bidsUsed, 0);
-  const cycleStart = user.bidCycleStart ? new Date(user.bidCycleStart) : new Date();
-  const cycleEnd = new Date(cycleStart.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const resetDate = new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", { day: "numeric", month: "short", year: "numeric" }).format(cycleEnd);
+  const isTr = locale === "tr";
+  // Real token balance from Supabase (attached in createDeveloperDashboardPage).
+  const status = session._tokenStatus || null;
+  const plan = String(user.currentPlan || "free").toLowerCase();
 
   const planLabels = {
-    free: locale === "tr" ? "Ücretsiz Plan" : "Free Plan",
-    pro40: locale === "tr" ? "40 Teklif Planı" : "40 Bid Plan",
-    unlimited: locale === "tr" ? "Sınırsız Plan" : "Unlimited Plan",
+    free: isTr ? "Ücretsiz" : "Free",
+    starter: "Starter",
+    pro: "Pro",
+    elite: "Elite",
   };
   const planLabel = planLabels[plan] || planLabels.free;
-  const isUnlimited = plan === "unlimited";
 
-  const pct = isUnlimited ? 100 : bidLimit > 0 ? Math.round((bidsRemaining / bidLimit) * 100) : 0;
-  const barColor = pct > 30 ? "var(--accent,#2A8DC8)" : pct > 10 ? "#e89040" : "#e05050";
+  const balance = status ? (status.balance ?? 0) : null;
+  const bigValue = balance == null ? "—" : String(balance);
+  const ctaLabel = plan === "free"
+    ? (isTr ? "Üyelik Al" : "Get Membership")
+    : (isTr ? "Jeton Al" : "Buy Tokens");
 
   return `
     <article class="panel developer-dashboard-bid-counter" style="padding:1.25rem;display:grid;gap:0.75rem">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <h4 style="font-size:0.95rem;color:var(--text,#E2EEF8);margin:0">${locale === "tr" ? "Teklif Hakkı" : "Bid Allowance"}</h4>
+        <h4 style="font-size:0.95rem;color:var(--text,#E2EEF8);margin:0">${isTr ? "Jeton Bakiyesi" : "Token Balance"}</h4>
         <span style="font-size:0.78rem;padding:4px 10px;border-radius:999px;background:var(--gold-soft,rgba(27,111,168,0.16));color:var(--accent,#2A8DC8);font-weight:600">${planLabel}</span>
       </div>
-      <div style="display:flex;align-items:baseline;gap:6px">
-        <span style="font-size:2rem;font-weight:700;color:var(--text,#E2EEF8)">${isUnlimited ? "∞" : bidsRemaining}</span>
-        <span style="font-size:0.85rem;color:var(--text-muted,#8BBAD6)">/ ${isUnlimited ? "∞" : bidLimit} ${locale === "tr" ? "kalan" : "remaining"}</span>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="font-size:2rem;font-weight:700;color:var(--text,#E2EEF8)">${bigValue}</span>
+        <span style="font-size:0.85rem;color:var(--text-muted,#8BBAD6)">${isTr ? "jeton" : "tokens"}</span>
       </div>
-      <div style="height:6px;border-radius:3px;background:var(--surface-soft,#0F2133);overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width 400ms ease"></div>
-      </div>
-      <p style="font-size:0.78rem;color:var(--text-dim,#507A98);margin:0">${locale === "tr" ? "Yenileme tarihi:" : "Resets on:"} ${resetDate}</p>
-      ${plan === "free" ? `<a href="./developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${locale === "tr" ? "Planı Yükselt" : "Upgrade Plan"}</a>` : ""}
+      <p style="font-size:0.78rem;color:var(--text-dim,#507A98);margin:0">${isTr ? "Her teklif, projenin büyüklüğüne göre jeton harcar." : "Each bid spends tokens based on the project's size."}</p>
+      <a href="./developer-membership.html" class="button button--secondary" style="font-size:0.82rem;padding:8px 16px;text-align:center;margin-top:4px">${ctaLabel}</a>
     </article>
   `;
 }
@@ -229,13 +227,39 @@ function createBidCard(bid, content) {
 
 function createWonBidCard(bid, content) {
   const locale = getDeveloperDashboardLocale(content);
+  const isTr = locale === "tr";
   const listingHref = getMarketplaceListingHref("client", bid.listing?.id || bid.listingId || "");
-  const contact = bid.clientContact || {};
-  const clientName = contact.name || content.fallback;
-  const clientEmail = contact.email || content.fallback;
-  const clientPhone = contact.phone || content.fallback;
-  const wonLabel = locale === "tr" ? "Kazanılan Teklif" : "Won Bid";
+  // Client contact comes from the accepted listing's contact block. Only WON
+  // bids appear here, so the client's number is revealed to the professional
+  // only after the client accepts — never to bidders who didn't win.
+  const contact = bid.clientContact || bid.listing?.contact || {};
+  const clientName = contact.name || contact.fullName || bid.listing?.ownerEmail || content.fallback;
+  const clientEmail = contact.email || bid.listing?.ownerEmail || content.fallback;
+  const clientPhoneRaw = (contact.phone || "").toString().trim();
+  const clientPhone = clientPhoneRaw || content.fallback;
+  const wonLabel = isTr ? "Kazanılan Teklif" : "Won Bid";
   const dateLabel = formatDashboardDate(bid.createdAt, locale, content.fallback);
+
+  // Normalise the phone for tel: and WhatsApp (Turkish numbers → +90).
+  const digits = clientPhoneRaw.replace(/[^\d]/g, "");
+  let waDigits = digits;
+  if (waDigits.startsWith("00")) waDigits = waDigits.slice(2);
+  else if (waDigits.startsWith("0")) waDigits = "90" + waDigits.slice(1);
+  else if (waDigits.length === 10) waDigits = "90" + waDigits;
+  const telHref = "tel:" + (clientPhoneRaw.startsWith("+") ? "+" : "") + digits;
+  const phoneIcon = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+
+  const contactBanner = clientPhoneRaw ? `
+    <div class="won-bid-contact" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:0.9rem 1rem;background:var(--gold-soft,rgba(27,111,168,0.12));border-top:1px solid rgba(27,111,168,0.25)">
+      <div style="flex:1 1 160px;min-width:0">
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim,#507A98)">${isTr ? "Müşteriyle iletişime geçin" : "Contact the client"}</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text,#E2EEF8)">${clientName}</div>
+        <div style="font-size:0.9rem;color:var(--text-muted,#8BBAD6)">${clientPhoneRaw}</div>
+      </div>
+      <a href="${telHref}" class="button button--primary" style="padding:8px 16px;font-size:0.85rem;display:inline-flex;align-items:center;gap:6px">${phoneIcon} ${isTr ? "Ara" : "Call"}</a>
+      <a href="https://wa.me/${waDigits}" target="_blank" rel="noopener" class="button button--secondary" style="padding:8px 16px;font-size:0.85rem">WhatsApp</a>
+    </div>
+  ` : "";
 
   return `
     <article class="detail-list-card marketplace-bid-accordion panel" data-bid-item>
@@ -244,6 +268,7 @@ function createWonBidCard(bid, content) {
         <span class="dev-bid-row__status dev-bid-row__status--won">${wonLabel}</span>
         <span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
       </button>
+      ${contactBanner}
       <div class="marketplace-bid-detail" data-bid-panel hidden>
         <div class="project-detail-card__facts developer-dashboard-bid-card__facts">
           <div>
@@ -479,6 +504,13 @@ export async function createDeveloperDashboardPage(content) {
 
   if (!session.authenticated || session.user?.role !== "developer") {
     return createAccessDenied(content);
+  }
+
+  // Live token balance for the balance card (real value from Supabase).
+  try {
+    session._tokenStatus = await getTokenStatus(session.user.id);
+  } catch (_) {
+    session._tokenStatus = null;
   }
 
   const notifications = (await getUnreadNotifications(session.user.id)).filter((n) => n.type === "bid-accepted");

@@ -62,7 +62,7 @@ function loadAdminDashboardApi() {
 }
 
 function loadOpenMarketplaceApi() {
-  return loadComponentModule("open-marketplace-page", () => import("./components/openMarketplacePage.js?v=20260325"));
+  return loadComponentModule("open-marketplace-page", () => import("./components/openMarketplacePage.js"));
 }
 
 function loadMarketplaceSubmissionApi() {

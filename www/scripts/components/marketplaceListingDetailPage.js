@@ -1,5 +1,6 @@
 import { getDefaultAvatarOptions } from "../core/accountSettingsStore.js";
 import { createButton, createSectionHeading } from "./primitives.js";
+import { verifiedSealMarkup, verifiedCheckBadge } from "./verifiedSeal.js";
 
 /** No-op — images are already compressed at upload time (1024px / 400KB max) */
 export function compressDetailImages() {}
@@ -253,6 +254,7 @@ function createBidSubmissionSection(content, listing) {
         <div class="panel application-panel">
           <form class="application-form" data-marketplace-bid-form novalidate>
             <input type="hidden" name="listingId" value="${listing.id}" />
+            <div class="bid-token-cost" data-bid-cost-badge data-listing-budget="${String(listing.budget || listing.marketplaceMeta?.budget?.label || listing.marketplaceMeta?.budget || "").replace(/"/g, "&quot;")}" hidden></div>
             <div class="auth-form-error form-field--full" data-marketplace-bid-error hidden style="display: none;">
               <strong data-marketplace-bid-error-title>${bidForm.errorTitle}</strong>
               <p data-marketplace-bid-error-text>${bidForm.errorFallback}</p>
@@ -414,6 +416,20 @@ function getListingImageItems(listing) {
 function createClientVisual(detailContent, listing) {
   const imageItems = getListingImageItems(listing);
 
+  // Slim fetch → image not embedded yet. Render a skeleton hero and stream the
+  // real photo in (hydrateDetailMedia). Keeps the page instant, image seamless.
+  if (imageItems.length === 0 && listing._lazyImage && listing.id) {
+    return `
+      <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact marketplace-detail-visual--media panel">
+        <div class="marketplace-detail-visual-gallery marketplace-detail-visual-gallery--single" data-gallery-container data-gallery-lazy="${listing.id}" data-board-title="${(detailContent.boardTitle || "").replace(/"/g, "&quot;")}" data-board-type="${(listing.projectType || "").replace(/"/g, "&quot;")}" data-board-loc="${(listing.location || "").replace(/"/g, "&quot;")}">
+          <div class="marketplace-detail-visual-slide marketplace-detail-visual-slide--active" data-gallery-slide="0">
+            <div class="yapply-img-skeleton"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   if (imageItems.length === 0) {
     return `
       <div class="project-hero-visual marketplace-detail-visual marketplace-detail-visual--client marketplace-detail-visual--compact panel">
@@ -569,16 +585,25 @@ function createClientDetail(content, listing) {
                 copy.fallback;
               const ratingLabel = formatBidRating(developerReference, locale, copy.latestBids.noRating);
               const submittedLabel = formatRelativeTime(bid.createdAt, locale, copy.fallback);
+              const bidderAvatar = developerReference.avatarSrc || "./assets/avatars/avatar-bird-business.png";
+              const bidderVerified = developerReference.isVerified === true;
+              const rowBadge = bidderVerified ? verifiedCheckBadge(locale) : "";
               return `
                 <article class="detail-list-card marketplace-bid-card marketplace-bid-accordion" data-bid-item>
                   <button class="marketplace-bid-row" type="button" data-bid-trigger aria-expanded="false">
-                    <span class="marketplace-bid-row__amount"><strong>${bid.bidAmount?.label || copy.fallback}</strong></span>
+                    <span class="marketplace-bid-row__amount"><strong>${bid.bidAmount?.label || copy.fallback}</strong>${rowBadge}</span>
                     <span class="marketplace-bid-row__chevron" aria-hidden="true"></span>
                   </button>
                   <div class="marketplace-bid-detail" data-bid-panel hidden>
+                    <div class="marketplace-bid-bidder" style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem">
+                      <span class="marketplace-bid-bidder__avatar" style="position:relative;display:inline-flex;line-height:0;flex:0 0 auto">
+                        <img src="${bidderAvatar}" alt="${developerName}" loading="lazy" decoding="async" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--surface-300,#d1d5db)" />
+                        ${bidderVerified ? verifiedSealMarkup(locale) : ""}
+                      </span>
+                      <span class="marketplace-bid-bidder__name" style="display:inline-flex;align-items:center;font-weight:600">${developerName}${bidderVerified ? verifiedCheckBadge(locale) : ""}</span>
+                    </div>
                     <div class="project-detail-card__facts">
                       ${createSummaryGrid([
-                        { label: copy.latestBids.bidder, value: developerName },
                         { label: copy.latestBids.timeframe, value: bid.estimatedCompletionTimeframe?.label || copy.fallback },
                         { label: copy.latestBids.rating, value: ratingLabel },
                         { label: copy.latestBids.submitted, value: submittedLabel },
@@ -618,7 +643,7 @@ function createClientDetail(content, listing) {
   const detailAcceptedDevId = detailAcceptedBid?.bidderUserId || detailAcceptedBid?.bidder_user_id || detailAcceptedBid?.developerProfileReference?.userId || "";
   const isTR = locale === "tr";
   const reviewLabels = {
-    title: isTR ? "Geliştiriciyi Değerlendir" : "Rate this Developer",
+    title: isTR ? "Profesyoneli Değerlendir" : "Rate this Professional",
     ratingLabel: isTR ? "Puanınız" : "Your Rating",
     commentLabel: isTR ? "Yorum (isteğe bağlı)" : "Comment (optional)",
     commentPlaceholder: isTR ? "Bu geliştirici ile çalışma deneyiminizi paylaşın..." : "Share your experience working with this developer...",
@@ -626,8 +651,8 @@ function createClientDetail(content, listing) {
   };
   const detailAlreadyReviewed = Boolean(listing._hasReview);
   const detailReviewMarkup = isOwner && detailAcceptedBidId && detailAcceptedDevId && !detailAlreadyReviewed ? `
-    <section class="section-shell" style="padding-top:0">
-      <div class="panel" style="padding:1.25rem">
+    <section class="section-shell" id="leave-review" style="padding-top:0;scroll-margin-top:80px">
+      <div class="panel" style="padding:1.25rem;border:1px solid var(--accent,#2A8DC8)">
         <h3 style="margin:0 0 0.75rem;font-size:1rem">${reviewLabels.title}</h3>
         <form data-inline-review-form data-review-dev="${detailAcceptedDevId}" data-review-listing="${listing.id}" data-review-bid="${detailAcceptedBidId}">
           <div data-star-input-group>
@@ -871,4 +896,67 @@ export function createMarketplaceListingDetailPage(content, listingType, listing
   }
 
   return createClientDetail(content, listing);
+}
+
+/**
+ * Stream the listing hero photo into the skeleton after the (slim) detail page
+ * has rendered instantly. Fetches only the image row — the page itself already
+ * loaded without the heavy base64. Falls back to the board placeholder if the
+ * listing genuinely has no photo.
+ */
+let _detailSkeletonCssInjected = false;
+export async function hydrateDetailMedia() {
+  if (!_detailSkeletonCssInjected) {
+    _detailSkeletonCssInjected = true;
+    const st = document.createElement("style");
+    st.id = "yapply-detail-skeleton-css";
+    st.textContent = `
+      @keyframes yapplyImgShimmer {0%{background-position:-200% 0}100%{background-position:200% 0}}
+      .yapply-img-skeleton{display:block;width:100%;min-height:240px;height:100%;border-radius:8px;background:linear-gradient(100deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.11) 40%,rgba(255,255,255,0.04) 55%);background-size:200% 100%;animation:yapplyImgShimmer 1.3s linear infinite;}
+      [data-theme="light"] .yapply-img-skeleton{background:linear-gradient(100deg,rgba(0,0,0,0.05) 25%,rgba(0,0,0,0.10) 40%,rgba(0,0,0,0.05) 55%);background-size:200% 100%;}
+    `;
+    document.head.appendChild(st);
+  }
+
+  const containers = Array.from(document.querySelectorAll("[data-gallery-lazy]"));
+  if (!containers.length) return;
+  const { fetchListingImages } = await import("../core/supabaseMarketplace.js");
+
+  for (const container of containers) {
+    const id = container.getAttribute("data-gallery-lazy");
+    if (!id || container.dataset.lazyDone) continue;
+    container.dataset.lazyDone = "1";
+
+    let images = [];
+    try { images = await fetchListingImages(id); } catch (_) {}
+
+    if (images && images.length) {
+      container.innerHTML = images
+        .map((im, i) => `
+          <div class="marketplace-detail-visual-slide${i === 0 ? " marketplace-detail-visual-slide--active" : ""}" data-gallery-slide="${i}">
+            <img src="${im.src}" alt="${String(im.name || "").replace(/"/g, "&quot;")}" decoding="async" loading="${i === 0 ? "eager" : "lazy"}" style="opacity:0;transition:opacity .35s ease" onload="this.style.opacity=1" />
+          </div>`)
+        .join("");
+      if (images.length > 1) {
+        const parent = container.closest(".marketplace-detail-visual");
+        if (parent && !parent.querySelector(".gallery-arrow")) {
+          parent.insertAdjacentHTML("beforeend", `
+            <button class="gallery-arrow gallery-arrow--prev" data-gallery-prev aria-label="Previous image">&#8249;</button>
+            <button class="gallery-arrow gallery-arrow--next" data-gallery-next aria-label="Next image">&#8250;</button>
+            <div class="gallery-dots">${images.map((_, i) => `<span class="gallery-dot${i === 0 ? " gallery-dot--active" : ""}" data-gallery-dot="${i}"></span>`).join("")}</div>`);
+        }
+      }
+      try { window.__yapplySetupGallery?.(); } catch (_) {}
+    } else {
+      // No photo on this listing — show the styled board placeholder instead.
+      const bt = container.getAttribute("data-board-title") || "";
+      const bty = container.getAttribute("data-board-type") || "";
+      const bl = container.getAttribute("data-board-loc") || "";
+      const panel = container.closest(".project-hero-visual");
+      if (panel) {
+        panel.classList.remove("marketplace-detail-visual--media");
+        panel.innerHTML = `<div class="project-hero-visual__grid"></div><div class="project-hero-board"><span>${bt}</span><strong>${bty}</strong><p>${bl}</p></div>`;
+      }
+    }
+  }
 }
