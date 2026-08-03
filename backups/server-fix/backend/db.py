@@ -1491,30 +1491,8 @@ def list_marketplace_listings(
   category: str | None = None,
   limit: int = 48,
   skip_bids: bool = False,
-  owner_user_id: str | None = None,
-  owner_email: str | None = None,
 ) -> list[dict]:
-  """owner_user_id / owner_email restrict the result to one account's listings.
-
-  Performance, not just correctness: serializing a listing fetches that
-  listing's bids (two more round trips each). The dashboards used to pull the
-  whole marketplace and filter afterwards in Python, so opening "My Listings"
-  paid bid lookups for everyone else's listings too.
-  """
   status_matches = _expand_status_matches(status) if status else set()
-  owner_user_id = (owner_user_id or "").strip()
-  owner_email = (owner_email or "").strip().lower()
-
-  def _owned(record) -> bool:
-    if not owner_user_id and not owner_email:
-      return True
-    if owner_user_id and str(get_record_value(record, "owner_user_id", "ownerUserId") or "") == owner_user_id:
-      return True
-    if owner_email:
-      record_email = str(get_record_value(record, "owner_email", "ownerEmail") or "").strip().lower()
-      if record_email and record_email == owner_email:
-        return True
-    return False
 
   if _uses_remote_marketplace_store():
     records = _list_remote_marketplace_listing_records()
@@ -1524,9 +1502,6 @@ def list_marketplace_listings(
 
     if status_matches:
       records = [record for record in records if get_record_value(record, "status") in status_matches]
-
-    if owner_user_id or owner_email:
-      records = [record for record in records if _owned(record)]
 
     listings = [serialize_marketplace_listing(record, skip_bids=skip_bids) for record in records[: max(1, limit)]]
 
@@ -1551,10 +1526,6 @@ def list_marketplace_listings(
     placeholders = ", ".join("?" for _ in status_matches)
     clauses.append(f"status IN ({placeholders})")
     params.extend(sorted(status_matches))
-
-  if owner_user_id:
-    clauses.append("owner_user_id = ?")
-    params.append(owner_user_id)
 
   where_clause = f"WHERE {' AND '.join(clauses)}" if clauses else ""
 

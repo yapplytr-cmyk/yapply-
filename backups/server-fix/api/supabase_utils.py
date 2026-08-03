@@ -290,15 +290,14 @@ def handle_client_dashboard(handler) -> None:
   owner_user_id = str(profile.get("id") or "").strip()
   owner_email = str(profile.get("email") or "").strip().lower()
 
-  # Ask for only this client's listings — fetching all 200 and filtering here
-  # meant paying two bid lookups for every OTHER user's listing as well.
-  listings = list_marketplace_listings(
-    listing_type="client",
-    status="",
-    limit=200,
-    owner_user_id=owner_user_id,
-    owner_email=owner_email,
-  )
+  listings = [
+    listing
+    for listing in list_marketplace_listings(listing_type="client", status="", limit=200)
+    if (
+      str(listing.get("ownerUserId") or "") == owner_user_id
+      or (owner_email and str(listing.get("ownerEmail") or "").strip().lower() == owner_email)
+    )
+  ]
 
   json_response(handler, HTTPStatus.OK, {"ok": True, "listings": listings})
 
@@ -307,12 +306,11 @@ def handle_developer_dashboard(handler) -> None:
   _, profile = require_public_access(extract_bearer_token(handler), "developer")
   owner_user_id = str(profile.get("id") or "").strip()
 
-  listings = list_marketplace_listings(
-    listing_type="professional",
-    status="",
-    limit=200,
-    owner_user_id=owner_user_id,
-  )
+  listings = [
+    listing
+    for listing in list_marketplace_listings(listing_type="professional", status="", limit=200)
+    if str(listing.get("ownerUserId") or "") == owner_user_id
+  ]
   bids = list_marketplace_bids_for_bidder(owner_user_id, limit=200)
 
   json_response(handler, HTTPStatus.OK, {"ok": True, "listings": listings, "bids": bids})

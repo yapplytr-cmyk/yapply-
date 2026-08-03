@@ -62,12 +62,7 @@ PROFILE_COLUMNS = ",".join(
   ]
 )
 ADMIN_ROLES = {"admin", "moderator"}
-# The "avatars" bucket is the one that actually exists and is public-read
-# (see supabase/ensure-avatar-rls.sql). Client photo uploads used to be
-# written to "yapply-marketplace", which was never created — so every upload
-# recorded a public URL that answers "Bucket not found" and the profile
-# picture rendered as a broken-image question mark.
-ACCOUNT_AVATAR_BUCKET = "avatars"
+ACCOUNT_AVATAR_BUCKET = "yapply-marketplace"
 MAX_ACCOUNT_AVATAR_BYTES = 5 * 1024 * 1024
 ALLOWED_ACCOUNT_AVATAR_MIME_TYPES = {
   "image/jpeg",
@@ -1244,14 +1239,7 @@ def update_own_account_settings(access_token: str, payload: dict[str, Any]) -> d
       content_type, raw_bytes = _decode_account_avatar_data_url(upload_data_url)
       extension = _guess_account_avatar_extension(content_type, upload_name)
       object_path = f"avatars/{profile['id']}/{uuid4().hex}{extension}"
-      try:
-        _upload_account_avatar(ACCOUNT_AVATAR_BUCKET, object_path, raw_bytes, content_type)
-      except Exception as upload_error:  # noqa: BLE001
-        raise SupabaseError(
-          "PROFILE_PICTURE_UPLOAD_FAILED",
-          "The profile photo could not be uploaded. Please try again.",
-          502,
-        ) from upload_error
+      _upload_account_avatar(ACCOUNT_AVATAR_BUCKET, object_path, raw_bytes, content_type)
       profile_picture_url = _build_public_storage_url(ACCOUNT_AVATAR_BUCKET, object_path)
     elif preserve_uploaded_picture:
       if not profile_picture_url:
@@ -1306,9 +1294,7 @@ def update_own_account_settings(access_token: str, payload: dict[str, Any]) -> d
       "username": updated_profile.get("username"),
       "role": updated_profile.get("role"),
       "status": updated_profile.get("status"),
-      # A default bird also writes an asset path into avatar_url, so deriving
-      # the type from the url reported "upload" for defaults too.
-      "profilePictureType": profile_picture_type,
+      "profilePictureType": "upload" if profile_picture_url else "default",
       "profilePictureId": profile_picture_id or "",
       "profilePicturePath": "",
       "profilePictureUrl": updated_profile.get("avatarUrl"),

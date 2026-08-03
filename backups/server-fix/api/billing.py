@@ -457,7 +457,6 @@ def handle_billing_webhook(handler) -> None:
     plan_id = ""
     provider_ref = None
     period_end = None
-    billing_ref = ""
 
     if event_type == "checkout.session.completed":
       meta = obj.get("metadata") or {}
@@ -473,7 +472,6 @@ def handle_billing_webhook(handler) -> None:
         return
       plan_id = str(meta.get("plan_id") or "")
       provider_ref = obj.get("subscription") or obj.get("id")
-      billing_ref = str(obj.get("invoice") or obj.get("subscription") or obj.get("id") or "")
     elif event_type in ("invoice.paid", "invoice.payment_succeeded"):
       # Recurring renewals — metadata lives on the subscription.
       lines = ((obj.get("lines") or {}).get("data")) or []
@@ -487,7 +485,6 @@ def handle_billing_webhook(handler) -> None:
       user_id = str(meta.get("user_id") or "")
       plan_id = str(meta.get("plan_id") or "")
       provider_ref = obj.get("subscription")
-      billing_ref = str(obj.get("id") or "")
       try:
         period_ts = int(((lines[0] or {}).get("period") or {}).get("end") or 0) if lines else 0
         if period_ts:
@@ -533,14 +530,8 @@ def handle_billing_webhook(handler) -> None:
 
     plan = _get_plan(plan_id)
     tokens = int(plan.get("tokens_per_month") or 0)
-
-    # Stripe fires checkout.session.completed AND invoice.paid AND
-    # invoice.payment_succeeded for ONE payment, each with its own event id.
-    # De-duping on event_id alone granted the same month two or three times.
-    # All three reference the same invoice, so key the ledger on that.
-    grant_ref = f"membership:{billing_ref}" if billing_ref else (event_id or provider_ref)
-    if tokens > 0 and not _already_processed(grant_ref):
-      _grant_tokens(user_id, tokens, "membership_grant", grant_ref)
+    if tokens > 0:
+      _grant_tokens(user_id, tokens, "membership_grant", event_id or provider_ref)
     _upsert_membership(user_id, plan_id, provider_ref, period_end)
     # Mirror onto the profile → drives verified badge + professional-listing gate.
     _set_profile_plan(user_id, plan_id)
@@ -613,15 +604,6 @@ def handle_billing_revenuecat_webhook(handler) -> None:
       _json_response(handler, HTTPStatus.OK, {"ok": True, "skipped": "no_user_or_product"})
       return
 
-    # Apple's StoreKit sandbox compresses a month into ~5 minutes, so one test
-    # subscription fires a RENEWAL every few minutes — each a genuine, distinct
-    # transaction that de-duplication cannot catch. That is how a tester's
-    # balance climbed to 449. Membership status still applies; only the token
-    # grant is withheld.
-    environment = str(event.get("environment") or "").upper()
-    is_sandbox = environment == "SANDBOX"
-
-
     if event_id and _already_processed(event_id):
       _json_response(handler, HTTPStatus.OK, {"ok": True, "skipped": "duplicate"})
       return
@@ -638,9 +620,8 @@ def handle_billing_revenuecat_webhook(handler) -> None:
         _set_profile_plan(user_id, plan_id)
         # Monthly token allowance — only on the actual purchase/renewal events.
         tokens = int(plan.get("tokens_per_month") or 0)
-        rc_ref = f"membership:{provider_ref or event_id}"
-        if tokens > 0 and etype in ("INITIAL_PURCHASE", "RENEWAL") and not is_sandbox and not _already_processed(rc_ref):
-          _grant_tokens(user_id, tokens, "membership", rc_ref)
+        if tokens > 0 and etype in ("INITIAL_PURCHASE", "RENEWAL"):
+          _grant_tokens(user_id, tokens, "membership", event_id or provider_ref)
         _json_response(handler, HTTPStatus.OK, {"ok": True, "plan": plan_id})
         return
 
@@ -664,7 +645,7 @@ def handle_billing_revenuecat_webhook(handler) -> None:
       if pack_id and etype in ("NON_RENEWING_PURCHASE", "INITIAL_PURCHASE"):
         pack = _get_pack(pack_id)
         tokens = int(pack.get("tokens") or 0)
-        if tokens > 0 and not is_sandbox:
+        if tokens > 0:
           _grant_tokens(user_id, tokens, "purchase", event_id or product_id)
         _json_response(handler, HTTPStatus.OK, {"ok": True, "granted": tokens, "pack": pack_id})
         return
